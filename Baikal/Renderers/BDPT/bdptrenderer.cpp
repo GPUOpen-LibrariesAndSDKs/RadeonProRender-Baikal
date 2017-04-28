@@ -317,7 +317,6 @@ namespace Baikal
     // Render the scene into the output
     void BdptRenderer::RenderTile(Scene1 const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
-        auto api = m_scene_controller.GetIntersectionApi();
         auto& clwscene = m_scene_controller.CompileScene(scene, m_render_data->mat_collector, m_render_data->tex_collector);
 
         // Number of rays to generate

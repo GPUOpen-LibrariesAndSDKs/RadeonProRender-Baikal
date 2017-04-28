@@ -123,7 +123,6 @@ namespace Baikal
         ClwSceneController m_scene_controller;
 
         // GPU data
-        struct PathVertex;
         struct RenderData;
         struct PathState;
 

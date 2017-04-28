@@ -19,22 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include <../App/CL/common.cl>
-#include <../App/CL/ray.cl>
-#include <../App/CL/isect.cl>
-#include <../App/CL/utils.cl>
-#include <../App/CL/payload.cl>
-#include <../App/CL/texture.cl>
-#include <../App/CL/sampling.cl>
-#include <../App/CL/normalmap.cl>
-#include <../App/CL/bxdf.cl>
-#include <../App/CL/light.cl>
-#include <../App/CL/camera.cl>
-#include <../App/CL/scene.cl>
-#include <../App/CL/material.cl>
-#include <../App/CL/volumetrics.cl>
-#include <../App/CL/path.cl>
-#include <../App/CL/vertex.cl>
+#include <../Baikal/CL/common.cl>
+#include <../Baikal/CL/ray.cl>
+#include <../Baikal/CL/isect.cl>
+#include <../Baikal/CL/utils.cl>
+#include <../Baikal/CL/payload.cl>
+#include <../Baikal/CL/texture.cl>
+#include <../Baikal/CL/sampling.cl>
+#include <../Baikal/CL/normalmap.cl>
+#include <../Baikal/CL/bxdf.cl>
+#include <../Baikal/CL/light.cl>
+#include <../Baikal/CL/camera.cl>
+#include <../Baikal/CL/scene.cl>
+#include <../Baikal/CL/material.cl>
+#include <../Baikal/CL/volumetrics.cl>
+#include <../Baikal/CL/path.cl>
+#include <../Baikal/CL/vertex.cl>
 
 // Convert PDF of sampling point po from point p from solid angle measure to area measure
 INLINE

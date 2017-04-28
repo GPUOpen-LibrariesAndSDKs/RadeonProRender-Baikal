@@ -25,7 +25,11 @@ THE SOFTWARE.
 #define PI 3.14159265358979323846f
 #define KERNEL __kernel
 #define GLOBAL __global
+
+#ifndef APPLE
 #define INLINE __attribute__((always_inline))
+#endif
+
 #define HIT_MARKER 1
 #define MISS_MARKER -1
 #define INVALID_IDX -1
