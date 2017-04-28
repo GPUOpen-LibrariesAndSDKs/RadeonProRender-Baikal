@@ -23,23 +23,23 @@ Internally meshes and instances are represented using Shape interface. If used t
 ## Materials
 
 Baikal supports compound materials assembled from the following building blocks:
-•	Matte BRDF (Lambertian)
-•	Microfacet BRDF (GGX or Beckmann distributions)
-•	Ideal reflection BRDF
-•	Ideal refraction BTDF
-•	Microfacet refraction BTDF (GGX or Beckmann distributions)
-•	Transparent BTDF
-•	Translucent BTDF
-•	Emission
+* Matte BRDF (Lambertian)
+* Microfacet BRDF (GGX or Beckmann distributions)
+* Ideal reflection BRDF
+* Ideal refraction BTDF
+* Microfacet refraction BTDF (GGX or Beckmann distributions)
+* Transparent BTDF
+* Translucent BTDF
+* Emission
 
 Each of these building blocks can have:
-•	Built-in Fresnel factor
-•	Normal map
-•	Bump map
+* Built-in Fresnel factor
+* Normal map
+* Bump map
 
 Building blocks are combined together using one of the following blend modes:
-•	Mix – linear interpolation of components using fixed weight
-•	Fresnel blend – linear interpolation of components with weight depending on angle of incidence
+* Mix – linear interpolation of components using fixed weight
+* Fresnel blend – linear interpolation of components with weight depending on angle of incidence
 
 Materials can use RGBA uint8, float16 or float32 uncompressed textures for albedos, weights and normal/bump maps.
 
@@ -47,13 +47,12 @@ Internally materials are represented as a subclasses of Material class: SingleBx
 
 ## Lights
 
-BMW Blender Benchmark model, courtesy of Mike Pan
 Baikal supports the following types of lights:
-•	Point light
-•	Directional light
-•	Spot light
-•	Area light (emissive geometry)
-•	Image-based environment light
+* Point light
+* Directional light
+* Spot light
+* Area light (emissive geometry)
+* Image-based environment light
 
 All the lights are internally represented by different subclasses of Light interface. If being used via RPR API, lights are represented by rpr_light opaque pointer.
 
@@ -62,9 +61,9 @@ All the lights are internally represented by different subclasses of Light inter
 
 Baikal can use one of the following samplers for random points/directions generation:
 
-•	Random sampler (less efficient, mainly for debugging)
-•	Sobol quasi- Monte-Carlo sampler
-•	Correlated multi-jittered sampler
+* Random sampler (less efficient, mainly for debugging)
+* Sobol quasi- Monte-Carlo sampler
+* Correlated multi-jittered sampler
 
 In addition Baikal is using multiple importance sampling to reduce variance for both direct and indirect illumination. It also applies Russian roulette to terminate low-probability paths.
 
@@ -95,7 +94,9 @@ In terms of intersection throughput performance is determined by underlying Rade
 “Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Primary rays: 773Mrays/s (2.68ms)
+
 Secondary rays: 285Mrays/s (7.27ms)
+
 Shadow rays: 1109Mrays/s (1.87ms)
 
 
@@ -103,7 +104,9 @@ Shadow rays: 1109Mrays/s (1.87ms)
 “Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Primary rays: 470Mrays/s (4.42ms)
+
 Secondary rays: 195Mrays/s (10.66ms)
+
 Shadow rays: 800Mrays/s (2.59ms)
 
 
@@ -111,23 +114,25 @@ Shadow rays: 800Mrays/s (2.59ms)
 “Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Primary rays: 562Mrays/s (3.69ms)
+
 Secondary rays: 270Mrays/s (7.67ms)
+
 Shadow rays: 1219Mrays/s (1.7ms)
 
 
 # RadeonPro Render API support
 We provide an implementation of RPR API with Baikal, which is still in an early state of development, so many features available in internal RPR core are not available in open-source back end. The list of unsupported features follow:
 
-•	Full material system (currently only basic BRDFs and blends of them are supported, no procedurals and arithmetic nodes)
-•	Volumetrics (currently work in progress in Baikal)
-•	IES lights
-•	Visibility flags
-•	Displacement and subdivision
-•	Tilt shift camera
-•	Bokeh shape controls
-•	Multiple UVs
-•	Post-processing
-•	Analytic sky system
+* Full material system (currently only basic BRDFs and blends of them are supported, no procedurals and arithmetic nodes)
+* Volumetrics (currently work in progress in Baikal)
+* IES lights
+* Visibility flags
+* Displacement and subdivision
+* Tilt shift camera
+* Bokeh shape controls
+* Multiple UVs
+* Post-processing
+* Analytic sky system
 
 # Instructions & requirements
 ## System requirements
