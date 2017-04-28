@@ -23,8 +23,8 @@ THE SOFTWARE.
 #define TEXTURE_CL
 
 
-#include <../App/CL/payload.cl>
-#include <../App/CL/utils.cl>
+#include <../Baikal/CL/payload.cl>
+#include <../Baikal/CL/utils.cl>
 
 
 /// To simplify a bit

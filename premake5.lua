@@ -85,14 +85,14 @@ if fileExists("./UnitTest/UnitTest.lua") then
 	dofile("./UnitTest/UnitTest.lua")
 end
 
-if fileExists("./RadeonRays/RadeonRays/RadeonRays.lua") then
-	dofile("./RadeonRays/RadeonRays/RadeonRays.lua")
+if fileExists("./RadeonRaysPremakeAdapter/RadeonRays.lua") then
+	dofile("./RadeonRaysPremakeAdapter/RadeonRays.lua")
 end
 
-if fileExists("./RadeonRays/CLW/CLW.lua") then
-	dofile("./RadeonRays/CLW/CLW.lua")
+if fileExists("./RadeonRaysPremakeAdapter/CLW.lua") then
+	dofile("./RadeonRaysPremakeAdapter/CLW.lua")
 end
 
-if fileExists("./RadeonRays/Calc/Calc.lua") then
-	dofile("./RadeonRays/Calc/Calc.lua")
+if fileExists("./RadeonRaysPremakeAdapter/Calc.lua") then
+	dofile("./RadeonRaysPremakeAdapter/Calc.lua")
 end

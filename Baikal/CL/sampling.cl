@@ -22,7 +22,7 @@ THE SOFTWARE.
 #ifndef SAMPLING_CL
 #define SAMPLING_CL
 
-#include <../App/CL/utils.cl>
+#include <../Baikal/CL/utils.cl>
 
 
 #define SAMPLE_DIMS_PER_BOUNCE 300

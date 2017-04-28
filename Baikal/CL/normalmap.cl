@@ -22,9 +22,9 @@ THE SOFTWARE.
 #ifndef NORMALMAP_CL
 #define NORMALMAP_CL
 
-#include <../App/CL/utils.cl>
-#include <../App/CL/texture.cl>
-#include <../App/CL/payload.cl>
+#include <../Baikal/CL/utils.cl>
+#include <../Baikal/CL/texture.cl>
+#include <../Baikal/CL/payload.cl>
 
 void DifferentialGeometry_ApplyNormalMap(DifferentialGeometry* diffgeo, TEXTURE_ARG_LIST)
 {

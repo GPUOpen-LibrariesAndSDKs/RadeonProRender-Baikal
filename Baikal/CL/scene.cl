@@ -22,9 +22,9 @@ THE SOFTWARE.
 #ifndef SCENE_CL
 #define SCENE_CL
 
-#include "../App/CL/common.cl"
-#include "../App/CL/utils.cl"
-#include "../App/CL/payload.cl"
+#include "../Baikal/CL/common.cl"
+#include "../Baikal/CL/utils.cl"
+#include "../Baikal/CL/payload.cl"
 
 typedef struct
 {

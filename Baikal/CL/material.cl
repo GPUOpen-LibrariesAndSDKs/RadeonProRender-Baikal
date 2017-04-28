@@ -22,11 +22,11 @@ THE SOFTWARE.
 #ifndef MATERIAL_CL
 #define MATERIAL_CL
 
-#include <../App/CL/common.cl>
-#include <../App/CL/utils.cl>
-#include <../App/CL/texture.cl>
-#include <../App/CL/payload.cl>
-#include <../App/CL/bxdf.cl>
+#include <../Baikal/CL/common.cl>
+#include <../Baikal/CL/utils.cl>
+#include <../Baikal/CL/texture.cl>
+#include <../Baikal/CL/payload.cl>
+#include <../Baikal/CL/bxdf.cl>
 
 void Material_Select(
     // Scene data

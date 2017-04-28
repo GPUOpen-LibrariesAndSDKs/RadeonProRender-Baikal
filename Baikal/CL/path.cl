@@ -22,7 +22,7 @@ THE SOFTWARE.
 #ifndef PATH_CL
 #define PATH_CL
 
-#include <../App/CL/payload.cl>
+#include <../Baikal/CL/payload.cl>
 
 typedef struct _Path
 {

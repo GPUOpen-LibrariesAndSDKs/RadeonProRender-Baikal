@@ -22,10 +22,10 @@ THE SOFTWARE.
 #ifndef LIGHT_CL
 #define LIGHT_CL
 
-#include <../App/CL/utils.cl>
-#include <../App/CL/payload.cl>
-#include <../App/CL/texture.cl>
-#include <../App/CL/scene.cl>
+#include <../Baikal/CL/utils.cl>
+#include <../Baikal/CL/payload.cl>
+#include <../Baikal/CL/texture.cl>
+#include <../Baikal/CL/scene.cl>
 
 
 INLINE

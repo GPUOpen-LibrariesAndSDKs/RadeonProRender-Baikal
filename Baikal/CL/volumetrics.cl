@@ -22,9 +22,9 @@ THE SOFTWARE.
 #ifndef VOLUMETRICS_CL
 #define VOLUMETRICS_CL
 
-#include <../App/CL/common.cl>
-#include <../App/CL/payload.cl>
-#include <../App/CL/path.cl>
+#include <../Baikal/CL/common.cl>
+#include <../Baikal/CL/payload.cl>
+#include <../Baikal/CL/path.cl>
 
 #define FAKE_SHAPE_SENTINEL 0xFFFFFF
 

@@ -22,9 +22,9 @@ THE SOFTWARE.
 #ifndef BXDF_CL
 #define BXDF_CL
 
-#include <../App/CL/utils.cl>
-#include <../App/CL/texture.cl>
-#include <../App/CL/payload.cl>
+#include <../Baikal/CL/utils.cl>
+#include <../Baikal/CL/texture.cl>
+#include <../Baikal/CL/payload.cl>
 
 #define DENOM_EPS 1e-8f
 #define ROUGHNESS_EPS 0.0001f

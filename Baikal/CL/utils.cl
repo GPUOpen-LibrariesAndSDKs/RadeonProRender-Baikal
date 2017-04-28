@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 #define PI 3.14159265358979323846f
 
-#include <../App/CL/payload.cl>
+#include <../Baikal/CL/payload.cl>
 
 #ifndef APPLE
 /// These functions are defined on OSX already

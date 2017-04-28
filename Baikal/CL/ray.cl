@@ -22,7 +22,7 @@
 #ifndef RAY_CL
 #define RAY_CL
 
-#include "../App/CL/common.cl"
+#include "../Baikal/CL/common.cl"
 
 // Ray descriptor
 typedef struct

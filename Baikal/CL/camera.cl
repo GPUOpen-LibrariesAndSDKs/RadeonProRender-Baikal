@@ -22,12 +22,12 @@ THE SOFTWARE.
 #ifndef CAMERA_CL
 #define CAMERA_CL
 
-#include <../App/CL/common.cl>
-#include <../App/CL/payload.cl>
-#include <../App/CL/sampling.cl>
-#include <../App/CL/utils.cl>
-#include <../App/CL/path.cl>
-#include <../App/CL/vertex.cl>
+#include <../Baikal/CL/common.cl>
+#include <../Baikal/CL/payload.cl>
+#include <../Baikal/CL/sampling.cl>
+#include <../Baikal/CL/utils.cl>
+#include <../Baikal/CL/path.cl>
+#include <../Baikal/CL/vertex.cl>
 
 // Pinhole camera implementation.
 // This kernel is being used if aperture value = 0.

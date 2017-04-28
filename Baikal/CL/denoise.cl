@@ -22,7 +22,7 @@ THE SOFTWARE.
 #ifndef DENOISE_CL
 #define DENOISE_CL
 
-#include <../App/CL/common.cl>
+#include <../Baikal/CL/common.cl>
 
 // Similarity function
 inline float C(float3 x1, float3 x2, float sigma)
