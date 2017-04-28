@@ -23,15 +23,9 @@ THE SOFTWARE.
 
 #ifdef __APPLE__
 #include <OpenCL/OpenCL.h>
-<<<<<<< HEAD
-// #define GLFW_INCLUDE_GL3
-// #define GLFW_NO_GLU
-//#include "GLFW/glfw3.h"
-=======
 #define GLFW_INCLUDE_GLCOREARB
 #define GLFW_NO_GLU
 #include "GLFW/glfw3.h"
->>>>>>> github/baikal-next
 #elif WIN32
 #define NOMINMAX
 #include <Windows.h>
@@ -95,7 +89,7 @@ using namespace RadeonRays;
 
 // Help message
 char const* kHelpMessage =
-"App [-p path_to_models][-f model_name][-b][-r][-ns number_of_shadow_rays][-ao ao_radius][-w window_width][-h window_height][-nb number_of_indirect_bounces]";
+"Baikal [-p path_to_models][-f model_name][-b][-r][-ns number_of_shadow_rays][-ao ao_radius][-w window_width][-h window_height][-nb number_of_indirect_bounces]";
 char const* g_path =
 "../Resources/CornellBox";
 char const* g_modelname = "orig.objm";
@@ -180,7 +174,6 @@ int g_primary = -1;
 
 std::unique_ptr<Baikal::Scene1> g_scene;
 
-
 static bool     g_is_left_pressed = false;
 static bool     g_is_right_pressed = false;
 static bool     g_is_fwd_pressed = false;
@@ -214,7 +207,7 @@ void Render(GLFWwindow* window)
             glClear(GL_COLOR_BUFFER_BIT); CHECK_GL_ERROR;
             glBindVertexArray(g_vao); CHECK_GL_ERROR;
 
-            GLuint program = g_shader_manager->GetProgram("../App/GLSL/simple");
+            GLuint program = g_shader_manager->GetProgram("../Baikal/GLSL/simple");
             glUseProgram(program); CHECK_GL_ERROR;
 
             GLuint texloc = glGetUniformLocation(program, "g_Texture");

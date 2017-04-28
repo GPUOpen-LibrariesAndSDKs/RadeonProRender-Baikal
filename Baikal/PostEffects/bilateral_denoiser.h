@@ -78,7 +78,7 @@ namespace Baikal
                          );
         
         // Compile kernels
-        m_program = CLWProgram::CreateFromFile("../App/CL/denoise.cl", buildopts.c_str(), GetContext());
+        m_program = CLWProgram::CreateFromFile("../Baikal/CL/denoise.cl", buildopts.c_str(), GetContext());
 
         // Add necessary params
         RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
