@@ -27,6 +27,10 @@ flags { "NoMinimalRebuild", "EnableSSE", "EnableSSE2" }
 -- define common includes
 includedirs { ".","./3rdParty/include" }
 
+
+dofile ("./OpenCLSearch.lua" )
+defines {"USE_OPENCL"}
+
 -- perform OS specific initializations
 local targetName;
 if os.is("macosx") then
@@ -57,10 +61,6 @@ configuration {"x64", "Release"}
 
 configuration {} -- back to all configurations
 
-if fileExists("./RadeonRays/RadeonRays.lua") then
-	dofile("./RadeonRays/RadeonRays.lua")
-end
-
 if _OPTIONS["rpr"] then
 	if fileExists("./Rpr/Rpr.lua") then
 		dofile("./Rpr/Rpr.lua")
@@ -73,10 +73,6 @@ if _OPTIONS["rpr"] then
 	end
 end
 
-if fileExists("./CLW/CLW.lua") then
-	dofile("./CLW/CLW.lua")
-end
-
 if fileExists("./Baikal/Baikal.lua") then
 	dofile("./Baikal/Baikal.lua")
 end
@@ -87,4 +83,16 @@ end
 
 if fileExists("./UnitTest/UnitTest.lua") then
 	dofile("./UnitTest/UnitTest.lua")
+end
+
+if fileExists("./RadeonRays/RadeonRays/RadeonRays.lua") then
+	dofile("./RadeonRays/RadeonRays/RadeonRays.lua")
+end
+
+if fileExists("./RadeonRays/CLW/CLW.lua") then
+	dofile("./RadeonRays/CLW/CLW.lua")
+end
+
+if fileExists("./RadeonRays/Calc/Calc.lua") then
+	dofile("./RadeonRays/Calc/Calc.lua")
 end

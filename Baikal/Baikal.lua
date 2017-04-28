@@ -1,10 +1,10 @@
-project "App"
+project "Baikal"
     kind "ConsoleApp"
-    location "../App"
+    location "../Baikal"
     links {"RadeonRays", "CLW", "Calc"}
-    files { "../App/**.inl", "../App/**.h", "../App/**.cpp", "../App/**.cl", "../App/**.fsh", "../App/**.vsh" }
+    files { "../Baikal/**.inl", "../Baikal/**.h", "../Baikal/**.cpp", "../Baikal/**.cl", "../Baikal/**.fsh", "../Baikal/**.vsh" }
 
-    includedirs{ "../RadeonRays/include", "../CLW", "."}
+    includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "."}
 
     if os.is("macosx") then
         sysincludedirs {"/usr/local/include"}
