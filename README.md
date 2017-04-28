@@ -4,13 +4,13 @@ Baikal initiative has been started as a sample application demonstrating the usa
 
 Baikal is fast and efficient GPU-based global illumination renderer implemented using OpenCL and relying on AMD® RadeonRays intersection engine. It is cross-platform and vendor independent. The only requirement it imposes on the hardware is OpenCL 1.2 support. Baikal maintains high level of performance across all vendors, but it is specifically optimized for AMD® GPUs and APUs.
 
+![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/1.jpg)
+“Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 # Features
 Being more of an experimental renderer, than a production rendering solution, Baikal still maintains a good set of features.
 
 ## Light transport
-
-“Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Baikal is essentially a biased path-tracer, however it is highly configurable and might be configured to run ray-tracing (sampling multiple light sources at once) instead of pure path tracing. Implementation of bidirectional path tracing solver is currently work in progress. 
 
@@ -91,21 +91,24 @@ In terms of latency the renderer is capable of maintaining high FPS while doing 
 In terms of intersection throughput performance is determined by underlying RadeonRays engine. Several examples using “Science Fiction” scene on R9 Fury X:
 
 
-TODO: insert picture
+![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/1.jpg)
+“Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Primary rays: 773Mrays/s (2.68ms)
 Secondary rays: 285Mrays/s (7.27ms)
 Shadow rays: 1109Mrays/s (1.87ms)
 
 
-TODO: insert picture
+![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/2.jpg)
+“Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Primary rays: 470Mrays/s (4.42ms)
 Secondary rays: 195Mrays/s (10.66ms)
 Shadow rays: 800Mrays/s (2.59ms)
 
 
-TODO: insert picture
+![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/3.jpg)
+“Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 Primary rays: 562Mrays/s (3.69ms)
 Secondary rays: 270Mrays/s (7.67ms)
