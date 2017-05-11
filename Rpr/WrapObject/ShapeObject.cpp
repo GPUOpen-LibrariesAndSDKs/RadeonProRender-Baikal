@@ -25,7 +25,7 @@ THE SOFTWARE.
 
 #include "WrapObject/ShapeObject.h"
 #include "WrapObject/Exception.h"
-#include "App/SceneGraph/shape.h"
+#include "SceneGraph/shape.h"
 
 
 using namespace Baikal;

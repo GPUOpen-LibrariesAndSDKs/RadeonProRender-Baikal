@@ -2,9 +2,9 @@ project "Rpr"
     kind "SharedLib"
     location "../Rpr"
     links {"RadeonRays", "CLW", "Calc"}
-    files { "../Rpr/**.h", "../Rpr/**.cpp", "../App/**.h", "../App/**.cpp" }
-    removefiles{"../App/main.cpp","../App/main_benchmark.cpp", "../App/ImGUI/imgui_impl_glfw_gl3.cpp"}
-    includedirs{ "../RadeonRays/include", "../CLW", "../App", "." }
+    files { "../Rpr/**.h", "../Rpr/**.cpp", "../Baikal/**.h", "../Baikal/**.cpp" }
+    removefiles{"../Baikal/main.cpp","../Baikal/main_benchmark.cpp", "../Baikal/ImGUI/imgui_impl_glfw_gl3.cpp"}
+    includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "." }
 
     if os.is("macosx") then
         sysincludedirs {"/usr/local/include"}
