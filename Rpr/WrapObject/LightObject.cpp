@@ -23,7 +23,7 @@ THE SOFTWARE.
 #include "WrapObject/MaterialObject.h"
 #include "WrapObject/Exception.h"
 #include "radeon_rays.h"
-#include "App/SceneGraph/light.h"
+#include "SceneGraph/light.h"
 #include "RadeonProRender.h"
 
 void LightObject::SetTransform(const RadeonRays::matrix& t)

@@ -23,10 +23,10 @@ THE SOFTWARE.
 #include <map>
 
 #include "math/int2.h"
-#include "App/SceneGraph/texture.h"
-#include "App/SceneGraph/material.h"
-#include "App/SceneGraph/IO/image_io.h"
-#include "App/SceneGraph/iterator.h"
+#include "SceneGraph/texture.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/IO/image_io.h"
+#include "SceneGraph/iterator.h"
 #include "WrapObject/MaterialObject.h"
 #include "WrapObject/Exception.h"
 
