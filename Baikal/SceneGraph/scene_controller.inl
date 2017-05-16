@@ -311,13 +311,13 @@ namespace Baikal
     void SceneController<CompiledScene>::RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const
     {
         UpdateCamera(scene, mat_collector, tex_collector, out);
-        
+
         UpdateLights(scene, mat_collector, tex_collector, out);
-        
+
         UpdateShapes(scene, mat_collector, tex_collector, out);
-        
+
         UpdateMaterials(scene, mat_collector, tex_collector, out);
-        
+
         UpdateTextures(scene, mat_collector, tex_collector, out);
     }
 }

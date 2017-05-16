@@ -238,9 +238,20 @@ typedef
         int dataoffset;
         // Format
         int fmt;
-        int extra;
+        int mip_chain_idx;
     } Texture;
 
+typedef 
+    struct _MipChain
+    {
+        int num_mip_levels;
+        int padding0;
+        int padding1;
+        int padding2;
+        int mip_offsets[16];
+        int mip_size_x[16];
+        int mip_size_y[16];
+    } MipChain;
 
 // Hit data
 typedef struct _DifferentialGeometry

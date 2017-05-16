@@ -242,6 +242,7 @@ namespace Baikal
 
         // TODO: temporary code, add IBL
         Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+        ibl_texture->GenerateMipLevels();
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();

@@ -31,7 +31,7 @@ namespace Baikal
 
         m_api->SetOption("acc.type", "fatbvh");
         m_api->SetOption("bvh.builder", "sah");
-        m_api->SetOption("bvh.sah.num_bins", 64.f);
+        m_api->SetOption("bvh.sah.num_bins", 128.f);
     }
     
     Material const* ClwSceneController::GetDefaultMaterial() const
@@ -610,11 +610,29 @@ namespace Baikal
         // Get new buffer size
         std::size_t tex_buffer_size = tex_collector.GetNumItems();
         std::size_t tex_data_buffer_size = 0;
+        std::size_t tex_mip_buffer_size = 0;
+
+        // Update material bundle first to be able to track differences
+        out.texture_bundle.reset(tex_collector.CreateBundle());
+
+        // Create material iterator
+        std::unique_ptr<Iterator> tex_iter(tex_collector.CreateIterator());
+
+        for (tex_iter->Reset(); tex_iter->IsValid(); tex_iter->Next())
+        {
+            auto tex = tex_iter->ItemAs<Texture const>();
+
+            if (tex->GetNumMipLevels() > 1)
+            {
+                ++tex_mip_buffer_size;
+            }
+        }
 
         if (tex_buffer_size == 0)
         {
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(1, CL_MEM_READ_ONLY);
             out.texturedata = m_context.CreateBuffer<char>(1, CL_MEM_READ_ONLY);
+            out.texture_mip_chains = m_context.CreateBuffer<ClwScene::MipChain>(1, CL_MEM_READ_ONLY);
             return;
         }
 
@@ -623,26 +641,35 @@ namespace Baikal
         {
             // Create material buffer
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(tex_buffer_size, CL_MEM_READ_ONLY);
+            out.texture_mip_chains = m_context.CreateBuffer<ClwScene::MipChain>(tex_mip_buffer_size > 0 ? tex_mip_buffer_size : 1, CL_MEM_READ_ONLY);
         }
 
         ClwScene::Texture* textures = nullptr;
+        ClwScene::MipChain* mip_chains = nullptr;
+
         std::size_t num_textures_written = 0;
+        std::size_t num_mip_chains_written = 0;
 
         // Map GPU materials buffer
         m_context.MapBuffer(0, out.textures, CL_MAP_WRITE, &textures).Wait();
-
-        // Update material bundle first to be able to track differences
-        out.texture_bundle.reset(tex_collector.CreateBundle());
-
-        // Create material iterator
-        std::unique_ptr<Iterator> tex_iter(tex_collector.CreateIterator());
+        m_context.MapBuffer(0, out.texture_mip_chains, CL_MAP_WRITE, &mip_chains).Wait();
 
         // Iterate and serialize
-        for (; tex_iter->IsValid(); tex_iter->Next())
+        for (tex_iter->Reset(); tex_iter->IsValid(); tex_iter->Next())
         {
             auto tex = tex_iter->ItemAs<Texture const>();
 
-            WriteTexture(tex, tex_data_buffer_size, textures + num_textures_written);
+            bool mip_mapped = false;
+
+            if (tex->GetNumMipLevels() > 1)
+            {
+                WriteMipChain(tex, mip_chains + num_mip_chains_written * sizeof(ClwScene::MipChain));
+                ++num_mip_chains_written;
+
+                mip_mapped = true;
+            }
+
+            WriteTexture(tex, tex_data_buffer_size, mip_mapped ? (num_mip_chains_written - 1) : -1, textures + num_textures_written);
 
             ++num_textures_written;
 
@@ -651,6 +678,7 @@ namespace Baikal
 
         // Unmap material buffer
         m_context.UnmapBuffer(0, out.textures, textures);
+        m_context.UnmapBuffer(0, out.texture_mip_chains, mip_chains);
 
         // Recreate material buffer if it needs resize
         if (tex_data_buffer_size > out.texturedata.GetElementCount())
@@ -1057,7 +1085,7 @@ namespace Baikal
         }
     }
 
-    void ClwSceneController::WriteTexture(Texture const* texture, std::size_t data_offset, void* data) const
+    void ClwSceneController::WriteTexture(Texture const* texture, std::size_t data_offset, int mip_chain_idx, void* data) const
     {
         auto clw_texture = reinterpret_cast<ClwScene::Texture*>(data);
 
@@ -1067,6 +1095,27 @@ namespace Baikal
         clw_texture->h = dim.y;
         clw_texture->fmt = GetTextureFormat(texture);
         clw_texture->dataoffset = static_cast<int>(data_offset);
+        clw_texture->mip_chain_idx = mip_chain_idx;
+    }
+
+    void ClwSceneController::WriteMipChain(Texture const* texture, void* data) const
+    {
+        auto clw_mip_chain = reinterpret_cast<ClwScene::MipChain*>(data);
+
+        std::fill(clw_mip_chain->mip_offsets, clw_mip_chain->mip_offsets + 16, -1);
+        std::fill(clw_mip_chain->mip_size_x, clw_mip_chain->mip_size_x + 16, -1);
+        std::fill(clw_mip_chain->mip_size_y, clw_mip_chain->mip_size_y + 16, -1);
+
+        clw_mip_chain->num_mip_levels = texture->GetNumMipLevels();
+
+        for (auto i = 0; i < texture->GetNumMipLevels(); ++i)
+        {
+            clw_mip_chain->mip_offsets[i] = texture->GetMipOffsetInBytes(i);
+
+            auto mip_size = texture->GetMipSize(i);
+            clw_mip_chain->mip_size_x[i] = mip_size.x;
+            clw_mip_chain->mip_size_y[i] = mip_size.y;
+        }
     }
 
     void ClwSceneController::WriteTextureData(Texture const* texture, void* data) const
