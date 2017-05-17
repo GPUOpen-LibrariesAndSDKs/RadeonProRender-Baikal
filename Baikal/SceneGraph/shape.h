@@ -33,7 +33,7 @@
 #include "math/matrix.h"
 #include <memory>
 #include <string>
-
+#include <vector>
 #include "scene_object.h"
 
 namespace Baikal
@@ -183,5 +183,48 @@ namespace Baikal
     {
         return m_base_shape;
     }
+
+
+
+	/**
+	\brief Curves class.
+	*/
+	class Curves : public Shape
+	{
+	public:
+		Curves();
+
+		// Set and get vertex array:
+		//      an array of numVerts 4 float vertices (curve width in w-component)
+		void SetVertices(RadeonRays::float4 const* vertices, std::size_t num_vertices);
+		void SetVertices(float const* vertices, std::size_t num_vertices);
+		std::size_t GetNumVertices() const;
+		RadeonRays::float4 const* GetVertices() const;
+
+		// Set and get index array:
+		//      an array of num_indices = 2*numSegments uint32_t indexing into the vertex array
+		void SetIndices(std::uint32_t const* indices, std::size_t num_indices);
+		std::size_t GetNumSegments() const;
+
+		// returns a length 2 * GetNumSegments() array
+		std::uint32_t const* GetIndices() const; 
+
+		/// @todo:
+		//  Later, may want to allow each curve segment to be associated with a UVW
+		//  deriving from the scalp UV of its containing curve, and with W given by 
+		//  location on the curve from root to tip. 
+		//  This would be required e.g. for scalp-varying and root/tip varying color.
+
+		// Forbidden stuff
+		Curves(Curves const&) = delete;
+		Curves& operator = (Curves const&) = delete;
+
+	private:
+		
+		std::vector<RadeonRays::float4> m_vertices;
+		std::vector<uint32_t> m_indices;
+
+	};
+
 }
 

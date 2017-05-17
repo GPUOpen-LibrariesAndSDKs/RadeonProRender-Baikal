@@ -53,9 +53,14 @@ typedef struct
         float aperture;
     } Camera;
 
+#define SHAPE_TYPE_MESH   0
+#define SHAPE_TYPE_CURVES 1
+
 // Shape description
 typedef struct
 {
+	// Shape type index (SHAPE_TYPE_...)
+	int typeidx;
     // Shape starting index
     int startidx;
     // Number of primitives in the shape

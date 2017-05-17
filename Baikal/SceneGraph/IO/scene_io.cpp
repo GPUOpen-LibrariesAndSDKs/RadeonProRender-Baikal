@@ -183,6 +183,58 @@ namespace Baikal
         }
 
         // Enumerate all shapes in the scene
+
+		/// @todo: for testing, create a scene with curves only.
+		///        As to handle a scene with both meshes and curves, we will need an
+		///        intersector which supports both.
+		{
+			Curves* curves = new Curves();
+
+			// make a test grid of curves ("fur")
+			float scale = 1.f;
+			int gridRes = 10;
+			int cvsPerCurve = 10;
+			float dl = scale/float(gridRes);
+			float cvRadius = dl/20.f;
+
+			std::vector<RadeonRays::float4> curve_vertices;
+			std::vector<std::uint32_t> curve_indices;
+
+			for (size_t i=0; i<gridRes; i++)
+			for (size_t j=0; j<gridRes; j++)
+			{
+				float x = float(i)*dl;
+				float z = float(j)*dl;
+				RadeonRays::float4 rootCv(x, 0.f, z, cvRadius);
+				curve_vertices.push_back(rootCv);
+				size_t prev_index = curve_vertices.size()-1;
+
+				for (size_t n=1; n<cvsPerCurve; ++n)
+				{
+					RadeonRays::float4 segment(0.5f*dl, dl, 0.f);
+					RadeonRays::float4 cv = rootCv + float(n)*segment;
+					cv.w = cvRadius;
+					curve_vertices.push_back(cv);
+
+					size_t numVertices = curve_vertices.size();
+					curve_indices.push_back(prev_index);
+					curve_indices.push_back(prev_index+1);
+
+					prev_index++;
+				}
+			}
+
+			curves->SetVertices(&curve_vertices[0], curve_vertices.size());
+			curves->SetIndices(&curve_indices[0], curve_indices.size());
+
+			// Attach to the scene
+			scene->AttachShape(curves);
+
+			// Attach for autorelease
+			scene->AttachAutoreleaseObject(curves);
+		}
+
+		/*
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
             // Create empty mesh
@@ -239,6 +291,7 @@ namespace Baikal
                 }
             }
         }
+		*/
 
         // TODO: temporary code, add IBL
         Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");

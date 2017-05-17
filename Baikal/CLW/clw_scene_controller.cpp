@@ -29,7 +29,7 @@ namespace Baikal
         // Create intersection API
         m_api = CreateFromOpenClContext(m_context, id, queue);
 
-        m_api->SetOption("acc.type", "fatbvh");
+        m_api->SetOption("acc.type", "curves"); // TESTING! (CURVES ONLY CURRENTLY)
         m_api->SetOption("bvh.builder", "sah");
         m_api->SetOption("bvh.sah.num_bins", 64.f);
     }
@@ -55,25 +55,24 @@ namespace Baikal
         // Prepare instance check lambda
         auto is_instance = [](Shape const* shape)
         {
-            if (dynamic_cast<Instance const*>(shape))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            if (dynamic_cast<Instance const*>(shape)) return true;
+			return false;
         };
+
+		auto is_mesh = [](Shape const* shape)
+		{
+			if (dynamic_cast<Mesh const*>(shape)) return true;
+			return false;
+		};
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
             auto shape = shape_iter->ItemAs<Shape const>();
-
-            if (!is_instance(shape))
+            if (is_mesh(shape))
             {
                 meshes.emplace(static_cast<Mesh const*>(shape));
             }
-            else
+            else if (is_instance(shape))
             {
                 instances.emplace(static_cast<Instance const*>(shape));
             }
@@ -132,6 +131,8 @@ namespace Baikal
 
     void ClwSceneController::UpdateIntersector(Scene1 const& scene, ClwScene& out) const
     {
+		/// (Generate RadeonRays shapes from Baikal shapes)
+
         // Detach and delete all shapes
         for (auto& shape : out.isect_shapes)
         {
@@ -141,105 +142,151 @@ namespace Baikal
 
         // Clear shapes cache
         out.isect_shapes.clear();
+
         // Only visible shapes are attached to the API.
         // So excluded meshes are pushed into isect_shapes, but
         // not to visible_shapes.
         out.visible_shapes.clear();
 
-        // Create new shapes
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+        /// Create new shapes:
 
-        if (!shape_iter->IsValid())
-        {
-            throw std::runtime_error("No shapes in the scene");
-        }
+        // Meshes
+		{
+			std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+			if (!shape_iter->IsValid())
+			{
+				throw std::runtime_error("No shapes in the scene");
+			}
 
-        // Split all shapes into meshes and instances sets.
-        std::set<Mesh const*> meshes;
-        // Excluded shapes are shapes which are not in the scene,
-        // but references by at least one instance.
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
-        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+			// Split all shapes into meshes and instances sets.
+			std::set<Mesh const*> meshes;
 
-        // Keep shape->rr shape association for 
-        // instance base shape lookup.
-        std::map<Shape const*, RadeonRays::Shape*> rr_shapes;
+			// Excluded shapes are shapes which are not in the scene,
+			// but references by at least one instance.
+			std::set<Mesh const*> excluded_meshes;
+			std::set<Instance const*> instances;
+			SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
 
-        // Start from ID 1
-        // Handle meshes
-        int id = 1;
-        for (auto& iter : meshes)
-        {
-            auto mesh = iter;
+			// Keep shape->rr shape association for 
+			// instance base shape lookup.
+			std::map<Shape const*, RadeonRays::Shape*> rr_shapes;
 
-            auto shape = m_api->CreateMesh(
-                // Vertices starting from the first one
-                (float*)mesh->GetVertices(),
-                // Number of vertices
-                static_cast<int>(mesh->GetNumVertices()),
-                // Stride
-                sizeof(float3),
-                // TODO: make API signature const
-                reinterpret_cast<int const*>(mesh->GetIndices()),
-                // Index stride
-                0,
-                // All triangles
-                nullptr,
-                // Number of primitives
-                static_cast<int>(mesh->GetNumIndices() / 3)
-            );
+			// Start from ID 1
+			// Handle meshes
+			int id = 1;
+			for (auto& iter : meshes)
+			{
+				auto mesh = iter;
 
-            auto transform = mesh->GetTransform();
-            shape->SetTransform(transform, inverse(transform));
-            shape->SetId(id++);
-            out.isect_shapes.push_back(shape);
-            out.visible_shapes.push_back(shape);
-            rr_shapes[mesh] = shape;
-        }
+				auto shape = m_api->CreateMesh(
+					// Vertices starting from the first one
+					(float*)mesh->GetVertices(),
+					// Number of vertices
+					static_cast<int>(mesh->GetNumVertices()),
+					// Stride
+					sizeof(float3),
+					// TODO: make API signature const
+					reinterpret_cast<int const*>(mesh->GetIndices()),
+					// Index stride
+					0,
+					// All triangles
+					nullptr,
+					// Number of primitives
+					static_cast<int>(mesh->GetNumIndices() / 3)
+				);
 
-        // Handle excluded meshes
-        for (auto& iter : excluded_meshes)
-        {
-            auto mesh = iter;
+				auto transform = mesh->GetTransform();
+				shape->SetTransform(transform, inverse(transform));
+				shape->SetId(id++);
+				out.isect_shapes.push_back(shape);
+				out.visible_shapes.push_back(shape);
+				rr_shapes[mesh] = shape;
+			}
 
-            auto shape = m_api->CreateMesh(
-                // Vertices starting from the first one
-                (float*)mesh->GetVertices(),
-                // Number of vertices
-                static_cast<int>(mesh->GetNumVertices()),
-                // Stride
-                sizeof(float3),
-                // TODO: make API signature const
-                reinterpret_cast<int const*>(mesh->GetIndices()),
-                // Index stride
-                0,
-                // All triangles
-                nullptr,
-                // Number of primitives
-                static_cast<int>(mesh->GetNumIndices() / 3)
-            );
+			// Handle excluded meshes
+			for (auto& iter : excluded_meshes)
+			{
+				auto mesh = iter;
 
-            auto transform = mesh->GetTransform();
-            shape->SetTransform(transform, inverse(transform));
-            shape->SetId(id++);
-            out.isect_shapes.push_back(shape);
-            rr_shapes[mesh] = shape;
-        }
+				auto shape = m_api->CreateMesh(
+					// Vertices starting from the first one
+					(float*)mesh->GetVertices(),
+					// Number of vertices
+					static_cast<int>(mesh->GetNumVertices()),
+					// Stride
+					sizeof(float3),
+					// TODO: make API signature const
+					reinterpret_cast<int const*>(mesh->GetIndices()),
+					// Index stride
+					0,
+					// All triangles
+					nullptr,
+					// Number of primitives
+					static_cast<int>(mesh->GetNumIndices() / 3)
+				);
 
-        // Handle instances
-        for (auto& iter: instances)
-        {
-            auto instance = iter;
-            auto rr_mesh = rr_shapes[instance->GetBaseShape()];
-            auto shape = m_api->CreateInstance(rr_mesh);
+				auto transform = mesh->GetTransform();
+				shape->SetTransform(transform, inverse(transform));
+				shape->SetId(id++);
+				out.isect_shapes.push_back(shape);
+				rr_shapes[mesh] = shape;
+			}
 
-            auto transform = instance->GetTransform();
-            shape->SetTransform(transform, inverse(transform));
-            shape->SetId(id++);
-            out.isect_shapes.push_back(shape);
-            out.visible_shapes.push_back(shape);
-        }
+			// Handle instances
+			for (auto& iter: instances)
+			{
+				auto instance = iter;
+				auto rr_mesh = rr_shapes[instance->GetBaseShape()];
+				auto shape = m_api->CreateInstance(rr_mesh);
+
+				auto transform = instance->GetTransform();
+				shape->SetTransform(transform, inverse(transform));
+				shape->SetId(id++);
+				out.isect_shapes.push_back(shape);
+				out.visible_shapes.push_back(shape);
+			}
+		}
+
+		// Curves
+		{
+			std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+			if (!shape_iter->IsValid())
+			{
+				throw std::runtime_error("No shapes in the scene");
+			}
+
+			std::set<Curves const*> curves_set;
+			auto is_curves = [](Shape const* shape)
+			{
+				if (dynamic_cast<Curves const*>(shape)) return true;
+				else                                    return false;
+			};
+			for (; shape_iter->IsValid(); shape_iter->Next())
+			{
+				auto shape = shape_iter->ItemAs<Shape const>();
+				if (is_curves(shape))
+				{
+					curves_set.emplace(static_cast<Curves const*>(shape));
+				}
+			}
+
+			// Start from ID 1 (?)
+			int id = 1;
+			for (auto& iter : curves_set)
+			{
+				auto curves = iter;
+				auto shape = m_api->CreateCurves( (float*)curves->GetVertices(),
+												   static_cast<int>(curves->GetNumVertices()),
+												   sizeof(float4), // vertex stride
+												   reinterpret_cast<int const*>(curves->GetIndices()),
+												   curves->GetNumSegments() );
+				auto transform = curves->GetTransform();
+				shape->SetTransform(transform, inverse(transform));
+				shape->SetId(id++);
+				out.isect_shapes.push_back(shape);
+				out.visible_shapes.push_back(shape);
+			}
+		}
     }
 
     void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
@@ -283,268 +330,363 @@ namespace Baikal
 
     void ClwSceneController::UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
-        std::size_t num_vertices = 0;
-        std::size_t num_normals = 0;
-        std::size_t num_uvs = 0;
-        std::size_t num_indices = 0;
-        std::size_t num_material_ids = 0;
+		// Identify meshes in scene and data size
+		std::set<Mesh const*> meshes;
+		std::set<Mesh const*> excluded_meshes;
+		std::set<Instance const*> instances;
+		std::size_t num_mesh_vertices = 0;
+		std::size_t num_mesh_normals = 0;
+		std::size_t num_mesh_uvs = 0;
+		std::size_t num_mesh_indices = 0;
+		std::size_t num_mesh_material_ids = 0;
+		{
+			std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
 
-        std::size_t num_vertices_written = 0;
-        std::size_t num_normals_written = 0;
-        std::size_t num_uvs_written = 0;
-        std::size_t num_indices_written = 0;
-        std::size_t num_matids_written = 0;
-        std::size_t num_shapes_written = 0;
+			// Sort shapes into meshes and instances sets.
+			// Excluded meshes are meshes which are not in the scene, 
+			// but are referenced by at least one instance.
+			SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
 
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+			// Calculate GPU array sizes. Do that only for meshes,
+			// since instances do not occupy space in vertex buffers.
+			// However instances still have their own material ids.
+			for (auto& iter : meshes)
+			{
+				auto mesh = iter;
+				num_mesh_vertices += mesh->GetNumVertices();
+				num_mesh_normals += mesh->GetNumNormals();
+				num_mesh_uvs += mesh->GetNumUVs();
+				num_mesh_indices += mesh->GetNumIndices();
+				num_mesh_material_ids += mesh->GetNumIndices() / 3;
+			}
 
-        // Sort shapes into meshes and instances sets.
-        std::set<Mesh const*> meshes;
-        // Excluded meshes are meshes which are not in the scene, 
-        // but are references by at least one instance.
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
-        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+			// Excluded meshes still occupy space in vertex buffers.
+			for (auto& iter : excluded_meshes)
+			{
+				auto mesh = iter;
+				num_mesh_vertices += mesh->GetNumVertices();
+				num_mesh_normals += mesh->GetNumNormals();
+				num_mesh_uvs += mesh->GetNumUVs();
+				num_mesh_indices += mesh->GetNumIndices();
+				num_mesh_material_ids += mesh->GetNumIndices() / 3;
+			}
 
-        // Calculate GPU array sizes. Do that only for meshes,
-        // since instances do not occupy space in vertex buffers.
-        // However instances still have their own material ids.
-        for (auto& iter : meshes)
-        {
-            auto mesh = iter;
+			// Instances only occupy material IDs space.
+			for (auto& iter : instances)
+			{
+				auto instance = iter;
+				auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
+				num_mesh_material_ids += mesh->GetNumIndices() / 3;
+			}
+		}
 
-            num_vertices += mesh->GetNumVertices();
-            num_normals += mesh->GetNumNormals();
-            num_uvs += mesh->GetNumUVs();
-            num_indices += mesh->GetNumIndices();
-            num_material_ids += mesh->GetNumIndices() / 3;
-        }
+		// Identify curves in scene and data size
+		std::set<Curves const*> curves_set;
+		std::size_t num_curve_vertices = 0;
+		std::size_t num_curve_indices = 0;
+		{
+			std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+			auto is_curves = [](Shape const* shape)
+			{
+				if (dynamic_cast<Curves const*>(shape)) return true;
+				else                                    return false;
+			};
+			for (; shape_iter->IsValid(); shape_iter->Next())
+			{
+				auto shape = shape_iter->ItemAs<Shape const>();
+				if (is_curves(shape))
+				{
+					curves_set.emplace(static_cast<Curves const*>(shape));
+				}
+			}
 
-        // Excluded meshes still occupy space in vertex buffers.
-        for (auto& iter : excluded_meshes)
-        {
-            auto mesh = iter;
+			for (auto& iter : curves_set)
+			{
+				auto curves = iter;
+				num_curve_vertices += curves->GetNumVertices();
+				num_curve_indices  += curves->GetNumSegments() * 2;
+			}
+		}
+       
+		// Total number of entries in shapes GPU array
+		auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size() + curves_set.size();
+		out.shapes = m_context.CreateBuffer<ClwScene::Shape>(num_shapes, CL_MEM_READ_ONLY);
+		ClwScene::Shape* shapes = nullptr;
+		m_context.MapBuffer(0, out.shapes, CL_MAP_WRITE, &shapes).Wait();
+		std::size_t num_shapes_written = 0;
 
-            num_vertices += mesh->GetNumVertices();
-            num_normals += mesh->GetNumNormals();
-            num_uvs += mesh->GetNumUVs();
-            num_indices += mesh->GetNumIndices();
-            num_material_ids += mesh->GetNumIndices() / 3;
-        }
+		// Load mesh data to GPU buffers
+		{
+			std::size_t num_vertices_written = 0;
+			std::size_t num_normals_written = 0;
+			std::size_t num_uvs_written = 0;
+			std::size_t num_indices_written = 0;
+			std::size_t num_matids_written = 0;
+			
+			// Create CL arrays (make a dummy 1-element buffer in case of no meshes)
+			out.mesh_vertices = m_context.CreateBuffer<float3>(std::max(size_t(1), num_mesh_vertices), CL_MEM_READ_ONLY);
+			out.mesh_normals  = m_context.CreateBuffer<float3>(std::max(size_t(1), num_mesh_normals), CL_MEM_READ_ONLY);
+			out.mesh_uvs      = m_context.CreateBuffer<float2>(std::max(size_t(1), num_mesh_uvs), CL_MEM_READ_ONLY);
+			out.mesh_indices  = m_context.CreateBuffer<int>(std::max(size_t(1), num_mesh_indices), CL_MEM_READ_ONLY);
+			out.materialids   = m_context.CreateBuffer<int>(std::max(size_t(1), num_mesh_material_ids), CL_MEM_READ_ONLY);
 
-        // Instances only occupy material IDs space.
-        for (auto& iter : instances)
-        {
-            auto instance = iter;
-            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
-            num_material_ids += mesh->GetNumIndices() / 3;
-        }
+			float3* vertices = nullptr;
+			float3* normals = nullptr;
+			float2* uvs = nullptr;
+			int* indices = nullptr;
+			int* matids = nullptr;
+		
+			// Map arrays and prepare to write data
+			m_context.MapBuffer(0, out.mesh_vertices, CL_MAP_WRITE, &vertices);
+			m_context.MapBuffer(0, out.mesh_normals, CL_MAP_WRITE, &normals);
+			m_context.MapBuffer(0, out.mesh_uvs, CL_MAP_WRITE, &uvs);
+			m_context.MapBuffer(0, out.mesh_indices, CL_MAP_WRITE, &indices);
+			m_context.MapBuffer(0, out.materialids, CL_MAP_WRITE, &matids);
+			
+			// Keep associated shapes data for instance look up.
+			// We retrieve data from here while serializing instances,
+			// using base shape lookup.
+			std::map<Mesh const*, ClwScene::Shape> shape_data;
 
-        // Create CL arrays
-        out.vertices = m_context.CreateBuffer<float3>(num_vertices, CL_MEM_READ_ONLY);
-        out.normals = m_context.CreateBuffer<float3>(num_normals, CL_MEM_READ_ONLY);
-        out.uvs = m_context.CreateBuffer<float2>(num_uvs, CL_MEM_READ_ONLY);
-        out.indices = m_context.CreateBuffer<int>(num_indices, CL_MEM_READ_ONLY);
+			// Handle meshes
+			for (auto& iter : meshes)
+			{
+				auto mesh = iter;
 
-        // Total number of entries in shapes GPU array
-        auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
-        out.shapes = m_context.CreateBuffer<ClwScene::Shape>(num_shapes, CL_MEM_READ_ONLY);
-        out.materialids = m_context.CreateBuffer<int>(num_material_ids, CL_MEM_READ_ONLY);
+				// Get pointers data
+				auto mesh_vertex_array = mesh->GetVertices();
+				auto mesh_num_vertices = mesh->GetNumVertices();
 
-        float3* vertices = nullptr;
-        float3* normals = nullptr;
-        float2* uvs = nullptr;
-        int* indices = nullptr;
-        int* matids = nullptr;
-        ClwScene::Shape* shapes = nullptr;
+				auto mesh_normal_array = mesh->GetNormals();
+				auto mesh_num_normals = mesh->GetNumNormals();
 
-        // Map arrays and prepare to write data
-        m_context.MapBuffer(0, out.vertices, CL_MAP_WRITE, &vertices);
-        m_context.MapBuffer(0, out.normals, CL_MAP_WRITE, &normals);
-        m_context.MapBuffer(0, out.uvs, CL_MAP_WRITE, &uvs);
-        m_context.MapBuffer(0, out.indices, CL_MAP_WRITE, &indices);
-        m_context.MapBuffer(0, out.materialids, CL_MAP_WRITE, &matids);
-        m_context.MapBuffer(0, out.shapes, CL_MAP_WRITE, &shapes).Wait();
+				auto mesh_uv_array = mesh->GetUVs();
+				auto mesh_num_uvs = mesh->GetNumUVs();
 
-        // Keep associated shapes data for instance look up.
-        // We retrieve data from here while serializing instances,
-        // using base shape lookup.
-        std::map<Mesh const*, ClwScene::Shape> shape_data;
-        // Handle meshes
-        for (auto& iter : meshes)
-        {
-            auto mesh = iter;
+				auto mesh_index_array = mesh->GetIndices();
+				auto mesh_num_indices = mesh->GetNumIndices();
 
-            // Get pointers data
-            auto mesh_vertex_array = mesh->GetVertices();
-            auto mesh_num_vertices = mesh->GetNumVertices();
+				// Prepare shape descriptor
+				ClwScene::Shape shape;
+				shape.typeidx = SHAPE_TYPE_MESH;
+				shape.numprims = static_cast<int>(mesh_num_indices / 3);
+				shape.startvtx = static_cast<int>(num_vertices_written);
+				shape.startidx = static_cast<int>(num_indices_written);
+				shape.start_material_idx = static_cast<int>(num_matids_written);
 
-            auto mesh_normal_array = mesh->GetNormals();
-            auto mesh_num_normals = mesh->GetNumNormals();
+				auto transform = mesh->GetTransform();
+				shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+				shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+				shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+				shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
 
-            auto mesh_uv_array = mesh->GetUVs();
-            auto mesh_num_uvs = mesh->GetNumUVs();
+				shape.linearvelocity = float3(0.0f, 0.f, 0.f);
+				shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
 
-            auto mesh_index_array = mesh->GetIndices();
-            auto mesh_num_indices = mesh->GetNumIndices();
+				shape_data[mesh] = shape;
 
-            // Prepare shape descriptor
-            ClwScene::Shape shape;
-            shape.numprims = static_cast<int>(mesh_num_indices / 3);
-            shape.startvtx = static_cast<int>(num_vertices_written);
-            shape.startidx = static_cast<int>(num_indices_written);
-            shape.start_material_idx = static_cast<int>(num_matids_written);
+				std::copy(mesh_vertex_array, mesh_vertex_array + mesh_num_vertices, vertices + num_vertices_written);
+				num_vertices_written += mesh_num_vertices;
 
-            auto transform = mesh->GetTransform();
-            shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
-            shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
-            shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
-            shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+				std::copy(mesh_normal_array, mesh_normal_array + mesh_num_normals, normals + num_normals_written);
+				num_normals_written += mesh_num_normals;
 
-            shape.linearvelocity = float3(0.0f, 0.f, 0.f);
-            shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+				std::copy(mesh_uv_array, mesh_uv_array + mesh_num_uvs, uvs + num_uvs_written);
+				num_uvs_written += mesh_num_uvs;
 
-            shape_data[mesh] = shape;
+				std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
+				num_indices_written += mesh_num_indices;
 
-            std::copy(mesh_vertex_array, mesh_vertex_array + mesh_num_vertices, vertices + num_vertices_written);
-            num_vertices_written += mesh_num_vertices;
+				shapes[num_shapes_written++] = shape;
 
-            std::copy(mesh_normal_array, mesh_normal_array + mesh_num_normals, normals + num_normals_written);
-            num_normals_written += mesh_num_normals;
+				// Check if mesh has a material and use default if not
+				auto material = mesh->GetMaterial();
+				if (!material)
+				{
+					material = m_default_material.get();
+				}
 
-            std::copy(mesh_uv_array, mesh_uv_array + mesh_num_uvs, uvs + num_uvs_written);
-            num_uvs_written += mesh_num_uvs;
+				auto matidx = mat_collector.GetItemIndex(material);
+				std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, matidx);
 
-            std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
-            num_indices_written += mesh_num_indices;
+				num_matids_written += mesh_num_indices / 3;
 
-            shapes[num_shapes_written++] = shape;
+				// Drop dirty flag
+				mesh->SetDirty(false);
+			}
 
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            if (!material)
-            {
-                material = m_default_material.get();
-            }
+			// Excluded shapes are handled in almost the same way
+			// except materials.
+			for (auto& iter : excluded_meshes)
+			{
+				auto mesh = iter;
 
-            auto matidx = mat_collector.GetItemIndex(material);
-            std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, matidx);
+				// Get pointers data
+				auto mesh_vertex_array = mesh->GetVertices();
+				auto mesh_num_vertices = mesh->GetNumVertices();
 
-            num_matids_written += mesh_num_indices / 3;
+				auto mesh_normal_array = mesh->GetNormals();
+				auto mesh_num_normals = mesh->GetNumNormals();
 
-            // Drop dirty flag
-            mesh->SetDirty(false);
-        }
+				auto mesh_uv_array = mesh->GetUVs();
+				auto mesh_num_uvs = mesh->GetNumUVs();
 
-        // Excluded shapes are handled in almost the same way
-        // except materials.
-        for (auto& iter : excluded_meshes)
-        {
-            auto mesh = iter;
+				auto mesh_index_array = mesh->GetIndices();
+				auto mesh_num_indices = mesh->GetNumIndices();
 
-            // Get pointers data
-            auto mesh_vertex_array = mesh->GetVertices();
-            auto mesh_num_vertices = mesh->GetNumVertices();
+				// Prepare shape descriptor
+				ClwScene::Shape shape;
+				shape.typeidx = SHAPE_TYPE_MESH;
+				shape.numprims = static_cast<int>(mesh_num_indices / 3);
+				shape.startvtx = static_cast<int>(num_vertices_written);
+				shape.startidx = static_cast<int>(num_indices_written);
+				shape.start_material_idx = static_cast<int>(num_matids_written);
 
-            auto mesh_normal_array = mesh->GetNormals();
-            auto mesh_num_normals = mesh->GetNumNormals();
+				auto transform = mesh->GetTransform();
+				shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+				shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+				shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+				shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
 
-            auto mesh_uv_array = mesh->GetUVs();
-            auto mesh_num_uvs = mesh->GetNumUVs();
+				shape.linearvelocity = float3(0.0f, 0.f, 0.f);
+				shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
 
-            auto mesh_index_array = mesh->GetIndices();
-            auto mesh_num_indices = mesh->GetNumIndices();
+				shape_data[mesh] = shape;
 
-            // Prepare shape descriptor
-            ClwScene::Shape shape;
-            shape.numprims = static_cast<int>(mesh_num_indices / 3);
-            shape.startvtx = static_cast<int>(num_vertices_written);
-            shape.startidx = static_cast<int>(num_indices_written);
-            shape.start_material_idx = static_cast<int>(num_matids_written);
+				std::copy(mesh_vertex_array, mesh_vertex_array + mesh_num_vertices, vertices + num_vertices_written);
+				num_vertices_written += mesh_num_vertices;
 
-            auto transform = mesh->GetTransform();
-            shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
-            shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
-            shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
-            shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+				std::copy(mesh_normal_array, mesh_normal_array + mesh_num_normals, normals + num_normals_written);
+				num_normals_written += mesh_num_normals;
 
-            shape.linearvelocity = float3(0.0f, 0.f, 0.f);
-            shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+				std::copy(mesh_uv_array, mesh_uv_array + mesh_num_uvs, uvs + num_uvs_written);
+				num_uvs_written += mesh_num_uvs;
 
-            shape_data[mesh] = shape;
+				std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
+				num_indices_written += mesh_num_indices;
 
-            std::copy(mesh_vertex_array, mesh_vertex_array + mesh_num_vertices, vertices + num_vertices_written);
-            num_vertices_written += mesh_num_vertices;
+				shapes[num_shapes_written++] = shape;
 
-            std::copy(mesh_normal_array, mesh_normal_array + mesh_num_normals, normals + num_normals_written);
-            num_normals_written += mesh_num_normals;
+				// We do not need materials for excluded shapes, we never shade them.
+				std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, -1);
 
-            std::copy(mesh_uv_array, mesh_uv_array + mesh_num_uvs, uvs + num_uvs_written);
-            num_uvs_written += mesh_num_uvs;
+				num_matids_written += mesh_num_indices / 3;
 
-            std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
-            num_indices_written += mesh_num_indices;
+				// Drop dirty flag
+				mesh->SetDirty(false);
+			}
 
-            shapes[num_shapes_written++] = shape;
+			// Handle instances
+			for (auto& iter : instances)
+			{
+				auto instance = iter;
+				auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
+				auto material = instance->GetMaterial();
+				auto transform = instance->GetTransform();
+				auto mesh_num_indices = base_shape->GetNumIndices();
 
-            // We do not need materials for excluded shapes, we never shade them.
-            std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, -1);
+				// Here shape_data is guaranteed to contain
+				// info for base_shape since we have serialized it
+				// above in a different pass.
+				ClwScene::Shape shape = shape_data[base_shape];
 
-            num_matids_written += mesh_num_indices / 3;
+				// Instance has its own material part.
+				shape.start_material_idx = static_cast<int>(num_matids_written);
 
-            // Drop dirty flag
-            mesh->SetDirty(false);
-        }
+				// Instance has its own transform.
+				shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+				shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+				shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+				shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
 
-        // Handle instances
-        for (auto& iter : instances)
-        {
-            auto instance = iter;
-            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
-            auto material = instance->GetMaterial();
-            auto transform = instance->GetTransform();
-            auto mesh_num_indices = base_shape->GetNumIndices();
+				shape.linearvelocity = float3(0.0f, 0.f, 0.f);
+				shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
 
-            // Here shape_data is guaranteed to contain
-            // info for base_shape since we have serialized it
-            // above in a different pass.
-            ClwScene::Shape shape = shape_data[base_shape];
-            // Instance has its own material part.
-            shape.start_material_idx = static_cast<int>(num_matids_written);
+				shapes[num_shapes_written++] = shape;
 
-            // Instance has its own transform.
-            shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
-            shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
-            shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
-            shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+				// If instance do not have a material, use default one.
+				if (!material)
+				{
+					material = m_default_material.get();
+				}
 
-            shape.linearvelocity = float3(0.0f, 0.f, 0.f);
-            shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+				auto mat_idx = mat_collector.GetItemIndex(material);
+				std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, mat_idx);
 
-            shapes[num_shapes_written++] = shape;
+				num_matids_written += mesh_num_indices / 3;
 
-            // If instance do not have a material, use default one.
-            if (!material)
-            {
-                material = m_default_material.get();
-            }
+				// Drop dirty flag
+				instance->SetDirty(false);
+			}
 
-            auto mat_idx = mat_collector.GetItemIndex(material);
-            std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, mat_idx);
+			m_context.UnmapBuffer(0, out.mesh_vertices, vertices);
+			m_context.UnmapBuffer(0, out.mesh_normals, normals);
+			m_context.UnmapBuffer(0, out.mesh_uvs, uvs);
+			m_context.UnmapBuffer(0, out.mesh_indices, indices);
+			m_context.UnmapBuffer(0, out.materialids, matids);
+		}
 
-            num_matids_written += mesh_num_indices / 3;
+		// Load curve data to GPU buffers
+		{
+			std::size_t num_vertices_written = 0;
+			std::size_t num_indices_written = 0;
 
-            // Drop dirty flag
-            instance->SetDirty(false);
-        }
+			// Create CL arrays (make a dummy 1-element buffer in case of no curves)
+			out.curve_vertices = m_context.CreateBuffer<float4>(std::max(size_t(1), num_curve_vertices), CL_MEM_READ_ONLY);
+			out.curve_indices = m_context.CreateBuffer<int>(std::max(size_t(1), num_curve_indices), CL_MEM_READ_ONLY);
 
-        m_context.UnmapBuffer(0, out.vertices, vertices);
-        m_context.UnmapBuffer(0, out.normals, normals);
-        m_context.UnmapBuffer(0, out.uvs, uvs);
-        m_context.UnmapBuffer(0, out.indices, indices);
-        m_context.UnmapBuffer(0, out.materialids, matids);
-        m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
-        
+			float4* vertices = nullptr;
+			int* indices = nullptr;
+
+			// Map arrays and prepare to write data
+			m_context.MapBuffer(0, out.curve_vertices, CL_MAP_WRITE, &vertices);
+			m_context.MapBuffer(0, out.curve_indices, CL_MAP_WRITE, &indices);
+
+			for (auto& iter : curves_set)
+			{
+				const Curves* curves = iter;
+				
+				const RadeonRays::float4* curves_vertex_array = curves->GetVertices();
+				auto curves_num_vertices = curves->GetNumVertices();
+
+				const std::uint32_t* curves_index_array = curves->GetIndices();
+				auto curves_num_indices = curves->GetNumSegments() * 2;
+
+				// Prepare shape descriptor
+				ClwScene::Shape shape;
+				shape.typeidx = SHAPE_TYPE_CURVES;
+				shape.numprims = static_cast<int>(curves_num_indices / 2);
+				shape.startvtx = static_cast<int>(num_vertices_written);
+				shape.startidx = static_cast<int>(num_indices_written);
+				shape.start_material_idx = 0; // we won't need this for now
+
+				auto transform = curves->GetTransform();
+				shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+				shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+				shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+				shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+
+				shape.linearvelocity = float3(0.0f, 0.f, 0.f);
+				shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+
+				std::copy(curves_vertex_array, curves_vertex_array + curves_num_vertices, vertices + num_vertices_written);
+				num_vertices_written += curves_num_vertices;
+
+				std::copy(curves_index_array, curves_index_array + curves_num_indices, indices + num_indices_written);
+				num_indices_written += curves_num_indices;
+
+				shapes[num_shapes_written++] = shape;
+
+				// Drop dirty flag
+				curves->SetDirty(false);
+			}
+
+			m_context.UnmapBuffer(0, out.curve_vertices, vertices);
+			m_context.UnmapBuffer(0, out.curve_indices, indices);
+		}
+
+		m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
+
         UpdateIntersector(scene, out);
         
         ReloadIntersector(scene, out);

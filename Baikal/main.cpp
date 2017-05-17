@@ -103,8 +103,8 @@ GLuint g_index_buffer;
 GLuint g_texture;
 GLuint g_vao;
 
-int g_window_width = 512;
-int g_window_height = 512;
+int g_window_width = 1024;
+int g_window_height = 1024;
 int g_num_shadow_rays = 1;
 int g_num_ao_rays = 1;
 int g_ao_enabled = false;

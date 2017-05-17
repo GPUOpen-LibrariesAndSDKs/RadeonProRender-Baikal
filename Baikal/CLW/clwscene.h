@@ -23,16 +23,24 @@ namespace Baikal
     {
         #include "CL/payload.cl"
 
-        CLWBuffer<RadeonRays::float3> vertices;
-        CLWBuffer<RadeonRays::float3> normals;
-        CLWBuffer<RadeonRays::float2> uvs;
-        CLWBuffer<int> indices;
+		// mesh data
+        CLWBuffer<RadeonRays::float3> mesh_vertices;
+        CLWBuffer<RadeonRays::float3> mesh_normals;
+        CLWBuffer<RadeonRays::float2> mesh_uvs;
+        CLWBuffer<int> mesh_indices;
 
+		// curve data
+		CLWBuffer<RadeonRays::float4> curve_vertices; // "CVs"
+		CLWBuffer<int> curve_indices;
+		//CLWBuffer<RadeonRays::float2> curve_uvs;
+		// For now, curve material data ignored.
+
+		// per-shape info
         CLWBuffer<Shape> shapes;
-
         CLWBuffer<Material> materials;
         CLWBuffer<Light> lights;
         CLWBuffer<int> materialids;
+
         CLWBuffer<Volume> volumes;
         CLWBuffer<Texture> textures;
         CLWBuffer<char> texturedata;

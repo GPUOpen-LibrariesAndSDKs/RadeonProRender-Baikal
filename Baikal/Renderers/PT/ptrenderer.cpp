@@ -431,10 +431,10 @@ namespace Baikal
         fill_kernel.SetArg(argc++, m_render_data->intersections);
         fill_kernel.SetArg(argc++, m_render_data->pixelindices[0]);
         fill_kernel.SetArg(argc++, m_render_data->hitcount);
-        fill_kernel.SetArg(argc++, scene.vertices);
-        fill_kernel.SetArg(argc++, scene.normals);
-        fill_kernel.SetArg(argc++, scene.uvs);
-        fill_kernel.SetArg(argc++, scene.indices);
+        fill_kernel.SetArg(argc++, scene.mesh_vertices);
+        fill_kernel.SetArg(argc++, scene.mesh_normals);
+        fill_kernel.SetArg(argc++, scene.mesh_uvs);
+        fill_kernel.SetArg(argc++, scene.mesh_indices);
         fill_kernel.SetArg(argc++, scene.shapes);
         fill_kernel.SetArg(argc++, scene.materialids);
         fill_kernel.SetArg(argc++, scene.materials);
@@ -511,10 +511,15 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
-        shadekernel.SetArg(argc++, scene.vertices);
-        shadekernel.SetArg(argc++, scene.normals);
-        shadekernel.SetArg(argc++, scene.uvs);
-        shadekernel.SetArg(argc++, scene.indices);
+
+        shadekernel.SetArg(argc++, scene.mesh_vertices);
+        shadekernel.SetArg(argc++, scene.mesh_normals);
+        shadekernel.SetArg(argc++, scene.mesh_uvs);
+        shadekernel.SetArg(argc++, scene.mesh_indices);
+
+		shadekernel.SetArg(argc++, scene.curve_vertices);
+		shadekernel.SetArg(argc++, scene.curve_indices);
+
         shadekernel.SetArg(argc++, scene.shapes);
         shadekernel.SetArg(argc++, scene.materialids);
         shadekernel.SetArg(argc++, scene.materials);
@@ -557,10 +562,10 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
-        shadekernel.SetArg(argc++, scene.vertices);
-        shadekernel.SetArg(argc++, scene.normals);
-        shadekernel.SetArg(argc++, scene.uvs);
-        shadekernel.SetArg(argc++, scene.indices);
+        shadekernel.SetArg(argc++, scene.mesh_vertices);
+        shadekernel.SetArg(argc++, scene.mesh_normals);
+        shadekernel.SetArg(argc++, scene.mesh_uvs);
+        shadekernel.SetArg(argc++, scene.mesh_indices);
         shadekernel.SetArg(argc++, scene.shapes);
         shadekernel.SetArg(argc++, scene.materialids);
         shadekernel.SetArg(argc++, scene.materials);

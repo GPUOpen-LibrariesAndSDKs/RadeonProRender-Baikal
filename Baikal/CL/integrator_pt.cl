@@ -231,14 +231,25 @@ __kernel void ShadeSurface(
     __global int const* pixelindices,
     // Number of rays
     __global int const* numhits,
+
+	/// Meshes:
+
     // Vertices
-    __global float3 const* vertices,
+    __global float3 const* mesh_vertices,
     // Normals
-    __global float3 const* normals,
+    __global float3 const* mesh_normals,
     // UVs
-    __global float2 const* uvs,
+    __global float2 const* mesh_uvs,
     // Indices
-    __global int const* indices,
+    __global int const* mesh_indices,
+
+	/// Curves
+
+	// Vertices
+	__global float4 const* curve_vertices,
+	// Indices
+	__global int const* curve_indices,
+
     // Shapes
     __global Shape const* shapes,
     // Material IDs
@@ -281,10 +292,12 @@ __kernel void ShadeSurface(
 
     Scene scene =
     {
-        vertices,
-        normals,
-        uvs,
-        indices,
+		mesh_vertices,
+		mesh_normals,
+		mesh_uvs,
+		mesh_indices,
+		curve_vertices,
+		curve_indices,
         shapes,
         materialids,
         materials,
@@ -327,7 +340,7 @@ __kernel void ShadeSurface(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect,&diffgeo);
+        Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
@@ -337,6 +350,7 @@ __kernel void ShadeSurface(
         Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 
         // Terminate if emissive
+		/*
         if (Bxdf_IsEmissive(&diffgeo))
         {
             if (!backfacing)
@@ -365,8 +379,10 @@ __kernel void ShadeSurface(
             lightsamples[globalid] = 0.f; 
             return;
         }
+		*/
 
-
+		float s = 1.f;
+		/*
         float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f; 
         if (backfacing && !Bxdf_IsBtdf(&diffgeo)) 
         {
@@ -379,10 +395,10 @@ __kernel void ShadeSurface(
             diffgeo.dpdv = -diffgeo.dpdv; 
             s = -s; 
         }
+		*/
 
-
-        DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
-        DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
+        //DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+		DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
         float ndotwi = fabs(dot(diffgeo.n, wi));
 
@@ -406,19 +422,19 @@ __kernel void ShadeSurface(
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdfpdf);
 
         // If we have light to sample we can hopefully do mis
-        if (light_idx > -1)
+       // if (light_idx > -1)
         {
             // Sample light
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &lightwo, &lightpdf);
             lightbxdfpdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
-            lightweight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, lightpdf / selection_pdf, 1, lightbxdfpdf);
+            lightweight = 1.f; //Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, lightpdf / selection_pdf, 1, lightbxdfpdf);
 
             // Apply MIS to account for both
-            if (NON_BLACK(le) && lightpdf > 0.0f && !Bxdf_IsSingular(&diffgeo))   
+            //if (NON_BLACK(le) && lightpdf > 0.0f && !Bxdf_IsSingular(&diffgeo))   
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
-                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * lightweight / lightpdf / selection_pdf;
+                radiance = le * ndotwo; //* Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * lightweight / lightpdf / selection_pdf;
             }
         }
 
@@ -426,7 +442,7 @@ __kernel void ShadeSurface(
         if (NON_BLACK(radiance))
         {
             // Generate shadow ray
-            float3 shadow_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
+            float3 shadow_ray_o = diffgeo.p + 10000.f * CRAZY_LOW_DISTANCE*s*diffgeo.ng;
             float3 temp = diffgeo.p + wo - shadow_ray_o;
             float3 shadow_ray_dir = normalize(temp); 
             float shadow_ray_length = length(temp);
@@ -435,12 +451,14 @@ __kernel void ShadeSurface(
             Ray_Init(shadowrays + globalid, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
 
             // Apply the volume to shadow ray if needed
+			/*
             int volidx =    Path_GetVolumeIdx(path);
             if (volidx != -1) 
             {
                 radiance *= Volume_Transmittance(&volumes[volidx], &shadowrays[globalid], shadow_ray_length);
                 radiance += Volume_Emission(&volumes[volidx], &shadowrays[globalid], shadow_ray_length) * throughput;
             }  
+			*/
              
             // And write the light sample 
             lightsamples[globalid] = REASONABLE_RADIANCE(radiance);
@@ -572,7 +590,6 @@ __kernel void GatherLightSamples(
     {
         // Get pixel id for this sample set
         int pixelidx = pixelindices[globalid];
-
 
         // Prepare accumulator variable
         float3 radiance = make_float3(0.f, 0.f, 0.f);
@@ -777,13 +794,13 @@ __kernel void FillAOVs(
     // Number of pixels
     __global int const* num_items,
     // Vertices
-    __global float3 const* vertices,
+    __global float3 const* mesh_vertices,
     // Normals
-    __global float3 const* normals,
+    __global float3 const* mesh_normals,
     // UVs
-    __global float2 const* uvs,
+    __global float2 const* mesh_uvs,
     // Indices
-    __global int const* indices,
+    __global int const* mesh_indices,
     // Shapes
     __global Shape const* shapes,
     // Material IDs
@@ -836,10 +853,10 @@ __kernel void FillAOVs(
 
     Scene scene =
     {
-        vertices,
-        normals,
-        uvs,
-        indices,
+		mesh_vertices,
+		mesh_normals,
+		mesh_uvs,
+		mesh_indices,
         shapes,
         materialids,
         materials,

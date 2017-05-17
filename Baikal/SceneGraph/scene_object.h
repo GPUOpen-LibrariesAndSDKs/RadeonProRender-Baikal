@@ -37,11 +37,13 @@ namespace Baikal
     public:
         // Constructor
         SceneObject();
+
         // Destructor
         virtual ~SceneObject() = 0;
         
         // Check if the object has been changed since last reset
         bool IsDirty() const;
+
         // Set dirty flag
         void SetDirty(bool dirty) const;
         
