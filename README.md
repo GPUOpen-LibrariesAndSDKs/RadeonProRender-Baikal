@@ -28,7 +28,7 @@ Tools\premake\win\premake5 vs2015
 Linux:
 
 ```
-Tools\premake\win\premake5 gmake
+Tools\premake\linux64\premake5 gmake
 
 make config=release_x64
 ```
@@ -36,7 +36,7 @@ make config=release_x64
 OSX:
 
 ```
-Tools\premake\win\premake5 xcode4
+Tools\premake\osx\premake5 xcode4
 ```
 
 # Features
