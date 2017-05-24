@@ -1,3 +1,15 @@
+
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <algorithm> 
+#include <functional> 
+#include <cctype>
+#include <locale>
+
 #include "scene_io.h"
 #include "image_io.h"
 #include "../scene1.h"
@@ -5,7 +17,6 @@
 #include "../material.h"
 #include "../light.h"
 #include "../texture.h"
-
 
 #include "Utils/tiny_obj_loader.h"
 
@@ -146,6 +157,26 @@ namespace Baikal
         return material;
     }
 
+
+	// trim from start
+	static inline std::string &ltrim(std::string &s) {
+		s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+			std::not1(std::ptr_fun<int, int>(std::isspace))));
+		return s;
+	}
+
+	// trim from end
+	static inline std::string &rtrim(std::string &s) {
+		s.erase(std::find_if(s.rbegin(), s.rend(),
+			std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+		return s;
+	}
+
+	// trim from both ends
+	static inline std::string &trim(std::string &s) {
+		return ltrim(rtrim(s));
+	}
+
     Scene1* SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
     {
         using namespace tinyobj;
@@ -182,50 +213,106 @@ namespace Baikal
             }
         }
 
-        // Enumerate all shapes in the scene
-
-		/// @todo: for testing, create a scene with curves only.
-		///        As to handle a scene with both meshes and curves, we will need an
-		///        intersector which supports both.
+        // Construct all Baikal shapes 
+		
+		/// @todo: for testing, load curves from a hard-coded custom formatted text file:
+		Curves* curves = new Curves();
 		{
-			Curves* curves = new Curves();
-
-			// make a test grid of curves ("fur")
-			float scale = 1.f;
-			int gridRes = 10;
-			int cvsPerCurve = 10;
-			float dl = scale/float(gridRes);
-			float cvRadius = dl/20.f;
-
+			std::string cvsFile = "../Resources/hair/out.cvs";
+			std::ifstream inFile(cvsFile);
+			
 			std::vector<RadeonRays::float4> curve_vertices;
 			std::vector<std::uint32_t> curve_indices;
 
-			for (size_t i=0; i<gridRes; i++)
-			for (size_t j=0; j<gridRes; j++)
+			float cvRadius = 0.05f; // hard-coded for now, as not exported!
+			
+			bool atRoot = true;
+			size_t prev_index = 0;
+			std::string line;
+			while (std::getline(inFile, line))
 			{
-				float x = float(i)*dl;
-				float z = float(j)*dl;
-				RadeonRays::float4 rootCv(x, 0.f, z, cvRadius);
-				curve_vertices.push_back(rootCv);
-				size_t prev_index = curve_vertices.size()-1;
-
-				for (size_t n=1; n<cvsPerCurve; ++n)
+				line = trim(line);
+				if (line.empty()) continue;
+				if (line.find("curve") != std::string::npos) 	
 				{
-					RadeonRays::float4 segment(0.5f*dl, dl, 0.f);
-					RadeonRays::float4 cv = rootCv + float(n)*segment;
-					cv.w = cvRadius;
-					curve_vertices.push_back(cv);
-
-					size_t numVertices = curve_vertices.size();
-					curve_indices.push_back(prev_index);
-					curve_indices.push_back(prev_index+1);
-
-					prev_index++;
+					atRoot = true;
+					continue;
 				}
+
+				float pos[3];
+				std::stringstream ss(line);
+				for(int i=0; i<3; i++) ss >> pos[i];
+				
+				RadeonRays::float4 cv(pos[0], pos[1], pos[2], cvRadius);
+				if (atRoot)
+				{
+					curve_vertices.push_back(cv);
+					prev_index = curve_vertices.size()-1;
+					atRoot = false;
+					continue;
+				}
+				
+				curve_vertices.push_back(cv);
+				curve_indices.push_back(prev_index);
+				curve_indices.push_back(prev_index+1);
+
+				prev_index++;
 			}
 
 			curves->SetVertices(&curve_vertices[0], curve_vertices.size());
 			curves->SetIndices(&curve_indices[0], curve_indices.size());
+			
+			Material* hairMaterial = new SingleBxdf(SingleBxdf::BxdfType::kHair);
+			curves->SetMaterial(hairMaterial);
+
+			// make a test grid of curves ("fur")
+			/*
+			{
+				float scale = 10.f;
+				int gridRes = 50;
+				float curveLength = 0.5f*scale;
+				int cvsPerCurve = 50;
+				float dgrid = scale/float(gridRes);
+				float dseg = curveLength/float(cvsPerCurve);
+				float cvRadius = curveLength/200.f;
+
+				std::vector<RadeonRays::float4> curve_vertices;
+				std::vector<std::uint32_t> curve_indices;
+
+				for (size_t i=0; i<gridRes; i++)
+				for (size_t j=0; j<gridRes; j++)
+				{
+					float x = float(i)*dgrid;
+					float z = float(j)*dgrid;
+					RadeonRays::float4 rootCv(x, 0.f, z, cvRadius);
+					curve_vertices.push_back(rootCv);
+					size_t prev_index = curve_vertices.size()-1;
+					RadeonRays::float4 prevCv = rootCv;
+
+					for (size_t n=1; n<cvsPerCurve; ++n)
+					{
+						float b = float(n)/float(cvsPerCurve-1);
+
+						RadeonRays::float4 segmentDir(0.25*sin(8.f*M_PI*b), 1.f, -0.25*sin(8.f*M_PI*b));
+						segmentDir.normalize();
+						RadeonRays::float4 segment = dseg * segmentDir;
+						RadeonRays::float4 cv = prevCv + segment;
+						cv.w = std::max(0.05f, (1.f-b)) * cvRadius;
+						curve_vertices.push_back(cv);
+
+						size_t numVertices = curve_vertices.size();
+						curve_indices.push_back(prev_index);
+						curve_indices.push_back(prev_index+1);
+
+						prev_index++;
+						prevCv = cv;
+					}
+				}
+
+				curves->SetVertices(&curve_vertices[0], curve_vertices.size());
+				curves->SetIndices(&curve_indices[0], curve_indices.size());
+			}
+			*/
 
 			// Attach to the scene
 			scene->AttachShape(curves);
@@ -234,7 +321,6 @@ namespace Baikal
 			scene->AttachAutoreleaseObject(curves);
 		}
 
-		/*
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
             // Create empty mesh
@@ -268,7 +354,7 @@ namespace Baikal
             // Set material
             auto idx = objshapes[s].mesh.material_ids[0];
 
-            if (idx > 0)
+            if (idx >= 0)
             {
                 mesh->SetMaterial(materials[idx]);
             }
@@ -291,7 +377,6 @@ namespace Baikal
                 }
             }
         }
-		*/
 
         // TODO: temporary code, add IBL
         Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
@@ -313,7 +398,7 @@ namespace Baikal
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
         scene->AttachAutoreleaseObject(light1);
 
-        //scene->AttachLight(light);
+        scene->AttachLight(light);
         scene->AttachLight(light1);
         scene->AttachLight(ibl);
 

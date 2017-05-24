@@ -101,7 +101,8 @@ float3 EnvironmentLight_Sample(// Light
     *pdf = fabs(dot(dg->n, normalize(d))) / PI;
 
     // Sample envmap
-    return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(light->multiplier));
+    //return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(light->multiplier));
+	return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(light->tex));
 }
 
 /// Get PDF for a given direction
@@ -160,7 +161,7 @@ float3 AreaLight_GetLe(// Emissive object
         float3 d = p - dg->p;
         *wo = d;
 
-        int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+        int mat_idx = Scene_GetFaceMaterialIndex(scene, shapeidx, primidx);
         Material mat = scene->materials[mat_idx];
 
         const float3 ke = Texture_GetValue3f(mat.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.kxmapidx));
@@ -208,7 +209,7 @@ float3 AreaLight_Sample(// Emissive object
 
     *wo = p - dg->p;
 
-    int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+    int mat_idx = Scene_GetFaceMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
     const float3 ke = Texture_GetValue3f(mat.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.kxmapidx));
@@ -309,7 +310,7 @@ float3 AreaLight_SampleVertex(
     float area;
 	Scene_InterpolateTriangleAttributes(scene, shapeidx, primidx, uv, p, n, &tx, &area);
 
-    int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+    int mat_idx = Scene_GetFaceMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
     const float3 ke = Texture_GetValue3f(mat.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.kxmapidx));

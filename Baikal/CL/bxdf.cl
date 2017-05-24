@@ -997,7 +997,6 @@ float3 Passthrough_Sample(
     float* pdf
     )
 {
-
     *wo = -wi;
     float coswo = fabs(wo->y);
 
@@ -1019,8 +1018,25 @@ float3 Hair_Evaluate(DifferentialGeometry const* dg, // Geometry
 	                                TEXTURE_ARG_LIST // Texture args
 )
 {
-	const float3 kd = make_float3(0.5f, 0.5f, 0.5f);
-	return kd / PI;
+	float3 T = dg->dpdu; // hair tangent, aligned with strand axis
+
+	float3 R = -wi;
+	float3 Rt = dot(R, T) * T;
+	float3 Rn = R - Rn;
+	float3 Rb = cross(T, Rn);
+
+	// @todo: get parameters from args
+	float3 kd = (float3)(0.1f, 0.05f, 0.0f);
+	float3 ks = 0.25f * (float3)(1.f, 1.f, 1.f);
+	float specPower = (float)80.0f;
+
+	float wiT = dot(wi, T);
+	float woT = dot(wo, T);
+	float spec_term = fabs(-wiT*woT + sqrt(fabs((1.f - wiT*wiT)*(1.f - woT*woT))));
+
+	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / fabs(woT); // -cos^n(reflected-incident) / cos(incident)
+	float3 kajiyakay_diff = kd / PI;
+	return kajiyakay_diff + kajiyakay_spec;
 }
 
 float Hair_GetPdf( DifferentialGeometry const* dg,       // Geometry
@@ -1029,7 +1045,7 @@ float Hair_GetPdf( DifferentialGeometry const* dg,       // Geometry
 	                                    TEXTURE_ARG_LIST // Texture args
 )
 {
-	return fabs(wo.y) / PI;
+	return 0.5f / PI;
 }
 
 float3 Hair_Sample( DifferentialGeometry const* dg, // Geometry
@@ -1041,165 +1057,166 @@ float3 Hair_Sample( DifferentialGeometry const* dg, // Geometry
 )
 {
 	*wo = Sample_MapToHemisphere(sample, make_float3(0.f, 1.f, 0.f) , 1.f);
-	*pdf = fabs(wo->y) / PI;
 
-	const float3 kd = make_float3(0.5f, 0.5f, 0.5f);
-	return kd / PI;
+	float3 T = dg->dpdu; // hair tangent, aligned with strand axis
+
+	// Compute scattered direction, by flipping incident direction and rotating through a random azimuth about the hair axis
+	float3 R = -wi;
+	float3 Rt = dot(R, T) * T;
+	float3 Rn = R - Rn;
+	float3 Rb = cross(T, Rn);
+
+	// (NB, 'wo' normally refers to the known scattered/output direction at the vertex, and 'wi' is the sampled incident direction)
+	float phi = 2.f*PI*sample.x;
+	*wo = Rt + cos(phi)*Rn + sin(phi)*Rb;
+	*pdf = 0.5f/PI;
+
+	// @todo: get parameters from args
+	float3 kd = (float3)(0.1f, 0.05f, 0.0f);
+	float3 ks = 0.25f * (float3)(1.f, 1.f, 1.f);
+	float specPower = (float)80.0f;
+
+	float wiT = dot(wi, T);
+	float woT = dot(*wo, T);
+	float spec_term = fabs(-wiT*woT + sqrt(fabs((1.f - wiT*wiT)*(1.f - woT*woT))));
+
+	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / fabs(woT); // -cos^n(reflected-incident) / cos(incident)
+	float3 kajiyakay_diff = kd / PI;
+	return kajiyakay_diff + kajiyakay_spec;
 }
 
 /*
  Dispatch functions
  */
 float3 Bxdf_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
-    // Incoming direction
-    float3 wi,
-    // Outgoing direction
-    float3 wo,
-    // Texture args
-    TEXTURE_ARG_LIST
+    DifferentialGeometry const* dg, // Geometry
+    float3 wi,                      // Incoming direction
+    float3 wo,                      // Outgoing direction
+    TEXTURE_ARG_LIST                // Texture args
     )
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
     float3 wo_t = matrix_mul_vector3(dg->world_to_tangent, wo);
 
-	return make_float3(1.f, 0.f, 0.f); //Hair_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+	int mattype = dg->mat.type;
+	switch (mattype)
+	{
+		case kLambert:
+			return Lambert_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetGGX:
+			return MicrofacetGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetBeckmann:
+			return MicrofacetBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kIdealReflect:
+			return IdealReflect_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kIdealRefract:
+			return IdealRefract_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kTranslucent:
+			return Translucent_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetRefractionGGX:
+			return MicrofacetRefractionGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetRefractionBeckmann:
+			return MicrofacetRefractionBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kHair:
+			return Hair_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+	}
 
-	/*
-		int mattype = dg->mat.type;
-		switch (mattype)
-		{
-			case kLambert:
-				return Lambert_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kMicrofacetGGX:
-				return MicrofacetGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kMicrofacetBeckmann:
-				return MicrofacetBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kIdealReflect:
-				return IdealReflect_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kIdealRefract:
-				return IdealRefract_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kTranslucent:
-				return Translucent_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kMicrofacetRefractionGGX:
-				return MicrofacetRefractionGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-			case kMicrofacetRefractionBeckmann:
-				return MicrofacetRefractionBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-		}
-	*/
-
-    //return 0.f;
+    return 0.f;
 }
 
-float3 Bxdf_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
-    // Incoming direction
-    float3 wi,
-    // Texture args
-    TEXTURE_ARG_LIST,
-    // RNG
-    float2 sample,
-    // Outgoing  direction
-    float3* wo,
-    // PDF at w
-    float* pdf
-    )
+float3 Bxdf_Sample( DifferentialGeometry const* dg, // Geometry
+                    float3 wi,                      // Incoming direction
+                    TEXTURE_ARG_LIST,               // Texture args
+                    float2 sample,                  // RNG
+                    float3* wo,                     // Outgoing  direction
+                    float* pdf                      // PDF at w  
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
     float3 wo_t;
 
-	float3 res = 0.f;
-	res = make_float3(1.f, 0.f, 0.f); //Lambert_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+	float3 res;
 
-	/*
-		int mattype = dg->mat.type;
-		switch (mattype)
-		{
-			case kLambert:
-				res = Lambert_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kMicrofacetGGX:
-				res = MicrofacetGGX_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kMicrofacetBeckmann:
-				res = MicrofacetBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kIdealReflect:
-				res = IdealReflect_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kIdealRefract:
-				res = IdealRefract_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kTranslucent:
-				res = Translucent_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kPassthrough:
-				res = Passthrough_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kMicrofacetRefractionGGX:
-				res = MicrofacetRefractionGGX_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			case kMicrofacetRefractionBeckmann:
-				res = MicrofacetRefractionBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-				break;
-			default:
-				*pdf = 0.f;
-				break;
-		}
-	*/
+	int mattype = dg->mat.type;
+	switch (mattype)
+	{
+		case kLambert:
+			res = Lambert_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kMicrofacetGGX:
+			res = MicrofacetGGX_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kMicrofacetBeckmann:
+			res = MicrofacetBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kIdealReflect:
+			res = IdealReflect_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kIdealRefract:
+			res = IdealRefract_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kTranslucent:
+			res = Translucent_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kPassthrough:
+			res = Passthrough_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kMicrofacetRefractionGGX:
+			res = MicrofacetRefractionGGX_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+		case kMicrofacetRefractionBeckmann:
+			res = MicrofacetRefractionBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+		case kHair:
+			res = Hair_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+			break;
+
+		default:
+			*pdf = 0.f;
+			break;
+	}
 
     *wo = matrix_mul_vector3(dg->tangent_to_world, wo_t);
-
     return res;
 }
 
-float Bxdf_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
-    // Incoming direction
-    float3 wi,
-    // Outgoing direction
-    float3 wo,
-    // Texture args
-    TEXTURE_ARG_LIST
-    )
+float Bxdf_GetPdf( DifferentialGeometry const* dg,  // Geometry
+                   float3 wi,                       // Incoming direction
+                   float3 wo,                       // Outgoing direction
+                   TEXTURE_ARG_LIST                 // Texture args
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
     float3 wo_t = matrix_mul_vector3(dg->world_to_tangent, wo);
 
-	return Hair_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-
-	/*
     int mattype = dg->mat.type;
     switch (mattype)
     {
-    case kLambert:
-        return Lambert_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetGGX:
-        return MicrofacetGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetBeckmann:
-        return MicrofacetBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kIdealReflect:
-        return IdealReflect_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kIdealRefract:
-        return IdealRefract_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kTranslucent:
-        return Translucent_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kPassthrough:
-        return 0.f;
-    case kMicrofacetRefractionGGX:
-        return MicrofacetRefractionGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetRefractionBeckmann:
-        return MicrofacetRefractionBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kLambert:
+			return Lambert_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetGGX:
+			return MicrofacetGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetBeckmann:
+			return MicrofacetBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kIdealReflect:
+			return IdealReflect_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kIdealRefract:
+			return IdealRefract_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kTranslucent:
+			return Translucent_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kPassthrough:
+			return 0.f;
+		case kMicrofacetRefractionGGX:
+			return MicrofacetRefractionGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kMicrofacetRefractionBeckmann:
+			return MicrofacetRefractionBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+		case kHair:
+			return Hair_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
     }
-	
-	*/
-    //return 0.f;
+
+    return 0.f;
 }
 
 /// Emissive BRDF sampling

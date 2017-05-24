@@ -40,16 +40,23 @@ typedef struct
 
     // Shapes
     GLOBAL Shape const* restrict shapes;
+
     // Material IDs
-    GLOBAL int const* restrict materialids;
+    GLOBAL int const* restrict mesh_materialids;  // per face
+	GLOBAL int const* restrict curve_materialids; // per curve
+
     // Materials
     GLOBAL Material const* restrict materials;
+
     // Emissive objects
     GLOBAL Light const* restrict lights;
+
     // Envmap idx
     int env_light_idx;
+
     // Number of emissive objects
     int num_lights;
+
 } Scene;
 
 // Get triangle vertices given scene, shape index and prim index
@@ -122,7 +129,8 @@ INLINE void Scene_InterpolateTriangleAttributes(Scene const* scene, int shape_id
 }
 
 
-INLINE void Scene_InterpolateSegmentAttributes(Scene const* scene, int shape_idx, int prim_idx, float2 barycentrics, float3* p, float3* segmentAxis)
+INLINE void Scene_InterpolateSegmentAttributes(Scene const* scene, int shape_idx, int prim_idx, float2 barycentrics, 
+	                                           float3* axisHit, float* radiusHit, float3* segmentAxis)
 {
 	// Extract shape data
 	Shape shape = scene->shapes[shape_idx];
@@ -132,31 +140,30 @@ INLINE void Scene_InterpolateSegmentAttributes(Scene const* scene, int shape_idx
 	int i1 = scene->curve_indices[shape.startidx + 2*prim_idx + 1];
 
 	// Fetch positions and transform to world space
-	float4 v0 = scene->curve_vertices[shape.startvtx + i0];
-	float4 v1 = scene->curve_vertices[shape.startvtx + i1];
-	//float3 v0 = matrix_mul_point3(shape.transform, scene->curve_vertices[shape.startvtx + i0].xyz);
-	//float3 v1 = matrix_mul_point3(shape.transform, scene->curve_vertices[shape.startvtx + i1].xyz);
+	float4 v0L = scene->curve_vertices[shape.startvtx + i0];
+	float4 v1L = scene->curve_vertices[shape.startvtx + i1];
+
+	// @todo: for some reason, shape.transform doesn't get copied correctly
+	float3 v0W = v0L.xyz; //matrix_mul_point3(shape.transform, v0L.xyz);
+	float3 v1W = v1L.xyz; //matrix_mul_point3(shape.transform, v1L.xyz);
 
 	float u = barycentrics.x;
-	*p = (1.f-u)*v0.xyz + u*v1.xyz;
-	*segmentAxis = normalize(v1.xyz - v0.xyz);
+	*axisHit = (1.f-u)*v0W.xyz + u*v1W.xyz;
+	*radiusHit = (1.f-u)*v0L.w + u*v1L.w;
+	*segmentAxis = normalize(v1W.xyz - v0W.xyz);
 }
 
 // Get material index of a shape face
-INLINE int Scene_GetMaterialIndex(Scene const* scene, int shape_idx, int prim_idx)
+INLINE int Scene_GetFaceMaterialIndex(Scene const* scene, int shape_idx, int prim_idx)
 {
     Shape shape = scene->shapes[shape_idx];
-    return scene->materialids[shape.start_material_idx + prim_idx];
+    return scene->mesh_materialids[shape.start_material_idx + prim_idx];
 }
 
 /// Fill DifferentialGeometry structure based on intersection info from RadeonRays
-void Scene_FillDifferentialGeometry(// Scene
-                              Scene const* scene,
-                              // RadeonRays intersection
-                              Intersection const* isect,
-                              // Differential geometry
-                              DifferentialGeometry* diffgeo
-                              )
+void Scene_FillDifferentialGeometry( Scene const* scene,
+                                     Intersection const* isect,
+                                     DifferentialGeometry* diffgeo )
 {
 	// Extract shape data
     int shape_idx = isect->shapeid - 1;
@@ -195,7 +202,7 @@ void Scene_FillDifferentialGeometry(// Scene
 		diffgeo->ng = -diffgeo->ng;
 
 		// Get material at shading point
-		int material_idx = Scene_GetMaterialIndex(scene, shape_idx, prim_idx);
+		int material_idx = Scene_GetFaceMaterialIndex(scene, shape_idx, prim_idx);
 		diffgeo->mat = scene->materials[material_idx];
 
 		// Get UVs
@@ -241,12 +248,14 @@ void Scene_FillDifferentialGeometry(// Scene
 		//	diffgeo->mat 
 		//	diffgeo->dpdv 
 		//  diffgeo->material_index
+		
+		int material_idx = scene->curve_materialids[shape_idx];
+		diffgeo->mat = scene->materials[material_idx];
 
-		float3 p;
+		float3 axisHit;
 		float3 segmentAxis;
-		Scene_InterpolateSegmentAttributes(scene, shape_idx, prim_idx, barycentrics, &p, &segmentAxis);
-
-		diffgeo->p = p;
+		float radiusHit;
+		Scene_InterpolateSegmentAttributes(scene, shape_idx, prim_idx, barycentrics, &axisHit, &radiusHit, &segmentAxis);
 		diffgeo->dpdu = segmentAxis;
 
 		// make an arbitrary orthonormal basis n, dpdu, dpdv  (given dpdu = segmentAxis)
@@ -262,6 +271,8 @@ void Scene_FillDifferentialGeometry(// Scene
 			diffgeo->n.y =  diffgeo->dpdu.z;
 			diffgeo->n.z = -diffgeo->dpdu.y;
 		}
+		diffgeo->n = normalize(diffgeo->n);
+		diffgeo->p = axisHit + radiusHit*diffgeo->n;
 
 		diffgeo->dpdv = cross(diffgeo->n, diffgeo->dpdu);
 		diffgeo->ng = diffgeo->n;

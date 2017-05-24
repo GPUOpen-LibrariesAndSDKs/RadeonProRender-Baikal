@@ -62,7 +62,8 @@ __kernel void ShadeVolume(
     // Shapes
     __global Shape const*  shapes,
     // Material IDs
-    __global int const* materialids,
+    __global int const* mesh_materialids,
+	__global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -106,7 +107,8 @@ __kernel void ShadeVolume(
         uvs,
         indices,
         shapes,
-        materialids,
+        mesh_materialids,
+		curve_materialids,
         materials,
         lights,
         env_light_idx,
@@ -192,6 +194,7 @@ __kernel void ShadeVolume(
         {
             // Nothing to compute
             lightsamples[globalid] = 0.f;
+			 
             // Otherwise make it incative to save intersector cycles (hopefully)
             Ray_SetInactive(shadowrays + globalid);
         }
@@ -231,29 +234,23 @@ __kernel void ShadeSurface(
     __global int const* pixelindices,
     // Number of rays
     __global int const* numhits,
-
-	/// Meshes:
-
-    // Vertices
+    // Mesh vertices
     __global float3 const* mesh_vertices,
-    // Normals
+    // Mesh normals
     __global float3 const* mesh_normals,
-    // UVs
+    // Mesh UVs
     __global float2 const* mesh_uvs,
-    // Indices
+    // Mesh indices
     __global int const* mesh_indices,
-
-	/// Curves
-
-	// Vertices
+	// Curve vertices
 	__global float4 const* curve_vertices,
-	// Indices
+	// Curve indices
 	__global int const* curve_indices,
-
     // Shapes
     __global Shape const* shapes,
     // Material IDs
-    __global int const* materialids,
+    __global int const* mesh_materialids,
+	__global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -299,7 +296,8 @@ __kernel void ShadeSurface(
 		curve_vertices,
 		curve_indices,
         shapes,
-        materialids,
+		mesh_materialids,
+		curve_materialids,
         materials,
         lights,
         env_light_idx,
@@ -381,9 +379,8 @@ __kernel void ShadeSurface(
         }
 		*/
 
-		float s = 1.f;
+        float s = 1.f; //Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
 		/*
-        float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f; 
         if (backfacing && !Bxdf_IsBtdf(&diffgeo)) 
         {
             //Reverse normal and tangents in this case
@@ -421,20 +418,20 @@ __kernel void ShadeSurface(
         // Sample bxdf
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdfpdf);
 
-        // If we have light to sample we can hopefully do mis
-       // if (light_idx > -1)
+        // If we have light to sample we can hopefully do mis (@todo: "hopefully" == "if light not singular")
+        if (light_idx > -1)
         {
             // Sample light
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &lightwo, &lightpdf);
             lightbxdfpdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
-            lightweight = 1.f; //Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, lightpdf / selection_pdf, 1, lightbxdfpdf);
+            lightweight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, lightpdf / selection_pdf, 1, lightbxdfpdf);
 
             // Apply MIS to account for both
-            //if (NON_BLACK(le) && lightpdf > 0.0f && !Bxdf_IsSingular(&diffgeo))   
+            if (NON_BLACK(le) && lightpdf > 0.0f && !Bxdf_IsSingular(&diffgeo))   
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
-                radiance = le * ndotwo; //* Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * lightweight / lightpdf / selection_pdf;
+                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * lightweight / lightpdf / selection_pdf;
             }
         }
 
@@ -442,7 +439,8 @@ __kernel void ShadeSurface(
         if (NON_BLACK(radiance))
         {
             // Generate shadow ray
-            float3 shadow_ray_o = diffgeo.p + 10000.f * CRAZY_LOW_DISTANCE*s*diffgeo.ng;
+			float kludge = 0.05f;
+            float3 shadow_ray_o = diffgeo.p + kludge*s*diffgeo.ng;
             float3 temp = diffgeo.p + wo - shadow_ray_o;
             float3 shadow_ray_dir = normalize(temp); 
             float shadow_ray_length = length(temp);
@@ -466,7 +464,7 @@ __kernel void ShadeSurface(
         else
         {
             // Otherwise save some intersector cycles
-            Ray_SetInactive(shadowrays +  globalid);
+            //Ray_SetInactive(shadowrays +  globalid);
             lightsamples[globalid] = 0;
         }
 
@@ -474,10 +472,10 @@ __kernel void ShadeSurface(
         float q = max(min(0.5f,
             // Luminance
             0.2126f * throughput.x + 0.7152f * throughput.y + 0.0722f * throughput.z), 0.01f); 
+
         // Only if it is 3+ bounce
         bool rr_apply = bounce > 3;
         bool rr_stop = Sampler_Sample1D(&sampler, SAMPLER_ARGS) > q && rr_apply;    
-         
         if (rr_apply)
         {
             Path_MulThroughput(path, 1.f / q);  
@@ -499,8 +497,10 @@ __kernel void ShadeSurface(
 
             // Generate ray
             float3 indirect_ray_dir = bxdfwo;
-            float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
-
+			float kludge = 0.05f;
+			float3 indirect_ray_o = diffgeo.p + kludge*s*diffgeo.ng;
+            //float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
+		
             Ray_Init(indirectrays + globalid, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
             Ray_SetExtra(indirectrays + globalid, make_float2(bxdfpdf, 0.f));
         }
@@ -508,7 +508,7 @@ __kernel void ShadeSurface(
         {
             // Otherwise kill the path
             Path_Kill(path);
-            Ray_SetInactive(indirectrays + globalid);
+            //Ray_SetInactive(indirectrays + globalid);
         }
     }
 }
@@ -585,7 +585,6 @@ __kernel void GatherLightSamples(
 )
 {
     int globalid = get_global_id(0);
-
     if (globalid < *numrays)
     {
         // Get pixel id for this sample set
@@ -597,9 +596,10 @@ __kernel void GatherLightSamples(
         // Start collecting samples
         {
             // If shadow ray didn't hit anything and reached skydome
+			// @todo: though presumably that should be "reached sampled light", not necessarily the skydome
             if (shadowhits[globalid] == -1)
             {
-                // Add its contribution to radiance accumulator
+				// Add its contribution to radiance accumulator
                 radiance += lightsamples[globalid];
             }
         }
@@ -801,10 +801,15 @@ __kernel void FillAOVs(
     __global float2 const* mesh_uvs,
     // Indices
     __global int const* mesh_indices,
+	// Curve vertices
+	__global float4 const* curve_vertices,
+	// Curve indices
+	__global int const* curve_indices,
     // Shapes
     __global Shape const* shapes,
     // Material IDs
-    __global int const* materialids,
+	__global int const* mesh_materialids,
+	__global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -851,19 +856,22 @@ __kernel void FillAOVs(
 {
     int globalid = get_global_id(0);
 
-    Scene scene =
-    {
+	Scene scene =
+	{
 		mesh_vertices,
 		mesh_normals,
 		mesh_uvs,
 		mesh_indices,
-        shapes,
-        materialids,
-        materials,
-        lights,
-        env_light_idx,
-        num_lights
-    };
+		curve_vertices,
+		curve_indices,
+		shapes,
+		mesh_materialids,
+		curve_materialids,
+		materials,
+		lights,
+		env_light_idx,
+		num_lights
+	}; 
 
     // Only applied to active rays after compaction
     if (globalid < *num_items)

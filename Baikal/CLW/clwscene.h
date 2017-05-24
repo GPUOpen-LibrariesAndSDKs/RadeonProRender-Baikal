@@ -32,6 +32,7 @@ namespace Baikal
 		// curve data
 		CLWBuffer<RadeonRays::float4> curve_vertices; // "CVs"
 		CLWBuffer<int> curve_indices;
+		
 		//CLWBuffer<RadeonRays::float2> curve_uvs;
 		// For now, curve material data ignored.
 
@@ -39,7 +40,8 @@ namespace Baikal
         CLWBuffer<Shape> shapes;
         CLWBuffer<Material> materials;
         CLWBuffer<Light> lights;
-        CLWBuffer<int> materialids;
+        CLWBuffer<int> mesh_materialids;  // mesh material ids, one per face
+		CLWBuffer<int> curve_materialids; // one per curves shape
 
         CLWBuffer<Volume> volumes;
         CLWBuffer<Texture> textures;

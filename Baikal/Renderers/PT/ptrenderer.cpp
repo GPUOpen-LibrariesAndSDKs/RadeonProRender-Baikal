@@ -226,7 +226,7 @@ namespace Baikal
                 {
                     ShadeMiss(clwscene, pass, tile_size);
                 }
-
+				 
                 // Convert intersections to predicates
                 FilterPathStream(pass, tile_size);
 
@@ -245,18 +245,17 @@ namespace Baikal
                 // Shade missing rays
                 if (pass == 0)
                     ShadeBackground(clwscene, pass, tile_size);
-
+				  
                 // Intersect shadow rays
-                api->QueryOcclusion(m_render_data->fr_shadowrays, m_render_data->fr_hitcount, num_rays, m_render_data->fr_shadowhits, nullptr, nullptr);
+	            api->QueryOcclusion(m_render_data->fr_shadowrays, m_render_data->fr_hitcount, num_rays, m_render_data->fr_shadowhits, nullptr, nullptr);
 
                 // Gather light samples and account for visibility
                 GatherLightSamples(clwscene, pass, tile_size);
-
-                //
+				  
                 m_context.Flush(0);
             }
         }
-
+		 
         // Check if we have other outputs, than color
         bool aov_pass_needed = (FindFirstNonZeroOutput(false) != nullptr);
         if (aov_pass_needed)
@@ -435,8 +434,11 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.mesh_normals);
         fill_kernel.SetArg(argc++, scene.mesh_uvs);
         fill_kernel.SetArg(argc++, scene.mesh_indices);
+		fill_kernel.SetArg(argc++, scene.curve_vertices);
+		fill_kernel.SetArg(argc++, scene.curve_indices);
         fill_kernel.SetArg(argc++, scene.shapes);
-        fill_kernel.SetArg(argc++, scene.materialids);
+        fill_kernel.SetArg(argc++, scene.mesh_materialids);
+		fill_kernel.SetArg(argc++, scene.curve_materialids);
         fill_kernel.SetArg(argc++, scene.materials);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
@@ -511,17 +513,15 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
-
         shadekernel.SetArg(argc++, scene.mesh_vertices);
         shadekernel.SetArg(argc++, scene.mesh_normals);
         shadekernel.SetArg(argc++, scene.mesh_uvs);
         shadekernel.SetArg(argc++, scene.mesh_indices);
-
 		shadekernel.SetArg(argc++, scene.curve_vertices);
 		shadekernel.SetArg(argc++, scene.curve_indices);
-
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materialids);
+        shadekernel.SetArg(argc++, scene.mesh_materialids);
+		shadekernel.SetArg(argc++, scene.curve_materialids);
         shadekernel.SetArg(argc++, scene.materials);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
@@ -567,7 +567,8 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.mesh_uvs);
         shadekernel.SetArg(argc++, scene.mesh_indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materialids);
+		shadekernel.SetArg(argc++, scene.mesh_materialids);
+		shadekernel.SetArg(argc++, scene.curve_materialids);
         shadekernel.SetArg(argc++, scene.materials);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
@@ -821,6 +822,8 @@ namespace Baikal
 
         m_context.Finish(0);
 
+
+
         delta = std::chrono::high_resolution_clock::now() - start;
 
         stats.shadow_rays_time_in_ms = (float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() / num_passes;
@@ -866,13 +869,12 @@ namespace Baikal
         api->QueryOcclusion(m_render_data->fr_shadowrays, m_render_data->fr_hitcount, maxrays, m_render_data->fr_shadowhits, nullptr, nullptr);
 
         // Gather light samples and account for visibility
-
         GatherLightSamples(clwscene, 0, tile_size);
 
         //
         m_context.Flush(0);
 
-        //samples statisticks
+        // sample statistics
         output->Clear(0.f);
         start = std::chrono::high_resolution_clock::now();
         for (auto i = 0U; i < num_passes; ++i)

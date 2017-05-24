@@ -29,7 +29,7 @@ namespace Baikal
         // Create intersection API
         m_api = CreateFromOpenClContext(m_context, id, queue);
 
-        m_api->SetOption("acc.type", "curves"); // TESTING! (CURVES ONLY CURRENTLY)
+        m_api->SetOption("acc.type", "bvh"); // TESTING! (CURVES ONLY CURRENTLY)
         m_api->SetOption("bvh.builder", "sah");
         m_api->SetOption("bvh.sah.num_bins", 64.f);
     }
@@ -149,6 +149,7 @@ namespace Baikal
         out.visible_shapes.clear();
 
         /// Create new shapes:
+		int shapeId = 1;
 
         // Meshes
 		{
@@ -171,9 +172,7 @@ namespace Baikal
 			// instance base shape lookup.
 			std::map<Shape const*, RadeonRays::Shape*> rr_shapes;
 
-			// Start from ID 1
 			// Handle meshes
-			int id = 1;
 			for (auto& iter : meshes)
 			{
 				auto mesh = iter;
@@ -197,7 +196,7 @@ namespace Baikal
 
 				auto transform = mesh->GetTransform();
 				shape->SetTransform(transform, inverse(transform));
-				shape->SetId(id++);
+				shape->SetId(shapeId++);
 				out.isect_shapes.push_back(shape);
 				out.visible_shapes.push_back(shape);
 				rr_shapes[mesh] = shape;
@@ -227,7 +226,7 @@ namespace Baikal
 
 				auto transform = mesh->GetTransform();
 				shape->SetTransform(transform, inverse(transform));
-				shape->SetId(id++);
+				shape->SetId(shapeId++);
 				out.isect_shapes.push_back(shape);
 				rr_shapes[mesh] = shape;
 			}
@@ -241,7 +240,7 @@ namespace Baikal
 
 				auto transform = instance->GetTransform();
 				shape->SetTransform(transform, inverse(transform));
-				shape->SetId(id++);
+				shape->SetId(shapeId++);
 				out.isect_shapes.push_back(shape);
 				out.visible_shapes.push_back(shape);
 			}
@@ -270,8 +269,6 @@ namespace Baikal
 				}
 			}
 
-			// Start from ID 1 (?)
-			int id = 1;
 			for (auto& iter : curves_set)
 			{
 				auto curves = iter;
@@ -282,7 +279,7 @@ namespace Baikal
 												   curves->GetNumSegments() );
 				auto transform = curves->GetTransform();
 				shape->SetTransform(transform, inverse(transform));
-				shape->SetId(id++);
+				shape->SetId(shapeId++);
 				out.isect_shapes.push_back(shape);
 				out.visible_shapes.push_back(shape);
 			}
@@ -424,11 +421,11 @@ namespace Baikal
 			std::size_t num_matids_written = 0;
 			
 			// Create CL arrays (make a dummy 1-element buffer in case of no meshes)
-			out.mesh_vertices = m_context.CreateBuffer<float3>(std::max(size_t(1), num_mesh_vertices), CL_MEM_READ_ONLY);
-			out.mesh_normals  = m_context.CreateBuffer<float3>(std::max(size_t(1), num_mesh_normals), CL_MEM_READ_ONLY);
-			out.mesh_uvs      = m_context.CreateBuffer<float2>(std::max(size_t(1), num_mesh_uvs), CL_MEM_READ_ONLY);
-			out.mesh_indices  = m_context.CreateBuffer<int>(std::max(size_t(1), num_mesh_indices), CL_MEM_READ_ONLY);
-			out.materialids   = m_context.CreateBuffer<int>(std::max(size_t(1), num_mesh_material_ids), CL_MEM_READ_ONLY);
+			out.mesh_vertices    = m_context.CreateBuffer<float3>(std::max(size_t(1), num_mesh_vertices), CL_MEM_READ_ONLY);
+			out.mesh_normals     = m_context.CreateBuffer<float3>(std::max(size_t(1), num_mesh_normals), CL_MEM_READ_ONLY);
+			out.mesh_uvs         = m_context.CreateBuffer<float2>(std::max(size_t(1), num_mesh_uvs), CL_MEM_READ_ONLY);
+			out.mesh_indices     = m_context.CreateBuffer<int>(std::max(size_t(1), num_mesh_indices), CL_MEM_READ_ONLY);
+			out.mesh_materialids = m_context.CreateBuffer<int>(std::max(size_t(1), num_mesh_material_ids), CL_MEM_READ_ONLY);
 
 			float3* vertices = nullptr;
 			float3* normals = nullptr;
@@ -437,11 +434,11 @@ namespace Baikal
 			int* matids = nullptr;
 		
 			// Map arrays and prepare to write data
-			m_context.MapBuffer(0, out.mesh_vertices, CL_MAP_WRITE, &vertices);
-			m_context.MapBuffer(0, out.mesh_normals, CL_MAP_WRITE, &normals);
-			m_context.MapBuffer(0, out.mesh_uvs, CL_MAP_WRITE, &uvs);
-			m_context.MapBuffer(0, out.mesh_indices, CL_MAP_WRITE, &indices);
-			m_context.MapBuffer(0, out.materialids, CL_MAP_WRITE, &matids);
+			m_context.MapBuffer(0, out.mesh_vertices, CL_MAP_WRITE, &vertices).Wait();
+			m_context.MapBuffer(0, out.mesh_normals, CL_MAP_WRITE, &normals).Wait();
+			m_context.MapBuffer(0, out.mesh_uvs, CL_MAP_WRITE, &uvs).Wait();
+			m_context.MapBuffer(0, out.mesh_indices, CL_MAP_WRITE, &indices).Wait();
+			m_context.MapBuffer(0, out.mesh_materialids, CL_MAP_WRITE, &matids).Wait();
 			
 			// Keep associated shapes data for instance look up.
 			// We retrieve data from here while serializing instances,
@@ -619,11 +616,11 @@ namespace Baikal
 				instance->SetDirty(false);
 			}
 
-			m_context.UnmapBuffer(0, out.mesh_vertices, vertices);
-			m_context.UnmapBuffer(0, out.mesh_normals, normals);
-			m_context.UnmapBuffer(0, out.mesh_uvs, uvs);
-			m_context.UnmapBuffer(0, out.mesh_indices, indices);
-			m_context.UnmapBuffer(0, out.materialids, matids);
+			m_context.UnmapBuffer(0, out.mesh_vertices, vertices).Wait();
+			m_context.UnmapBuffer(0, out.mesh_normals, normals).Wait();
+			m_context.UnmapBuffer(0, out.mesh_uvs, uvs).Wait();
+			m_context.UnmapBuffer(0, out.mesh_indices, indices).Wait();
+			m_context.UnmapBuffer(0, out.mesh_materialids, matids).Wait();
 		}
 
 		// Load curve data to GPU buffers
@@ -634,13 +631,21 @@ namespace Baikal
 			// Create CL arrays (make a dummy 1-element buffer in case of no curves)
 			out.curve_vertices = m_context.CreateBuffer<float4>(std::max(size_t(1), num_curve_vertices), CL_MEM_READ_ONLY);
 			out.curve_indices = m_context.CreateBuffer<int>(std::max(size_t(1), num_curve_indices), CL_MEM_READ_ONLY);
+			out.curve_materialids = m_context.CreateBuffer<int>(std::max(size_t(1), num_shapes), CL_MEM_READ_ONLY);
 
 			float4* vertices = nullptr;
 			int* indices = nullptr;
+			int* matids = nullptr;
 
 			// Map arrays and prepare to write data
-			m_context.MapBuffer(0, out.curve_vertices, CL_MAP_WRITE, &vertices);
-			m_context.MapBuffer(0, out.curve_indices, CL_MAP_WRITE, &indices);
+			m_context.MapBuffer(0, out.curve_vertices, CL_MAP_WRITE, &vertices).Wait();
+			m_context.MapBuffer(0, out.curve_indices, CL_MAP_WRITE, &indices).Wait();
+			m_context.MapBuffer(0, out.curve_materialids, CL_MAP_WRITE, &matids).Wait();
+
+			for (size_t n=0; n<num_shapes; ++n)
+			{
+				matids[n] = -1;
+			}
 
 			for (auto& iter : curves_set)
 			{
@@ -675,14 +680,25 @@ namespace Baikal
 				std::copy(curves_index_array, curves_index_array + curves_num_indices, indices + num_indices_written);
 				num_indices_written += curves_num_indices;
 
-				shapes[num_shapes_written++] = shape;
+				auto material = curves->GetMaterial();
+				if (!material)
+				{
+					material = m_default_material.get();
+				}
+				auto mat_idx = mat_collector.GetItemIndex(material);
+				matids[num_shapes_written] = mat_idx;
+
+				shapes[num_shapes_written] = shape;
 
 				// Drop dirty flag
 				curves->SetDirty(false);
+
+				num_shapes_written++;
 			}
 
-			m_context.UnmapBuffer(0, out.curve_vertices, vertices);
-			m_context.UnmapBuffer(0, out.curve_indices, indices);
+			m_context.UnmapBuffer(0, out.curve_vertices, vertices).Wait();
+			m_context.UnmapBuffer(0, out.curve_indices, indices).Wait();
+			m_context.UnmapBuffer(0, out.curve_materialids, matids).Wait();
 		}
 
 		m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
@@ -831,18 +847,19 @@ namespace Baikal
         {
             switch (bxdf->GetBxdfType())
             {
-            case SingleBxdf::BxdfType::kZero: return ClwScene::Bxdf::kZero;
-            case SingleBxdf::BxdfType::kLambert: return ClwScene::Bxdf::kLambert;
-            case SingleBxdf::BxdfType::kEmissive: return ClwScene::Bxdf::kEmissive;
-            case SingleBxdf::BxdfType::kPassthrough: return ClwScene::Bxdf::kPassthrough;
-            case SingleBxdf::BxdfType::kTranslucent: return ClwScene::Bxdf::kTranslucent;
-            case SingleBxdf::BxdfType::kIdealReflect: return ClwScene::Bxdf::kIdealReflect;
-            case SingleBxdf::BxdfType::kIdealRefract: return ClwScene::Bxdf::kIdealRefract;
-            case SingleBxdf::BxdfType::kMicrofacetGGX: return ClwScene::Bxdf::kMicrofacetGGX;
-            case SingleBxdf::BxdfType::kMicrofacetBeckmann: return ClwScene::Bxdf::kMicrofacetBeckmann;
-            case SingleBxdf::BxdfType::kMicrofacetRefractionGGX: return ClwScene::Bxdf::kMicrofacetRefractionGGX;
-            case SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann: return ClwScene::Bxdf::kMicrofacetRefractionBeckmann;
-            }
+				case SingleBxdf::BxdfType::kZero: return ClwScene::Bxdf::kZero;
+				case SingleBxdf::BxdfType::kLambert: return ClwScene::Bxdf::kLambert;
+				case SingleBxdf::BxdfType::kEmissive: return ClwScene::Bxdf::kEmissive;
+				case SingleBxdf::BxdfType::kPassthrough: return ClwScene::Bxdf::kPassthrough;
+				case SingleBxdf::BxdfType::kTranslucent: return ClwScene::Bxdf::kTranslucent;
+				case SingleBxdf::BxdfType::kIdealReflect: return ClwScene::Bxdf::kIdealReflect;
+				case SingleBxdf::BxdfType::kIdealRefract: return ClwScene::Bxdf::kIdealRefract;
+				case SingleBxdf::BxdfType::kMicrofacetGGX: return ClwScene::Bxdf::kMicrofacetGGX;
+				case SingleBxdf::BxdfType::kMicrofacetBeckmann: return ClwScene::Bxdf::kMicrofacetBeckmann;
+				case SingleBxdf::BxdfType::kMicrofacetRefractionGGX: return ClwScene::Bxdf::kMicrofacetRefractionGGX;
+				case SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann: return ClwScene::Bxdf::kMicrofacetRefractionBeckmann;
+				case SingleBxdf::BxdfType::kHair: return ClwScene::Bxdf::kHair;            
+			}
         }
         else if (auto mat = dynamic_cast<MultiBxdf const*>(material))
         {
@@ -910,6 +927,7 @@ namespace Baikal
         case ClwScene::Bxdf::kTranslucent:
         case ClwScene::Bxdf::kIdealRefract:
         case ClwScene::Bxdf::kIdealReflect:
+		case ClwScene::Bxdf::kHair:
         {
             Material::InputValue value = material->GetInputValue("albedo");
 
@@ -1051,7 +1069,6 @@ namespace Baikal
     // Convert Light:: types to ClwScene:: types
     static int GetLightType(Light const* light)
     {
-
         if (dynamic_cast<PointLight const*>(light))
         {
             return ClwScene::kPoint;

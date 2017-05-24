@@ -265,7 +265,7 @@ namespace Baikal
         genkernel.SetArg(argc++, scene.mesh_uvs);
         genkernel.SetArg(argc++, scene.mesh_indices);
         genkernel.SetArg(argc++, scene.shapes);
-        genkernel.SetArg(argc++, scene.materialids);
+        genkernel.SetArg(argc++, scene.mesh_materialids);
         genkernel.SetArg(argc++, scene.materials);
         genkernel.SetArg(argc++, scene.textures);
         genkernel.SetArg(argc++, scene.texturedata);
@@ -496,7 +496,7 @@ namespace Baikal
             connect_kernel.SetArg(argc++, scene.mesh_uvs);
             connect_kernel.SetArg(argc++, scene.mesh_indices);
             connect_kernel.SetArg(argc++, scene.shapes);
-            connect_kernel.SetArg(argc++, scene.materialids);
+            connect_kernel.SetArg(argc++, scene.mesh_materialids);
             connect_kernel.SetArg(argc++, scene.materials);
             connect_kernel.SetArg(argc++, scene.textures);
             connect_kernel.SetArg(argc++, scene.texturedata);
@@ -680,7 +680,7 @@ namespace Baikal
         sample_kernel.SetArg(argc++, scene.mesh_uvs);
         sample_kernel.SetArg(argc++, scene.mesh_indices);
         sample_kernel.SetArg(argc++, scene.shapes);
-        sample_kernel.SetArg(argc++, scene.materialids);
+        sample_kernel.SetArg(argc++, scene.mesh_materialids);
         sample_kernel.SetArg(argc++, scene.materials);
         sample_kernel.SetArg(argc++, scene.textures);
         sample_kernel.SetArg(argc++, scene.texturedata);
@@ -857,7 +857,7 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.mesh_uvs);
         fill_kernel.SetArg(argc++, scene.mesh_indices);
         fill_kernel.SetArg(argc++, scene.shapes);
-        fill_kernel.SetArg(argc++, scene.materialids);
+        fill_kernel.SetArg(argc++, scene.mesh_materialids);
         fill_kernel.SetArg(argc++, scene.materials);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
@@ -936,7 +936,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.mesh_uvs);
         shadekernel.SetArg(argc++, scene.mesh_indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materialids);
+        shadekernel.SetArg(argc++, scene.mesh_materialids);
         shadekernel.SetArg(argc++, scene.materials);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
@@ -981,7 +981,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.mesh_uvs);
         shadekernel.SetArg(argc++, scene.mesh_indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materialids);
+        shadekernel.SetArg(argc++, scene.mesh_materialids);
         shadekernel.SetArg(argc++, scene.materials);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
