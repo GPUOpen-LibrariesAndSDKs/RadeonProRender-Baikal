@@ -20,10 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #pragma once
-#include "post_effect_clw.h"
-
-#include "CLW.h"
-#include "../CLW/clwoutput.h"
+#include "clw_post_effect.h"
 
 namespace Baikal
 {
@@ -43,7 +40,7 @@ namespace Baikal
         * kWorldShadingNormal
         * kWorldPosition
     */
-    class BilateralDenoiser : public PostEffectClw
+    class BilateralDenoiser : public ClwPostEffect
     {
     public:
         // Constructor
@@ -59,7 +56,7 @@ namespace Baikal
     };
 
     inline BilateralDenoiser::BilateralDenoiser(CLWContext context)
-        : PostEffectClw(context)
+        : ClwPostEffect(context)
     {
         std::string buildopts;
         
@@ -78,7 +75,7 @@ namespace Baikal
                          );
         
         // Compile kernels
-        m_program = CLWProgram::CreateFromFile("../Baikal/CL/denoise.cl", buildopts.c_str(), GetContext());
+        m_program = CLWProgram::CreateFromFile("../Baikal/Kernels/CL/denoise.cl", buildopts.c_str(), GetContext());
 
         // Add necessary params
         RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));

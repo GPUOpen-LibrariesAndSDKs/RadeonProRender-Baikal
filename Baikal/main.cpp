@@ -67,21 +67,17 @@ THE SOFTWARE.
 
 #include "math/mathutils.h"
 
-#include "Utils/tiny_obj_loader.h"
+#include "RenderFactory/render_factory.h"
+#include "Renderers/ptrenderer.h"
+#include "Renderers/bdptrenderer.h"
+#include "SceneGraph/scene1.h"
 #include "SceneGraph/camera.h"
-#include "Utils/shader_manager.h"
-#include "SceneGraph/scene1.h"
-#include "Renderers/PT/ptrenderer.h"
-#include "Renderers/BDPT/bdptrenderer.h"
-#include "CLW/clwoutput.h"
-#include "Utils/config_manager.h"
-#include "SceneGraph/scene1.h"
 #include "SceneGraph/IO/scene_io.h"
 #include "SceneGraph/IO/material_io.h"
-
-#ifdef ENABLE_DENOISER
-#include "PostEffects/bilateral_denoiser.h"
-#endif
+#include "Output/clwoutput.h"
+#include "Utils/shader_manager.h"
+#include "Utils/config_manager.h"
+#include "Utils/tiny_obj_loader.h"
 
 Baikal::Scene1 scene;
 
@@ -141,14 +137,14 @@ using namespace tinyobj;
 
 struct OutputData
 {
-    Baikal::ClwOutput* output;
+    std::unique_ptr<Baikal::Output> output;
 
 #ifdef ENABLE_DENOISER
-    Baikal::ClwOutput* output_position;
-    Baikal::ClwOutput* output_normal;
-    Baikal::ClwOutput* output_albedo;
-    Baikal::ClwOutput* output_denoised;
-    Baikal::BilateralDenoiser* denoiser;
+    std::unique_ptr<Baikal::Output> output_position;
+    std::unique_ptr<Baikal::Output> output_normal;
+    std::unique_ptr<Baikal::Output> output_albedo;
+    std::unique_ptr<Baikal::Output> output_denoised;
+    std::unique_ptr<Baikal::PostEffect> denoiser;
 #endif
 
     std::vector<float3> fdata;
@@ -207,7 +203,7 @@ void Render(GLFWwindow* window)
             glClear(GL_COLOR_BUFFER_BIT); CHECK_GL_ERROR;
             glBindVertexArray(g_vao); CHECK_GL_ERROR;
 
-            GLuint program = g_shader_manager->GetProgram("../Baikal/GLSL/simple");
+            GLuint program = g_shader_manager->GetProgram("../Baikal/Kernels/GLSL/simple");
             glUseProgram(program); CHECK_GL_ERROR;
 
             GLuint texloc = glGetUniformLocation(program, "g_Texture");
@@ -426,22 +422,22 @@ void InitData()
 #pragma omp parallel for
     for (int i = 0; i < g_cfgs.size(); ++i)
     {
-        g_outputs[i].output = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
 
 #ifdef ENABLE_DENOISER
-        g_outputs[i].output_denoised = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].output_normal = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].output_position = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].output_albedo = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].denoiser = new Baikal::BilateralDenoiser(g_cfgs[i].context);
+        g_outputs[i].output_denoised = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output_normal = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output_position = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output_albedo = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].denoiser = g_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory::PostEffectType::kBilateralDenoiser);
 #endif
 
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, g_outputs[i].output);
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, g_outputs[i].output.get());
 
 #ifdef ENABLE_DENOISER
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldShadingNormal, g_outputs[i].output_normal);
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldPosition, g_outputs[i].output_position);
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kAlbedo, g_outputs[i].output_albedo);
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldShadingNormal, g_outputs[i].output_normal.get());
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldPosition, g_outputs[i].output_position.get());
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kAlbedo, g_outputs[i].output_albedo.get());
 #endif
 
         g_outputs[i].fdata.resize(g_window_width * g_window_height);
@@ -666,12 +662,12 @@ void Update(bool update_required)
                 //std::cout << "Finished updating acc buffer\n"; std::cout.flush();
             }
 
-            CLWKernel acckernel = g_cfgs[g_primary].renderer->GetAccumulateKernel();
+            CLWKernel acckernel = static_cast<Baikal::PtRenderer*>(g_cfgs[g_primary].renderer.get())->GetAccumulateKernel();
 
             int argc = 0;
             acckernel.SetArg(argc++, g_outputs[g_primary].copybuffer);
             acckernel.SetArg(argc++, g_window_width * g_window_width);
-            acckernel.SetArg(argc++, g_outputs[g_primary].output->data());
+            acckernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(g_outputs[g_primary].output.get())->data());
 
             int globalsize = g_window_width * g_window_height;
             g_cfgs[g_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, acckernel);
@@ -713,16 +709,16 @@ void Update(bool update_required)
         objects.push_back(g_cl_interop_image);
         g_cfgs[g_primary].context.AcquireGLObjects(0, objects);
 
-        CLWKernel copykernel = g_cfgs[g_primary].renderer->GetCopyKernel();
+        CLWKernel copykernel = static_cast<Baikal::PtRenderer*>(g_cfgs[g_primary].renderer.get())->GetCopyKernel();
 
 #ifdef ENABLE_DENOISER
         auto output = g_outputs[g_primary].output_denoised;
 #else
-        auto output = g_outputs[g_primary].output;
+        auto output = g_outputs[g_primary].output.get();
 #endif
 
         int argc = 0;
-        copykernel.SetArg(argc++, output->data());
+        copykernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(output)->data());
         copykernel.SetArg(argc++, output->width());
         copykernel.SetArg(argc++, output->height());
         copykernel.SetArg(argc++, 2.2f);
@@ -755,8 +751,8 @@ void Update(bool update_required)
 
 void RenderThread(ControlData& cd)
 {
-    auto renderer = g_cfgs[cd.idx].renderer;
-    auto output = g_outputs[cd.idx].output;
+    auto renderer = g_cfgs[cd.idx].renderer.get();
+    auto output = g_outputs[cd.idx].output.get();
 
     auto updatetime = std::chrono::high_resolution_clock::now();
 
@@ -1042,7 +1038,7 @@ int main(int argc, char * argv[])
                     g_num_bounces = num_bounces;
                     for (int i = 0; i < g_cfgs.size(); ++i)
                     {
-                        g_cfgs[i].renderer->SetNumBounces(g_num_bounces);
+                        static_cast<Baikal::PtRenderer*>(g_cfgs[i].renderer.get())->SetNumBounces(g_num_bounces);
                     }
                     update = true;
                 }
@@ -1054,7 +1050,7 @@ int main(int argc, char * argv[])
                     for (int i = 0; i < g_cfgs.size(); ++i)
                     {
                         g_cfgs[i].renderer->SetOutput(g_ouput_type, nullptr);
-                        g_cfgs[i].renderer->SetOutput(tmp, g_outputs[i].output);
+                        g_cfgs[i].renderer->SetOutput(tmp, g_outputs[i].output.get());
                         g_ouput_type = tmp;
                     }
 

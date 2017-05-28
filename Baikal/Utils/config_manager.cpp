@@ -22,8 +22,9 @@ THE SOFTWARE.
 #include "config_manager.h"
 
 #include "CLW.h"
-#include "Renderers/PT/ptrenderer.h"
-#include "Renderers/BDPT/bdptrenderer.h"
+#include "RenderFactory/render_factory.h"
+#include "Renderers/ptrenderer.h"
+#include "Renderers/bdptrenderer.h"
 
 #ifndef APP_BENCHMARK
 
@@ -139,7 +140,7 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
                 cfg.type = kSecondary;
             }
 
-            configs.push_back(cfg);
+            configs.push_back(std::move(cfg));
 
             if (mode == kUseSingleGpu || mode == kUseSingleCpu)
                 break;
@@ -156,7 +157,8 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 
     for (int i = 0; i < configs.size(); ++i)
     {
-        configs[i].renderer = new Baikal::MyRenderer(configs[i].context, configs[i].devidx, initial_num_bounces);
+        configs[i].factory = Baikal::CreateClwRenderFactory(configs[i].context, configs[i].devidx);
+        configs[i].renderer = configs[i].factory->CreateRenderer(Baikal::RenderFactory::RendererType::kUnidirectionalPathTracer);
     }
 }
 
@@ -194,7 +196,7 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
             cfg.devidx = 0;
             cfg.type = kSecondary;
 
-            configs.push_back(cfg);
+            configs.push_back(std::move(cfg));
 
             if (mode == kUseSingleGpu || mode == kUseSingleCpu)
                 break;
@@ -211,7 +213,8 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 
     for (int i = 0; i < configs.size(); ++i)
     {
-        configs[i].renderer = new Baikal::PtRenderer(configs[i].context, configs[i].devidx, initial_num_bounces);
+        configs[i].factory = Baikal::CreateClwRenderFactory(configs[i].context, configs[i].devidx);
+        configs[i].renderer = configs[i].factory->CreateRenderer(Baikal::RenderFactory::RendererType::kUnidirectionalPathTracer);
     }
 }
 #endif //APP_BENCHMARK

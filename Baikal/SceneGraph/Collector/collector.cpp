@@ -1,5 +1,5 @@
 #include "collector.h"
-#include "CLW/clwscene.h"
+#include "SceneGraph/clwscene.h"
 #include "SceneGraph/iterator.h"
 #include <vector>
 #include <cassert>

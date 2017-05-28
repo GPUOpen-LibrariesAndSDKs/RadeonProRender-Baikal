@@ -21,8 +21,8 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
-#include "Core/renderer.h"
-#include "Core/output.h"
+#include "Renderers/renderer.h"
+#include "Output/output.h"
 
 #include <map>
 #include <string>
