@@ -41,9 +41,11 @@ namespace Baikal
         m_impl->m_set.clear();
     }
     
-    Iterator* Collector::CreateIterator() const
+    std::unique_ptr<Iterator> Collector::CreateIterator() const
     {
-        return new IteratorImpl<ItemSet::const_iterator>(m_impl->m_set.cbegin(), m_impl->m_set.cend());
+        return std::unique_ptr<Iterator>(
+            new IteratorImpl<ItemSet::const_iterator>(m_impl->m_set.cbegin(),
+                                                      m_impl->m_set.cend()));
     }
     
     void Collector::Collect(Iterator* shape_iter, ExpandFunc expand_func)

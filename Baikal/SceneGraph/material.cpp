@@ -87,7 +87,7 @@ namespace Baikal
 
     
     // Iterator of dependent materials (plugged as inputs)
-    Iterator* Material::CreateMaterialIterator() const
+    std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
         std::set<Material const*> materials;
         
@@ -102,11 +102,11 @@ namespace Baikal
                       }
                       );
         
-        return new ContainerIterator<std::set<Material const*>>(std::move(materials));
+        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Material const*>>(std::move(materials)));
     }
     
     // Iterator of textures (plugged as inputs)
-    Iterator* Material::CreateTextureIterator() const
+    std::unique_ptr<Iterator> Material::CreateTextureIterator() const
     {
         std::set<Texture const*> textures;
         
@@ -121,13 +121,13 @@ namespace Baikal
                       }
                       );
         
-        return new ContainerIterator<std::set<Texture const*>>(std::move(textures));
+        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Texture const*>>(std::move(textures)));
     }
     
     // Iterator of inputs
-    Iterator* Material::CreateInputIterator() const
+    std::unique_ptr<Iterator> Material::CreateInputIterator() const
     {
-        return new InputIterator(m_inputs.cbegin(), m_inputs.cend());
+        return std::unique_ptr<Iterator>(new InputIterator(m_inputs.cbegin(), m_inputs.cend()));
     }
     
     // Set input value

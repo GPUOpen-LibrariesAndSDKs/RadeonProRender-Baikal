@@ -97,11 +97,11 @@ namespace Baikal
         virtual ~Material() = 0;
 
         // Iterator of dependent materials (plugged as inputs)
-        virtual Iterator* CreateMaterialIterator() const;
+        virtual std::unique_ptr<Iterator> CreateMaterialIterator() const;
         // Iterator of textures (plugged as inputs)
-        virtual Iterator* CreateTextureIterator() const;
+        virtual std::unique_ptr<Iterator> CreateTextureIterator() const;
         // Iterator of inputs
-        virtual Iterator* CreateInputIterator() const;
+        virtual std::unique_ptr<Iterator> CreateInputIterator() const;
         // Check if material has emissive components
         virtual bool HasEmission() const;
 

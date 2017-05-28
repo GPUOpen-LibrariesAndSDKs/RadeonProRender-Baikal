@@ -23,7 +23,9 @@ namespace Baikal
     
     template <typename CompiledScene>
     inline
-    CompiledScene& SceneController<CompiledScene>::CompileScene(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector) const
+    CompiledScene& SceneController<CompiledScene>::CompileScene(
+        Scene1 const& scene, Collector& mat_collector,
+        Collector& tex_collector) const
     {
         // The overall approach is:
         // 1) Check if materials have changed, update collector if yes
@@ -40,15 +42,16 @@ namespace Baikal
         tex_collector.Clear();
         
         // Create shape and light iterators
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
-        std::unique_ptr<Iterator> light_iter(scene.CreateLightIterator());
+        auto shape_iter = scene.CreateShapeIterator();
+        auto light_iter = scene.CreateLightIterator();
         
         auto default_material = GetDefaultMaterial();
         // Collect materials from shapes first
         mat_collector.Collect(shape_iter.get(),
                               // This function adds all materials to resulting map
                               // recursively via Material dependency API
-                              [default_material](void const* item) -> std::set<void const*>
+                              [default_material](void const* item) ->
+                              std::set<void const*>
                               {
                                   // Resulting material set
                                   std::set<void const*> mats;
@@ -79,12 +82,14 @@ namespace Baikal
                                       mats.emplace(m);
                                       
                                       // Create dependency iterator
-                                      std::unique_ptr<Iterator> mat_iter(m->CreateMaterialIterator());
+                                      auto mat_iter = m->CreateMaterialIterator();
                                       
                                       // Push all dependencies into the stack
                                       for (; mat_iter->IsValid(); mat_iter->Next())
                                       {
-                                          material_stack.push(mat_iter->ItemAs<Material const>());
+                                          material_stack.push(
+                                            mat_iter->ItemAs<Material const>()
+                                          );
                                       }
                                   }
                                   
@@ -97,7 +102,7 @@ namespace Baikal
         
         // Now we need to collect textures from our materials
         // Create material iterator
-        std::unique_ptr<Iterator> mat_iter(mat_collector.CreateIterator());
+        auto mat_iter = mat_collector.CreateIterator();
         
         // Collect textures from materials
         tex_collector.Collect(mat_iter.get(),
@@ -109,7 +114,7 @@ namespace Baikal
                                   auto material = reinterpret_cast<Material const*>(item);
                                   
                                   // Create texture dependency iterator
-                                  std::unique_ptr<Iterator> tex_iter(material->CreateTextureIterator());
+                                  auto tex_iter = material->CreateTextureIterator();
                                   
                                   // Emplace all dependent textures
                                   for (; tex_iter->IsValid(); tex_iter->Next())
@@ -132,7 +137,7 @@ namespace Baikal
                                   auto light = reinterpret_cast<Light const*>(item);
                                   
                                   // Create texture dependency iterator
-                                  std::unique_ptr<Iterator> tex_iter(light->CreateTextureIterator());
+                                  auto tex_iter = light->CreateTextureIterator();
                                   
                                   // Emplace all dependent textures
                                   for (; tex_iter->IsValid(); tex_iter->Next())
@@ -199,7 +204,7 @@ namespace Baikal
             
             {
                 // Check if we have lights in the scene
-                std::unique_ptr<Iterator> light_iter(scene.CreateLightIterator());
+                auto light_iter = scene.CreateLightIterator();
                 
                 if (!light_iter->IsValid())
                 {
@@ -231,7 +236,7 @@ namespace Baikal
             
             {
                 // Check if we have shapes in the scene
-                std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+                auto shape_iter = scene.CreateShapeIterator();
                 
                 if (!shape_iter->IsValid())
                 {

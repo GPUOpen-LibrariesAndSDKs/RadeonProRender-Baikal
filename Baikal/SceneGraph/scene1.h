@@ -72,7 +72,7 @@ namespace Baikal
         // Get the number of lights in the scene
         std::size_t GetNumLights() const;
         // Get light iterator
-        Iterator* CreateLightIterator() const;
+        std::unique_ptr<Iterator> CreateLightIterator() const;
         
         // Add or remove shapes
         void AttachShape(Shape const* shape);
@@ -81,7 +81,7 @@ namespace Baikal
         // Get number of shapes in the scene
         std::size_t GetNumShapes() const;
         // Get shape iterator
-        Iterator* CreateShapeIterator() const;
+        std::unique_ptr<Iterator> CreateShapeIterator() const;
         
         // Set and get camera
         void SetCamera(Camera const* camera);
