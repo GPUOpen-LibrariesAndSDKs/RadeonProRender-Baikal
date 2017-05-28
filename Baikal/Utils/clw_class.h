@@ -8,7 +8,7 @@ namespace Baikal
     class ClwClass
     {
     public:
-        ClwClass(CLWContext context, std::string const& kernels_file);
+        ClwClass(CLWContext context, std::string const& cl_file);
         virtual ~ClwClass();
         
     protected:
@@ -21,7 +21,7 @@ namespace Baikal
         CLWProgram m_program;
     };
     
-    inline ClwClass::ClwClass(CLWContext context, std::string const& kernels_file_name)
+    inline ClwClass::ClwClass(CLWContext context, std::string const& cl_file)
     : m_context(context)
     {
         std::string buildopts;
@@ -41,7 +41,7 @@ namespace Baikal
 #endif
                          );
         
-        m_program = CLWProgram::CreateFromFile(kernels_file_name.c_str(),
+        m_program = CLWProgram::CreateFromFile(cl_file.c_str(),
                                                buildopts.c_str(), m_context);
     }
     

@@ -51,6 +51,9 @@ namespace Baikal
             kBilateralDenoiser
         };
         
+        static std::unique_ptr<RenderFactory> CreateClwRenderFactory(CLWContext context,
+                                                              int device_index);
+        
         RenderFactory() = default;
         virtual ~RenderFactory() = default;
         
@@ -65,6 +68,5 @@ namespace Baikal
         RenderFactory const& operator = (RenderFactory const&) = delete;
     };
     
-    std::unique_ptr<RenderFactory> CreateClwRenderFactory(CLWContext context,
-                                                          int device_index);
+    
 }

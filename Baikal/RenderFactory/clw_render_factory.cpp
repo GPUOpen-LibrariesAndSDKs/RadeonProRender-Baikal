@@ -30,7 +30,7 @@ namespace Baikal
         return std::unique_ptr<PostEffect>(new BilateralDenoiser(m_context));
     }
     
-    std::unique_ptr<RenderFactory> CreateClwRenderFactory(CLWContext context, int device_index)
+    std::unique_ptr<RenderFactory> RenderFactory::CreateClwRenderFactory(CLWContext context, int device_index)
     {
         return std::unique_ptr<RenderFactory>(new ClwRenderFactory(context, device_index));
     }

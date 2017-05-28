@@ -157,7 +157,7 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 
     for (int i = 0; i < configs.size(); ++i)
     {
-        configs[i].factory = Baikal::CreateClwRenderFactory(configs[i].context, configs[i].devidx);
+        configs[i].factory = Baikal::RenderFactory::CreateClwRenderFactory(configs[i].context, configs[i].devidx);
         configs[i].renderer = configs[i].factory->CreateRenderer(Baikal::RenderFactory::RendererType::kUnidirectionalPathTracer);
     }
 }
@@ -213,7 +213,7 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 
     for (int i = 0; i < configs.size(); ++i)
     {
-        configs[i].factory = Baikal::CreateClwRenderFactory(configs[i].context, configs[i].devidx);
+        configs[i].factory = Baikal::RenderFactory::CreateClwRenderFactory(configs[i].context, configs[i].devidx);
         configs[i].renderer = configs[i].factory->CreateRenderer(Baikal::RenderFactory::RendererType::kUnidirectionalPathTracer);
     }
 }
