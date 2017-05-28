@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "renderer.h"
 #include "SceneGraph/clwscene.h"
 #include "Controllers/clw_scene_controller.h"
+#include "Utils/clw_class.h"
 
 #include "CLW.h"
 
@@ -36,7 +37,7 @@ namespace Baikal
     class SceneTracker;
 
     ///< Renderer implementation
-    class BdptRenderer : public Renderer
+    class BdptRenderer : public Renderer, protected ClwClass
     {
     public:
         // Constructor
@@ -113,8 +114,6 @@ namespace Baikal
 
 
     public:
-        // CL context
-        CLWContext m_context;
         // Scene tracker
         ClwSceneController m_scene_controller;
 

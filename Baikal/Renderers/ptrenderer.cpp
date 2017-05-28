@@ -74,8 +74,6 @@ namespace Baikal
         CLWBuffer<std::uint32_t> random;
         CLWBuffer<std::uint32_t> sobolmat;
         CLWBuffer<int> hitcount;
-
-        CLWProgram program;
         CLWParallelPrimitives pp;
 
         // RadeonRays stuff
@@ -103,40 +101,16 @@ namespace Baikal
 
     // Constructor
     PtRenderer::PtRenderer(CLWContext context, int devidx, int num_bounces)
-        : m_context(context)
+        : Baikal::ClwClass(context, "../Baikal/Kernels/CL/integrator_pt.cl")
         , m_render_data(new RenderData)
         , m_vidmemws(0)
         , m_scene_controller(context, devidx)
         , m_num_bounces(num_bounces)
         , m_framecnt(0)
     {
-        std::string buildopts;
-
-        buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math -cl-std=CL1.2 -I . ");
-
-        buildopts.append(
-#if defined(__APPLE__)
-            "-D APPLE "
-#elif defined(_WIN32) || defined (WIN32)
-            "-D WIN32 "
-#elif defined(__linux__)
-            "-D __linux__ "
-#else
-            ""
-#endif
-        );
-
         // Create parallel primitives
-        m_render_data->pp = CLWParallelPrimitives(m_context, buildopts.c_str());
-
-        // Load kernels
-#ifndef RR_EMBED_KERNELS
-        m_render_data->program = CLWProgram::CreateFromFile("../Baikal/Kernels/CL/integrator_pt.cl", buildopts.c_str(), m_context);
-#else
-        m_render_data->program = CLWProgram::CreateFromSource(cl_app, std::strlen(cl_integrator_pt), buildopts.c_str(), context);
-#endif
-
-        m_render_data->sobolmat = m_context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
+        m_render_data->pp = CLWParallelPrimitives(context, GetBuildOpts().c_str());
+        m_render_data->sobolmat = context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
     }
 
     PtRenderer::~PtRenderer()
@@ -204,7 +178,7 @@ namespace Baikal
             for (int pass = 0; pass < static_cast<int>(m_num_bounces); ++pass)
             {
                 // Clear ray hits buffer
-                m_context.FillBuffer(0, m_render_data->hits, 0, m_render_data->hits.GetElementCount());
+                GetContext().FillBuffer(0, m_render_data->hits, 0, m_render_data->hits.GetElementCount());
 
                 // Intersect ray batch
                 api->QueryIntersection(m_render_data->fr_rays[pass & 0x1], m_render_data->fr_hitcount, num_rays, m_render_data->fr_intersections, nullptr, nullptr);
@@ -243,7 +217,7 @@ namespace Baikal
                 GatherLightSamples(clwscene, pass, tile_size);
 
                 //
-                m_context.Flush(0);
+                GetContext().Flush(0);
             }
         }
 
@@ -252,7 +226,7 @@ namespace Baikal
         if (aov_pass_needed)
         {
             FillAOVs(clwscene, tile_origin, tile_size);
-            m_context.Flush(0);
+            GetContext().Flush(0);
         }
 
         ++m_framecnt;
@@ -262,7 +236,7 @@ namespace Baikal
         int2 const& tile_size, int2 const& subtile_size)
     {
         // Fetch kernel
-        CLWKernel generate_kernel = m_render_data->program.GetKernel("GenerateTileDomain");
+        CLWKernel generate_kernel = GetKernel("GenerateTileDomain");
 
         // Set kernel parameters
         int argc = 0;
@@ -283,7 +257,7 @@ namespace Baikal
             size_t gs[] = { static_cast<size_t>((tile_size.x + 7) / 8 * 8), static_cast<size_t>((tile_size.y + 7) / 8 * 8) };
             size_t ls[] = { 8, 8 };
 
-            m_context.Launch2D(0, gs, ls, generate_kernel);
+            GetContext().Launch2D(0, gs, ls, generate_kernel);
         }
     }
 
@@ -327,51 +301,51 @@ namespace Baikal
         m_vidmemws = 0;
 
         // Create ray payloads
-        m_render_data->rays[0] = m_context.CreateBuffer<ray>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->rays[0] = GetContext().CreateBuffer<ray>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(ray);
 
-        m_render_data->rays[1] = m_context.CreateBuffer<ray>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->rays[1] = GetContext().CreateBuffer<ray>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(ray);
 
-        m_render_data->hits = m_context.CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->hits = GetContext().CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(int);
 
-        m_render_data->intersections = m_context.CreateBuffer<Intersection>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->intersections = GetContext().CreateBuffer<Intersection>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(Intersection);
 
-        m_render_data->shadowrays = m_context.CreateBuffer<ray>(output.width() * output.height() * kMaxLightSamples, CL_MEM_READ_WRITE);
+        m_render_data->shadowrays = GetContext().CreateBuffer<ray>(output.width() * output.height() * kMaxLightSamples, CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(ray)* kMaxLightSamples;
 
-        m_render_data->shadowhits = m_context.CreateBuffer<int>(output.width() * output.height() * kMaxLightSamples, CL_MEM_READ_WRITE);
+        m_render_data->shadowhits = GetContext().CreateBuffer<int>(output.width() * output.height() * kMaxLightSamples, CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(int)* kMaxLightSamples;
 
-        m_render_data->lightsamples = m_context.CreateBuffer<float3>(output.width() * output.height() * kMaxLightSamples, CL_MEM_READ_WRITE);
+        m_render_data->lightsamples = GetContext().CreateBuffer<float3>(output.width() * output.height() * kMaxLightSamples, CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(float3)* kMaxLightSamples;
 
-        m_render_data->paths = m_context.CreateBuffer<PathState>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->paths = GetContext().CreateBuffer<PathState>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(PathState);
 
         std::vector<std::uint32_t> random_buffer(output.width() * output.height());
         std::generate(random_buffer.begin(), random_buffer.end(), std::rand);
 
-        m_render_data->random = m_context.CreateBuffer<std::uint32_t>(output.width() * output.height(), CL_MEM_READ_WRITE, &random_buffer[0]);
+        m_render_data->random = GetContext().CreateBuffer<std::uint32_t>(output.width() * output.height(), CL_MEM_READ_WRITE, &random_buffer[0]);
         m_vidmemws += output.width() * output.height() * sizeof(std::uint32_t);
 
         std::vector<int> initdata(output.width() * output.height());
         std::iota(initdata.begin(), initdata.end(), 0);
-        m_render_data->iota = m_context.CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, &initdata[0]);
+        m_render_data->iota = GetContext().CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, &initdata[0]);
         m_vidmemws += output.width() * output.height() * sizeof(int);
 
-        m_render_data->compacted_indices = m_context.CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->compacted_indices = GetContext().CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(int);
 
-        m_render_data->pixelindices[0] = m_context.CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->pixelindices[0] = GetContext().CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(int);
 
-        m_render_data->pixelindices[1] = m_context.CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
+        m_render_data->pixelindices[1] = GetContext().CreateBuffer<int>(output.width() * output.height(), CL_MEM_READ_WRITE);
         m_vidmemws += output.width() * output.height() * sizeof(int);
 
-        m_render_data->hitcount = m_context.CreateBuffer<int>(1, CL_MEM_READ_WRITE);
+        m_render_data->hitcount = GetContext().CreateBuffer<int>(1, CL_MEM_READ_WRITE);
 
         auto api = m_scene_controller.GetIntersectionApi();
 
@@ -414,7 +388,7 @@ namespace Baikal
         // Intersect ray batch
         api->QueryIntersection(m_render_data->fr_rays[0], m_render_data->fr_hitcount, num_rays, m_render_data->fr_intersections, nullptr, nullptr);
 
-        CLWKernel fill_kernel = m_render_data->program.GetKernel("FillAOVs");
+        CLWKernel fill_kernel = GetKernel("FillAOVs");
 
         auto argc = 0U;
         fill_kernel.SetArg(argc++, m_render_data->rays[0]);
@@ -455,7 +429,7 @@ namespace Baikal
         // Run AOV kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, fill_kernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, fill_kernel);
         }
     }
 
@@ -465,7 +439,7 @@ namespace Baikal
         // Fetch kernel
         std::string kernel_name = (scene.camera_type == CameraType::kDefault) ? "PerspectiveCamera_GeneratePaths" : "PerspectiveCameraDof_GeneratePaths";
 
-        CLWKernel genkernel = m_render_data->program.GetKernel(kernel_name);
+        auto genkernel = GetKernel(kernel_name);
 
         // Set kernel parameters
         int argc = 0;
@@ -483,14 +457,14 @@ namespace Baikal
 
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, genkernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, genkernel);
         }
     }
 
     void PtRenderer::ShadeSurface(ClwScene const& scene, int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel shadekernel = m_render_data->program.GetKernel("ShadeSurface");
+        auto shadekernel = GetKernel("ShadeSurface");
 
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
@@ -528,7 +502,7 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, shadekernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, shadekernel);
         }
     }
 
@@ -536,7 +510,7 @@ namespace Baikal
     void PtRenderer::ShadeVolume(ClwScene const& scene, int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel shadekernel = m_render_data->program.GetKernel("ShadeVolume");
+        auto shadekernel = GetKernel("ShadeVolume");
 
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
@@ -574,14 +548,14 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, shadekernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, shadekernel);
         }
     }
 
     void PtRenderer::EvaluateVolume(ClwScene const& scene, int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel evalkernel = m_render_data->program.GetKernel("EvaluateVolume");
+        auto evalkernel = GetKernel("EvaluateVolume");
 
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
@@ -605,7 +579,7 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, evalkernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, evalkernel);
         }
     }
 
@@ -613,7 +587,7 @@ namespace Baikal
     void PtRenderer::ShadeBackground(ClwScene const& scene, int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel misskernel = m_render_data->program.GetKernel("ShadeBackgroundEnvMap");
+        auto misskernel = GetKernel("ShadeBackgroundEnvMap");
 
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
@@ -633,14 +607,14 @@ namespace Baikal
 
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, misskernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, misskernel);
         }
     }
 
     void PtRenderer::GatherLightSamples(ClwScene const& scene, int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel gatherkernel = m_render_data->program.GetKernel("GatherLightSamples");
+        auto gatherkernel = GetKernel("GatherLightSamples");
 
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
@@ -656,7 +630,7 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, gatherkernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, gatherkernel);
         }
     }
 
@@ -664,7 +638,7 @@ namespace Baikal
     void PtRenderer::RestorePixelIndices(int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel restorekernel = m_render_data->program.GetKernel("RestorePixelIndices");
+        CLWKernel restorekernel = GetKernel("RestorePixelIndices");
 
         // Set kernel parameters
         int argc = 0;
@@ -676,14 +650,14 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, restorekernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, restorekernel);
         }
     }
 
     void PtRenderer::FilterPathStream(int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel restorekernel = m_render_data->program.GetKernel("FilterPathStream");
+        auto restorekernel = GetKernel("FilterPathStream");
 
         // Set kernel parameters
         int argc = 0;
@@ -696,25 +670,25 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, restorekernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, restorekernel);
         }
     }
 
     CLWKernel PtRenderer::GetCopyKernel()
     {
-        return m_render_data->program.GetKernel("ApplyGammaAndCopyData");
+        return GetKernel("ApplyGammaAndCopyData");
     }
 
     CLWKernel PtRenderer::GetAccumulateKernel()
     {
-        return m_render_data->program.GetKernel("AccumulateData");
+        return GetKernel("AccumulateData");
     }
 
     // Shade background
     void PtRenderer::ShadeMiss(ClwScene const& scene, int pass, int2 const& tile_size)
     {
         // Fetch kernel
-        CLWKernel misskernel = m_render_data->program.GetKernel("ShadeMiss");
+        auto misskernel = GetKernel("ShadeMiss");
 
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
@@ -735,7 +709,7 @@ namespace Baikal
         // Run shading kernel
         {
             int globalsize = tile_size.x * tile_size.y;
-            m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, misskernel);
+            GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, misskernel);
         }
 
     }
@@ -759,13 +733,13 @@ namespace Baikal
         GeneratePrimaryRays(clwscene, *output, tile_size);
 
         // Copy compacted indices to track reverse indices
-        m_context.CopyBuffer(0, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, m_render_data->iota.GetElementCount());
-        m_context.CopyBuffer(0, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, m_render_data->iota.GetElementCount());
-        m_context.FillBuffer(0, m_render_data->hitcount, maxrays, 1);
+        GetContext().CopyBuffer(0, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, m_render_data->iota.GetElementCount());
+        GetContext().CopyBuffer(0, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, m_render_data->iota.GetElementCount());
+        GetContext().FillBuffer(0, m_render_data->hitcount, maxrays, 1);
 
 
         // Clear ray hits buffer
-        m_context.FillBuffer(0, m_render_data->hits, 0, m_render_data->hits.GetElementCount());
+        GetContext().FillBuffer(0, m_render_data->hits, 0, m_render_data->hits.GetElementCount());
 
         // Intersect ray batch
         auto start = std::chrono::high_resolution_clock::now();
@@ -775,7 +749,7 @@ namespace Baikal
             api->QueryIntersection(m_render_data->fr_rays[0], m_render_data->fr_hitcount, maxrays, m_render_data->fr_intersections, nullptr, nullptr);
         }
 
-        m_context.Finish(0);
+        GetContext().Finish(0);
 
         auto delta = std::chrono::high_resolution_clock::now() - start;
 
@@ -804,7 +778,7 @@ namespace Baikal
             api->QueryOcclusion(m_render_data->fr_shadowrays, m_render_data->fr_hitcount, maxrays, m_render_data->fr_shadowhits, nullptr, nullptr);
         }
 
-        m_context.Finish(0);
+        GetContext().Finish(0);
 
         delta = std::chrono::high_resolution_clock::now() - start;
 
@@ -814,10 +788,10 @@ namespace Baikal
         GatherLightSamples(clwscene, 0, tile_size);
 
         //
-        m_context.Flush(0);
+        GetContext().Flush(0);
 
         // Clear ray hits buffer
-        m_context.FillBuffer(0, m_render_data->hits, 0, m_render_data->hits.GetElementCount());
+        GetContext().FillBuffer(0, m_render_data->hits, 0, m_render_data->hits.GetElementCount());
 
         // Intersect ray batch
         start = std::chrono::high_resolution_clock::now();
@@ -827,7 +801,7 @@ namespace Baikal
             api->QueryIntersection(m_render_data->fr_rays[1], m_render_data->fr_hitcount, maxrays, m_render_data->fr_intersections, nullptr, nullptr);
         }
 
-        m_context.Finish(0);
+        GetContext().Finish(0);
 
         delta = std::chrono::high_resolution_clock::now() - start;
 
@@ -855,7 +829,7 @@ namespace Baikal
         GatherLightSamples(clwscene, 0, tile_size);
 
         //
-        m_context.Flush(0);
+        GetContext().Flush(0);
 
         //samples statisticks
         output->Clear(0.f);

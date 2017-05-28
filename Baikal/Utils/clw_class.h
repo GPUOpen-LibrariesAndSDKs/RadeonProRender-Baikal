@@ -9,27 +9,27 @@ namespace Baikal
     {
     public:
         ClwClass(CLWContext context, std::string const& cl_file);
-        virtual ~ClwClass();
+        virtual ~ClwClass() = default;
         
     protected:
         CLWContext GetContext() { return m_context; }
         CLWKernel GetKernel(std::string const& name);
+        std::string GetBuildOpts() const { return m_buildopts; }
         
         
     private:
         CLWContext m_context;
         CLWProgram m_program;
+        std::string m_buildopts;
     };
     
     inline ClwClass::ClwClass(CLWContext context, std::string const& cl_file)
     : m_context(context)
     {
-        std::string buildopts;
-        
-        buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math "
+        m_buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math "
                          "-cl-std=CL1.2 -I . ");
         
-        buildopts.append(
+        m_buildopts.append(
 #if defined(__APPLE__)
                          "-D APPLE "
 #elif defined(_WIN32) || defined (WIN32)
@@ -42,7 +42,7 @@ namespace Baikal
                          );
         
         m_program = CLWProgram::CreateFromFile(cl_file.c_str(),
-                                               buildopts.c_str(), m_context);
+                                               m_buildopts.c_str(), m_context);
     }
     
     inline CLWKernel ClwClass::GetKernel(std::string const& name)

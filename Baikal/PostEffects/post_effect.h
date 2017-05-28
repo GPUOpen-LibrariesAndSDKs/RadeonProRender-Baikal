@@ -52,9 +52,6 @@ namespace Baikal
         PostEffect() = default;
         virtual ~PostEffect() = default;
 
-        // Check if the output is compatible with this effect
-        virtual bool IsCompatible(Output const& output) const = 0;
-
         // Apply post effect and use output for the result
         virtual void Apply(InputSet const& input_set, Output& output) = 0;
 

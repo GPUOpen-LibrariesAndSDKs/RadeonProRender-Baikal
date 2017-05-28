@@ -23,8 +23,10 @@ THE SOFTWARE.
 
 #include "math/int2.h"
 #include "renderer.h"
+
 #include "SceneGraph/clwscene.h"
 #include "Controllers/clw_scene_controller.h"
+#include "Utils/clw_class.h"
 
 #include "CLW.h"
 
@@ -36,7 +38,7 @@ namespace Baikal
     class SceneTracker;
 
     ///< Renderer implementation
-    class PtRenderer : public Renderer
+    class PtRenderer : public Renderer, protected ClwClass
     {
     public:
         // Constructor
@@ -46,11 +48,14 @@ namespace Baikal
 
         // Renderer overrides
         // Clear output
-        void Clear(RadeonRays::float3 const& val, Output& output) const override;
+        void Clear(RadeonRays::float3 const& val,
+                   Output& output) const override;
         // Render the scene into the output
         void Render(Scene1 const& scene) override;
         // Render single tile
-        void RenderTile(Scene1 const& scene, RadeonRays::int2 const& tile_origin, RadeonRays::int2 const& tile_size) override;
+        void RenderTile(Scene1 const& scene,
+                        RadeonRays::int2 const& tile_origin,
+                        RadeonRays::int2 const& tile_size) override;
         // Set output
         void SetOutput(OutputType type, Output* output) override;
         // Set number of light bounces
@@ -60,39 +65,48 @@ namespace Baikal
         // Add function
         CLWKernel GetAccumulateKernel();
         // Run render benchmark
-        void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes, BenchmarkStats& stats) override;
+        void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes,
+                          BenchmarkStats& stats) override;
 
     protected:
         // Resize output-dependent buffers
         void ResizeWorkingSet(Output const& output);
         // Generate rays
-        void GeneratePrimaryRays(ClwScene const& scene, Output const& output, int2 const& tile_size);
+        void GeneratePrimaryRays(ClwScene const& scene, Output const& output,
+                                 int2 const& tile_size);
         // Shade first hit
-        void ShadeSurface(ClwScene const& scene, int pass, int2 const& tile_size);
+        void ShadeSurface(ClwScene const& scene, int pass,
+                          int2 const& tile_size);
         // Evaluate volume
-        void EvaluateVolume(ClwScene const& scene, int pass, int2 const& tile_size);
+        void EvaluateVolume(ClwScene const& scene, int pass,
+                            int2 const& tile_size);
         // Handle missing rays
         void ShadeMiss(ClwScene const& scene, int pass, int2 const& tile_size);
         // Gather light samples and account for visibility
-        void GatherLightSamples(ClwScene const& scene, int pass, int2 const& tile_size);
+        void GatherLightSamples(ClwScene const& scene, int pass,
+                                int2 const& tile_size);
         // Restore pixel indices after compaction
         void RestorePixelIndices(int pass, int2 const& tile_size);
         // Convert intersection info to compaction predicate
         void FilterPathStream(int pass, int2 const& tile_size);
         // Integrate volume
-        void ShadeVolume(ClwScene const& scene, int pass, int2 const& tile_size);
+        void ShadeVolume(ClwScene const& scene, int pass,
+                         int2 const& tile_size);
         // Shade background
-        void ShadeBackground(ClwScene const& scene, int pass, int2 const& tile_size);
+        void ShadeBackground(ClwScene const& scene, int pass,
+                             int2 const& tile_size);
         // Fill necessary AOVs
-        void FillAOVs(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size);
+        void FillAOVs(ClwScene const& scene, int2 const& tile_origin,
+                      int2 const& tile_size);
         // Generate index domain
-        void GenerateTileDomain(int2 const& output_size, int2 const& tile_origin, int2 const& tile_size, int2 const& subtile_size);
+        void GenerateTileDomain(int2 const& output_size,
+                                int2 const& tile_origin,
+                                int2 const& tile_size,
+                                int2 const& subtile_size);
         // Find non-zero AOV
         Output* FindFirstNonZeroOutput(bool include_color = true) const;
 
     public:
-        // CL context
-        CLWContext m_context;
         // Scene tracker
         ClwSceneController m_scene_controller;
 

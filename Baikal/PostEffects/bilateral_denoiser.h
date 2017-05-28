@@ -56,27 +56,8 @@ namespace Baikal
     };
 
     inline BilateralDenoiser::BilateralDenoiser(CLWContext context)
-        : ClwPostEffect(context)
+        : ClwPostEffect(context, "../Baikal/Kernels/CL/denoise.cl")
     {
-        std::string buildopts;
-        
-        buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math -cl-std=CL1.2 -I . ");
-        
-        buildopts.append(
-#if defined(__APPLE__)
-                         "-D APPLE "
-#elif defined(_WIN32) || defined (WIN32)
-                         "-D WIN32 "
-#elif defined(__linux__)
-                         "-D __linux__ "
-#else
-                         ""
-#endif
-                         );
-        
-        // Compile kernels
-        m_program = CLWProgram::CreateFromFile("../Baikal/Kernels/CL/denoise.cl", buildopts.c_str(), GetContext());
-
         // Add necessary params
         RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
         RegisterParameter("color_sensitivity", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));

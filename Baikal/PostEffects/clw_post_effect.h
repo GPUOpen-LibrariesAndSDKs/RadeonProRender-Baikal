@@ -25,43 +25,24 @@ THE SOFTWARE.
 
 #include "CLW.h"
 #include "Output/clwoutput.h"
+#include "Utils/clw_class.h"
+
+#include <string>
 
 namespace Baikal
 {
     /**
     \brief Post effects partial implementation based on CLW framework.
     */
-    class ClwPostEffect: public PostEffect
+    class ClwPostEffect: public PostEffect, protected ClwClass
     {
     public:
         // Constructor, receives CLW context
-        ClwPostEffect(CLWContext context);
-
-        // Check output compatibility, CLW effects are only compatible
-        // with ClwOutput.
-        bool IsCompatible(Output const& output) const override;
-
-    protected:
-        CLWContext GetContext() const;
-
-    private:
-        CLWContext m_context;
+        ClwPostEffect(CLWContext context, std::string const& file_name);
     };
 
-    inline ClwPostEffect::ClwPostEffect(CLWContext context)
-        : m_context(context)
+    inline ClwPostEffect::ClwPostEffect(CLWContext context, std::string const& file_name)
+        : ClwClass(context, file_name)
     {
-    }
-
-    inline bool ClwPostEffect::IsCompatible(Output const& output) const
-    {
-        auto tmp = dynamic_cast<ClwOutput const*>(&output);
-
-        return tmp ? true : false;
-    }
-
-    inline CLWContext ClwPostEffect::GetContext() const
-    {
-        return m_context;
     }
 }

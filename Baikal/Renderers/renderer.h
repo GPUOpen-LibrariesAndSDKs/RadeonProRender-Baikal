@@ -24,7 +24,8 @@ THE SOFTWARE.
  \file renderer.h
  \author Dmitry Kozlov
  \version 1.0
- \brief Contains declaration of Baikal::Renderer class, core interface representing representing the renderer.
+ \brief Contains declaration of Baikal::Renderer class, core interface 
+        representing representing the renderer.
  */
 #pragma once
 
@@ -42,7 +43,8 @@ namespace Baikal
     /**
      \brief Interface for the renderer.
 
-     Renderer implemenation is taking the scene and producing its image into an output surface.
+     Renderer implemenation is taking the scene and producing its image into 
+     an output surface.
      */
     class Renderer
     {
@@ -68,7 +70,8 @@ namespace Baikal
          \param val Value to clear to
          \param output Output to clear
          */
-        virtual void Clear(RadeonRays::float3 const& val, Output& output) const = 0;
+        virtual void Clear(RadeonRays::float3 const& val, Output& output)
+                                                                    const = 0;
 
         /**
          \brief Render single iteration.
@@ -82,7 +85,9 @@ namespace Baikal
 
         \param scene Scene to render
         */
-		virtual void RenderTile(Scene1 const& scene, RadeonRays::int2 const& tile_origin, RadeonRays::int2 const& tile_size) = 0;
+		virtual void RenderTile(Scene1 const& scene,
+                                RadeonRays::int2 const& tile_origin,
+                                RadeonRays::int2 const& tile_size) = 0;
 
         /**
          \brief Set the output for rendering.
@@ -117,10 +122,12 @@ namespace Baikal
             float samples_pes_sec;
         };
 
-        virtual void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes, BenchmarkStats& stats) {}
+        virtual void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes,
+                                  BenchmarkStats& stats) {}
 
     private:
-        std::array<Output*, static_cast<std::size_t>(OutputType::kMax)> m_outputs;
+        std::array<Output*, static_cast<std::size_t>(OutputType::kMax)>
+                                                                m_outputs;
     };
 
     inline Renderer::Renderer()

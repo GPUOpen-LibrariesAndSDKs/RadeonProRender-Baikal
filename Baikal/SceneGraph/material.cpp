@@ -9,7 +9,8 @@ namespace Baikal
     {
     public:
         
-        InputIterator(InputMap::const_iterator begin, InputMap::const_iterator end)
+        InputIterator(InputMap::const_iterator begin,
+                      InputMap::const_iterator end)
         : m_begin(begin)
         , m_end(end)
         {
@@ -54,7 +55,9 @@ namespace Baikal
     {
     }
     
-    void Material::RegisterInput(std::string const& name, std::string const& desc, std::set<InputType>&& supported_types)
+    void Material::RegisterInput(std::string const& name,
+                                 std::string const& desc,
+                                 std::set<InputType>&& supported_types)
     {
         Input input = {{name, desc, std::move(supported_types)}};
         
@@ -102,7 +105,8 @@ namespace Baikal
                       }
                       );
         
-        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Material const*>>(std::move(materials)));
+        return std::unique_ptr<Iterator>(
+            new ContainerIterator<std::set<Material const*>>(std::move(materials)));
     }
     
     // Iterator of textures (plugged as inputs)
@@ -121,7 +125,8 @@ namespace Baikal
                       }
                       );
         
-        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Texture const*>>(std::move(textures)));
+        return std::unique_ptr<Iterator>(
+            new ContainerIterator<std::set<Texture const*>>(std::move(textures)));
     }
     
     // Iterator of inputs
