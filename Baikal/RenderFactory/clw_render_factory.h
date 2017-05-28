@@ -41,11 +41,14 @@ namespace Baikal
         ClwRenderFactory(CLWContext context, int device_index);
         
         // Create a renderer of specified type
-        std::unique_ptr<Renderer> CreateRenderer(RendererType type) const override;
+        std::unique_ptr<Renderer> CreateRenderer(RendererType type) const
+                                                                    override;
         // Create an output of specified type
-        std::unique_ptr<Output> CreateOutput(std::uint32_t w, std::uint32_t h) const override;
+        std::unique_ptr<Output> CreateOutput(std::uint32_t w, std::uint32_t h)
+                                                                const override;
         // Create post effect of specified type
-        std::unique_ptr<PostEffect> CreatePostEffect(PostEffectType type) const override;
+        std::unique_ptr<PostEffect> CreatePostEffect(PostEffectType type)
+                                                                const override;
         
     private:
         CLWContext m_context;
