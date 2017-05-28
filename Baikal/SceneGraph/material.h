@@ -119,6 +119,9 @@ namespace Baikal
         bool IsThin() const;
         // Set thin flag
         void SetThin(bool thin);
+        
+        Material(Material const&) = delete;
+        Material& operator = (Material const&) = delete;
 
     protected:
         // Register specific input
@@ -196,5 +199,14 @@ namespace Baikal
     
     private:
         Type m_type;
+    };
+    
+    class DisneyBxdf : public Material
+    {
+    public:
+        DisneyBxdf();
+        
+        // Check if material has emissive components
+        bool HasEmission() const override;
     };
 }

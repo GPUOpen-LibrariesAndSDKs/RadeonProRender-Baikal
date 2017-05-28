@@ -302,6 +302,25 @@ namespace Baikal
 
         return false;
     }
-
-
+    
+    DisneyBxdf::DisneyBxdf()
+    {
+        RegisterInput("albedo", "Base color", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("metallic", "Metallicity", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("subsurface", "Subsurface look of diffuse base", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("specular", "Specular exponent", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("specular_tint", "Specular color to base", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("anisotropy", "Anisotropy of specular layer", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("sheen", "Sheen for cloth", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("sheen_tint", "Sheen to base color", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("clearcoat", "Clearcoat layer", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("clearcoat_gloss", "Clearcoat roughness", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("roughness", "Roughness of specular & diffuse layers", {InputType::kFloat4, InputType::kTexture});
+    }
+    
+    // Check if material has emissive components
+    bool DisneyBxdf::HasEmission() const
+    {
+        return false;
+    }
 }

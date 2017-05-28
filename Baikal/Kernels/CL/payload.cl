@@ -94,48 +94,64 @@ enum Bxdf
 // Material description
 typedef struct _Material
 {
-    // Color: can be diffuse, specular, whatever...
-    float4 kx;
-    // Refractive index
-    float  ni;
-    // Context dependent parameter: glossiness, etc
-    float  ns;
-
     union
     {
-        // Color map index
-        int kxmapidx;
-        int brdftopidx;
+        struct
+        {
+            float4 kx;
+            float ni;
+            float ns;
+            int kxmapidx;
+            int nmapidx;
+            int nsmapidx;
+            float fresnel;
+            int padding0[2];
+        };
+        
+        struct
+        {
+            float weight;
+            int weight_map_idx;
+            int top_brdf_idx;
+            int base_brdf_idx;
+            int padding1[2];
+        };
+        
+        struct
+        {
+            float4 base_color;
+            
+            float metallic;
+            float subsurface;
+            float specular;
+            float roughness;
+            
+            float specular_tint;
+            float anisotropy;
+            float sheen;
+            float sheen_tint;
+            
+            float clearcoat;
+            float clearcoat_gloss;
+            int base_color_map_idx;
+            int metallic_map_idx;
+            
+            int specular_map_idx;
+            int roughness_map_idx;
+            int specular_tint_map_idx;
+            int anisotropy_map_idx;
+            
+            int sheen_map_idx;
+            int sheen_tint_map_idx;
+            int clearcoat_map_idx;
+            int clearcoat_gloss_map_idx;
+        };
     };
-
-    union
-    {
-        // Normal map index
-        int nmapidx;
-        int brdfbaseidx;
-    };
-
-    union
-    {
-        // Parameter map idx
-        int nsmapidx;
-    };
-
-    union
-    {
-        // PDF
-        float fresnel;
-    };
-
-    union
-    {
-        int type;
-        int num_materials;
-    };
-
+    
+    int type;
     int bump_flag;
     int thin;
-    int padding[3];
+    int padding;
 } Material;
 
 

@@ -99,7 +99,7 @@ void Material_Select(
             if (mat.type == kFresnelBlend)
             {
                 float etai = 1.f;
-                float etat = mat.ni;
+                float etat = mat.weight;
                 float cosi = dot(dg->n, wi);
 
                 // Revert normal and eta if needed
@@ -127,7 +127,7 @@ void Material_Select(
                 if (sample < fresnel)
                 {
                     // Sample top
-                    idx = mat.brdftopidx;
+                    idx = mat.top_brdf_idx;
                     //
                     mat = scene->materials[idx];
                     mat.fresnel = 1.f;
@@ -135,7 +135,7 @@ void Material_Select(
                 else
                 {
                     // Sample base
-                    idx = mat.brdfbaseidx;
+                    idx = mat.base_brdf_idx;
                     // 
                     mat = scene->materials[idx];
                     mat.fresnel = 1.f;
@@ -145,12 +145,12 @@ void Material_Select(
             {
                 float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
 
-                float weight = Texture_GetValue1f(mat.ns, dg->uv, TEXTURE_ARGS_IDX(mat.nsmapidx));
+                float weight = Texture_GetValue1f(mat.weight, dg->uv, TEXTURE_ARGS_IDX(mat.weight_map_idx));
 
                 if (sample < weight)
                 {
                     // Sample top
-                    idx = mat.brdftopidx;
+                    idx = mat.top_brdf_idx;
                     //
                     mat = scene->materials[idx];
                     mat.fresnel = 1.f;
@@ -158,7 +158,7 @@ void Material_Select(
                 else
                 {
                     // Sample base
-                    idx = mat.brdfbaseidx;
+                    idx = mat.base_brdf_idx;
                     //
                     mat = scene->materials[idx];
                     mat.fresnel = 1.f;

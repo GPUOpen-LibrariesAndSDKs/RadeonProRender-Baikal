@@ -856,8 +856,8 @@ namespace Baikal
             if (value0.type == Material::InputType::kMaterial &&
                 value1.type == Material::InputType::kMaterial)
             {
-                clw_material->brdfbaseidx = mat_collector.GetItemIndex(value0.mat_value);
-                clw_material->brdftopidx = mat_collector.GetItemIndex(value1.mat_value);
+                clw_material->base_brdf_idx = mat_collector.GetItemIndex(value0.mat_value);
+                clw_material->top_brdf_idx = mat_collector.GetItemIndex(value1.mat_value);
             }
             else
             {
@@ -873,12 +873,12 @@ namespace Baikal
 
                 if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->nsmapidx = tex_collector.GetItemIndex(value.tex_value);
+                    clw_material->weight_map_idx = tex_collector.GetItemIndex(value.tex_value);
                 }
                 else
                 {
-                    clw_material->nsmapidx = -1;
-                    clw_material->ns = value.float_value.x;
+                    clw_material->weight_map_idx = -1;
+                    clw_material->weight = value.float_value.x;
                 }
             }
             else
@@ -889,7 +889,7 @@ namespace Baikal
 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->ni = value.float_value.x;
+                    clw_material->weight = value.float_value.x;
                 }
                 else
                 {
