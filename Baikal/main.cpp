@@ -367,8 +367,8 @@ void InitData()
 
     {
         // Load OBJ scene
-        std::unique_ptr<Baikal::SceneIo> scene_io(Baikal::SceneIo::CreateSceneIoObj());
-        g_scene.reset(scene_io->LoadScene(filename, basepath));
+        auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
+        g_scene = scene_io->LoadScene(filename, basepath);
 
         // Enable this to generate new materal mapping for a model
 #if 0
@@ -386,8 +386,7 @@ void InitData()
             in_materials.close();
             in_mapping.close();
 
-            std::unique_ptr<Baikal::MaterialIo> material_io(Baikal::MaterialIo::CreateMaterialIoXML());
-
+            auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
             auto mats = material_io->LoadMaterials(basepath + "materials.xml");
             auto mapping = material_io->LoadMaterialMapping(basepath + "mapping.xml");
 

@@ -43,7 +43,7 @@ namespace Baikal
     {
     public:
         // Create default image IO
-        static ImageIo* CreateImageIo();
+        static std::unique_ptr<ImageIo> CreateImageIo();
         
         // Constructor
         ImageIo() = default;

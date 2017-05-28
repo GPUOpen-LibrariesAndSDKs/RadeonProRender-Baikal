@@ -8,6 +8,7 @@
 #include "math/mathutils.h"
 
 #include <vector>
+#include <memory>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -19,13 +20,13 @@ namespace Baikal
     {
     public:
         // Load scene (this class uses filename to determine what scene to generate)
-        Scene1* LoadScene(std::string const& filename, std::string const& basepath) const override;
+        std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
     };
     
     // Create test IO
-    SceneIo* SceneIo::CreateSceneIoTest()
+    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoTest()
     {
-        return new SceneIoTest();
+        return std::unique_ptr<SceneIo>(new SceneIoTest());
     }
     
     
@@ -138,7 +139,7 @@ namespace Baikal
         return mesh;
     }
     
-    Scene1* SceneIoTest::LoadScene(std::string const& filename, std::string const& basepath) const
+    std::unique_ptr<Scene1> SceneIoTest::LoadScene(std::string const& filename, std::string const& basepath) const
     {
         using namespace RadeonRays;
         
@@ -339,7 +340,7 @@ namespace Baikal
             
         }
         
-        return scene;
+        return std::unique_ptr<Scene1>(scene);
     }
 }
 

@@ -16,15 +16,15 @@ namespace Baikal
     {
     public:
         // Load scene from file
-        Scene1* LoadScene(std::string const& filename, std::string const& basepath) const override;
+        std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
     private:
         Material const* TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
 
     };
 
-    SceneIo* SceneIo::CreateSceneIoObj()
+    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoObj()
     {
-        return new SceneIoObj();
+        return std::unique_ptr<SceneIo>(new SceneIoObj());
     }
 
 
@@ -146,7 +146,7 @@ namespace Baikal
         return material;
     }
 
-    Scene1* SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
+    std::unique_ptr<Scene1> SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
     {
         using namespace tinyobj;
 
@@ -264,6 +264,6 @@ namespace Baikal
         scene->AttachLight(light1);
         scene->AttachLight(ibl);
 
-        return scene;
+        return std::unique_ptr<Scene1>(scene);
     }
 }

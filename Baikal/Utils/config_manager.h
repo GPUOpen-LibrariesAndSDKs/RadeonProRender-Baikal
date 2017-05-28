@@ -59,6 +59,7 @@ public:
         std::unique_ptr<Baikal::RenderFactory> factory;
         CLWContext context;
         bool caninterop;
+
     };
 
     static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);

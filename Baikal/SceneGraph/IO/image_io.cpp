@@ -125,8 +125,8 @@ namespace Baikal
         
     }
     
-    ImageIo* ImageIo::CreateImageIo()
+    std::unique_ptr<ImageIo> ImageIo::CreateImageIo()
     {
-        return new Oiio();
+        return std::unique_ptr<ImageIo>(new Oiio());
     }
 }
