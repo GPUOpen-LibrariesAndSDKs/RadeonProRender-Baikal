@@ -47,7 +47,7 @@ namespace Baikal
         
         auto default_material = GetDefaultMaterial();
         // Collect materials from shapes first
-        mat_collector.Collect(shape_iter.get(),
+        mat_collector.Collect(*shape_iter,
                               // This function adds all materials to resulting map
                               // recursively via Material dependency API
                               [default_material](void const* item) ->
@@ -105,7 +105,7 @@ namespace Baikal
         auto mat_iter = mat_collector.CreateIterator();
         
         // Collect textures from materials
-        tex_collector.Collect(mat_iter.get(),
+        tex_collector.Collect(*mat_iter,
                               [](void const* item) -> std::set<void const*>
                               {
                                   // Texture set
@@ -128,7 +128,7 @@ namespace Baikal
         
         
         // Collect textures from lights
-        tex_collector.Collect(light_iter.get(),
+        tex_collector.Collect(*light_iter,
                               [](void const* item) -> std::set<void const*>
                               {
                                   // Resulting set

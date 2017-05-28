@@ -113,8 +113,6 @@ namespace Baikal
 
         auto denoise_kernel = m_program.GetKernel("BilateralDenoise_main");
 
-        int num_pixels = color->width() * color->height();
-
         // Set kernel parameters
         int argc = 0;
         denoise_kernel.SetArg(argc++, color->data());

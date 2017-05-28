@@ -441,7 +441,7 @@ namespace Baikal
 
         Collector mat_collector;
         // Collect materials from shapes first
-        mat_collector.Collect(shape_iter.get(),
+        mat_collector.Collect(*shape_iter,
             // This function adds all materials to resulting map
             // recursively via Material dependency API
             [](void const* item) -> std::set<void const*>

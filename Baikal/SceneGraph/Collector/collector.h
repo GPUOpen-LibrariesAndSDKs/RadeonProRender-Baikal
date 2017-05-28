@@ -72,7 +72,7 @@ namespace Baikal
         // Create an iterator of objects
         std::unique_ptr<Iterator> CreateIterator() const;
         // Collect objects and their dependencies
-        void Collect(Iterator* iter, ExpandFunc expand_func);
+        void Collect(Iterator& iter, ExpandFunc expand_func);
         // Commit collected objects
         void Commit();
         // Given a budnle check if all collected objects are in the bundle and do not require update

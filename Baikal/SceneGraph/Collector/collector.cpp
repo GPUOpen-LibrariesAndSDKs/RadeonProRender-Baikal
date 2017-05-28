@@ -48,12 +48,12 @@ namespace Baikal
                                                       m_impl->m_set.cend()));
     }
     
-    void Collector::Collect(Iterator* shape_iter, ExpandFunc expand_func)
+    void Collector::Collect(Iterator& iter, ExpandFunc expand_func)
     {
-        for(;shape_iter->IsValid();shape_iter->Next())
+        for(;iter.IsValid(); iter.Next())
         {
             // Expand current item
-            auto cur_items = expand_func(shape_iter->Item());
+            auto cur_items = expand_func(iter.Item());
             
             // Insert items
             m_impl->m_set.insert(cur_items.cbegin(), cur_items.cend());
