@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
+#include <../Baikal/Kernels/CL/disney.cl>
 
 #define DENOM_EPS 1e-8f
 #define ROUGHNESS_EPS 0.0001f
@@ -1046,6 +1047,8 @@ float3 Bxdf_Evaluate(
         return MicrofacetRefractionGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
     case kMicrofacetRefractionBeckmann:
         return MicrofacetRefractionBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+    case kDisney:
+        return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
     }
 
     return 0.f;
@@ -1102,6 +1105,9 @@ float3 Bxdf_Sample(
     case kMicrofacetRefractionBeckmann:
         res = MicrofacetRefractionBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
         break;
+    case kDisney:
+        res = Disney_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+        break;
     default:
         *pdf = 0.f;
         break;
@@ -1148,6 +1154,8 @@ float Bxdf_GetPdf(
         return MicrofacetRefractionGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
     case kMicrofacetRefractionBeckmann:
         return MicrofacetRefractionBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+    case kDisney:
+        return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
     }
 
     return 0.f;

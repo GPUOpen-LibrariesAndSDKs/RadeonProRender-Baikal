@@ -307,7 +307,7 @@ namespace Baikal
     {
         RegisterInput("albedo", "Base color", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("metallic", "Metallicity", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("subsurface", "Subsurface look of diffuse base", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("subsurface", "Subsurface look of diffuse base", {InputType::kFloat4});
         RegisterInput("specular", "Specular exponent", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("specular_tint", "Specular color to base", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("anisotropy", "Anisotropy of specular layer", {InputType::kFloat4, InputType::kTexture});
@@ -316,6 +316,14 @@ namespace Baikal
         RegisterInput("clearcoat", "Clearcoat layer", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("clearcoat_gloss", "Clearcoat roughness", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("roughness", "Roughness of specular & diffuse layers", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("normal", "Normal map", {InputType::kTexture});
+        RegisterInput("bump", "Bump map", { InputType::kTexture });
+        
+        SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
+        SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
+        SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
+        SetInputValue("normal", static_cast<Texture const*>(nullptr));
+        SetInputValue("bump", static_cast<Texture const*>(nullptr));
     }
     
     // Check if material has emissive components

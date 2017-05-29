@@ -88,7 +88,8 @@ enum Bxdf
     kPassthrough,
     kTranslucent,
     kMicrofacetRefractionGGX,
-    kMicrofacetRefractionBeckmann
+    kMicrofacetRefractionBeckmann,
+    kDisney
 };
 
 // Material description
@@ -102,10 +103,9 @@ typedef struct _Material
             float ni;
             float ns;
             int kxmapidx;
-            int nmapidx;
             int nsmapidx;
             float fresnel;
-            int padding0[2];
+            int padding0[3];
         };
         
         struct
@@ -114,7 +114,6 @@ typedef struct _Material
             int weight_map_idx;
             int top_brdf_idx;
             int base_brdf_idx;
-            int padding1[2];
         };
         
         struct
@@ -151,7 +150,7 @@ typedef struct _Material
     int type;
     int bump_flag;
     int thin;
-    int padding;
+    int nmapidx;
 } Material;
 
 
