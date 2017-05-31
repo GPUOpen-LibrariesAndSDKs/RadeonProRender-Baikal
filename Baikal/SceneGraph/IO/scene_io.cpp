@@ -76,7 +76,7 @@ namespace Baikal
                 Material* diffuse = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
                 Material* specular = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
 
-                specular->SetInputValue("roughness", 0.01f);
+                specular->SetInputValue("roughness", 0.025f);
 
                 // Set albedo
                 if (!mat.diffuse_texname.empty())
@@ -188,8 +188,10 @@ namespace Baikal
         std::vector<material_t> objmaterials;
 
         // Try loading file
+		std::cout << "Loading OBJ  ..." << std::endl;
         std::string res = LoadObj(objshapes, objmaterials, filename.c_str(), basepath.c_str());
-        if (res != "")
+		std::cout << "OBJ loaded." << std::endl;
+		if (res != "")
         {
             throw std::runtime_error(res);
         }
@@ -216,15 +218,17 @@ namespace Baikal
         // Construct all Baikal shapes 
 		
 		/// @todo: for testing, load curves from a hard-coded custom formatted text file:
+		std::cout << "Constructing curves  ..." << std::endl;
+
 		Curves* curves = new Curves();
 		{
-			std::string cvsFile = "../Resources/hair/out.cvs";
+			std::string cvsFile = "../Resources/chief/chief_lonoise.cvs";
 			std::ifstream inFile(cvsFile);
 			
 			std::vector<RadeonRays::float4> curve_vertices;
 			std::vector<std::uint32_t> curve_indices;
 
-			float cvRadius = 0.05f; // hard-coded for now, as not exported!
+			float cvRadius = 0.002f; // hard-coded for now, as not exported!
 			
 			bool atRoot = true;
 			size_t prev_index = 0;
@@ -243,6 +247,7 @@ namespace Baikal
 				std::stringstream ss(line);
 				for(int i=0; i<3; i++) ss >> pos[i];
 				
+				// @todo: allow for a radius ramp between root and tip.
 				RadeonRays::float4 cv(pos[0], pos[1], pos[2], cvRadius);
 				if (atRoot)
 				{
@@ -265,61 +270,13 @@ namespace Baikal
 			Material* hairMaterial = new SingleBxdf(SingleBxdf::BxdfType::kHair);
 			curves->SetMaterial(hairMaterial);
 
-			// make a test grid of curves ("fur")
-			/*
-			{
-				float scale = 10.f;
-				int gridRes = 50;
-				float curveLength = 0.5f*scale;
-				int cvsPerCurve = 50;
-				float dgrid = scale/float(gridRes);
-				float dseg = curveLength/float(cvsPerCurve);
-				float cvRadius = curveLength/200.f;
-
-				std::vector<RadeonRays::float4> curve_vertices;
-				std::vector<std::uint32_t> curve_indices;
-
-				for (size_t i=0; i<gridRes; i++)
-				for (size_t j=0; j<gridRes; j++)
-				{
-					float x = float(i)*dgrid;
-					float z = float(j)*dgrid;
-					RadeonRays::float4 rootCv(x, 0.f, z, cvRadius);
-					curve_vertices.push_back(rootCv);
-					size_t prev_index = curve_vertices.size()-1;
-					RadeonRays::float4 prevCv = rootCv;
-
-					for (size_t n=1; n<cvsPerCurve; ++n)
-					{
-						float b = float(n)/float(cvsPerCurve-1);
-
-						RadeonRays::float4 segmentDir(0.25*sin(8.f*M_PI*b), 1.f, -0.25*sin(8.f*M_PI*b));
-						segmentDir.normalize();
-						RadeonRays::float4 segment = dseg * segmentDir;
-						RadeonRays::float4 cv = prevCv + segment;
-						cv.w = std::max(0.05f, (1.f-b)) * cvRadius;
-						curve_vertices.push_back(cv);
-
-						size_t numVertices = curve_vertices.size();
-						curve_indices.push_back(prev_index);
-						curve_indices.push_back(prev_index+1);
-
-						prev_index++;
-						prevCv = cv;
-					}
-				}
-
-				curves->SetVertices(&curve_vertices[0], curve_vertices.size());
-				curves->SetIndices(&curve_indices[0], curve_indices.size());
-			}
-			*/
-
 			// Attach to the scene
 			scene->AttachShape(curves);
 
 			// Attach for autorelease
 			scene->AttachAutoreleaseObject(curves);
 		}
+		std::cout << "Curves constructed ..." << std::endl;
 
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
@@ -379,17 +336,20 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+        //Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/Stonewall_Ref.hdr");
+		//Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/HDR_112_River_Road_2_Ref.hdr");
+		Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/HDR_041_Path_Ref.hdr");
+		
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(1.f);
+        ibl->SetMultiplier(0.2f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
         DirectionalLight* light = new DirectionalLight();
-        light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
+        light->SetDirection(RadeonRays::normalize(RadeonRays::float3(1.1f, -0.6f, 1.2f)));
         light->SetEmittedRadiance(3.5f * RadeonRays::float3(1.f, 1.f, 1.f));
         scene->AttachAutoreleaseObject(light);
 
@@ -399,7 +359,7 @@ namespace Baikal
         scene->AttachAutoreleaseObject(light1);
 
         scene->AttachLight(light);
-        scene->AttachLight(light1);
+        //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 
         return scene;

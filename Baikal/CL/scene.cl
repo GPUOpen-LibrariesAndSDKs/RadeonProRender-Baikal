@@ -129,7 +129,7 @@ INLINE void Scene_InterpolateTriangleAttributes(Scene const* scene, int shape_id
 }
 
 
-INLINE void Scene_InterpolateSegmentAttributes(Scene const* scene, int shape_idx, int prim_idx, float2 barycentrics, 
+INLINE void Scene_InterpolateSegmentAttributes(Scene const* scene, int shape_idx, int prim_idx, float u, 
 	                                           float3* axisHit, float* radiusHit, float3* segmentAxis)
 {
 	// Extract shape data
@@ -147,9 +147,8 @@ INLINE void Scene_InterpolateSegmentAttributes(Scene const* scene, int shape_idx
 	float3 v0W = v0L.xyz; //matrix_mul_point3(shape.transform, v0L.xyz);
 	float3 v1W = v1L.xyz; //matrix_mul_point3(shape.transform, v1L.xyz);
 
-	float u = barycentrics.x;
-	*axisHit = (1.f-u)*v0W.xyz + u*v1W.xyz;
-	*radiusHit = (1.f-u)*v0L.w + u*v1L.w;
+	*axisHit   = (1.f-u)*v0W.xyz + u*v1W.xyz;
+	*radiusHit = (1.f-u)*v0L.w   + u*v1L.w;
 	*segmentAxis = normalize(v1W.xyz - v0W.xyz);
 }
 
@@ -242,20 +241,11 @@ void Scene_FillDifferentialGeometry( Scene const* scene,
 	// Curve hit data
 	else if (shape.typeidx == SHAPE_TYPE_CURVES)
 	{
-		// not required:
-		//	diffgeo->uv 
-		//	diffgeo->ng 
-		//	diffgeo->mat 
-		//	diffgeo->dpdv 
-		//  diffgeo->material_index
-		
-		int material_idx = scene->curve_materialids[shape_idx];
-		diffgeo->mat = scene->materials[material_idx];
-
 		float3 axisHit;
 		float3 segmentAxis;
 		float radiusHit;
-		Scene_InterpolateSegmentAttributes(scene, shape_idx, prim_idx, barycentrics, &axisHit, &radiusHit, &segmentAxis);
+		float u = barycentrics.x;
+		Scene_InterpolateSegmentAttributes(scene, shape_idx, prim_idx, u, &axisHit, &radiusHit, &segmentAxis);
 		diffgeo->dpdu = segmentAxis;
 
 		// make an arbitrary orthonormal basis n, dpdu, dpdv  (given dpdu = segmentAxis)
@@ -273,9 +263,13 @@ void Scene_FillDifferentialGeometry( Scene const* scene,
 		}
 		diffgeo->n = normalize(diffgeo->n);
 		diffgeo->p = axisHit + radiusHit*diffgeo->n;
-
 		diffgeo->dpdv = cross(diffgeo->n, diffgeo->dpdu);
 		diffgeo->ng = diffgeo->n;
+		diffgeo->uv = (float2)(u, 0.f);
+
+		// (diffgeo->material_index not required)
+		int material_idx = scene->curve_materialids[shape_idx];
+		diffgeo->mat = scene->materials[material_idx];
 	}
 }
 

@@ -392,7 +392,7 @@ KERNEL void SampleSurface(
                 float3 new_ray_dir = bxdfwo;
                 float3 new_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.n;
 
-                Ray_Init(extension_rays + global_id, new_ray_o, new_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+                Ray_Init(extension_rays + global_id, new_ray_o, new_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF, -1, -1);
                 Ray_SetExtra(extension_rays + global_id, make_float2(bxdfpdf, 0.f));
             }
             else
@@ -549,7 +549,7 @@ KERNEL void SampleSurface(
                 float shadow_ray_length = 0.999f * length(temp);
                 int shadow_ray_mask = 0xFFFFFFFF;
 
-                Ray_Init(shadowrays + global_id, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
+                Ray_Init(shadowrays + global_id, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask, -1, -1);
 
                 // And write the light sample
                 lightsamples[global_id] = REASONABLE_RADIANCE(radiance);
@@ -725,7 +725,7 @@ KERNEL void SampleSurface(
         float  connect_ray_length = 0.999f * length(temp);
         float3 connect_ray_dir = eye_wo;
 
-        Ray_Init(&connection_rays[global_id], connect_ray_o, connect_ray_dir, connect_ray_length, 0.f, 0xFFFFFFFF);
+        Ray_Init(&connection_rays[global_id], connect_ray_o, connect_ray_dir, connect_ray_length, 0.f, 0xFFFFFFFF, -1, -1);
     }
 
 
@@ -1021,7 +1021,7 @@ KERNEL void ConnectCaustics(
     float3 connect_ray_dir = eye_wo;
     float3 connect_ray_o = eye_dg.p;
 
-    Ray_Init(connection_rays + global_id, connect_ray_o, connect_ray_dir, connect_ray_length, 0.f, 0xFFFFFFFF);
+    Ray_Init(connection_rays + global_id, connect_ray_o, connect_ray_dir, connect_ray_length, 0.f, 0xFFFFFFFF, -1, -1);
 
     ray r;
     r.o.xyz = eye_dg.p;

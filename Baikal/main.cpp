@@ -91,9 +91,9 @@ using namespace RadeonRays;
 char const* kHelpMessage =
 "Baikal [-p path_to_models][-f model_name][-b][-r][-ns number_of_shadow_rays][-ao ao_radius][-w window_width][-h window_height][-nb number_of_indirect_bounces]";
 char const* g_path =
-"../Resources/hair";
-char const* g_modelname = "mesh.obj";
-char const* g_envmapname = "../Resources/Textures/studio015.hdr";
+"../Resources/chief";
+char const* g_modelname = "chief_lowest.obj";
+char const* g_envmapname = "";
 
 std::unique_ptr<ShaderManager>    g_shader_manager;
 std::unique_ptr<Baikal::PerspectiveCamera> g_camera;
@@ -103,20 +103,20 @@ GLuint g_index_buffer;
 GLuint g_texture;
 GLuint g_vao;
 
-int g_window_width = 1024;
-int g_window_height = 1024;
+int g_window_width = 1920;
+int g_window_height = 1080;
 int g_num_shadow_rays = 1;
 int g_num_ao_rays = 1;
 int g_ao_enabled = false;
 int g_progressive = false;
-int g_num_bounces = 5;
+int g_num_bounces = 3;
 int g_num_samples = -1;
 int g_samplecount = 0;
 float g_ao_radius = 1.f;
 float g_envmapmul = 1.f;
-float g_cspeed = 100.25f;
+float g_cspeed = 10.f;
 
-float3 g_camera_pos = float3(0.f, 10.f, 30.f);
+float3 g_camera_pos = float3(5.f, 5.f, 5.f);
 float3 g_camera_at = float3(0.f, 1.f, 0.f);
 float3 g_camera_up = float3(0.f, 1.f, 0.f);
 

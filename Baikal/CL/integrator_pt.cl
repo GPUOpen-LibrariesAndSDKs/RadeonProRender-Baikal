@@ -164,12 +164,13 @@ __kernel void ShadeVolume(
         // put scattering position in there (it is along the current ray at isect.distance
         // since EvaluateVolume has put it there
         dg.p = o + wi * Intersection_GetDistance(isects + hitidx);
-        // Get light sample intencity
+
+        // Get light sample intensity
         float3 le = Light_Sample (light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &wo, &pdf);
 
         // Generate shadow ray
         float shadow_ray_length = length(wo);
-        Ray_Init(shadowrays + globalid, dg.p, normalize(wo), shadow_ray_length, 0.f, 0xFFFFFFFF);
+        Ray_Init(shadowrays + globalid, dg.p, normalize(wo), shadow_ray_length, 0.f, 0xFFFFFFFF, -1, -1);
 
         // Evaluate volume transmittion along the shadow ray (it is incorrect if the light source is outside of the
         // current volume, but in this case it will be discarded anyway since the intersection at the outer bound
@@ -206,7 +207,7 @@ __kernel void ShadeVolume(
         pdf = 1.f / (4.f * PI);
 
         // Generate new path segment
-        Ray_Init(indirectrays + globalid, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+        Ray_Init(indirectrays + globalid, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF, -1, -1);
 
         // Update path throughput multiplying by phase function.
         Path_MulThroughput(path, volumes[volidx].sigma_s * PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
@@ -310,7 +311,10 @@ __kernel void ShadeSurface(
         // Fetch index
         int hitidx = hitindices[globalid];
         int pixelidx = pixelindices[globalid];
+
         Intersection isect = isects[hitidx];
+		int shape_idx = isect.shapeid - 1;
+		int prim_idx = isect.primid;
 
         __global Path* path = paths + pixelidx;
 
@@ -348,7 +352,6 @@ __kernel void ShadeSurface(
         Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 
         // Terminate if emissive
-		/*
         if (Bxdf_IsEmissive(&diffgeo))
         {
             if (!backfacing)
@@ -377,10 +380,9 @@ __kernel void ShadeSurface(
             lightsamples[globalid] = 0.f; 
             return;
         }
-		*/
 
-        float s = 1.f; //Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
-		/*
+
+        float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
         if (backfacing && !Bxdf_IsBtdf(&diffgeo)) 
         {
             //Reverse normal and tangents in this case
@@ -392,9 +394,8 @@ __kernel void ShadeSurface(
             diffgeo.dpdv = -diffgeo.dpdv; 
             s = -s; 
         }
-		*/
 
-        //DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+        DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
 		DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
         float ndotwi = fabs(dot(diffgeo.n, wi));
@@ -439,24 +440,21 @@ __kernel void ShadeSurface(
         if (NON_BLACK(radiance))
         {
             // Generate shadow ray
-			float kludge = 0.05f;
-            float3 shadow_ray_o = diffgeo.p + kludge*s*diffgeo.ng;
+            float3 shadow_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE*s*diffgeo.ng;
             float3 temp = diffgeo.p + wo - shadow_ray_o;
             float3 shadow_ray_dir = normalize(temp); 
             float shadow_ray_length = length(temp);
             int shadow_ray_mask = 0xFFFFFFFF;
 
-            Ray_Init(shadowrays + globalid, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
+            Ray_Init(shadowrays + globalid, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask, shape_idx+1, prim_idx);
 
             // Apply the volume to shadow ray if needed
-			/*
             int volidx =    Path_GetVolumeIdx(path);
             if (volidx != -1) 
             {
                 radiance *= Volume_Transmittance(&volumes[volidx], &shadowrays[globalid], shadow_ray_length);
                 radiance += Volume_Emission(&volumes[volidx], &shadowrays[globalid], shadow_ray_length) * throughput;
             }  
-			*/
              
             // And write the light sample 
             lightsamples[globalid] = REASONABLE_RADIANCE(radiance);
@@ -464,7 +462,7 @@ __kernel void ShadeSurface(
         else
         {
             // Otherwise save some intersector cycles
-            //Ray_SetInactive(shadowrays +  globalid);
+            Ray_SetInactive(shadowrays +  globalid);
             lightsamples[globalid] = 0;
         }
 
@@ -497,18 +495,16 @@ __kernel void ShadeSurface(
 
             // Generate ray
             float3 indirect_ray_dir = bxdfwo;
-			float kludge = 0.05f;
-			float3 indirect_ray_o = diffgeo.p + kludge*s*diffgeo.ng;
-            //float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
+            float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE*s*diffgeo.ng;
 		
-            Ray_Init(indirectrays + globalid, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+            Ray_Init(indirectrays + globalid, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF, shape_idx+1, prim_idx);
             Ray_SetExtra(indirectrays + globalid, make_float2(bxdfpdf, 0.f));
         }
         else
         {
             // Otherwise kill the path
             Path_Kill(path);
-            //Ray_SetInactive(indirectrays + globalid);
+            Ray_SetInactive(indirectrays + globalid);
         }
     }
 }
