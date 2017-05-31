@@ -58,6 +58,8 @@ namespace Baikal
             kUv,
             kWireframe,
             kAlbedo,
+            kWorldTangent,
+            kWorldBitangent,
             kMax
         };
 

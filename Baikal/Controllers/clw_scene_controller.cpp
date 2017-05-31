@@ -30,6 +30,7 @@ namespace Baikal
         m_api = CreateFromOpenClContext(m_context, id, queue);
         
         m_api->SetOption("acc.type", "fatbvh");
+        m_api->SetOption("bvh.forceflat", 1.f);
         m_api->SetOption("bvh.builder", "sah");
         m_api->SetOption("bvh.sah.num_bins", 64.f);
     }
@@ -296,7 +297,7 @@ namespace Baikal
         std::size_t num_matids_written = 0;
         std::size_t num_shapes_written = 0;
         
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+        auto shape_iter = scene.CreateShapeIterator();
         
         // Sort shapes into meshes and instances sets.
         std::set<Mesh const*> meshes;
@@ -1230,15 +1231,16 @@ namespace Baikal
             {
                 auto light = light_iter->ItemAs<Light const>();
                 WriteLight(scene, light, tex_collector, lights + num_lights_written);
-                ++num_lights_written;
+
                 
                 // Find and update IBL idx
                 auto ibl = dynamic_cast<ImageBasedLight const*>(light_iter->ItemAs<Light const>());
                 if (ibl)
                 {
-                    out.envmapidx = static_cast<int>(num_lights_written - 1);
+                    out.envmapidx = static_cast<int>(num_lights_written);
                 }
                 
+                ++num_lights_written;
                 light->SetDirty(false);
             }
         }

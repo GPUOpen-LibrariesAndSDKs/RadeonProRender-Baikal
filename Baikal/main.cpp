@@ -72,8 +72,10 @@ THE SOFTWARE.
 #include "Renderers/bdptrenderer.h"
 #include "SceneGraph/scene1.h"
 #include "SceneGraph/camera.h"
+#include "SceneGraph/material.h"
 #include "SceneGraph/IO/scene_io.h"
 #include "SceneGraph/IO/material_io.h"
+#include "SceneGraph/material.h"
 #include "Output/clwoutput.h"
 #include "Utils/shader_manager.h"
 #include "Utils/config_manager.h"
@@ -105,7 +107,7 @@ int g_num_shadow_rays = 1;
 int g_num_ao_rays = 1;
 int g_ao_enabled = false;
 int g_progressive = false;
-int g_num_bounces = 5;
+int g_num_bounces = 1;
 int g_num_samples = -1;
 int g_samplecount = 0;
 float g_ao_radius = 1.f;
@@ -367,8 +369,10 @@ void InitData()
 
     {
         // Load OBJ scene
-        auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
-        g_scene = scene_io->LoadScene(filename, basepath);
+        auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
+        //auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
+        g_scene = scene_io->LoadScene("sphere+plane+ibl", basepath);
+        //g_scene = scene_io->LoadScene(filename, basepath);
 
         // Enable this to generate new materal mapping for a model
 #if 0
@@ -976,7 +980,7 @@ int main(int argc, char * argv[])
             static float aperture = 0.0f;
             static float focal_length = 35.f;
             static float focus_distance = 1.f;
-            static int num_bounces = 5;
+            static int num_bounces = 1;
             static char const* outputs =
                 "Color\0"
                 "World position\0"
@@ -984,9 +988,39 @@ int main(int argc, char * argv[])
                 "Geometric normal\0"
                 "Texture coords\0"
                 "Wire\0"
-                "Albedo\0\0";
+                "Albedo\0"
+                "Tangent\0\0"
+                "Bitangent\0\0"
+            ;
 
             static int output = 0;
+            
+            static float roughness = 0.5f;
+            static float metallic = 0.5f;
+            static float specular = 0.f;
+            static float specular_tint = 0.f;
+            static float subsurface = 0.f;
+            static float anisotropy = 0.f;
+            static float sheen = 0.f;
+            static float sheen_tint = 0.f;
+            static float clearcoat = 0.f;
+            static float clearcoat_gloss = 0.f;
+            
+            static float g_roughness = 0.5f;
+            static float g_metallic = 0.5f;
+            static float g_specular = 0.f;
+            static float g_specular_tint = 0.f;
+            static float g_subsurface = 0.f;
+            static float g_anisotropy = 0.f;
+            static float g_sheen = 0.f;
+            static float g_sheen_tint = 0.f;
+            static float g_clearcoat = 0.f;
+            static float g_clearcoat_gloss = 0.f;
+
+            
+            static auto iter = g_scene->CreateShapeIterator();
+            static auto mesh = iter->ItemAs<Baikal::Shape const>();
+            static auto material = const_cast<Baikal::Material*>(mesh->GetMaterial());
 
             if (g_gui_visible)
             {
@@ -1061,6 +1095,100 @@ int main(int argc, char * argv[])
                 ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
                 ImGui::End();
+                
+                
+                
+                
+                
+                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 400), ImVec2(380, 400));
+                ImGui::Begin("Disney material");
+        
+                ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
+                ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
+                ImGui::SliderFloat("specular", &specular, 0.0f, 1.0f);
+                ImGui::SliderFloat("specular_tint", &specular_tint, 0.0f, 1.0f);
+                ImGui::SliderFloat("subsurface", &subsurface, 0.0f, 1.0f);
+                ImGui::SliderFloat("anisotropy", &anisotropy, -1.0f, 1.0f);
+                ImGui::SliderFloat("sheen", &sheen, 0.0f, 1.0f);
+                ImGui::SliderFloat("sheen_tint", &sheen_tint, 0.0f, 1.0f);
+                ImGui::SliderFloat("clearcoat", &clearcoat, 0.0f, 1.0f);
+                ImGui::SliderFloat("clearcoat_gloss", &clearcoat_gloss, 0.0f, 1.0f);
+                
+                ImGui::End();
+                
+                if (g_sheen != sheen)
+                {
+                    g_sheen = sheen;
+                    material->SetInputValue("sheen", RadeonRays::float4(sheen, sheen, sheen, sheen));
+                    update = true;
+                }
+                
+                if (g_sheen_tint != sheen_tint)
+                {
+                    g_sheen_tint = sheen_tint;
+                    material->SetInputValue("sheen_tint", RadeonRays::float4(sheen_tint, sheen_tint, sheen_tint, sheen_tint));
+                    update = true;
+                }
+                
+                if (g_clearcoat != clearcoat)
+                {
+                    g_clearcoat = clearcoat;
+                    material->SetInputValue("clearcoat", RadeonRays::float4(clearcoat, clearcoat, clearcoat, clearcoat));
+                    update = true;
+                }
+                
+                if (g_clearcoat_gloss != clearcoat_gloss)
+                {
+                    g_clearcoat_gloss = clearcoat_gloss;
+                    material->SetInputValue("clearcoat_gloss", RadeonRays::float4(clearcoat_gloss, clearcoat_gloss, clearcoat_gloss, clearcoat_gloss));
+                    update = true;
+                }
+                
+                if (roughness != g_roughness)
+                {
+                    g_roughness = roughness;
+                    material->SetInputValue("roughness", RadeonRays::float4(roughness, roughness, roughness, roughness));
+                    update = true;
+                }
+                
+                if (g_anisotropy != anisotropy)
+                {
+                    g_anisotropy = anisotropy;
+                    material->SetInputValue("anisotropy", RadeonRays::float4(anisotropy, anisotropy, anisotropy, anisotropy));
+                    update = true;
+                }
+                
+                if (g_metallic != metallic)
+                {
+                    g_metallic = metallic;
+                    material->SetInputValue("metallic", RadeonRays::float4(metallic, metallic, metallic, metallic));
+                    update = true;
+                }
+                
+                if (g_specular != specular)
+                {
+                    g_specular = specular;
+                    material->SetInputValue("specular", RadeonRays::float4(specular, specular, specular, specular));
+                    update = true;
+                }
+                
+                if (g_specular_tint != specular_tint)
+                {
+                    g_specular_tint = specular_tint;
+                    material->SetInputValue("specular_tint", RadeonRays::float4(specular_tint, specular_tint, specular_tint, specular_tint));
+                    update = true;
+                }
+                
+                if (g_subsurface != subsurface)
+                {
+                    g_subsurface = subsurface;
+                    material->SetInputValue("subsurface", RadeonRays::float4(subsurface, subsurface, subsurface, subsurface));
+                    update = true;
+                }
+
+                
+                
+                
                 ImGui::Render();
             }
 

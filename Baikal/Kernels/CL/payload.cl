@@ -114,6 +114,7 @@ typedef struct _Material
             int weight_map_idx;
             int top_brdf_idx;
             int base_brdf_idx;
+            int padding1[8];
         };
         
         struct
@@ -165,8 +166,6 @@ enum LightType
 
 typedef struct
 {
-    int type;
-
     union
     {
         // Area light
@@ -175,6 +174,7 @@ typedef struct
             int shapeidx;
             int primidx;
             int matidx;
+            int padding0;
         };
 
         // IBL
@@ -183,6 +183,7 @@ typedef struct
             int tex;
             int texdiffuse;
             float multiplier;
+            int padding1;
         };
 
         // Spot
@@ -191,12 +192,15 @@ typedef struct
             float ia;
             float oa;
             float f;
+            int padding2;
         };
     };
 
     float3 p;
     float3 d;
     float3 intensity;
+    int type;
+    int padding[3];
 } Light;
 
 typedef enum

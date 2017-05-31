@@ -1,4 +1,4 @@
-﻿
+
 /**********************************************************************
 Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
 
@@ -414,7 +414,7 @@ __kernel void ShadeSurface(
             lightweight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, lightpdf / selection_pdf, 1, lightbxdfpdf);
 
             // Apply MIS to account for both
-            if (NON_BLACK(le) && lightpdf > 0.0f && !Bxdf_IsSingular(&diffgeo))   
+            if (NON_BLACK(le) && lightpdf > 0.0f && !Bxdf_IsSingular(&diffgeo))
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
@@ -829,7 +829,15 @@ __kernel void FillAOVs(
     // Albedo flag
     int albedo_enabled,
     // Wireframe AOV
-    __global float4* aov_albedo
+    __global float4* aov_albedo,
+    // World tangent flag
+    int world_tangent_enabled,
+    // World tangent AOV
+    __global float4* aov_world_tangent,
+    // World bitangent flag
+    int world_bitangent_enabled,
+    // World bitangent AOV
+    __global float4* aov_world_bitangent
 )
 {
     int globalid = get_global_id(0);
@@ -925,7 +933,7 @@ __kernel void FillAOVs(
 
             if (uv_enabled)
             {
-                aov_uv[idx].xyz += diffgeo.uv.xyy;
+                aov_uv[idx].xy += diffgeo.uv.xy;
                 aov_uv[idx].w += 1.f;
             }
 
@@ -941,6 +949,60 @@ __kernel void FillAOVs(
 
                 aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
+            }
+            
+            if (world_tangent_enabled)
+            {
+                float ngdotwi = dot(diffgeo.ng, wi);
+                bool backfacing = ngdotwi < 0.f;
+                
+                // Select BxDF
+                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+                
+                float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
+                if (backfacing && !Bxdf_IsBtdf(&diffgeo))
+                {
+                    //Reverse normal and tangents in this case
+                    //but not for BTDFs, since BTDFs rely
+                    //on normal direction in order to arrange
+                    //indices of refraction
+                    diffgeo.n = -diffgeo.n;
+                    diffgeo.dpdu = -diffgeo.dpdu;
+                    diffgeo.dpdv = -diffgeo.dpdv;
+                }
+                
+                DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+                DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
+                
+                aov_world_tangent[idx].xyz += diffgeo.dpdu;
+                aov_world_tangent[idx].w += 1.f;
+            }
+            
+            if (world_bitangent_enabled)
+            {
+                float ngdotwi = dot(diffgeo.ng, wi);
+                bool backfacing = ngdotwi < 0.f;
+                
+                // Select BxDF
+                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+                
+                float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
+                if (backfacing && !Bxdf_IsBtdf(&diffgeo))
+                {
+                    //Reverse normal and tangents in this case
+                    //but not for BTDFs, since BTDFs rely
+                    //on normal direction in order to arrange
+                    //indices of refraction
+                    diffgeo.n = -diffgeo.n;
+                    diffgeo.dpdu = -diffgeo.dpdu;
+                    diffgeo.dpdv = -diffgeo.dpdv;
+                }
+                
+                DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+                DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
+                
+                aov_world_bitangent[idx].xyz += diffgeo.dpdv;
+                aov_world_bitangent[idx].w += 1.f;
             }
         }
     }

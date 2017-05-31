@@ -54,7 +54,7 @@ namespace Baikal
                 normals[t].x = sinf(theta) * cosf(phi);
                 normals[t].y = cosf(theta);
                 normals[t].z = -sinf(theta) * sinf(phi);
-                uvs[t].x = float(j) / (lat - 2);
+                uvs[t].x = float(j) / (lat - 1);
                 uvs[t].y = float(i) / (lon - 1);
                 ++t;
             }
@@ -75,6 +75,7 @@ namespace Baikal
                 indices[t++] = j * lon + i;
                 indices[t++] = (j + 1) * lon + i + 1;
                 indices[t++] = j * lon + i + 1;
+                
                 indices[t++] = j * lon + i;
                 indices[t++] = (j + 1) * lon + i;
                 indices[t++] = (j + 1) * lon + i + 1;
@@ -278,36 +279,16 @@ namespace Baikal
             scene->AttachShape(mesh);
             scene->AttachAutoreleaseObject(mesh);
 
-            auto instance = new Instance(mesh);
-            scene->AttachShape(instance);
-            scene->AttachAutoreleaseObject(instance);
+            DisneyBxdf* disney = new DisneyBxdf();
+            disney->SetInputValue("albedo", float4(0.7f, 0.f, 0.f, 0.0f));
+//            disney->SetInputValue("metallic", float4(0.5f, 0.5f, 0.5f, 0.5f));
+//            disney->SetInputValue("roughness", float4(0.f, 0.f, 0.f, 0.f));
+//            disney->SetInputValue("specular", float4(1.f, 1.f, 1.f, 1.f));
+//            disney->SetInputValue("specular_tint", float4(1.f, 1.f, 1.f, 1.f));
+            
+            scene->AttachAutoreleaseObject(disney);
 
-            matrix t = RadeonRays::translation(float3(5.f, 0.f, 5.f));
-            instance->SetTransform(t);
-
-            SingleBxdf* green = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-            green->SetInputValue("albedo", 2.f * float4(0.1f, 0.2f, 0.1f, 1.f));
-
-            SingleBxdf* grey = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-            green->SetInputValue("albedo", 2.f * float4(0.2f, 0.2f, 0.2f, 0.2f));
-
-            SingleBxdf* spec = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
-            spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
-            spec->SetInputValue("roughness", float4(0.2f, 0.2f, 0.2f, 1.f));
-
-            auto normal_map = image_io->LoadImage("../Resources/Textures/test_normal.jpg");
-            auto bump_map = image_io->LoadImage("../Resources/Textures/test_bump.jpg");
-            green->SetInputValue("normal", normal_map);
-            spec->SetInputValue("normal", normal_map);
-            grey->SetInputValue("bump", bump_map);
-            instance->SetMaterial(grey);
-
-            MultiBxdf* mix = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
-            mix->SetInputValue("base_material", green);
-            mix->SetInputValue("top_material", spec);
-            mix->SetInputValue("ior", float4(3.33f, 3.33f, 3.33f, 3.33f));
-
-            mesh->SetMaterial(mix);
+            mesh->SetMaterial(disney);
 
             Mesh* floor = CreateQuad(
                                      {
@@ -320,24 +301,124 @@ namespace Baikal
             scene->AttachShape(floor);
             scene->AttachAutoreleaseObject(floor);
             
-            floor->SetMaterial(green);
-            
-            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
             scene->AttachAutoreleaseObject(ibl_texture);
             
             ImageBasedLight* ibl = new ImageBasedLight();
             ibl->SetTexture(ibl_texture);
-            ibl->SetMultiplier(1.f);
+            ibl->SetMultiplier(5.f);
             scene->AttachLight(ibl);
             scene->AttachAutoreleaseObject(ibl);
+        }
+        else if (filename == "10spheres+plane+ibl")
+        {
+            auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
+            scene->AttachShape(mesh);
+            scene->AttachAutoreleaseObject(mesh);
             
-            scene->AttachAutoreleaseObject(green);
-            scene->AttachAutoreleaseObject(spec);
-            scene->AttachAutoreleaseObject(mix);
-            scene->AttachAutoreleaseObject(grey);
-            scene->AttachAutoreleaseObject(normal_map);
-            scene->AttachAutoreleaseObject(bump_map);
+            std::vector<std::string> params =
+            {
+                "metallic",
+                "roughness",
+                "anisotropy",
+                "subsurface",
+                "specular",
+                "specular_tint",
+                "clearcoat",
+                "clearcoat_gloss",
+                "sheen",
+                "sheen_tint"
+            };
             
+            for (int i = 0; i < 10; ++i)
+            {
+                auto color = 0.5f * float3(rand_float(), rand_float(), rand_float()) +
+                float3(0.5f, 0.5f, 0.5f);
+                for (int j = 0; j < 10; ++j)
+                {
+                    DisneyBxdf* disney = new DisneyBxdf();
+                    disney->SetInputValue("albedo", color);
+                    
+                    if (params[i] == "roughness")
+                        disney->SetInputValue("metallic", float4(1.0f));
+                    
+                    if (params[i] == "metallic")
+                        disney->SetInputValue("roughness", float4(0.2f));
+                    
+                    if (params[i] == "anisotropy")
+                    {
+                        disney->SetInputValue("roughness", float4(0.2f));
+                        disney->SetInputValue("metallic", float4(0.75f));
+                        disney->SetInputValue("specular", float4(0.f));
+                        disney->SetInputValue("clearcoat", float4(0.f));
+                    }
+                    
+                    if (params[i] == "subsurface")
+                    {
+                        disney->SetInputValue("roughness", float4(0.5f));
+                        disney->SetInputValue("metallic", float4(0.f));
+                        disney->SetInputValue("specular", float4(0.f));
+                        disney->SetInputValue("clearcoat", float4(0.f));
+                    }
+                    
+                    if (params[i] == "clearcoat" || params[i] == "clearcoat_gloss")
+                    {
+                        disney->SetInputValue("roughness", float4(0.0f));
+                        disney->SetInputValue("metallic", float4(0.0f));
+                        disney->SetInputValue("clearcoat", float4(1.0f));
+                        disney->SetInputValue("clearcoat_gloss", float4(0.5f));
+                    }
+                    
+                    if (params[i] == "specular" || params[i] == "specular_tint")
+                    {
+                        disney->SetInputValue("roughness", float4(0.f));
+                        disney->SetInputValue("metallic", float4(0.f));
+                        disney->SetInputValue("clearcoat", float4(0.f));
+                        disney->SetInputValue("specular", float4(1.f));
+                    }
+                    
+                    if (params[i] == "sheen" || params[i] == "sheen_tint")
+                    {
+                        disney->SetInputValue("roughness", float4(0.f));
+                        disney->SetInputValue("metallic", float4(0.0f));
+                        disney->SetInputValue("clearcoat", float4(0.f));
+                        disney->SetInputValue("specular", float4(1.f));
+                    }
+                    
+                    float3 value = float3( j / 10.f, j / 10.f, j / 10.f);
+                    disney->SetInputValue(params[i], value);
+                    
+                    auto instance = new Instance(mesh);
+                    matrix t = RadeonRays::translation(float3(i * 2 - 9, 0.f, j * 2 - 9));
+                    instance->SetTransform(t);
+                    scene->AttachShape(instance);
+                    scene->AttachAutoreleaseObject(instance);
+                    
+                    instance->SetMaterial(disney);
+                    scene->AttachAutoreleaseObject(disney);
+                }
+            }
+            
+            
+            Mesh* floor = CreateQuad(
+                                     {
+                                         RadeonRays::float3(-15, 0, -15),
+                                         RadeonRays::float3(15, 0, -15),
+                                         RadeonRays::float3(15, 0, 15),
+                                         RadeonRays::float3(-15, 0, 15),
+                                     }
+                                     , false);
+            scene->AttachShape(floor);
+            scene->AttachAutoreleaseObject(floor);
+            
+            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+            scene->AttachAutoreleaseObject(ibl_texture);
+            
+            ImageBasedLight* ibl = new ImageBasedLight();
+            ibl->SetTexture(ibl_texture);
+            ibl->SetMultiplier(3.f);
+            scene->AttachLight(ibl);
+            scene->AttachAutoreleaseObject(ibl);
         }
         
         return std::unique_ptr<Scene1>(scene);
