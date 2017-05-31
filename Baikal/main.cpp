@@ -107,7 +107,7 @@ int g_num_shadow_rays = 1;
 int g_num_ao_rays = 1;
 int g_ao_enabled = false;
 int g_progressive = false;
-int g_num_bounces = 1;
+int g_num_bounces = 5;
 int g_num_samples = -1;
 int g_samplecount = 0;
 float g_ao_radius = 1.f;
@@ -131,6 +131,9 @@ bool g_interop = true;
 bool g_gui_visible = true;
 ConfigManager::Mode g_mode = ConfigManager::Mode::kUseSingleGpu;
 Baikal::Renderer::OutputType g_ouput_type = Baikal::Renderer::OutputType::kColor;
+
+Baikal::Renderer::BenchmarkStats g_stats;
+bool g_benchmarked = false;
 
 using namespace tinyobj;
 
@@ -369,10 +372,10 @@ void InitData()
 
     {
         // Load OBJ scene
-        auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
-        //auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
-        g_scene = scene_io->LoadScene("sphere+plane+ibl", basepath);
-        //g_scene = scene_io->LoadScene(filename, basepath);
+        //auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
+        auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
+        //g_scene = scene_io->LoadScene("10spheres+plane+ibl", basepath);
+        g_scene = scene_io->LoadScene(filename, basepath);
 
         // Enable this to generate new materal mapping for a model
 #if 0
@@ -737,18 +740,20 @@ void Update(bool update_required)
 
     if (g_benchmark)
     {
-        auto const kNumBenchmarkPasses = 100U;
+        auto const kNumBenchmarkPasses = 25U;
 
-        Baikal::Renderer::BenchmarkStats stats;
-        g_cfgs[g_primary].renderer->RunBenchmark(*g_scene.get(), kNumBenchmarkPasses, stats);
 
-        auto numrays = stats.resolution.x * stats.resolution.y;
-        std::cout << "Baikal renderer benchmark\n";
-        std::cout << "Number of primary rays: " << numrays << "\n";
-        std::cout << "Primary rays: " << (float)(numrays / (stats.primary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.primary_rays_time_in_ms << "ms )\n";
-        std::cout << "Secondary rays: " << (float)(numrays / (stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.secondary_rays_time_in_ms << "ms )\n";
-        std::cout << "Shadow rays: " << (float)(numrays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.shadow_rays_time_in_ms << "ms )\n";
+        g_cfgs[g_primary].renderer->RunBenchmark(*g_scene.get(), kNumBenchmarkPasses, g_stats);
+
+        //auto numrays = g_stats.resolution.x * g_stats.resolution.y;
+        //std::cout << "Baikal renderer benchmark\n";
+        //std::cout << "Number of primary rays: " << numrays << "\n";
+        //std::cout << "Primary rays: " << (float)(numrays / (stats.primary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.primary_rays_time_in_ms << "ms )\n";
+        //std::cout << "Secondary rays: " << (float)(numrays / (stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.secondary_rays_time_in_ms << "ms )\n";
+        //std::cout << "Shadow rays: " << (float)(numrays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.shadow_rays_time_in_ms << "ms )\n";
+
         g_benchmark = false;
+        g_benchmarked = true;
     }
 }
 
@@ -805,6 +810,26 @@ void StartRenderThreads()
 void OnError(int error, const char* description)
 {
     std::cout << description << "\n";
+}
+
+bool GradeBenchmarkResults(std::string const& scene, int& general, int& rt)
+{
+    if (scene == "classroom.obj")
+    {
+        auto num_samples = g_stats.resolution.x * g_stats.resolution.y;
+        auto primary = (float)(num_samples / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
+        auto secondary = (float)(num_samples / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
+        auto shadow = (float)(num_samples / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
+
+        auto avg = (primary + secondary + shadow) / 3.f;
+        auto samples = g_stats.samples_pes_sec;
+
+        general = (int)(samples / 60.f * 100.f);
+        rt = (int)(100.f * avg / 300.f);
+        return true;
+    }
+
+    return false;
 }
 
 int main(int argc, char * argv[])
@@ -980,7 +1005,7 @@ int main(int argc, char * argv[])
             static float aperture = 0.0f;
             static float focal_length = 35.f;
             static float focus_distance = 1.f;
-            static int num_bounces = 1;
+            static int num_bounces = 5;
             static char const* outputs =
                 "Color\0"
                 "World position\0"
@@ -994,37 +1019,10 @@ int main(int argc, char * argv[])
             ;
 
             static int output = 0;
-            
-            static float roughness = 0.5f;
-            static float metallic = 0.5f;
-            static float specular = 0.f;
-            static float specular_tint = 0.f;
-            static float subsurface = 0.f;
-            static float anisotropy = 0.f;
-            static float sheen = 0.f;
-            static float sheen_tint = 0.f;
-            static float clearcoat = 0.f;
-            static float clearcoat_gloss = 0.f;
-            
-            static float g_roughness = 0.5f;
-            static float g_metallic = 0.5f;
-            static float g_specular = 0.f;
-            static float g_specular_tint = 0.f;
-            static float g_subsurface = 0.f;
-            static float g_anisotropy = 0.f;
-            static float g_sheen = 0.f;
-            static float g_sheen_tint = 0.f;
-            static float g_clearcoat = 0.f;
-            static float g_clearcoat_gloss = 0.f;
-
-            
-            static auto iter = g_scene->CreateShapeIterator();
-            static auto mesh = iter->ItemAs<Baikal::Shape const>();
-            static auto material = const_cast<Baikal::Material*>(mesh->GetMaterial());
 
             if (g_gui_visible)
             {
-                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 400), ImVec2(380, 400));
+                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 580), ImVec2(380, 580));
                 ImGui::Begin("Baikal settings");
                 ImGui::Text("Use arrow keys to move");
                 ImGui::Text("PgUp/Down to climb/descent");
@@ -1094,101 +1092,37 @@ int main(int argc, char * argv[])
                 ImGui::Text(" ");
                 ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
-                ImGui::End();
-                
-                
-                
-                
-                
-                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 400), ImVec2(380, 400));
-                ImGui::Begin("Disney material");
-        
-                ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
-                ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
-                ImGui::SliderFloat("specular", &specular, 0.0f, 1.0f);
-                ImGui::SliderFloat("specular_tint", &specular_tint, 0.0f, 1.0f);
-                ImGui::SliderFloat("subsurface", &subsurface, 0.0f, 1.0f);
-                ImGui::SliderFloat("anisotropy", &anisotropy, -1.0f, 1.0f);
-                ImGui::SliderFloat("sheen", &sheen, 0.0f, 1.0f);
-                ImGui::SliderFloat("sheen_tint", &sheen_tint, 0.0f, 1.0f);
-                ImGui::SliderFloat("clearcoat", &clearcoat, 0.0f, 1.0f);
-                ImGui::SliderFloat("clearcoat_gloss", &clearcoat_gloss, 0.0f, 1.0f);
-                
-                ImGui::End();
-                
-                if (g_sheen != sheen)
+
+                ImGui::Separator();
+
+                if (!g_benchmark && ImGui::Button("Start benchmark"))
                 {
-                    g_sheen = sheen;
-                    material->SetInputValue("sheen", RadeonRays::float4(sheen, sheen, sheen, sheen));
-                    update = true;
-                }
-                
-                if (g_sheen_tint != sheen_tint)
-                {
-                    g_sheen_tint = sheen_tint;
-                    material->SetInputValue("sheen_tint", RadeonRays::float4(sheen_tint, sheen_tint, sheen_tint, sheen_tint));
-                    update = true;
-                }
-                
-                if (g_clearcoat != clearcoat)
-                {
-                    g_clearcoat = clearcoat;
-                    material->SetInputValue("clearcoat", RadeonRays::float4(clearcoat, clearcoat, clearcoat, clearcoat));
-                    update = true;
-                }
-                
-                if (g_clearcoat_gloss != clearcoat_gloss)
-                {
-                    g_clearcoat_gloss = clearcoat_gloss;
-                    material->SetInputValue("clearcoat_gloss", RadeonRays::float4(clearcoat_gloss, clearcoat_gloss, clearcoat_gloss, clearcoat_gloss));
-                    update = true;
-                }
-                
-                if (roughness != g_roughness)
-                {
-                    g_roughness = roughness;
-                    material->SetInputValue("roughness", RadeonRays::float4(roughness, roughness, roughness, roughness));
-                    update = true;
-                }
-                
-                if (g_anisotropy != anisotropy)
-                {
-                    g_anisotropy = anisotropy;
-                    material->SetInputValue("anisotropy", RadeonRays::float4(anisotropy, anisotropy, anisotropy, anisotropy));
-                    update = true;
-                }
-                
-                if (g_metallic != metallic)
-                {
-                    g_metallic = metallic;
-                    material->SetInputValue("metallic", RadeonRays::float4(metallic, metallic, metallic, metallic));
-                    update = true;
-                }
-                
-                if (g_specular != specular)
-                {
-                    g_specular = specular;
-                    material->SetInputValue("specular", RadeonRays::float4(specular, specular, specular, specular));
-                    update = true;
-                }
-                
-                if (g_specular_tint != specular_tint)
-                {
-                    g_specular_tint = specular_tint;
-                    material->SetInputValue("specular_tint", RadeonRays::float4(specular_tint, specular_tint, specular_tint, specular_tint));
-                    update = true;
-                }
-                
-                if (g_subsurface != subsurface)
-                {
-                    g_subsurface = subsurface;
-                    material->SetInputValue("subsurface", RadeonRays::float4(subsurface, subsurface, subsurface, subsurface));
-                    update = true;
+                    g_benchmark = true;
                 }
 
+                if (g_benchmarked)
+                {
+                    ImGui::Text(" ");
+                    ImGui::Text("Performance index measures general");
+                    ImGui::Text("rendering capabilities.");
+                    ImGui::Text("RT performance index measures system");
+                    ImGui::Text("ray tracing capabilities.");
+
+                    int general, rt;
+
+                    if (GradeBenchmarkResults(g_modelname, general, rt))
+                    {
+                        ImGui::TextColored(ImVec4(0.2f, 1.f, 0.2f, 1.f), "Performance index: %d (of 100)", general);
+                        ImGui::TextColored(ImVec4(0.2f, 1.f, 0.2f, 1.f), "RT perf index: %d (of 100)", rt);
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(0.7f, 0.2f, 0.2f, 1.f), "Perf grades are not available for this scene");
+                    }
+                }
                 
-                
-                
+                ImGui::End();
+
                 ImGui::Render();
             }
 

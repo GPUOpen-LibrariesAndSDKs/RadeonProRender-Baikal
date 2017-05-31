@@ -453,7 +453,7 @@ float3 Lambert_Sample(
 
     float F = dg->mat.fresnel;
 
-    *pdf = fabs(wo->y) / PI;
+    *pdf = fabs((*wo).y) / PI;
 
     return F * kd / PI;
 }
@@ -499,7 +499,7 @@ float3 Translucent_Sample(
 
     *wo = normalize(Sample_MapToHemisphere(sample, n, 1.f));
 
-    *pdf = fabs(wo->y) / PI;
+    *pdf = fabs((*wo).y) / PI;
 
     return kd / PI;
 }
@@ -589,7 +589,7 @@ float3 IdealReflect_Sample(
 
     float F = dg->mat.fresnel;
 
-    float coswo = fabs(wo->y);
+    float coswo = fabs((*wo).y);
 
     // Return reflectance value
     return coswo > DENOM_EPS ? (F * ks * (1.f / coswo)) : 0.f;
@@ -1000,7 +1000,7 @@ float3 Passthrough_Sample(
 {
 
     *wo = -wi;
-    float coswo = fabs(wo->y);
+    float coswo = fabs((*wo).y);
 
     // PDF is infinite at that point, but deltas are going to cancel out while evaluating
     // so set it to 1.f
@@ -1047,8 +1047,10 @@ float3 Bxdf_Evaluate(
         return MicrofacetRefractionGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
     case kMicrofacetRefractionBeckmann:
         return MicrofacetRefractionBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+#ifdef ENABLE_DISNEY
     case kDisney:
         return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+#endif
     }
 
     return 0.f;
@@ -1105,9 +1107,11 @@ float3 Bxdf_Sample(
     case kMicrofacetRefractionBeckmann:
         res = MicrofacetRefractionBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
         break;
+#ifdef ENABLE_DISNEY
     case kDisney:
         res = Disney_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
         break;
+#endif
     default:
         *pdf = 0.f;
         break;
@@ -1154,8 +1158,10 @@ float Bxdf_GetPdf(
         return MicrofacetRefractionGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
     case kMicrofacetRefractionBeckmann:
         return MicrofacetRefractionBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+#ifdef ENABLE_DISNEY
     case kDisney:
         return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+#endif
     }
 
     return 0.f;

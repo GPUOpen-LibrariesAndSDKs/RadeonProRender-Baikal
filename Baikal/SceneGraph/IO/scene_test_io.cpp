@@ -279,17 +279,6 @@ namespace Baikal
             scene->AttachShape(mesh);
             scene->AttachAutoreleaseObject(mesh);
 
-            DisneyBxdf* disney = new DisneyBxdf();
-            disney->SetInputValue("albedo", float4(0.7f, 0.f, 0.f, 0.0f));
-//            disney->SetInputValue("metallic", float4(0.5f, 0.5f, 0.5f, 0.5f));
-//            disney->SetInputValue("roughness", float4(0.f, 0.f, 0.f, 0.f));
-//            disney->SetInputValue("specular", float4(1.f, 1.f, 1.f, 1.f));
-//            disney->SetInputValue("specular_tint", float4(1.f, 1.f, 1.f, 1.f));
-            
-            scene->AttachAutoreleaseObject(disney);
-
-            mesh->SetMaterial(disney);
-
             Mesh* floor = CreateQuad(
                                      {
                                          RadeonRays::float3(-8, 0, -8),
@@ -306,11 +295,11 @@ namespace Baikal
             
             ImageBasedLight* ibl = new ImageBasedLight();
             ibl->SetTexture(ibl_texture);
-            ibl->SetMultiplier(5.f);
+            ibl->SetMultiplier(3.f);
             scene->AttachLight(ibl);
             scene->AttachAutoreleaseObject(ibl);
         }
-        else if (filename == "10spheres+plane+ibl")
+        else if (filename == "100spheres+plane+ibl+disney")
         {
             auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
             scene->AttachShape(mesh);
@@ -347,7 +336,7 @@ namespace Baikal
                     
                     if (params[i] == "anisotropy")
                     {
-                        disney->SetInputValue("roughness", float4(0.2f));
+                        disney->SetInputValue("roughness", float4(0.4f));
                         disney->SetInputValue("metallic", float4(0.75f));
                         disney->SetInputValue("specular", float4(0.f));
                         disney->SetInputValue("clearcoat", float4(0.f));
@@ -367,6 +356,7 @@ namespace Baikal
                         disney->SetInputValue("metallic", float4(0.0f));
                         disney->SetInputValue("clearcoat", float4(1.0f));
                         disney->SetInputValue("clearcoat_gloss", float4(0.5f));
+                        disney->SetInputValue("specular", float4(0.f));
                     }
                     
                     if (params[i] == "specular" || params[i] == "specular_tint")
@@ -382,7 +372,7 @@ namespace Baikal
                         disney->SetInputValue("roughness", float4(0.f));
                         disney->SetInputValue("metallic", float4(0.0f));
                         disney->SetInputValue("clearcoat", float4(0.f));
-                        disney->SetInputValue("specular", float4(1.f));
+                        disney->SetInputValue("specular", float4(0.f));
                     }
                     
                     float3 value = float3( j / 10.f, j / 10.f, j / 10.f);

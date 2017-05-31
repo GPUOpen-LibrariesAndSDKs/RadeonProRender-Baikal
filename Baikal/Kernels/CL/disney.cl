@@ -102,15 +102,15 @@ INLINE float Disney_GetPdf(
     // Normalize lum. to isolate hue+sat
     float3 c_tint = cd_lum > 0.f ? (cd_lin / cd_lum) : WHITE;
     
-    float3 c_spec0 = mix(specular * 0.08f * mix(WHITE,
+    float3 c_spec0 = mix(specular * 0.1f * mix(WHITE,
                                         c_tint, specular_tint),
                          cd_lin, metallic);
     
     float cs_lum = dot(c_spec0, make_float3(0.3f, 0.6f, 0.1f));
     
-    float cs_w = cs_lum / (cs_lum + cd_lum);
+    float cs_w = cs_lum / (cs_lum + (1.f - metallic) * cd_lum);
     
-    return c_pdf * clearcoat * 0.25f + (1.f - clearcoat * 0.25f) * (cs_w * r_pdf + (1.f - cs_w) * d_pdf);
+    return c_pdf * clearcoat + (1.f - clearcoat) * (cs_w * r_pdf + (1.f - cs_w) * d_pdf);
 }
 
 
@@ -151,7 +151,7 @@ INLINE float3 Disney_Evaluate(
     // Normalize lum. to isolate hue+sat
     float3 c_tint = cd_lum > 0.f ? (cd_lin / cd_lum) : WHITE;
     
-    float3 c_spec0 = mix(specular * 0.08f * mix(WHITE,
+    float3 c_spec0 = mix(specular * 0.1f * mix(WHITE,
                                     c_tint, specular_tint),
                                     cd_lin, metallic);
     
@@ -192,7 +192,7 @@ INLINE float3 Disney_Evaluate(
     float gr = SmithGGX_G(ndotwo, 0.25f) * SmithGGX_G(ndotwi, 0.25f);
     
     return ((1.f / PI) * mix(fd, ss, subsurface) * cd_lin + f_sheen) *
-            (1.f - metallic) + gs * fs * ds + 0.25f * clearcoat * gr * fr * dr;
+            (1.f - metallic) + gs * fs * ds + clearcoat * gr * fr * dr;
 }
 
 INLINE float3 Disney_Sample(
@@ -210,6 +210,7 @@ INLINE float3 Disney_Sample(
                             float* pdf
                             )
 {
+    float3 base_color = Texture_GetValue3f(dg->mat.base_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.base_color_map_idx));
     float metallic = Texture_GetValue1f(dg->mat.metallic, dg->uv, TEXTURE_ARGS_IDX(dg->mat.metallic_map_idx));
     float specular = Texture_GetValue1f(dg->mat.specular, dg->uv, TEXTURE_ARGS_IDX(dg->mat.specular_map_idx));
     float anisotropy = Texture_GetValue1f(dg->mat.anisotropy, dg->uv, TEXTURE_ARGS_IDX(dg->mat.anisotropy_map_idx));
@@ -230,7 +231,7 @@ INLINE float3 Disney_Sample(
     
     if (sample.x < clearcoat)
     {
-        sample.x /= clearcoat;
+        sample.x /= (clearcoat);
         
         float a = mix(0.1f,0.001f, clearcoat_gloss);
         float ndotwh = native_sqrt((1.f - native_powr(a*a, 1.f - sample.y)) / (1.f - a*a));
@@ -244,12 +245,27 @@ INLINE float3 Disney_Sample(
     }
     else
     {
-        sample.x -= clearcoat;
+        sample.x -= (clearcoat);
         sample.x /= (1.f - clearcoat);
+
+        float3 cd_lin = native_powr(base_color, 2.2f);
+        // Luminance approximmation
+        float cd_lum = dot(cd_lin, make_float3(0.3f, 0.6f, 0.1f));
+
+        // Normalize lum. to isolate hue+sat
+        float3 c_tint = cd_lum > 0.f ? (cd_lin / cd_lum) : WHITE;
+
+        float3 c_spec0 = mix(specular * 0.3f * mix(WHITE,
+            c_tint, specular_tint),
+            cd_lin, metallic);
+
+        float cs_lum = dot(c_spec0, make_float3(0.3f, 0.6f, 0.1f));
+
+        float cs_w = cs_lum / (cs_lum + (1.f - metallic) * cd_lum);
         
-        if (sample.y < metallic)
+        if (sample.y < cs_w)
         {
-            sample.y /= metallic;
+            sample.y /= cs_w;
             
             float t = native_sqrt(sample.y / (1.f - sample.y));
             wh = normalize(make_float3(t * ax * native_cos(2.f * PI * sample.x),
@@ -260,8 +276,8 @@ INLINE float3 Disney_Sample(
         }
         else
         {
-            sample.y -= metallic;
-            sample.y /= (1.f - metallic);
+            sample.y -= cs_w;
+            sample.y /= (1.f - cs_w);
             
             *wo = Sample_MapToHemisphere(sample, make_float3(0.f, 1.f, 0.f) , 1.f);
             
