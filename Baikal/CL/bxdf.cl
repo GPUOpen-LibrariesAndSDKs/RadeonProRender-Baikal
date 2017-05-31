@@ -1026,15 +1026,17 @@ float3 Hair_Evaluate(DifferentialGeometry const* dg, // Geometry
 	float3 Rb = cross(T, Rn);
 
 	// @todo: get parameters from args
-	float3 kd = (float3)(0.1f, 0.05f, 0.0f);
-	float3 ks = 0.25f * (float3)(1.f, 1.f, 1.f);
-	float specPower = (float)80.0f;
+	float3 kd = (float3)(0.1f, 0.03f, 0.01f);
+	float3 ks = 0.5f * (float3)(1.f, 1.f, 1.f);
+	float specPower = (float)50.0f;
 
 	float wiT = dot(wi, T);
 	float woT = dot(wo, T);
+	float sinThetai = sqrt(fabs(1.0 - wiT*wiT));
 	float spec_term = fabs(-wiT*woT + sqrt(fabs((1.f - wiT*wiT)*(1.f - woT*woT))));
 
-	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / fabs(woT); // -cos^n(reflected-incident) / cos(incident)
+	float denom_tol = 1.0e-6f;
+	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / max(denom_tol, sinThetai); // -cos^n(reflected-incident) / cos(incident)
 	float3 kajiyakay_diff = kd / PI;
 	return kajiyakay_diff + kajiyakay_spec;
 }
@@ -1068,19 +1070,21 @@ float3 Hair_Sample( DifferentialGeometry const* dg, // Geometry
 
 	// (NB, 'wo' normally refers to the known scattered/output direction at the vertex, and 'wi' is the sampled incident direction)
 	float phi = 2.f*PI*sample.x;
-	*wo = Rt + cos(phi)*Rn + sin(phi)*Rb;
+	*wo = normalize(Rt + cos(phi)*Rn + sin(phi)*Rb);
 	*pdf = 0.5f/PI;
 
 	// @todo: get parameters from args
-	float3 kd = (float3)(0.1f, 0.05f, 0.0f);
-	float3 ks = 0.25f * (float3)(1.f, 1.f, 1.f);
-	float specPower = (float)80.0f;
+	float3 kd = (float3)(0.1f, 0.03f, 0.01f);
+	float3 ks = 0.5f * (float3)(1.f, 1.f, 1.f);
+	float specPower = (float)50.0f;
 
 	float wiT = dot(wi, T);
 	float woT = dot(*wo, T);
+	float sinThetai = sqrt(fabs(1.0 - wiT*wiT));
 	float spec_term = fabs(-wiT*woT + sqrt(fabs((1.f - wiT*wiT)*(1.f - woT*woT))));
 
-	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / fabs(woT); // -cos^n(reflected-incident) / cos(incident)
+	float denom_tol = 1.0e-6f;
+	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / max(denom_tol, sinThetai); // -cos^n(reflected-incident) / cos(incident)
 	float3 kajiyakay_diff = kd / PI;
 	return kajiyakay_diff + kajiyakay_spec;
 }
