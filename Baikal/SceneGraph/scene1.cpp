@@ -73,7 +73,9 @@ namespace Baikal
         assert(light);
 
         // Check if the light is already in the scene
-        LightList::const_iterator citer =  std::find(m_impl->m_lights.cbegin(), m_impl->m_lights.cend(), light);
+        LightList::const_iterator citer =  std::find(m_impl->m_lights.cbegin(),
+                                                     m_impl->m_lights.cend(),
+                                                     light);
         
         // And insert only if not
         if (citer == m_impl->m_lights.cend())
@@ -87,7 +89,9 @@ namespace Baikal
     void Scene1::DetachLight(Light const* light)
     {
         // Check if the light is in the scene
-        LightList::const_iterator citer =  std::find(m_impl->m_lights.cbegin(), m_impl->m_lights.cend(), light);
+        LightList::const_iterator citer =  std::find(m_impl->m_lights.cbegin(),
+                                                     m_impl->m_lights.cend(),
+                                                     light);
         
         // And remove it if yes
         if (citer != m_impl->m_lights.cend())
@@ -103,9 +107,11 @@ namespace Baikal
         return m_impl->m_lights.size();
     }
 
-    Iterator* Scene1::CreateShapeIterator() const
+    std::unique_ptr<Iterator> Scene1::CreateShapeIterator() const
     {
-        return new IteratorImpl<ShapeList::const_iterator>(m_impl->m_shapes.begin(), m_impl->m_shapes.end());
+        return std::unique_ptr<Iterator>(
+            new IteratorImpl<ShapeList::const_iterator>
+            (m_impl->m_shapes.begin(), m_impl->m_shapes.end()));
     }
     
     void Scene1::AttachShape(Shape const* shape)
@@ -113,7 +119,9 @@ namespace Baikal
         assert(shape);
         
         // Check if the shape is already in the scene
-        ShapeList::const_iterator citer =  std::find(m_impl->m_shapes.cbegin(), m_impl->m_shapes.cend(), shape);
+        ShapeList::const_iterator citer =  std::find(m_impl->m_shapes.cbegin(),
+                                                     m_impl->m_shapes.cend(),
+                                                     shape);
         
         // And attach it if not
         if (citer == m_impl->m_shapes.cend())
@@ -129,7 +137,9 @@ namespace Baikal
         assert(shape);
         
         // Check if the shape is in the scene
-        ShapeList::const_iterator citer =  std::find(m_impl->m_shapes.cbegin(), m_impl->m_shapes.cend(), shape);
+        ShapeList::const_iterator citer =  std::find(m_impl->m_shapes.cbegin(),
+                                                     m_impl->m_shapes.cend(),
+                                                     shape);
         
         // And detach if yes
         if (citer != m_impl->m_shapes.cend())
@@ -150,7 +160,9 @@ namespace Baikal
         assert(object);
         
         // Check if the light is already in the scene
-        AutoreleasePool::const_iterator citer =  std::find(m_impl->m_autorelease_pool.cbegin(), m_impl->m_autorelease_pool.cend(), object);
+        AutoreleasePool::const_iterator citer =
+        std::find(m_impl->m_autorelease_pool.cbegin(),
+                  m_impl->m_autorelease_pool.cend(), object);
         
         // And insert only if not
         if (citer == m_impl->m_autorelease_pool.cend())
@@ -164,7 +176,9 @@ namespace Baikal
         assert(object);
         
         // Check if the light is already in the scene
-        AutoreleasePool::const_iterator citer =  std::find(m_impl->m_autorelease_pool.cbegin(), m_impl->m_autorelease_pool.cend(), object);
+        AutoreleasePool::const_iterator citer =
+        std::find(m_impl->m_autorelease_pool.cbegin(),
+                  m_impl->m_autorelease_pool.cend(), object);
         
         // And insert only if not
         if (citer != m_impl->m_autorelease_pool.cend())
@@ -173,9 +187,11 @@ namespace Baikal
         }
     }
     
-    Iterator* Scene1::CreateLightIterator() const
+    std::unique_ptr<Iterator> Scene1::CreateLightIterator() const
     {
-        return new IteratorImpl<LightList::const_iterator>(m_impl->m_lights.begin(), m_impl->m_lights.end());
+        return std::unique_ptr<Iterator>(
+            new IteratorImpl<LightList::const_iterator>
+            (m_impl->m_lights.begin(), m_impl->m_lights.end()));
     }
     
     bool Scene1::IsValid() const

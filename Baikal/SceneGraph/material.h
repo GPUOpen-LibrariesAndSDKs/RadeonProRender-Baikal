@@ -97,30 +97,36 @@ namespace Baikal
         virtual ~Material() = 0;
 
         // Iterator of dependent materials (plugged as inputs)
-        virtual Iterator* CreateMaterialIterator() const;
+        virtual std::unique_ptr<Iterator> CreateMaterialIterator() const;
         // Iterator of textures (plugged as inputs)
-        virtual Iterator* CreateTextureIterator() const;
+        virtual std::unique_ptr<Iterator> CreateTextureIterator() const;
         // Iterator of inputs
-        virtual Iterator* CreateInputIterator() const;
+        virtual std::unique_ptr<Iterator> CreateInputIterator() const;
         // Check if material has emissive components
         virtual bool HasEmission() const;
 
         // Set input value
         // If specific data type is not supported throws std::runtime_error
-        void SetInputValue(std::string const& name, RadeonRays::float4 const& value);
+        void SetInputValue(std::string const& name,
+                           RadeonRays::float4 const& value);
         void SetInputValue(std::string const& name, Texture const* texture);
         void SetInputValue(std::string const& name, Material const* material);
 
         InputValue GetInputValue(std::string const& name) const;
 
-        // Check if material is thin (normal is always pointing in ray incidence direction)
+        // Check if material is thin (normal is always pointing in ray incidence
+        // direction)
         bool IsThin() const;
         // Set thin flag
         void SetThin(bool thin);
+        
+        Material(Material const&) = delete;
+        Material& operator = (Material const&) = delete;
 
     protected:
         // Register specific input
-        void RegisterInput(std::string const& name, std::string const& desc, std::set<InputType>&& supported_types);
+        void RegisterInput(std::string const& name, std::string const& desc,
+                           std::set<InputType>&& supported_types);
         // Wipe out all the inputs
         void ClearInputs();
 
@@ -193,5 +199,14 @@ namespace Baikal
     
     private:
         Type m_type;
+    };
+    
+    class DisneyBxdf : public Material
+    {
+    public:
+        DisneyBxdf();
+        
+        // Check if material has emissive components
+        bool HasEmission() const override;
     };
 }

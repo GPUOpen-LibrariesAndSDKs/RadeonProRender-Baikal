@@ -19,46 +19,51 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ********************************************************************/
+#ifndef RAY_CL
+#define RAY_CL
 
-/**
- \file image_io.h
- \author Dmitry Kozlov
- \version 1.0
- \brief
- */
-#pragma once
+#include <../Baikal/Kernels/CL/common.cl>
 
-#include <string>
-#include <memory>
-
-namespace Baikal
+// Ray descriptor
+typedef struct
 {
-    class Texture;
-    
-    /**
-     \brief Interface for image loading and writing
-     
-     ImageIO is responsible for texture loading from disk and keeping track of image reuse.
-     */
-    class ImageIo
-    {
-    public:
-        // Create default image IO
-        static std::unique_ptr<ImageIo> CreateImageIo();
-        
-        // Constructor
-        ImageIo() = default;
-        // Destructor
-        virtual ~ImageIo() = default;
-        
-        // Load texture from file
-        virtual Texture* LoadImage(std::string const& filename) const = 0;
-        virtual void SaveImage(std::string const& filename, Texture const* texture) const = 0;
-        
-        // Disallow copying
-        ImageIo(ImageIo const&) = delete;
-        ImageIo& operator = (ImageIo const&) = delete;
-    };
-    
+    // xyz - origin, w - max range
+    float4 o;
+    // xyz - direction, w - time
+    float4 d;
+    // x - ray mask, y - activity flag
+    int2 extra;
+    // Padding
+    float2 padding;
+} ray;
 
+// Set ray activity flag
+INLINE void Ray_SetInactive(GLOBAL ray* r)
+{
+    r->extra.y = 0;
 }
+
+// Set extra data for ray
+INLINE void Ray_SetExtra(GLOBAL ray* r, float2 extra)
+{
+    r->padding = extra;
+}
+
+// Get extra data for ray
+INLINE float2 Ray_GetExtra(GLOBAL ray const* r)
+{
+    return r->padding;
+}
+
+// Initialize ray structure
+INLINE void Ray_Init(GLOBAL ray* r, float3 o, float3 d, float maxt, float time, int mask)
+{
+    r->o.xyz = o;
+    r->d.xyz = d;
+    r->o.w = maxt;
+    r->d.w = time;
+    r->extra.x = mask;
+    r->extra.y = 0xFFFFFFFF;
+}
+
+#endif

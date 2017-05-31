@@ -29,6 +29,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 namespace Baikal
 {
@@ -43,24 +44,20 @@ namespace Baikal
     {
     public:
         // Create OBJ scene loader
-        static SceneIo* CreateSceneIoObj();
+        static std::unique_ptr<SceneIo> CreateSceneIoObj();
         // Create test scene loader
-        static SceneIo* CreateSceneIoTest();
+        static std::unique_ptr<SceneIo> CreateSceneIoTest();
 
         // Constructor
         SceneIo() = default;
         // Destructor
-        virtual ~SceneIo() = 0;
+        virtual ~SceneIo() = default;
         
         // Load the scene from file using resourse base path
-        virtual Scene1* LoadScene(std::string const& filename, std::string const& basepath) const = 0;
+        virtual std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const = 0;
         
         // Disallow copying
         SceneIo(SceneIo const&) = delete;
         SceneIo& operator = (SceneIo const&) = delete;
     };
-    
-    inline SceneIo::~SceneIo()
-    {
-    }
 }

@@ -67,21 +67,19 @@ THE SOFTWARE.
 
 #include "math/mathutils.h"
 
-#include "Utils/tiny_obj_loader.h"
+#include "RenderFactory/render_factory.h"
+#include "Renderers/ptrenderer.h"
+#include "Renderers/bdptrenderer.h"
+#include "SceneGraph/scene1.h"
 #include "SceneGraph/camera.h"
-#include "Utils/shader_manager.h"
-#include "SceneGraph/scene1.h"
-#include "Renderers/PT/ptrenderer.h"
-#include "Renderers/BDPT/bdptrenderer.h"
-#include "CLW/clwoutput.h"
-#include "Utils/config_manager.h"
-#include "SceneGraph/scene1.h"
+#include "SceneGraph/material.h"
 #include "SceneGraph/IO/scene_io.h"
 #include "SceneGraph/IO/material_io.h"
-
-#ifdef ENABLE_DENOISER
-#include "PostEffects/bilateral_denoiser.h"
-#endif
+#include "SceneGraph/material.h"
+#include "Output/clwoutput.h"
+#include "Utils/shader_manager.h"
+#include "Utils/config_manager.h"
+#include "Utils/tiny_obj_loader.h"
 
 Baikal::Scene1 scene;
 
@@ -134,6 +132,9 @@ bool g_gui_visible = true;
 ConfigManager::Mode g_mode = ConfigManager::Mode::kUseSingleGpu;
 Baikal::Renderer::OutputType g_ouput_type = Baikal::Renderer::OutputType::kColor;
 
+Baikal::Renderer::BenchmarkStats g_stats;
+bool g_benchmarked = false;
+
 using namespace tinyobj;
 
 #define CHECK_GL_ERROR assert(glGetError() == 0)
@@ -141,14 +142,14 @@ using namespace tinyobj;
 
 struct OutputData
 {
-    Baikal::ClwOutput* output;
+    std::unique_ptr<Baikal::Output> output;
 
 #ifdef ENABLE_DENOISER
-    Baikal::ClwOutput* output_position;
-    Baikal::ClwOutput* output_normal;
-    Baikal::ClwOutput* output_albedo;
-    Baikal::ClwOutput* output_denoised;
-    Baikal::BilateralDenoiser* denoiser;
+    std::unique_ptr<Baikal::Output> output_position;
+    std::unique_ptr<Baikal::Output> output_normal;
+    std::unique_ptr<Baikal::Output> output_albedo;
+    std::unique_ptr<Baikal::Output> output_denoised;
+    std::unique_ptr<Baikal::PostEffect> denoiser;
 #endif
 
     std::vector<float3> fdata;
@@ -207,7 +208,7 @@ void Render(GLFWwindow* window)
             glClear(GL_COLOR_BUFFER_BIT); CHECK_GL_ERROR;
             glBindVertexArray(g_vao); CHECK_GL_ERROR;
 
-            GLuint program = g_shader_manager->GetProgram("../Baikal/GLSL/simple");
+            GLuint program = g_shader_manager->GetProgram("../Baikal/Kernels/GLSL/simple");
             glUseProgram(program); CHECK_GL_ERROR;
 
             GLuint texloc = glGetUniformLocation(program, "g_Texture");
@@ -371,8 +372,10 @@ void InitData()
 
     {
         // Load OBJ scene
-        std::unique_ptr<Baikal::SceneIo> scene_io(Baikal::SceneIo::CreateSceneIoObj());
-        g_scene.reset(scene_io->LoadScene(filename, basepath));
+        //auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
+        auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
+        //g_scene = scene_io->LoadScene("10spheres+plane+ibl", basepath);
+        g_scene = scene_io->LoadScene(filename, basepath);
 
         // Enable this to generate new materal mapping for a model
 #if 0
@@ -390,8 +393,7 @@ void InitData()
             in_materials.close();
             in_mapping.close();
 
-            std::unique_ptr<Baikal::MaterialIo> material_io(Baikal::MaterialIo::CreateMaterialIoXML());
-
+            auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
             auto mats = material_io->LoadMaterials(basepath + "materials.xml");
             auto mapping = material_io->LoadMaterialMapping(basepath + "mapping.xml");
 
@@ -426,22 +428,22 @@ void InitData()
 #pragma omp parallel for
     for (int i = 0; i < g_cfgs.size(); ++i)
     {
-        g_outputs[i].output = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
 
 #ifdef ENABLE_DENOISER
-        g_outputs[i].output_denoised = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].output_normal = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].output_position = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].output_albedo = (Baikal::ClwOutput*)g_cfgs[i].renderer->CreateOutput(g_window_width, g_window_height);
-        g_outputs[i].denoiser = new Baikal::BilateralDenoiser(g_cfgs[i].context);
+        g_outputs[i].output_denoised = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output_normal = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output_position = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].output_albedo = g_cfgs[i].factory->CreateOutput(g_window_width, g_window_height);
+        g_outputs[i].denoiser = g_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory::PostEffectType::kBilateralDenoiser);
 #endif
 
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, g_outputs[i].output);
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, g_outputs[i].output.get());
 
 #ifdef ENABLE_DENOISER
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldShadingNormal, g_outputs[i].output_normal);
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldPosition, g_outputs[i].output_position);
-        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kAlbedo, g_outputs[i].output_albedo);
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldShadingNormal, g_outputs[i].output_normal.get());
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kWorldPosition, g_outputs[i].output_position.get());
+        g_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kAlbedo, g_outputs[i].output_albedo.get());
 #endif
 
         g_outputs[i].fdata.resize(g_window_width * g_window_height);
@@ -666,12 +668,12 @@ void Update(bool update_required)
                 //std::cout << "Finished updating acc buffer\n"; std::cout.flush();
             }
 
-            CLWKernel acckernel = g_cfgs[g_primary].renderer->GetAccumulateKernel();
+            CLWKernel acckernel = static_cast<Baikal::PtRenderer*>(g_cfgs[g_primary].renderer.get())->GetAccumulateKernel();
 
             int argc = 0;
             acckernel.SetArg(argc++, g_outputs[g_primary].copybuffer);
             acckernel.SetArg(argc++, g_window_width * g_window_width);
-            acckernel.SetArg(argc++, g_outputs[g_primary].output->data());
+            acckernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(g_outputs[g_primary].output.get())->data());
 
             int globalsize = g_window_width * g_window_height;
             g_cfgs[g_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, acckernel);
@@ -713,16 +715,16 @@ void Update(bool update_required)
         objects.push_back(g_cl_interop_image);
         g_cfgs[g_primary].context.AcquireGLObjects(0, objects);
 
-        CLWKernel copykernel = g_cfgs[g_primary].renderer->GetCopyKernel();
+        CLWKernel copykernel = static_cast<Baikal::PtRenderer*>(g_cfgs[g_primary].renderer.get())->GetCopyKernel();
 
 #ifdef ENABLE_DENOISER
         auto output = g_outputs[g_primary].output_denoised;
 #else
-        auto output = g_outputs[g_primary].output;
+        auto output = g_outputs[g_primary].output.get();
 #endif
 
         int argc = 0;
-        copykernel.SetArg(argc++, output->data());
+        copykernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(output)->data());
         copykernel.SetArg(argc++, output->width());
         copykernel.SetArg(argc++, output->height());
         copykernel.SetArg(argc++, 2.2f);
@@ -738,25 +740,27 @@ void Update(bool update_required)
 
     if (g_benchmark)
     {
-        auto const kNumBenchmarkPasses = 100U;
+        auto const kNumBenchmarkPasses = 25U;
 
-        Baikal::Renderer::BenchmarkStats stats;
-        g_cfgs[g_primary].renderer->RunBenchmark(*g_scene.get(), kNumBenchmarkPasses, stats);
 
-        auto numrays = stats.resolution.x * stats.resolution.y;
-        std::cout << "Baikal renderer benchmark\n";
-        std::cout << "Number of primary rays: " << numrays << "\n";
-        std::cout << "Primary rays: " << (float)(numrays / (stats.primary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.primary_rays_time_in_ms << "ms )\n";
-        std::cout << "Secondary rays: " << (float)(numrays / (stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.secondary_rays_time_in_ms << "ms )\n";
-        std::cout << "Shadow rays: " << (float)(numrays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.shadow_rays_time_in_ms << "ms )\n";
+        g_cfgs[g_primary].renderer->RunBenchmark(*g_scene.get(), kNumBenchmarkPasses, g_stats);
+
+        //auto numrays = g_stats.resolution.x * g_stats.resolution.y;
+        //std::cout << "Baikal renderer benchmark\n";
+        //std::cout << "Number of primary rays: " << numrays << "\n";
+        //std::cout << "Primary rays: " << (float)(numrays / (stats.primary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.primary_rays_time_in_ms << "ms )\n";
+        //std::cout << "Secondary rays: " << (float)(numrays / (stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.secondary_rays_time_in_ms << "ms )\n";
+        //std::cout << "Shadow rays: " << (float)(numrays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.shadow_rays_time_in_ms << "ms )\n";
+
         g_benchmark = false;
+        g_benchmarked = true;
     }
 }
 
 void RenderThread(ControlData& cd)
 {
-    auto renderer = g_cfgs[cd.idx].renderer;
-    auto output = g_outputs[cd.idx].output;
+    auto renderer = g_cfgs[cd.idx].renderer.get();
+    auto output = g_outputs[cd.idx].output.get();
 
     auto updatetime = std::chrono::high_resolution_clock::now();
 
@@ -806,6 +810,26 @@ void StartRenderThreads()
 void OnError(int error, const char* description)
 {
     std::cout << description << "\n";
+}
+
+bool GradeBenchmarkResults(std::string const& scene, int& general, int& rt)
+{
+    if (scene == "classroom.obj")
+    {
+        auto num_samples = g_stats.resolution.x * g_stats.resolution.y;
+        auto primary = (float)(num_samples / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
+        auto secondary = (float)(num_samples / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
+        auto shadow = (float)(num_samples / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
+
+        auto avg = (primary + secondary + shadow) / 3.f;
+        auto samples = g_stats.samples_pes_sec;
+
+        general = (int)(samples / 60.f * 100.f);
+        rt = (int)(100.f * avg / 300.f);
+        return true;
+    }
+
+    return false;
 }
 
 int main(int argc, char * argv[])
@@ -989,13 +1013,16 @@ int main(int argc, char * argv[])
                 "Geometric normal\0"
                 "Texture coords\0"
                 "Wire\0"
-                "Albedo\0\0";
+                "Albedo\0"
+                "Tangent\0\0"
+                "Bitangent\0\0"
+            ;
 
             static int output = 0;
 
             if (g_gui_visible)
             {
-                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 400), ImVec2(380, 400));
+                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 580), ImVec2(380, 580));
                 ImGui::Begin("Baikal settings");
                 ImGui::Text("Use arrow keys to move");
                 ImGui::Text("PgUp/Down to climb/descent");
@@ -1042,7 +1069,7 @@ int main(int argc, char * argv[])
                     g_num_bounces = num_bounces;
                     for (int i = 0; i < g_cfgs.size(); ++i)
                     {
-                        g_cfgs[i].renderer->SetNumBounces(g_num_bounces);
+                        static_cast<Baikal::PtRenderer*>(g_cfgs[i].renderer.get())->SetNumBounces(g_num_bounces);
                     }
                     update = true;
                 }
@@ -1054,7 +1081,7 @@ int main(int argc, char * argv[])
                     for (int i = 0; i < g_cfgs.size(); ++i)
                     {
                         g_cfgs[i].renderer->SetOutput(g_ouput_type, nullptr);
-                        g_cfgs[i].renderer->SetOutput(tmp, g_outputs[i].output);
+                        g_cfgs[i].renderer->SetOutput(tmp, g_outputs[i].output.get());
                         g_ouput_type = tmp;
                     }
 
@@ -1065,7 +1092,37 @@ int main(int argc, char * argv[])
                 ImGui::Text(" ");
                 ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
+
+                ImGui::Separator();
+
+                if (!g_benchmark && ImGui::Button("Start benchmark"))
+                {
+                    g_benchmark = true;
+                }
+
+                if (g_benchmarked)
+                {
+                    ImGui::Text(" ");
+                    ImGui::Text("Performance index measures general");
+                    ImGui::Text("rendering capabilities.");
+                    ImGui::Text("RT performance index measures system");
+                    ImGui::Text("ray tracing capabilities.");
+
+                    int general, rt;
+
+                    if (GradeBenchmarkResults(g_modelname, general, rt))
+                    {
+                        ImGui::TextColored(ImVec4(0.2f, 1.f, 0.2f, 1.f), "Performance index: %d (of 100)", general);
+                        ImGui::TextColored(ImVec4(0.2f, 1.f, 0.2f, 1.f), "RT perf index: %d (of 100)", rt);
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(0.7f, 0.2f, 0.2f, 1.f), "Perf grades are not available for this scene");
+                    }
+                }
+                
                 ImGui::End();
+
                 ImGui::Render();
             }
 

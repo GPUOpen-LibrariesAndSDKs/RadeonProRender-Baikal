@@ -20,10 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #pragma once
-#include "post_effect_clw.h"
-
-#include "CLW.h"
-#include "../CLW/clwoutput.h"
+#include "clw_post_effect.h"
 
 namespace Baikal
 {
@@ -43,7 +40,7 @@ namespace Baikal
         * kWorldShadingNormal
         * kWorldPosition
     */
-    class BilateralDenoiser : public PostEffectClw
+    class BilateralDenoiser : public ClwPostEffect
     {
     public:
         // Constructor
@@ -59,27 +56,8 @@ namespace Baikal
     };
 
     inline BilateralDenoiser::BilateralDenoiser(CLWContext context)
-        : PostEffectClw(context)
+        : ClwPostEffect(context, "../Baikal/Kernels/CL/denoise.cl")
     {
-        std::string buildopts;
-        
-        buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math -cl-std=CL1.2 -I . ");
-        
-        buildopts.append(
-#if defined(__APPLE__)
-                         "-D APPLE "
-#elif defined(_WIN32) || defined (WIN32)
-                         "-D WIN32 "
-#elif defined(__linux__)
-                         "-D __linux__ "
-#else
-                         ""
-#endif
-                         );
-        
-        // Compile kernels
-        m_program = CLWProgram::CreateFromFile("../Baikal/CL/denoise.cl", buildopts.c_str(), GetContext());
-
         // Add necessary params
         RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
         RegisterParameter("color_sensitivity", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
@@ -115,8 +93,6 @@ namespace Baikal
         auto out_color = static_cast<ClwOutput*>(&output);
 
         auto denoise_kernel = m_program.GetKernel("BilateralDenoise_main");
-
-        int num_pixels = color->width() * color->height();
 
         // Set kernel parameters
         int argc = 0;

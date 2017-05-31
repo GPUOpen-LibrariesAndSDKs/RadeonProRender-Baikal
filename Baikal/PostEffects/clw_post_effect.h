@@ -19,53 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#ifndef CONFIG_MANAGER_H
-#define CONFIG_MANAGER_H
+#pragma once
+
+#include "post_effect.h"
 
 #include "CLW.h"
-#include <vector>
-#include <memory>
+#include "Output/clwoutput.h"
+#include "Utils/clw_class.h"
+
+#include <string>
 
 namespace Baikal
 {
-    class Renderer;
-    class RenderFactory;
+    /**
+    \brief Post effects partial implementation based on CLW framework.
+    */
+    class ClwPostEffect: public PostEffect, protected ClwClass
+    {
+    public:
+        // Constructor, receives CLW context
+        ClwPostEffect(CLWContext context, std::string const& file_name);
+    };
+
+    inline ClwPostEffect::ClwPostEffect(CLWContext context, std::string const& file_name)
+        : ClwClass(context, file_name)
+    {
+    }
 }
-
-class ConfigManager
-{
-public:
-
-    enum DeviceType
-    {
-        kPrimary,
-        kSecondary
-    };
-
-    enum Mode
-    {
-        kUseAll,
-        kUseGpus,
-        kUseSingleGpu,
-        kUseSingleCpu,
-        kUseCpus
-    };
-
-    struct Config
-    {
-        DeviceType type;
-        int devidx;
-        std::unique_ptr<Baikal::Renderer> renderer;
-        std::unique_ptr<Baikal::RenderFactory> factory;
-        CLWContext context;
-        bool caninterop;
-
-    };
-
-    static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);
-
-private:
-
-};
-
-#endif // CONFIG_MANAGER_H

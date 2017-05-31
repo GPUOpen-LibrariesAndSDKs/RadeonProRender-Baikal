@@ -1,5 +1,6 @@
+
 /**********************************************************************
- Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+ Copyright (c) 2017 Advanced Micro Devices, Inc. All rights reserved.
  
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -19,46 +20,38 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ********************************************************************/
-
-/**
- \file image_io.h
- \author Dmitry Kozlov
- \version 1.0
- \brief
- */
 #pragma once
 
-#include <string>
-#include <memory>
+#include "render_factory.h"
+#include "CLW.h"
+
 
 namespace Baikal
 {
-    class Texture;
-    
     /**
-     \brief Interface for image loading and writing
+     \brief RenderFactory class is in charge of render entities creation.
      
-     ImageIO is responsible for texture loading from disk and keeping track of image reuse.
+     \details RenderFactory makes sure renderer objects are compatible between
+     each other since many of them might use either CPU or GPU implementation.
+     Entities create via the same factory are known to be compatible.
      */
-    class ImageIo
+    class ClwRenderFactory : public RenderFactory
     {
     public:
-        // Create default image IO
-        static std::unique_ptr<ImageIo> CreateImageIo();
+        ClwRenderFactory(CLWContext context, int device_index);
         
-        // Constructor
-        ImageIo() = default;
-        // Destructor
-        virtual ~ImageIo() = default;
+        // Create a renderer of specified type
+        std::unique_ptr<Renderer> CreateRenderer(RendererType type) const
+                                                                    override;
+        // Create an output of specified type
+        std::unique_ptr<Output> CreateOutput(std::uint32_t w, std::uint32_t h)
+                                                                const override;
+        // Create post effect of specified type
+        std::unique_ptr<PostEffect> CreatePostEffect(PostEffectType type)
+                                                                const override;
         
-        // Load texture from file
-        virtual Texture* LoadImage(std::string const& filename) const = 0;
-        virtual void SaveImage(std::string const& filename, Texture const* texture) const = 0;
-        
-        // Disallow copying
-        ImageIo(ImageIo const&) = delete;
-        ImageIo& operator = (ImageIo const&) = delete;
+    private:
+        CLWContext m_context;
+        int m_device_index;
     };
-    
-
 }

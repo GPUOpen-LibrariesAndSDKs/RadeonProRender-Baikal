@@ -16,15 +16,15 @@ namespace Baikal
     {
     public:
         // Load scene from file
-        Scene1* LoadScene(std::string const& filename, std::string const& basepath) const override;
+        std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
     private:
         Material const* TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
 
     };
 
-    SceneIo* SceneIo::CreateSceneIoObj()
+    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoObj()
     {
-        return new SceneIoObj();
+        return std::unique_ptr<SceneIo>(new SceneIoObj());
     }
 
 
@@ -146,7 +146,7 @@ namespace Baikal
         return material;
     }
 
-    Scene1* SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
+    std::unique_ptr<Scene1> SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
     {
         using namespace tinyobj;
 
@@ -241,18 +241,18 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(1.f);
+        ibl->SetMultiplier(10.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
         DirectionalLight* light = new DirectionalLight();
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
-        light->SetEmittedRadiance(3.5f * RadeonRays::float3(1.f, 1.f, 1.f));
+        light->SetEmittedRadiance(35.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
         scene->AttachAutoreleaseObject(light);
 
         DirectionalLight* light1 = new DirectionalLight();
@@ -260,10 +260,10 @@ namespace Baikal
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
         scene->AttachAutoreleaseObject(light1);
 
-        //scene->AttachLight(light);
-        scene->AttachLight(light1);
+        scene->AttachLight(light);
+        //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 
-        return scene;
+        return std::unique_ptr<Scene1>(scene);
     }
 }
