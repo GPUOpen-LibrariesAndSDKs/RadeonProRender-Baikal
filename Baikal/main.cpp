@@ -133,7 +133,14 @@ ConfigManager::Mode g_mode = ConfigManager::Mode::kUseSingleGpu;
 Baikal::Renderer::OutputType g_ouput_type = Baikal::Renderer::OutputType::kColor;
 
 Baikal::Renderer::BenchmarkStats g_stats;
-bool g_benchmarked = false;
+bool g_time_benchmarked = false;
+bool g_rt_benchmarked = false;
+bool g_time_benchmark = false;
+float g_time_benchmark_time = 0.f;
+
+decltype(std::chrono::high_resolution_clock::now()) g_time_bench_start_time;
+
+
 
 using namespace tinyobj;
 
@@ -533,60 +540,65 @@ void Update(bool update_required)
     float camroty = 0.f;
 
     const float kMouseSensitivity = 0.001125f;
-    float2 delta = g_mouse_delta * float2(kMouseSensitivity, kMouseSensitivity);
-    camrotx = -delta.x;
-    camroty = -delta.y;
 
-    if (std::abs(camroty) > 0.001f)
+    if (!g_benchmark && !g_time_benchmark)
     {
-        g_camera->Tilt(camroty);
-        //g_camera->ArcballRotateVertically(float3(0, 0, 0), camroty);
-        update = true;
-    }
+        float2 delta = g_mouse_delta * float2(kMouseSensitivity, kMouseSensitivity);
+        camrotx = -delta.x;
+        camroty = -delta.y;
 
-    if (std::abs(camrotx) > 0.001f)
-    {
 
-        g_camera->Rotate(camrotx);
-        //g_camera->ArcballRotateHorizontally(float3(0, 0, 0), camrotx);
-        update = true;
-    }
+        if (std::abs(camroty) > 0.001f)
+        {
+            g_camera->Tilt(camroty);
+            //g_camera->ArcballRotateVertically(float3(0, 0, 0), camroty);
+            update = true;
+        }
 
-    const float kMovementSpeed = g_cspeed;
-    if (g_is_fwd_pressed)
-    {
-        g_camera->MoveForward((float)dt.count() * kMovementSpeed);
-        update = true;
-    }
+        if (std::abs(camrotx) > 0.001f)
+        {
 
-    if (g_is_back_pressed)
-    {
-        g_camera->MoveForward(-(float)dt.count() * kMovementSpeed);
-        update = true;
-    }
+            g_camera->Rotate(camrotx);
+            //g_camera->ArcballRotateHorizontally(float3(0, 0, 0), camrotx);
+            update = true;
+        }
 
-    if (g_is_right_pressed)
-    {
-        g_camera->MoveRight((float)dt.count() * kMovementSpeed);
-        update = true;
-    }
+        const float kMovementSpeed = g_cspeed;
+        if (g_is_fwd_pressed)
+        {
+            g_camera->MoveForward((float)dt.count() * kMovementSpeed);
+            update = true;
+        }
 
-    if (g_is_left_pressed)
-    {
-        g_camera->MoveRight(-(float)dt.count() * kMovementSpeed);
-        update = true;
-    }
+        if (g_is_back_pressed)
+        {
+            g_camera->MoveForward(-(float)dt.count() * kMovementSpeed);
+            update = true;
+        }
 
-    if (g_is_home_pressed)
-    {
-        g_camera->MoveUp((float)dt.count() * kMovementSpeed);
-        update = true;
-    }
+        if (g_is_right_pressed)
+        {
+            g_camera->MoveRight((float)dt.count() * kMovementSpeed);
+            update = true;
+        }
 
-    if (g_is_end_pressed)
-    {
-        g_camera->MoveUp(-(float)dt.count() * kMovementSpeed);
-        update = true;
+        if (g_is_left_pressed)
+        {
+            g_camera->MoveRight(-(float)dt.count() * kMovementSpeed);
+            update = true;
+        }
+
+        if (g_is_home_pressed)
+        {
+            g_camera->MoveUp((float)dt.count() * kMovementSpeed);
+            update = true;
+        }
+
+        if (g_is_end_pressed)
+        {
+            g_camera->MoveUp(-(float)dt.count() * kMovementSpeed);
+            update = true;
+        }
     }
 
     if (update)
@@ -753,7 +765,7 @@ void Update(bool update_required)
         //std::cout << "Shadow rays: " << (float)(numrays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.shadow_rays_time_in_ms << "ms )\n";
 
         g_benchmark = false;
-        g_benchmarked = true;
+        g_rt_benchmarked = true;
     }
 }
 
@@ -812,20 +824,31 @@ void OnError(int error, const char* description)
     std::cout << description << "\n";
 }
 
-bool GradeBenchmarkResults(std::string const& scene, int& general, int& rt)
+bool GradeTimeBenchmarkResults(std::string const& scene, int time_in_sec, std::string& rating, ImVec4& color)
 {
     if (scene == "classroom.obj")
     {
-        auto num_samples = g_stats.resolution.x * g_stats.resolution.y;
-        auto primary = (float)(num_samples / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
-        auto secondary = (float)(num_samples / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
-        auto shadow = (float)(num_samples / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
+        if (time_in_sec < 70)
+        {
+            rating = "Excellent";
+            color = ImVec4(0.1f, 0.7f, 0.1f, 1.f);
+        }
+        else if (time_in_sec < 100)
+        {
+            rating = "Good";
+            color = ImVec4(0.1f, 0.7f, 0.1f, 1.f);
+        }
+        else if (time_in_sec < 120)
+        {
+            rating = "Average";
+            color = ImVec4(0.7f, 0.7f, 0.1f, 1.f);
+        }
+        else
+        {
+            rating = "Poor";
+            color = ImVec4(0.7f, 0.1f, 0.1f, 1.f);
+        }
 
-        auto avg = (primary + secondary + shadow) / 3.f;
-        auto samples = g_stats.samples_pes_sec;
-
-        general = (int)(samples / 60.f * 100.f);
-        rt = (int)(100.f * avg / 300.f);
         return true;
     }
 
@@ -1092,33 +1115,69 @@ int main(int argc, char * argv[])
                 ImGui::Text(" ");
                 ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
-
                 ImGui::Separator();
 
-                if (!g_benchmark && ImGui::Button("Start benchmark"))
+                if (g_time_benchmark)
                 {
-                    g_benchmark = true;
+                    ImGui::ProgressBar(g_samplecount / 512.f);
                 }
 
-                if (g_benchmarked)
+                if (!g_time_benchmark && !g_benchmark)
                 {
-                    ImGui::Text(" ");
-                    ImGui::Text("Performance index measures general");
-                    ImGui::Text("rendering capabilities.");
-                    ImGui::Text("RT performance index measures system");
-                    ImGui::Text("ray tracing capabilities.");
-
-                    int general, rt;
-
-                    if (GradeBenchmarkResults(g_modelname, general, rt))
+                    if(ImGui::Button("Start benchmark") && g_num_samples == -1)
                     {
-                        ImGui::TextColored(ImVec4(0.2f, 1.f, 0.2f, 1.f), "Performance index: %d (of 100)", general);
-                        ImGui::TextColored(ImVec4(0.2f, 1.f, 0.2f, 1.f), "RT perf index: %d (of 100)", rt);
+                        g_time_bench_start_time = std::chrono::high_resolution_clock::now();
+                        g_time_benchmark = true;
+                        update = true;
+                    }
+                    
+                    if (!g_time_benchmark && ImGui::Button("Start RT benchmark"))
+                    {
+                        g_benchmark = true;
+                    }
+                }
+
+                if (g_time_benchmark && g_samplecount > 511)
+                {
+                    g_time_benchmark = false;
+                    auto delta = std::chrono::duration_cast<std::chrono::milliseconds>
+                        (std::chrono::high_resolution_clock::now() - g_time_bench_start_time).count();
+                    g_time_benchmark_time = delta / 1000.f;
+                    g_time_benchmarked = true;
+                }
+
+                if (g_time_benchmarked)
+                {
+                    auto minutes = (int)(g_time_benchmark_time / 60.f);
+                    auto seconds = (int)(g_time_benchmark_time - minutes * 60);
+                    ImGui::Separator();
+
+                    ImVec4 color;
+                    std::string rating;
+                    ImGui::Text("Rendering time: %2dmin:%ds", minutes, seconds);
+                    if (GradeTimeBenchmarkResults(g_modelname, minutes * 60 + seconds, rating, color))
+                    {
+                        ImGui::TextColored(color, "Rating: %s", rating.c_str());
                     }
                     else
                     {
-                        ImGui::TextColored(ImVec4(0.7f, 0.2f, 0.2f, 1.f), "Perf grades are not available for this scene");
+                        ImGui::Text("Rating: N/A");
                     }
+                }
+
+                if (g_rt_benchmarked)
+                {
+                    //if (GradeBenchmarkResults(g_modelname, general, rt))
+                    //{
+                    auto num_rays = g_stats.resolution.x * g_stats.resolution.y;
+                    auto primary = (float)(num_rays / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
+                    auto secondary = (float)(num_rays / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
+                    auto shadow = (float)(num_rays / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
+
+                    ImGui::Separator();
+                    ImGui::Text("Primary rays: %f Mrays/s", primary);
+                    ImGui::Text("Secondary rays: %f Mrays/s", secondary);
+                    ImGui::Text("Shadow rays: %f Mrays/s", shadow);
                 }
                 
                 ImGui::End();
