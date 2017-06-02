@@ -381,7 +381,7 @@ void InitData()
         // Load OBJ scene
         //auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
         auto scene_io = Baikal::SceneIo::CreateSceneIoObj();
-        //g_scene = scene_io->LoadScene("10spheres+plane+ibl", basepath);
+        //g_scene = scene_io->LoadScene("sphere+plane+ibl", basepath);
         g_scene = scene_io->LoadScene(filename, basepath);
 
         // Enable this to generate new materal mapping for a model
@@ -1037,7 +1037,7 @@ int main(int argc, char * argv[])
                 "Texture coords\0"
                 "Wire\0"
                 "Albedo\0"
-                "Tangent\0\0"
+                "Tangent\0"
                 "Bitangent\0\0"
             ;
 

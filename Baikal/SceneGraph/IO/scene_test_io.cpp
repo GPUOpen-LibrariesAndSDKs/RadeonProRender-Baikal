@@ -279,6 +279,27 @@ namespace Baikal
             scene->AttachShape(mesh);
             scene->AttachAutoreleaseObject(mesh);
 
+            SingleBxdf* refract = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
+            refract->SetInputValue("albedo", float4(0.7f, 1.f, 0.7f, 1.f));
+            refract->SetInputValue("ior", float4(1.5f, 1.5f, 1.5f, 1.f));
+            refract->SetInputValue("roughness", float4(0.02f, 0.02f, 0.02f, 1.f));
+
+
+            SingleBxdf* spec = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
+            spec->SetInputValue("albedo", float4(0.7f, 1.f, 0.7f, 1.f));
+            spec->SetInputValue("roughness", float4(0.02f, 0.02f, 0.02f, 1.f));
+
+            MultiBxdf* mix = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+            mix->SetInputValue("base_material", refract);
+            mix->SetInputValue("top_material", spec);
+            mix->SetInputValue("ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
+
+            scene->AttachAutoreleaseObject(spec);
+            scene->AttachAutoreleaseObject(refract);
+            scene->AttachAutoreleaseObject(mix);
+
+            mesh->SetMaterial(mix);
+
             Mesh* floor = CreateQuad(
                                      {
                                          RadeonRays::float3(-8, 0, -8),

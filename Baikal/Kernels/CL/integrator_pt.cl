@@ -430,7 +430,7 @@ __kernel void ShadeSurface(
             float3 temp = diffgeo.p + wo - shadow_ray_o;
             float3 shadow_ray_dir = normalize(temp); 
             float shadow_ray_length = length(temp);
-            int shadow_ray_mask = 0xFFFFFFFF;
+            int shadow_ray_mask = 0x0000FFFF;
 
             Ray_Init(shadowrays + globalid, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
 
