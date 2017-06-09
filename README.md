@@ -7,6 +7,38 @@ Baikal is fast and efficient GPU-based global illumination renderer implemented 
 ![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/1.jpg)
 “Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
+# Build
+
+Baikal is using git submodules, use the following command line to clone all of them:
+
+```
+git clone https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal.git
+
+git submodule init
+
+git submodule update
+```
+
+To build the renderer use the following premake command line on Windows:
+
+```
+Tools\premake\win\premake5 vs2015
+```
+
+Linux:
+
+```
+Tools\premake\linux64\premake5 gmake
+
+make config=release_x64
+```
+
+OSX:
+
+```
+Tools\premake\osx\premake5 xcode4
+```
+
 # Features
 Being more of an experimental renderer, than a production rendering solution, Baikal still maintains a good set of features.
 
