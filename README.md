@@ -28,8 +28,8 @@ Tools\premake\win\premake5 vs2015
 Linux:
 
 ```
-Tools\premake\linux64\premake5 gmake
-
+chmod +x Tools/premake/linux64/premake5
+Tools/premake/linux64/premake5 gmake
 make config=release_x64
 ```
 
