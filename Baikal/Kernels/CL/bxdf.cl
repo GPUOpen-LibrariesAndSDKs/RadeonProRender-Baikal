@@ -998,7 +998,6 @@ float3 Passthrough_Sample(
     float* pdf
     )
 {
-
     *wo = -wi;
     float coswo = fabs((*wo).y);
 
@@ -1010,18 +1009,95 @@ float3 Passthrough_Sample(
     return coswo > 0.0001f ? (1.f / coswo) : 0.f;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// Hair test BRDF
+/////////////////////////////////////////////////////////////////////////////
+
+float3 Hair_Evaluate(DifferentialGeometry const* dg, // Geometry
+	                                      float3 wi, // Incoming direction
+	                                      float3 wo, // Outgoing direction
+	                                TEXTURE_ARG_LIST // Texture args
+)
+{
+	float3 T = dg->dpdu; // hair tangent, aligned with strand axis
+
+	float3 R = -wi;
+	float3 Rt = dot(R, T) * T;
+	float3 Rn = R - Rn;
+	float3 Rb = cross(T, Rn);
+
+	// @todo: get parameters from args
+	float3 kd = (float3)(0.1f, 0.03f, 0.01f);
+	float3 ks = 0.5f * (float3)(1.f, 1.f, 1.f);
+	float specPower = (float)50.0f;
+
+	float wiT = dot(wi, T);
+	float woT = dot(wo, T);
+	float sinThetai = sqrt(fabs(1.0 - wiT*wiT));
+	float spec_term = fabs(-wiT*woT + sqrt(fabs((1.f - wiT*wiT)*(1.f - woT*woT))));
+
+	float denom_tol = 1.0e-6f;
+	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / max(denom_tol, sinThetai); // -cos^n(reflected-incident) / cos(incident)
+	float3 kajiyakay_diff = kd / PI;
+	return kajiyakay_diff + kajiyakay_spec;
+}
+
+float Hair_GetPdf( DifferentialGeometry const* dg,       // Geometry
+	                                    float3 wi,       // Incoming direction
+	                                    float3 wo,       // Outgoing direction
+	                                    TEXTURE_ARG_LIST // Texture args
+)
+{
+	return 0.5f / PI;
+}
+
+float3 Hair_Sample( DifferentialGeometry const* dg, // Geometry
+	                   float3 wi,                   // Incoming direction
+	                   TEXTURE_ARG_LIST,            // Texture args
+	                   float2 sample,               // Sample
+	                   float3* wo,                  // Outgoing  direction
+	                   float* pdf                   // PDF at wo
+)
+{
+	*wo = Sample_MapToHemisphere(sample, make_float3(0.f, 1.f, 0.f) , 1.f);
+
+	float3 T = dg->dpdu; // hair tangent, aligned with strand axis
+
+	// Compute scattered direction, by flipping incident direction and rotating through a random azimuth about the hair axis
+	float3 R = -wi;
+	float3 Rt = dot(R, T) * T;
+	float3 Rn = R - Rn;
+	float3 Rb = cross(T, Rn);
+
+	// (NB, 'wo' normally refers to the known scattered/output direction at the vertex, and 'wi' is the sampled incident direction)
+	float phi = 2.f*PI*sample.x;
+	*wo = normalize(Rt + cos(phi)*Rn + sin(phi)*Rb);
+	*pdf = 0.5f/PI;
+
+	// @todo: get parameters from args
+	float3 kd = (float3)(0.1f, 0.03f, 0.01f);
+	float3 ks = 0.5f * (float3)(1.f, 1.f, 1.f);
+	float specPower = (float)50.0f;
+
+	float wiT = dot(wi, T);
+	float woT = dot(*wo, T);
+	float sinThetai = sqrt(fabs(1.0 - wiT*wiT));
+	float spec_term = fabs(-wiT*woT + sqrt(fabs((1.f - wiT*wiT)*(1.f - woT*woT))));
+
+	float denom_tol = 1.0e-6f;
+	float3 kajiyakay_spec = ks * pow(spec_term, specPower) / max(denom_tol, sinThetai); // -cos^n(reflected-incident) / cos(incident)
+	float3 kajiyakay_diff = kd / PI;
+	return kajiyakay_diff + kajiyakay_spec;
+}
+
 /*
  Dispatch functions
  */
 float3 Bxdf_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
-    // Incoming direction
-    float3 wi,
-    // Outgoing direction
-    float3 wo,
-    // Texture args
-    TEXTURE_ARG_LIST
+    DifferentialGeometry const* dg, // Geometry
+    float3 wi,                      // Incoming direction
+    float3 wo,                      // Outgoing direction
+    TEXTURE_ARG_LIST                // Texture args
     )
 {
     // Transform vectors into tangent space
@@ -1051,25 +1127,20 @@ float3 Bxdf_Evaluate(
     case kDisney:
         return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
+	case kHair:
+		return Hair_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
     }
 
     return 0.f;
 }
 
-float3 Bxdf_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
-    // Incoming direction
-    float3 wi,
-    // Texture args
-    TEXTURE_ARG_LIST,
-    // RNG
-    float2 sample,
-    // Outgoing  direction
-    float3* wo,
-    // PDF at w
-    float* pdf
-    )
+float3 Bxdf_Sample( DifferentialGeometry const* dg, // Geometry
+                    float3 wi,                      // Incoming direction
+                    TEXTURE_ARG_LIST,               // Texture args
+                    float2 sample,                  // RNG
+                    float3* wo,                     // Outgoing  direction
+                    float* pdf                      // PDF at w  
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
@@ -1107,6 +1178,9 @@ float3 Bxdf_Sample(
     case kMicrofacetRefractionBeckmann:
         res = MicrofacetRefractionBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
         break;
+	case kHair:
+		res = Hair_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+		break;
 #ifdef ENABLE_DISNEY
     case kDisney:
         res = Disney_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
@@ -1118,20 +1192,14 @@ float3 Bxdf_Sample(
     }
 
     *wo = matrix_mul_vector3(dg->tangent_to_world, wo_t);
-
     return res;
 }
 
-float Bxdf_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
-    // Incoming direction
-    float3 wi,
-    // Outgoing direction
-    float3 wo,
-    // Texture args
-    TEXTURE_ARG_LIST
-    )
+float Bxdf_GetPdf( DifferentialGeometry const* dg,  // Geometry
+                   float3 wi,                       // Incoming direction
+                   float3 wo,                       // Outgoing direction
+                   TEXTURE_ARG_LIST                 // Texture args
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
@@ -1158,6 +1226,8 @@ float Bxdf_GetPdf(
         return MicrofacetRefractionGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
     case kMicrofacetRefractionBeckmann:
         return MicrofacetRefractionBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+	case kHair:
+		return Hair_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
 #ifdef ENABLE_DISNEY
     case kDisney:
         return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);

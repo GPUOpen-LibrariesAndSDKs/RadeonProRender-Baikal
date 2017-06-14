@@ -24,17 +24,15 @@
 
 #include <../Baikal/Kernels/CL/common.cl>
 
-// Ray descriptor
+// Ray descriptor (must match C++ RadeonRays::ray exactly)
 typedef struct
 {
-    // xyz - origin, w - max range
-    float4 o;
-    // xyz - direction, w - time
-    float4 d;
-    // x - ray mask, y - activity flag
-    int2 extra;
-    // Padding
-    float2 padding;
+    float4 o;        // xyz - origin, w - max range
+    float4 d;        // xyz - direction, w - time
+    int2 extra;      // x = ray mask, y = activity flag
+    float2 padding;  // @todo: not just padding since actually used for logic, right?
+	int2 surface0;   // x = shape id, y = prim index
+	int2 surface1;   // (currently just padding)
 } ray;
 
 // Set ray activity flag
@@ -56,7 +54,8 @@ INLINE float2 Ray_GetExtra(GLOBAL ray const* r)
 }
 
 // Initialize ray structure
-INLINE void Ray_Init(GLOBAL ray* r, float3 o, float3 d, float maxt, float time, int mask)
+INLINE void Ray_Init(GLOBAL ray* r, float3 o, float3 d, float maxt, float time, int mask, 
+	                 int shape_idx, int prim_idx)
 {
     r->o.xyz = o;
     r->d.xyz = d;
@@ -64,6 +63,8 @@ INLINE void Ray_Init(GLOBAL ray* r, float3 o, float3 d, float maxt, float time, 
     r->d.w = time;
     r->extra.x = mask;
     r->extra.y = 0xFFFFFFFF;
+	r->surface0.x = shape_idx;
+	r->surface0.y = prim_idx;
 }
 
 #endif

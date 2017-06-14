@@ -99,6 +99,8 @@ namespace Baikal
             return "microfacet_refraction_ggx";
         case Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann:
             return "microfacet_refraction_beckmann";
+		case Baikal::SingleBxdf::BxdfType::kHair:
+			return "hair";
         default:
             return "lambert";
         }
@@ -119,6 +121,7 @@ namespace Baikal
             { "translucent" , Baikal::SingleBxdf::BxdfType::kTranslucent },
             { "microfacet_refraction_ggx" , Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX },
             { "microfacet_refraction_beckmann" , Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann },
+			{ "hair", Baikal::SingleBxdf::BxdfType::kHair }
         };
 
         auto iter = bxdf_map.find(bxdf);

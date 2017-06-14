@@ -3,6 +3,11 @@
 
 namespace Baikal
 {
+
+	////////////////////////////////////////////////////////////////////////////
+	// Mesh
+	////////////////////////////////////////////////////////////////////////////
+
     Mesh::Mesh()
     : m_num_indices(0)
     , m_num_vertices(0)
@@ -77,7 +82,7 @@ namespace Baikal
         return m_num_vertices;
     }
     
-    RadeonRays::float3 const* Mesh::GetVertices() const
+	RadeonRays::float4 const* Mesh::GetVertices() const
     {
         return m_vertices.get();
     }
@@ -171,4 +176,53 @@ namespace Baikal
     {
         return m_uvs.get();
     }
+
+
+	////////////////////////////////////////////////////////////////////////////
+	// Curves
+	////////////////////////////////////////////////////////////////////////////
+
+	Curves::Curves()
+	{
+	}
+
+	void Curves::SetIndices(std::uint32_t const* indices, std::size_t num_indices)
+	{
+		assert(indices);
+		assert(num_indices != 0);
+		m_indices.resize(num_indices);
+		memcpy(&m_indices[0], indices, num_indices*sizeof(uint32_t));
+		SetDirty(true);
+	}
+
+	std::size_t Curves::GetNumSegments() const
+	{
+		return m_indices.size()/2;
+	}
+
+	std::uint32_t const* Curves::GetIndices() const
+	{
+		return &m_indices[0];
+	}
+
+	void Curves::SetVertices(RadeonRays::float4 const* vertices, std::size_t num_vertices)
+	{
+		assert(vertices);
+		assert(num_vertices != 0);
+		m_vertices.resize(num_vertices);
+		memcpy(&m_vertices[0], vertices, num_vertices*sizeof(RadeonRays::float4));
+		SetDirty(true);
+	}
+
+	RadeonRays::float4 const* Curves::GetVertices() const
+	{
+		return &m_vertices[0];
+	}
+
+	std::size_t Curves::GetNumVertices() const
+	{
+		return m_vertices.size();
+	}
+
 }
+
