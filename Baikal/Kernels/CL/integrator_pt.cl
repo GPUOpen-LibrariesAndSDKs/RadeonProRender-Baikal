@@ -62,7 +62,8 @@ __kernel void ShadeVolume(
     // Shapes
     __global Shape const*  shapes,
     // Material IDs
-    __global int const* materialids,
+    __global int const* mesh_materialids,
+	__global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -106,7 +107,8 @@ __kernel void ShadeVolume(
         uvs,
         indices,
         shapes,
-        materialids,
+        mesh_materialids,
+		curve_materialids,
         materials,
         lights,
         env_light_idx,
@@ -162,12 +164,13 @@ __kernel void ShadeVolume(
         // put scattering position in there (it is along the current ray at isect.distance
         // since EvaluateVolume has put it there
         dg.p = o + wi * Intersection_GetDistance(isects + hitidx);
-        // Get light sample intencity
+
+        // Get light sample intensity
         float3 le = Light_Sample (light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &wo, &pdf);
 
         // Generate shadow ray
         float shadow_ray_length = length(wo);
-        Ray_Init(shadowrays + globalid, dg.p, normalize(wo), shadow_ray_length, 0.f, 0xFFFFFFFF);
+        Ray_Init(shadowrays + globalid, dg.p, normalize(wo), shadow_ray_length, 0.f, 0xFFFFFFFF, -1, -1);
 
         // Evaluate volume transmittion along the shadow ray (it is incorrect if the light source is outside of the
         // current volume, but in this case it will be discarded anyway since the intersection at the outer bound
@@ -192,6 +195,7 @@ __kernel void ShadeVolume(
         {
             // Nothing to compute
             lightsamples[globalid] = 0.f;
+			 
             // Otherwise make it incative to save intersector cycles (hopefully)
             Ray_SetInactive(shadowrays + globalid);
         }
@@ -203,7 +207,7 @@ __kernel void ShadeVolume(
         pdf = 1.f / (4.f * PI);
 
         // Generate new path segment
-        Ray_Init(indirectrays + globalid, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+        Ray_Init(indirectrays + globalid, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF, -1, -1);
 
         // Update path throughput multiplying by phase function.
         Path_MulThroughput(path, volumes[volidx].sigma_s * PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
@@ -231,18 +235,23 @@ __kernel void ShadeSurface(
     __global int const* pixelindices,
     // Number of rays
     __global int const* numhits,
-    // Vertices
-    __global float3 const* vertices,
-    // Normals
-    __global float3 const* normals,
-    // UVs
-    __global float2 const* uvs,
-    // Indices
-    __global int const* indices,
+    // Mesh vertices
+    __global float3 const* mesh_vertices,
+    // Mesh normals
+    __global float3 const* mesh_normals,
+    // Mesh UVs
+    __global float2 const* mesh_uvs,
+    // Mesh indices
+    __global int const* mesh_indices,
+	// Curve vertices
+	__global float4 const* curve_vertices,
+	// Curve indices
+	__global int const* curve_indices,
     // Shapes
     __global Shape const* shapes,
     // Material IDs
-    __global int const* materialids,
+    __global int const* mesh_materialids,
+	__global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -281,12 +290,15 @@ __kernel void ShadeSurface(
 
     Scene scene =
     {
-        vertices,
-        normals,
-        uvs,
-        indices,
+		mesh_vertices,
+		mesh_normals,
+		mesh_uvs,
+		mesh_indices,
+		curve_vertices,
+		curve_indices,
         shapes,
-        materialids,
+		mesh_materialids,
+		curve_materialids,
         materials,
         lights,
         env_light_idx,
@@ -299,7 +311,10 @@ __kernel void ShadeSurface(
         // Fetch index
         int hitidx = hitindices[globalid];
         int pixelidx = pixelindices[globalid];
+
         Intersection isect = isects[hitidx];
+		int shape_idx = isect.shapeid - 1;
+		int prim_idx = isect.primid;
 
         __global Path* path = paths + pixelidx;
 
@@ -327,7 +342,7 @@ __kernel void ShadeSurface(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect,&diffgeo);
+        Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
@@ -367,7 +382,7 @@ __kernel void ShadeSurface(
         }
 
 
-        float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f; 
+        float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
         if (backfacing && !Bxdf_IsBtdf(&diffgeo)) 
         {
             //Reverse normal and tangents in this case
@@ -380,9 +395,8 @@ __kernel void ShadeSurface(
             s = -s; 
         }
 
-
         DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
-        DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
+		DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
         float ndotwi = fabs(dot(diffgeo.n, wi));
 
@@ -405,7 +419,7 @@ __kernel void ShadeSurface(
         // Sample bxdf
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdfpdf);
 
-        // If we have light to sample we can hopefully do mis
+        // If we have light to sample we can hopefully do mis (@todo: "hopefully" == "if light not singular")
         if (light_idx > -1)
         {
             // Sample light
@@ -426,13 +440,13 @@ __kernel void ShadeSurface(
         if (NON_BLACK(radiance))
         {
             // Generate shadow ray
-            float3 shadow_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
+            float3 shadow_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE*s*diffgeo.ng;
             float3 temp = diffgeo.p + wo - shadow_ray_o;
             float3 shadow_ray_dir = normalize(temp); 
             float shadow_ray_length = length(temp);
             int shadow_ray_mask = 0xFFFFFFFF;
 
-            Ray_Init(shadowrays + globalid, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
+            Ray_Init(shadowrays + globalid, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask, shape_idx+1, prim_idx);
 
             // Apply the volume to shadow ray if needed
             int volidx =    Path_GetVolumeIdx(path);
@@ -456,10 +470,10 @@ __kernel void ShadeSurface(
         float q = max(min(0.5f,
             // Luminance
             0.2126f * throughput.x + 0.7152f * throughput.y + 0.0722f * throughput.z), 0.01f); 
+
         // Only if it is 3+ bounce
         bool rr_apply = bounce > 3;
         bool rr_stop = Sampler_Sample1D(&sampler, SAMPLER_ARGS) > q && rr_apply;    
-         
         if (rr_apply)
         {
             Path_MulThroughput(path, 1.f / q);  
@@ -481,9 +495,9 @@ __kernel void ShadeSurface(
 
             // Generate ray
             float3 indirect_ray_dir = bxdfwo;
-            float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
-
-            Ray_Init(indirectrays + globalid, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+            float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE*s*diffgeo.ng;
+		
+            Ray_Init(indirectrays + globalid, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF, shape_idx+1, prim_idx);
             Ray_SetExtra(indirectrays + globalid, make_float2(bxdfpdf, 0.f));
         }
         else
@@ -567,12 +581,10 @@ __kernel void GatherLightSamples(
 )
 {
     int globalid = get_global_id(0);
-
     if (globalid < *numrays)
     {
         // Get pixel id for this sample set
         int pixelidx = pixelindices[globalid];
-
 
         // Prepare accumulator variable
         float3 radiance = make_float3(0.f, 0.f, 0.f);
@@ -580,9 +592,10 @@ __kernel void GatherLightSamples(
         // Start collecting samples
         {
             // If shadow ray didn't hit anything and reached skydome
+			// @todo: though presumably that should be "reached sampled light", not necessarily the skydome
             if (shadowhits[globalid] == -1)
             {
-                // Add its contribution to radiance accumulator
+				// Add its contribution to radiance accumulator
                 radiance += lightsamples[globalid];
             }
         }
@@ -777,17 +790,22 @@ __kernel void FillAOVs(
     // Number of pixels
     __global int const* num_items,
     // Vertices
-    __global float3 const* vertices,
+    __global float3 const* mesh_vertices,
     // Normals
-    __global float3 const* normals,
+    __global float3 const* mesh_normals,
     // UVs
-    __global float2 const* uvs,
+    __global float2 const* mesh_uvs,
     // Indices
-    __global int const* indices,
+    __global int const* mesh_indices,
+	// Curve vertices
+	__global float4 const* curve_vertices,
+	// Curve indices
+	__global int const* curve_indices,
     // Shapes
     __global Shape const* shapes,
     // Material IDs
-    __global int const* materialids,
+	__global int const* mesh_materialids,
+	__global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -842,19 +860,22 @@ __kernel void FillAOVs(
 {
     int globalid = get_global_id(0);
 
-    Scene scene =
-    {
-        vertices,
-        normals,
-        uvs,
-        indices,
-        shapes,
-        materialids,
-        materials,
-        lights,
-        env_light_idx,
-        num_lights
-    };
+	Scene scene =
+	{
+		mesh_vertices,
+		mesh_normals,
+		mesh_uvs,
+		mesh_indices,
+		curve_vertices,
+		curve_indices,
+		shapes,
+		mesh_materialids,
+		curve_materialids,
+		materials,
+		lights,
+		env_light_idx,
+		num_lights
+	}; 
 
     // Only applied to active rays after compaction
     if (globalid < *num_items)

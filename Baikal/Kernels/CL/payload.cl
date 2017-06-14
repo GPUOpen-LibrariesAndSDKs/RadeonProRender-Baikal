@@ -53,17 +53,21 @@ typedef struct
         float aperture;
     } Camera;
 
+#define SHAPE_TYPE_MESH   0
+#define SHAPE_TYPE_CURVES 1
+
 // Shape description
 typedef struct
 {
-    // Shape starting index
-    int startidx;
-    // Number of primitives in the shape
-    int numprims;
-    // Start vertex
-    int startvtx;
-    // Start material idx
-    int start_material_idx;
+	int typeidx; // Shape type index (SHAPE_TYPE_...)
+    int startidx;  // Shape starting index
+    int numprims; // Number of primitives in the shape
+    int startvtx;  // Start vertex
+    int start_material_idx; // Start material idx
+	int padding1;
+	int padding2;
+	int padding3;
+
     // Linear motion vector
     float3 linearvelocity;
     // Angular velocity
@@ -89,6 +93,7 @@ enum Bxdf
     kTranslucent,
     kMicrofacetRefractionGGX,
     kMicrofacetRefractionBeckmann,
+	kHair,
     kDisney
 };
 

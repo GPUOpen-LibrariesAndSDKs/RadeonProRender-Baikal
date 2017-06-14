@@ -155,12 +155,12 @@ float3 AreaLight_GetLe(// Emissive object
         float3 p;
         float2 tx;
         float area;
-        Scene_InterpolateAttributes(scene, shapeidx, primidx, make_float2(a, b), &p, &n, &tx, &area);
+		Scene_InterpolateTriangleAttributes(scene, shapeidx, primidx, make_float2(a, b), &p, &n, &tx, &area);
 
         float3 d = p - dg->p;
         *wo = d;
 
-        int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+        int mat_idx = Scene_GetFaceMaterialIndex(scene, shapeidx, primidx);
         Material mat = scene->materials[mat_idx];
 
         const float3 ke = Texture_GetValue3f(mat.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.kxmapidx));
@@ -204,11 +204,11 @@ float3 AreaLight_Sample(// Emissive object
     float3 p;
     float2 tx;
     float area;
-    Scene_InterpolateAttributes(scene, shapeidx, primidx, uv, &p, &n, &tx, &area);
+	Scene_InterpolateTriangleAttributes(scene, shapeidx, primidx, uv, &p, &n, &tx, &area);
 
     *wo = p - dg->p;
 
-    int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+    int mat_idx = Scene_GetFaceMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
     const float3 ke = Texture_GetValue3f(mat.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.kxmapidx));
@@ -262,7 +262,7 @@ float AreaLight_GetPdf(// Emissive object
         float3 p;
         float2 tx;
         float area;
-        Scene_InterpolateAttributes(scene, shapeidx, primidx, make_float2(a, b), &p, &n, &tx, &area);
+		Scene_InterpolateTriangleAttributes(scene, shapeidx, primidx, make_float2(a, b), &p, &n, &tx, &area);
 
         float3 d = p - dg->p;
         float dist2 = dot(d, d) ;
@@ -307,9 +307,9 @@ float3 AreaLight_SampleVertex(
 
     float2 tx;
     float area;
-    Scene_InterpolateAttributes(scene, shapeidx, primidx, uv, p, n, &tx, &area);
+	Scene_InterpolateTriangleAttributes(scene, shapeidx, primidx, uv, p, n, &tx, &area);
 
-    int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+    int mat_idx = Scene_GetFaceMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
     const float3 ke = Texture_GetValue3f(mat.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.kxmapidx));

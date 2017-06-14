@@ -89,9 +89,9 @@ using namespace RadeonRays;
 char const* kHelpMessage =
 "Baikal [-p path_to_models][-f model_name][-b][-r][-ns number_of_shadow_rays][-ao ao_radius][-w window_width][-h window_height][-nb number_of_indirect_bounces]";
 char const* g_path =
-"../Resources/CornellBox";
-char const* g_modelname = "orig.objm";
-char const* g_envmapname = "../Resources/Textures/studio015.hdr";
+"../Resources/chief";
+char const* g_modelname = "chief_lowest.obj";
+char const* g_envmapname = "";
 
 std::unique_ptr<ShaderManager>    g_shader_manager;
 std::unique_ptr<Baikal::PerspectiveCamera> g_camera;
@@ -101,20 +101,20 @@ GLuint g_index_buffer;
 GLuint g_texture;
 GLuint g_vao;
 
-int g_window_width = 512;
-int g_window_height = 512;
+int g_window_width = 1920;
+int g_window_height = 1080;
 int g_num_shadow_rays = 1;
 int g_num_ao_rays = 1;
 int g_ao_enabled = false;
 int g_progressive = false;
-int g_num_bounces = 5;
+int g_num_bounces = 3;
 int g_num_samples = -1;
 int g_samplecount = 0;
 float g_ao_radius = 1.f;
 float g_envmapmul = 1.f;
-float g_cspeed = 10.25f;
+float g_cspeed = 10.f;
 
-float3 g_camera_pos = float3(0.f, 1.f, 3.f);
+float3 g_camera_pos = float3(5.f, 5.f, 5.f);
 float3 g_camera_at = float3(0.f, 1.f, 0.f);
 float3 g_camera_up = float3(0.f, 1.f, 0.f);
 
@@ -499,32 +499,32 @@ void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     switch (key)
     {
-    case GLFW_KEY_UP:
-        g_is_fwd_pressed = action == GLFW_PRESS ? true : false;
-        break;
-    case GLFW_KEY_DOWN:
-        g_is_back_pressed = action == GLFW_PRESS ? true : false;
-        break;
-    case GLFW_KEY_LEFT:
-        g_is_left_pressed = action == GLFW_PRESS ? true : false;
-        break;
-    case GLFW_KEY_RIGHT:
-        g_is_right_pressed = action == GLFW_PRESS ? true : false;
-        break;
-    case GLFW_KEY_HOME:
-        g_is_home_pressed = action == GLFW_PRESS ? true : false;
-        break;
-    case GLFW_KEY_END:
-        g_is_end_pressed = action == GLFW_PRESS ? true : false;
-        break;
-    case GLFW_KEY_F1:
-        g_gui_visible = action == GLFW_PRESS ? !g_gui_visible : g_gui_visible;
-        break;
-    case GLFW_KEY_F3:
-        g_benchmark = action == GLFW_PRESS ? true : g_benchmark;
-        break;
-    default:
-        break;
+		case GLFW_KEY_UP:
+			g_is_fwd_pressed = (action == GLFW_PRESS) || (action == GLFW_REPEAT) ? true : false;
+			break;
+		case GLFW_KEY_DOWN:
+			g_is_back_pressed = (action == GLFW_PRESS) || (action == GLFW_REPEAT) ? true : false;
+			break;
+		case GLFW_KEY_LEFT:
+			g_is_left_pressed = (action == GLFW_PRESS) || (action == GLFW_REPEAT) ? true : false;
+			break;
+		case GLFW_KEY_RIGHT:
+			g_is_right_pressed = (action == GLFW_PRESS) || (action == GLFW_REPEAT) ? true : false;
+			break;
+		case GLFW_KEY_HOME:
+			g_is_home_pressed = action == GLFW_PRESS ? true : false;
+			break;
+		case GLFW_KEY_END:
+			g_is_end_pressed = action == GLFW_PRESS ? true : false;
+			break;
+		case GLFW_KEY_F1:
+			g_gui_visible = action == GLFW_PRESS ? !g_gui_visible : g_gui_visible;
+			break;
+		case GLFW_KEY_F3:
+			g_benchmark = action == GLFW_PRESS ? true : g_benchmark;
+			break;
+		default:
+			break;
     }
 }
 

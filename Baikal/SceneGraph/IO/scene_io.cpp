@@ -1,3 +1,16 @@
+
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <algorithm> 
+#include <functional> 
+#include <cctype>
+#include <locale>
+#include <iostream>
+
 #include "scene_io.h"
 #include "image_io.h"
 #include "../scene1.h"
@@ -5,7 +18,6 @@
 #include "../material.h"
 #include "../light.h"
 #include "../texture.h"
-
 
 #include "Utils/tiny_obj_loader.h"
 
@@ -26,7 +38,6 @@ namespace Baikal
     {
         return std::unique_ptr<SceneIo>(new SceneIoObj());
     }
-
 
     Material const* SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
     {
@@ -65,7 +76,7 @@ namespace Baikal
                 Material* diffuse = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
                 Material* specular = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
 
-                specular->SetInputValue("roughness", 0.01f);
+                specular->SetInputValue("roughness", 0.025f);
 
                 // Set albedo
                 if (!mat.diffuse_texname.empty())
@@ -146,6 +157,25 @@ namespace Baikal
         return material;
     }
 
+	// trim from start
+	static inline std::string &ltrim(std::string &s) {
+		s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+			std::not1(std::ptr_fun<int, int>(std::isspace))));
+		return s;
+	}
+
+	// trim from end
+	static inline std::string &rtrim(std::string &s) {
+		s.erase(std::find_if(s.rbegin(), s.rend(),
+			std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+		return s;
+	}
+
+	// trim from both ends
+	static inline std::string &trim(std::string &s) {
+		return ltrim(rtrim(s));
+	}
+
     std::unique_ptr<Scene1> SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
     {
         using namespace tinyobj;
@@ -157,8 +187,10 @@ namespace Baikal
         std::vector<material_t> objmaterials;
 
         // Try loading file
+		std::cout << "Loading OBJ  ..." << std::endl;
         std::string res = LoadObj(objshapes, objmaterials, filename.c_str(), basepath.c_str());
-        if (res != "")
+		std::cout << "OBJ loaded." << std::endl;
+		if (res != "")
         {
             throw std::runtime_error(res);
         }
@@ -182,7 +214,69 @@ namespace Baikal
             }
         }
 
-        // Enumerate all shapes in the scene
+        // Construct all Baikal shapes 
+		
+		/// @todo: for testing, load curves from a hard-coded custom formatted text file:
+		std::cout << "Constructing curves  ..." << std::endl;
+
+		Curves* curves = new Curves();
+		{
+			std::string cvsFile = "../Resources/chief/chief_lonoise.cvs";
+			std::ifstream inFile(cvsFile);
+			
+			std::vector<RadeonRays::float4> curve_vertices;
+			std::vector<std::uint32_t> curve_indices;
+
+			float cvRadius = 0.002f; // hard-coded for now, as not exported!
+			
+			bool atRoot = true;
+			size_t prev_index = 0;
+			std::string line;
+			while (std::getline(inFile, line))
+			{
+				line = trim(line);
+				if (line.empty()) continue;
+				if (line.find("curve") != std::string::npos) 	
+				{
+					atRoot = true;
+					continue;
+				}
+
+				float pos[3];
+				std::stringstream ss(line);
+				for(int i=0; i<3; i++) ss >> pos[i];
+				
+				// @todo: allow for a radius ramp between root and tip.
+				RadeonRays::float4 cv(pos[0], pos[1], pos[2], cvRadius);
+				if (atRoot)
+				{
+					curve_vertices.push_back(cv);
+					prev_index = curve_vertices.size()-1;
+					atRoot = false;
+					continue;
+				}
+				
+				curve_vertices.push_back(cv);
+				curve_indices.push_back(prev_index);
+				curve_indices.push_back(prev_index+1);
+
+				prev_index++;
+			}
+
+			curves->SetVertices(&curve_vertices[0], curve_vertices.size());
+			curves->SetIndices(&curve_indices[0], curve_indices.size());
+			
+			Material* hairMaterial = new SingleBxdf(SingleBxdf::BxdfType::kHair);
+			curves->SetMaterial(hairMaterial);
+
+			// Attach to the scene
+			scene->AttachShape(curves);
+
+			// Attach for autorelease
+			scene->AttachAutoreleaseObject(curves);
+		}
+		std::cout << "Curves constructed ..." << std::endl;
+
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
             // Create empty mesh
@@ -216,7 +310,7 @@ namespace Baikal
             // Set material
             auto idx = objshapes[s].mesh.material_ids[0];
 
-            if (idx > 0)
+            if (idx >= 0)
             {
                 mesh->SetMaterial(materials[idx]);
             }
@@ -241,12 +335,12 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(10.f);
+        ibl->SetMultiplier(3.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
