@@ -1,5 +1,5 @@
 #include "collector.h"
-#include "CLW/clwscene.h"
+#include "SceneGraph/clwscene.h"
 #include "SceneGraph/iterator.h"
 #include <vector>
 #include <cassert>
@@ -41,17 +41,19 @@ namespace Baikal
         m_impl->m_set.clear();
     }
     
-    Iterator* Collector::CreateIterator() const
+    std::unique_ptr<Iterator> Collector::CreateIterator() const
     {
-        return new IteratorImpl<ItemSet::const_iterator>(m_impl->m_set.cbegin(), m_impl->m_set.cend());
+        return std::unique_ptr<Iterator>(
+            new IteratorImpl<ItemSet::const_iterator>(m_impl->m_set.cbegin(),
+                                                      m_impl->m_set.cend()));
     }
     
-    void Collector::Collect(Iterator* shape_iter, ExpandFunc expand_func)
+    void Collector::Collect(Iterator& iter, ExpandFunc expand_func)
     {
-        for(;shape_iter->IsValid();shape_iter->Next())
+        for(;iter.IsValid(); iter.Next())
         {
             // Expand current item
-            auto cur_items = expand_func(shape_iter->Item());
+            auto cur_items = expand_func(iter.Item());
             
             // Insert items
             m_impl->m_set.insert(cur_items.cbegin(), cur_items.cend());

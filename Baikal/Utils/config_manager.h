@@ -24,12 +24,12 @@ THE SOFTWARE.
 
 #include "CLW.h"
 #include <vector>
+#include <memory>
 
 namespace Baikal
 {
-    class PtRenderer;
-    class BdptRenderer;
-    using MyRenderer = PtRenderer;
+    class Renderer;
+    class RenderFactory;
 }
 
 class ConfigManager
@@ -55,7 +55,8 @@ public:
     {
         DeviceType type;
         int devidx;
-        Baikal::MyRenderer* renderer;
+        std::unique_ptr<Baikal::Renderer> renderer;
+        std::unique_ptr<Baikal::RenderFactory> factory;
         CLWContext context;
         bool caninterop;
 

@@ -22,7 +22,7 @@ THE SOFTWARE.
 #pragma once
 
 #include "RadeonProRender.h"
-#include "App/SceneGraph/shape.h"
+#include "SceneGraph/shape.h"
 #include "WrapObject/WrapObject.h"
 #include "WrapObject/MaterialObject.h"
 

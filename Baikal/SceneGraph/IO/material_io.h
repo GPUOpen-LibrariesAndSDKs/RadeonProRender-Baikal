@@ -30,6 +30,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 namespace Baikal
 {
@@ -45,7 +46,7 @@ namespace Baikal
     {
     public:
         // Create XML based material IO
-        static MaterialIo* CreateMaterialIoXML();
+        static std::unique_ptr<MaterialIo> CreateMaterialIoXML();
 
         using MaterialMap = std::map<std::string, std::string>;
 
@@ -55,10 +56,10 @@ namespace Baikal
         virtual ~MaterialIo() = 0;
 
         // Save materials from scene into a file
-        virtual void SaveMaterials(std::string const& filename, Iterator& iterator) = 0;
+        virtual void SaveMaterials(std::string const& file_name, Iterator& iterator) = 0;
 
         // Load materials from disk
-        virtual Iterator* LoadMaterials(std::string const& filename) = 0;
+        virtual std::unique_ptr<Iterator> LoadMaterials(std::string const& file_name) = 0;
 
         // Helper method: save all materials in the scene
         void SaveMaterialsFromScene(std::string const& filename, Scene1 const& scene);

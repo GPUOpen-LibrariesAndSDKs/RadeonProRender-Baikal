@@ -1196,6 +1196,7 @@ rpr_image FRS6::LoadImage(rpr_context context, std::istream *myfile)
 	if (checkCode != m_IMAGE_END)
 	{
 		ErrorDetected();
+		delete[] idata;
 		return 0;
 	}
 

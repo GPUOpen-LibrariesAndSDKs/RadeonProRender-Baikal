@@ -27,7 +27,7 @@ namespace Baikal
         void SaveMaterials(std::string const& filename, Iterator& iterator) override;
 
         // Load materials from disk
-        Iterator* LoadMaterials(std::string const& filename) override;
+        std::unique_ptr<Iterator> LoadMaterials(std::string const& file_name) override;
 
     private:
         // Write single material
@@ -61,9 +61,9 @@ namespace Baikal
         std::string m_base_path;
     };
 
-    MaterialIo* MaterialIo::CreateMaterialIoXML()
+    std::unique_ptr<MaterialIo> MaterialIo::CreateMaterialIoXML()
     {
-        return new MaterialIoXML();
+        return std::unique_ptr<MaterialIo>(new MaterialIoXML());
     }
 
     static std::string Float4ToString(RadeonRays::float3 const& v)
@@ -404,23 +404,23 @@ namespace Baikal
         return material;
     }
 
-    Iterator* MaterialIoXML::LoadMaterials(std::string const& filename)
+    std::unique_ptr<Iterator> MaterialIoXML::LoadMaterials(std::string const& file_name)
     {
         m_id2mat.clear();
         m_name2tex.clear();
         m_resolve_requests.clear();
 
-        auto slash = filename.find_last_of('/');
-        if (slash == std::string::npos) slash = filename.find_last_of('\\');
+        auto slash = file_name.find_last_of('/');
+        if (slash == std::string::npos) slash = file_name.find_last_of('\\');
         if (slash != std::string::npos)
-            m_base_path.assign(filename.cbegin(), filename.cbegin() + slash + 1);
+            m_base_path.assign(file_name.cbegin(), file_name.cbegin() + slash + 1);
         else
             m_base_path.clear();
 
         XMLDocument doc;
-        doc.LoadFile(filename.c_str());
+        doc.LoadFile(file_name.c_str());
 
-        std::unique_ptr<ImageIo> image_io(ImageIo::CreateImageIo());
+        auto image_io = ImageIo::CreateImageIo();
 
         std::set<Material*> materials;
         for (auto element = doc.FirstChildElement(); element; element = element->NextSiblingElement())
@@ -435,16 +435,16 @@ namespace Baikal
             i.material->SetInputValue(i.input, m_id2mat[i.id]);
         }
 
-        return new ContainerIterator<std::set<Material*>>(std::move(materials));
+        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Material*>>(std::move(materials)));
     }
 
     void MaterialIo::SaveMaterialsFromScene(std::string const& filename, Scene1 const& scene)
     {
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+        auto shape_iter = scene.CreateShapeIterator();
 
         Collector mat_collector;
         // Collect materials from shapes first
-        mat_collector.Collect(shape_iter.get(),
+        mat_collector.Collect(*shape_iter,
             // This function adds all materials to resulting map
             // recursively via Material dependency API
             [](void const* item) -> std::set<void const*>
@@ -488,7 +488,7 @@ namespace Baikal
             return mats;
         });
 
-        std::unique_ptr<Iterator> mat_iter(mat_collector.CreateIterator());
+        auto mat_iter = mat_collector.CreateIterator();
 
         SaveMaterials(filename, *mat_iter);
     }
@@ -504,7 +504,7 @@ namespace Baikal
             name2mat[name] = material;
         }
 
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+        auto shape_iter = scene.CreateShapeIterator();
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {

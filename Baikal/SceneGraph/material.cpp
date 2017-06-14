@@ -9,7 +9,8 @@ namespace Baikal
     {
     public:
         
-        InputIterator(InputMap::const_iterator begin, InputMap::const_iterator end)
+        InputIterator(InputMap::const_iterator begin,
+                      InputMap::const_iterator end)
         : m_begin(begin)
         , m_end(end)
         {
@@ -54,7 +55,9 @@ namespace Baikal
     {
     }
     
-    void Material::RegisterInput(std::string const& name, std::string const& desc, std::set<InputType>&& supported_types)
+    void Material::RegisterInput(std::string const& name,
+                                 std::string const& desc,
+                                 std::set<InputType>&& supported_types)
     {
         Input input = {{name, desc, std::move(supported_types)}};
         
@@ -87,7 +90,7 @@ namespace Baikal
 
     
     // Iterator of dependent materials (plugged as inputs)
-    Iterator* Material::CreateMaterialIterator() const
+    std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
         std::set<Material const*> materials;
         
@@ -102,11 +105,12 @@ namespace Baikal
                       }
                       );
         
-        return new ContainerIterator<std::set<Material const*>>(std::move(materials));
+        return std::unique_ptr<Iterator>(
+            new ContainerIterator<std::set<Material const*>>(std::move(materials)));
     }
     
     // Iterator of textures (plugged as inputs)
-    Iterator* Material::CreateTextureIterator() const
+    std::unique_ptr<Iterator> Material::CreateTextureIterator() const
     {
         std::set<Texture const*> textures;
         
@@ -121,13 +125,14 @@ namespace Baikal
                       }
                       );
         
-        return new ContainerIterator<std::set<Texture const*>>(std::move(textures));
+        return std::unique_ptr<Iterator>(
+            new ContainerIterator<std::set<Texture const*>>(std::move(textures)));
     }
     
     // Iterator of inputs
-    Iterator* Material::CreateInputIterator() const
+    std::unique_ptr<Iterator> Material::CreateInputIterator() const
     {
-        return new InputIterator(m_inputs.cbegin(), m_inputs.cend());
+        return std::unique_ptr<Iterator>(new InputIterator(m_inputs.cbegin(), m_inputs.cend()));
     }
     
     // Set input value
@@ -297,6 +302,33 @@ namespace Baikal
 
         return false;
     }
-
-
+    
+    DisneyBxdf::DisneyBxdf()
+    {
+        RegisterInput("albedo", "Base color", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("metallic", "Metallicity", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("subsurface", "Subsurface look of diffuse base", {InputType::kFloat4});
+        RegisterInput("specular", "Specular exponent", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("specular_tint", "Specular color to base", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("anisotropy", "Anisotropy of specular layer", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("sheen", "Sheen for cloth", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("sheen_tint", "Sheen to base color", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("clearcoat", "Clearcoat layer", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("clearcoat_gloss", "Clearcoat roughness", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("roughness", "Roughness of specular & diffuse layers", {InputType::kFloat4, InputType::kTexture});
+        RegisterInput("normal", "Normal map", {InputType::kTexture});
+        RegisterInput("bump", "Bump map", { InputType::kTexture });
+        
+        SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
+        SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
+        SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
+        SetInputValue("normal", static_cast<Texture const*>(nullptr));
+        SetInputValue("bump", static_cast<Texture const*>(nullptr));
+    }
+    
+    // Check if material has emissive components
+    bool DisneyBxdf::HasEmission() const
+    {
+        return false;
+    }
 }

@@ -1,6 +1,6 @@
 #include "../Rpr/RadeonProRender.h"
-#include "../RadeonRays/include/math/matrix.h"
-#include "../RadeonRays/include/math/mathutils.h"
+#include "../RadeonRays/RadeonRays/include/math/matrix.h"
+#include "../RadeonRays/RadeonRays/include/math/mathutils.h"
 #include "../RprLoadStore/RprLoadStore.h"
 
 #include <map>
