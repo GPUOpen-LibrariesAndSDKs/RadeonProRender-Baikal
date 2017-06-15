@@ -241,12 +241,12 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(10.f);
+        ibl->SetMultiplier(1.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light

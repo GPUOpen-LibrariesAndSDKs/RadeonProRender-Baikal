@@ -138,6 +138,7 @@ namespace Baikal
     inline void Shape::SetMaterial(Material const* material)
     {
         m_material = material;
+        SetDirty(true);
     }
     
     inline Material const* Shape::GetMaterial() const
@@ -148,6 +149,7 @@ namespace Baikal
     inline void Shape::SetTransform(RadeonRays::matrix const& t)
     {
         m_transform = t;
+        SetDirty(true);
     }
 
     inline RadeonRays::matrix Shape::GetTransform() const
@@ -158,6 +160,7 @@ namespace Baikal
     inline void Shape::SetShadow(bool shadow)
     {
         m_shadow = shadow;
+        SetDirty(true);
     }
 
     inline bool Shape::GetShadow() const
@@ -195,6 +198,7 @@ namespace Baikal
     inline void Instance::SetBaseShape(Shape const* base_shape)
     {
         m_base_shape = base_shape;
+        SetDirty(true);
     }
 
     inline Shape const* Instance::GetBaseShape() const
