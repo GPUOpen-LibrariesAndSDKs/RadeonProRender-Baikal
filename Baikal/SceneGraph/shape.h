@@ -61,6 +61,10 @@ namespace Baikal
         void SetTransform(RadeonRays::matrix const& t);
         RadeonRays::matrix GetTransform() const;
 
+        // Set whether a shape casts shadow or not
+        void SetShadow(bool shadow);
+        bool GetShadow() const;
+
         // Forbidden stuff
         Shape(Shape const&) = delete;
         Shape& operator = (Shape const&) = delete;
@@ -68,6 +72,8 @@ namespace Baikal
         Material const* m_material;
 
         RadeonRays::matrix m_transform;
+
+        bool m_shadow;
     };
     
     /**
@@ -123,13 +129,16 @@ namespace Baikal
     {
     }
     
-    inline Shape::Shape() : m_material(nullptr)
+    inline Shape::Shape() 
+        : m_material(nullptr)
+        , m_shadow(true)
     {
     }
     
     inline void Shape::SetMaterial(Material const* material)
     {
         m_material = material;
+        SetDirty(true);
     }
     
     inline Material const* Shape::GetMaterial() const
@@ -140,11 +149,23 @@ namespace Baikal
     inline void Shape::SetTransform(RadeonRays::matrix const& t)
     {
         m_transform = t;
+        SetDirty(true);
     }
 
     inline RadeonRays::matrix Shape::GetTransform() const
     {
         return m_transform;
+    }
+
+    inline void Shape::SetShadow(bool shadow)
+    {
+        m_shadow = shadow;
+        SetDirty(true);
+    }
+
+    inline bool Shape::GetShadow() const
+    {
+        return m_shadow;
     }
 
     /**
@@ -177,6 +198,7 @@ namespace Baikal
     inline void Instance::SetBaseShape(Shape const* base_shape)
     {
         m_base_shape = base_shape;
+        SetDirty(true);
     }
 
     inline Shape const* Instance::GetBaseShape() const

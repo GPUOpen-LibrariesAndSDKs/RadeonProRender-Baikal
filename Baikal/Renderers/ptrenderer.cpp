@@ -829,17 +829,8 @@ namespace Baikal
         GatherLightSamples(clwscene, 0, tile_size);
 
         //
-        GetContext().Flush(0);
+        GetContext().Finish(0);
 
-        //samples statistics
-        output->Clear(0.f);
-        start = std::chrono::high_resolution_clock::now();
-        for (auto i = 0U; i < num_passes; ++i)
-        {
-            Render(scene);
-        }
-        delta = std::chrono::high_resolution_clock::now() - start;
-
-        stats.samples_pes_sec = num_passes * output->width() * output->height() / ((float)(std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() / 1000.f)) / 10000000.f;
+        stats.samples_pes_sec = 0;
     }
 }
