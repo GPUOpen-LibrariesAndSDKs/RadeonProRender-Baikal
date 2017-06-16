@@ -101,21 +101,21 @@ GLuint g_index_buffer;
 GLuint g_texture;
 GLuint g_vao;
 
-int g_window_width = 1920;
-int g_window_height = 1080;
+int g_window_width = 1080;
+int g_window_height = 720;
 int g_num_shadow_rays = 1;
 int g_num_ao_rays = 1;
 int g_ao_enabled = false;
 int g_progressive = false;
-int g_num_bounces = 3;
+int g_num_bounces = 1;
 int g_num_samples = -1;
 int g_samplecount = 0;
 float g_ao_radius = 1.f;
 float g_envmapmul = 1.f;
 float g_cspeed = 10.f;
 
-float3 g_camera_pos = float3(5.f, 5.f, 5.f);
-float3 g_camera_at = float3(0.f, 1.f, 0.f);
+float3 g_camera_pos = float3(10.f, 5.f, 10.f);
+float3 g_camera_at = float3(0.f, 5.f, 0.f);
 float3 g_camera_up = float3(0.f, 1.f, 0.f);
 
 float2 g_camera_sensor_size = float2(0.036f, 0.024f);  // default full frame sensor 36x24 mm
@@ -1148,13 +1148,13 @@ int main(int argc, char * argv[])
 
                 if (g_time_benchmarked)
                 {
-                    auto minutes = (int)(g_time_benchmark_time / 60.f);
-                    auto seconds = (int)(g_time_benchmark_time - minutes * 60);
+                    int minutes = static_cast<int>(g_time_benchmark_time / 60.f);
+					float seconds = g_time_benchmark_time - minutes*60.f;
                     ImGui::Separator();
 
                     ImVec4 color;
                     std::string rating;
-                    ImGui::Text("Rendering time: %2dmin:%ds", minutes, seconds);
+                    ImGui::Text("Rendering time: %2dmin:%.2fs", minutes, seconds);
                     if (GradeTimeBenchmarkResults(g_modelname, minutes * 60 + seconds, rating, color))
                     {
                         ImGui::TextColored(color, "Rating: %s", rating.c_str());
