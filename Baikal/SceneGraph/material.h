@@ -165,7 +165,7 @@ namespace Baikal
             kTranslucent,
             kMicrofacetRefractionGGX,
             kMicrofacetRefractionBeckmann,
-			kHair
+            kHair
         };
 
         SingleBxdf(BxdfType type);

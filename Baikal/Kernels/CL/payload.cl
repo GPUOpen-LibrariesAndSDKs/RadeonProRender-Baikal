@@ -59,14 +59,14 @@ typedef struct
 // Shape description
 typedef struct
 {
-	int typeidx; // Shape type index (SHAPE_TYPE_...)
+    int typeidx; // Shape type index (SHAPE_TYPE_...)
     int startidx;  // Shape starting index
     int numprims; // Number of primitives in the shape
     int startvtx;  // Start vertex
     int start_material_idx; // Start material idx
-	int padding1;
-	int padding2;
-	int padding3;
+    int padding1;
+    int padding2;
+    int padding3;
 
     // Linear motion vector
     float3 linearvelocity;
@@ -93,7 +93,7 @@ enum Bxdf
     kTranslucent,
     kMicrofacetRefractionGGX,
     kMicrofacetRefractionBeckmann,
-	kHair,
+    kHair,
     kDisney
 };
 

@@ -63,7 +63,7 @@ __kernel void ShadeVolume(
     __global Shape const*  shapes,
     // Material IDs
     __global int const* mesh_materialids,
-	__global int const* curve_materialids,
+    __global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -108,7 +108,7 @@ __kernel void ShadeVolume(
         indices,
         shapes,
         mesh_materialids,
-		curve_materialids,
+        curve_materialids,
         materials,
         lights,
         env_light_idx,
@@ -195,7 +195,7 @@ __kernel void ShadeVolume(
         {
             // Nothing to compute
             lightsamples[globalid] = 0.f;
-			 
+             
             // Otherwise make it incative to save intersector cycles (hopefully)
             Ray_SetInactive(shadowrays + globalid);
         }
@@ -243,15 +243,15 @@ __kernel void ShadeSurface(
     __global float2 const* mesh_uvs,
     // Mesh indices
     __global int const* mesh_indices,
-	// Curve vertices
-	__global float4 const* curve_vertices,
-	// Curve indices
-	__global int const* curve_indices,
+    // Curve vertices
+    __global float4 const* curve_vertices,
+    // Curve indices
+    __global int const* curve_indices,
     // Shapes
     __global Shape const* shapes,
     // Material IDs
     __global int const* mesh_materialids,
-	__global int const* curve_materialids,
+    __global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -290,15 +290,15 @@ __kernel void ShadeSurface(
 
     Scene scene =
     {
-		mesh_vertices,
-		mesh_normals,
-		mesh_uvs,
-		mesh_indices,
-		curve_vertices,
-		curve_indices,
+        mesh_vertices,
+        mesh_normals,
+        mesh_uvs,
+        mesh_indices,
+        curve_vertices,
+        curve_indices,
         shapes,
-		mesh_materialids,
-		curve_materialids,
+        mesh_materialids,
+        curve_materialids,
         materials,
         lights,
         env_light_idx,
@@ -313,8 +313,8 @@ __kernel void ShadeSurface(
         int pixelidx = pixelindices[globalid];
 
         Intersection isect = isects[hitidx];
-		int shape_idx = isect.shapeid - 1;
-		int prim_idx = isect.primid;
+        int shape_idx = isect.shapeid - 1;
+        int prim_idx = isect.primid;
 
         __global Path* path = paths + pixelidx;
 
@@ -396,7 +396,7 @@ __kernel void ShadeSurface(
         }
 
         DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
-		DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
+        DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
         float ndotwi = fabs(dot(diffgeo.n, wi));
 
@@ -496,7 +496,7 @@ __kernel void ShadeSurface(
             // Generate ray
             float3 indirect_ray_dir = bxdfwo;
             float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE*s*diffgeo.ng;
-		
+        
             Ray_Init(indirectrays + globalid, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF, shape_idx+1, prim_idx);
             Ray_SetExtra(indirectrays + globalid, make_float2(bxdfpdf, 0.f));
         }
@@ -592,10 +592,10 @@ __kernel void GatherLightSamples(
         // Start collecting samples
         {
             // If shadow ray didn't hit anything and reached skydome
-			// @todo: though presumably that should be "reached sampled light", not necessarily the skydome
+            // @todo: though presumably that should be "reached sampled light", not necessarily the skydome
             if (shadowhits[globalid] == -1)
             {
-				// Add its contribution to radiance accumulator
+                // Add its contribution to radiance accumulator
                 radiance += lightsamples[globalid];
             }
         }
@@ -785,8 +785,8 @@ __kernel void FillAOVs(
     __global ray const* rays,
     // Intersection data
     __global Intersection const* isects,
-	// Pixel indices
-	__global int const* pixel_idx,
+    // Pixel indices
+    __global int const* pixel_idx,
     // Number of pixels
     __global int const* num_items,
     // Vertices
@@ -797,15 +797,15 @@ __kernel void FillAOVs(
     __global float2 const* mesh_uvs,
     // Indices
     __global int const* mesh_indices,
-	// Curve vertices
-	__global float4 const* curve_vertices,
-	// Curve indices
-	__global int const* curve_indices,
+    // Curve vertices
+    __global float4 const* curve_vertices,
+    // Curve indices
+    __global int const* curve_indices,
     // Shapes
     __global Shape const* shapes,
     // Material IDs
-	__global int const* mesh_materialids,
-	__global int const* curve_materialids,
+    __global int const* mesh_materialids,
+    __global int const* curve_materialids,
     // Materials
     __global Material const* materials,
     // Textures
@@ -860,28 +860,28 @@ __kernel void FillAOVs(
 {
     int globalid = get_global_id(0);
 
-	Scene scene =
-	{
-		mesh_vertices,
-		mesh_normals,
-		mesh_uvs,
-		mesh_indices,
-		curve_vertices,
-		curve_indices,
-		shapes,
-		mesh_materialids,
-		curve_materialids,
-		materials,
-		lights,
-		env_light_idx,
-		num_lights
-	}; 
+    Scene scene =
+    {
+        mesh_vertices,
+        mesh_normals,
+        mesh_uvs,
+        mesh_indices,
+        curve_vertices,
+        curve_indices,
+        shapes,
+        mesh_materialids,
+        curve_materialids,
+        materials,
+        lights,
+        env_light_idx,
+        num_lights
+    }; 
 
     // Only applied to active rays after compaction
     if (globalid < *num_items)
     {
         Intersection isect = isects[globalid];
-		int idx = pixel_idx[globalid];
+        int idx = pixel_idx[globalid];
 
         if (isect.shapeid > -1)
         {

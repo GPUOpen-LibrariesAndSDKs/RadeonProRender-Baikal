@@ -157,24 +157,24 @@ namespace Baikal
         return material;
     }
 
-	// trim from start
-	static inline std::string &ltrim(std::string &s) {
-		s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-			std::not1(std::ptr_fun<int, int>(std::isspace))));
-		return s;
-	}
+    // trim from start
+    static inline std::string &ltrim(std::string &s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))));
+        return s;
+    }
 
-	// trim from end
-	static inline std::string &rtrim(std::string &s) {
-		s.erase(std::find_if(s.rbegin(), s.rend(),
-			std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-		return s;
-	}
+    // trim from end
+    static inline std::string &rtrim(std::string &s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        return s;
+    }
 
-	// trim from both ends
-	static inline std::string &trim(std::string &s) {
-		return ltrim(rtrim(s));
-	}
+    // trim from both ends
+    static inline std::string &trim(std::string &s) {
+        return ltrim(rtrim(s));
+    }
 
     std::unique_ptr<Scene1> SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
     {
@@ -188,7 +188,7 @@ namespace Baikal
 
         // Try loading file
         std::string res = LoadObj(objshapes, objmaterials, filename.c_str(), basepath.c_str());
-		if (res != "")
+        if (res != "")
         {
             throw std::runtime_error(res);
         }
@@ -213,65 +213,65 @@ namespace Baikal
         }
 
         // Construct all Baikal shapes 
-		
-		/// for testing, load curves from a hard-coded custom formatted text file:
-		/// @todo: curve loading should eventually occur via RPR API
-		Curves* curves = new Curves();
-		{
-			std::string cvsFile = "../Resources/chief/chief_lonoise.cvs";
-			std::ifstream inFile(cvsFile);
-			
-			std::vector<RadeonRays::float4> curve_vertices;
-			std::vector<std::uint32_t> curve_indices;
+        
+        /// for testing, load curves from a hard-coded custom formatted text file:
+        /// @todo: curve loading should eventually occur via RPR API
+        Curves* curves = new Curves();
+        {
+            std::string cvsFile = "../Resources/chief/chief_lonoise.cvs";
+            std::ifstream inFile(cvsFile);
+            
+            std::vector<RadeonRays::float4> curve_vertices;
+            std::vector<std::uint32_t> curve_indices;
 
-			float cvRadius = 0.002f; // hard-coded for now, as not exported!
-			
-			bool atRoot = true;
-			size_t prev_index = 0;
-			std::string line;
-			while (std::getline(inFile, line))
-			{
-				line = trim(line);
-				if (line.empty()) continue;
-				if (line.find("curve") != std::string::npos) 	
-				{
-					atRoot = true;
-					continue;
-				}
+            float cvRadius = 0.002f; // hard-coded for now, as not exported!
+            
+            bool atRoot = true;
+            size_t prev_index = 0;
+            std::string line;
+            while (std::getline(inFile, line))
+            {
+                line = trim(line);
+                if (line.empty()) continue;
+                if (line.find("curve") != std::string::npos) 	
+                {
+                    atRoot = true;
+                    continue;
+                }
 
-				float pos[3];
-				std::stringstream ss(line);
-				for(int i=0; i<3; i++) ss >> pos[i];
-				
-				// @todo: allow for a radius ramp between root and tip.
-				RadeonRays::float4 cv(pos[0], pos[1], pos[2], cvRadius);
-				if (atRoot)
-				{
-					curve_vertices.push_back(cv);
-					prev_index = curve_vertices.size()-1;
-					atRoot = false;
-					continue;
-				}
-				
-				curve_vertices.push_back(cv);
-				curve_indices.push_back(prev_index);
-				curve_indices.push_back(prev_index+1);
+                float pos[3];
+                std::stringstream ss(line);
+                for(int i=0; i<3; i++) ss >> pos[i];
+                
+                // @todo: allow for a radius ramp between root and tip.
+                RadeonRays::float4 cv(pos[0], pos[1], pos[2], cvRadius);
+                if (atRoot)
+                {
+                    curve_vertices.push_back(cv);
+                    prev_index = curve_vertices.size()-1;
+                    atRoot = false;
+                    continue;
+                }
+                
+                curve_vertices.push_back(cv);
+                curve_indices.push_back(prev_index);
+                curve_indices.push_back(prev_index+1);
 
-				prev_index++;
-			}
+                prev_index++;
+            }
 
-			curves->SetVertices(&curve_vertices[0], curve_vertices.size());
-			curves->SetIndices(&curve_indices[0], curve_indices.size());
-			
-			Material* hairMaterial = new SingleBxdf(SingleBxdf::BxdfType::kHair);
-			curves->SetMaterial(hairMaterial);
+            curves->SetVertices(&curve_vertices[0], curve_vertices.size());
+            curves->SetIndices(&curve_indices[0], curve_indices.size());
+            
+            Material* hairMaterial = new SingleBxdf(SingleBxdf::BxdfType::kHair);
+            curves->SetMaterial(hairMaterial);
 
-			// Attach to the scene
-			scene->AttachShape(curves);
+            // Attach to the scene
+            scene->AttachShape(curves);
 
-			// Attach for autorelease
-			scene->AttachAutoreleaseObject(curves);
-		}
+            // Attach for autorelease
+            scene->AttachAutoreleaseObject(curves);
+        }
 
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
