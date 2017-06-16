@@ -262,7 +262,7 @@ void Scene_FillDifferentialGeometry( Scene const* scene,
 			diffgeo->n.z = -diffgeo->dpdu.y;
 		}
 		diffgeo->n = normalize(diffgeo->n);
-		diffgeo->p = axisHit + radiusHit*diffgeo->n;
+		diffgeo->p = axisHit;
 		diffgeo->dpdv = cross(diffgeo->n, diffgeo->dpdu);
 		diffgeo->ng = diffgeo->n;
 		diffgeo->uv = (float2)(u, 0.f);
