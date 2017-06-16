@@ -24,7 +24,7 @@
 
 #include <../Baikal/Kernels/CL/common.cl>
 
-// Ray descriptor (must match C++ RadeonRays::ray exactly)
+// Ray descriptor (must match C++/OpenCL RadeonRays::ray exactly)
 typedef struct
 {
     float4 o;        // xyz - origin, w - max range
