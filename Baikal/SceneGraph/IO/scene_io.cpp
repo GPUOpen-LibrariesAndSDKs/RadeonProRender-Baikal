@@ -187,9 +187,7 @@ namespace Baikal
         std::vector<material_t> objmaterials;
 
         // Try loading file
-		std::cout << "Loading OBJ  ..." << std::endl;
         std::string res = LoadObj(objshapes, objmaterials, filename.c_str(), basepath.c_str());
-		std::cout << "OBJ loaded." << std::endl;
 		if (res != "")
         {
             throw std::runtime_error(res);
@@ -216,9 +214,8 @@ namespace Baikal
 
         // Construct all Baikal shapes 
 		
-		/// @todo: for testing, load curves from a hard-coded custom formatted text file:
-		std::cout << "Constructing curves  ..." << std::endl;
-
+		/// for testing, load curves from a hard-coded custom formatted text file:
+		/// @todo: curve loading should eventually occur via RPR API
 		Curves* curves = new Curves();
 		{
 			std::string cvsFile = "../Resources/chief/chief_lonoise.cvs";
@@ -275,7 +272,6 @@ namespace Baikal
 			// Attach for autorelease
 			scene->AttachAutoreleaseObject(curves);
 		}
-		std::cout << "Curves constructed ..." << std::endl;
 
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
