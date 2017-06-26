@@ -129,6 +129,7 @@ int g_frame_count = 0;
 bool g_benchmark = false;
 bool g_interop = true;
 bool g_gui_visible = true;
+bool g_cmd_line_mode = false;
 ConfigManager::Mode g_mode = ConfigManager::Mode::kUseSingleGpu;
 Baikal::Renderer::OutputType g_ouput_type = Baikal::Renderer::OutputType::kColor;
 
@@ -659,8 +660,54 @@ void Update(bool update_required)
     }
     else if (g_samplecount == g_num_samples)
     {
+        if (!g_interop)
+        {
+            auto& fdata = g_outputs[g_primary].fdata;
+            std::vector<RadeonRays::float3> data(fdata.size());
+            std::transform(fdata.cbegin(), fdata.cend(), data.begin(), 
+                [](RadeonRays::float3 const& v)
+                {
+                    float invw = 1.f / v.w;
+                    return v * invw;
+                });
+            
+            std::stringstream oss;
+            auto camera_position = g_camera->GetPosition();
+            auto camera_direction = g_camera->GetForwardVector();
+            oss << "../Output/" << g_modelname << "_p" << camera_position.x << camera_position.y << camera_position.z <<
+                "_d" << camera_direction.x << camera_direction.y << camera_direction.z <<
+                "_s" << g_num_samples << ".exr";
+
+            SaveFrameBuffer(oss.str(), &data[0]);
+        }
+        else
+        {
+            auto output = g_outputs[g_primary].output.get(); 
+            auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
+            std::vector<RadeonRays::float3> fdata(buffer.GetElementCount());
+            g_cfgs[g_primary].context.ReadBuffer(0, static_cast<Baikal::ClwOutput*>(output)->data(), &fdata[0], fdata.size()).Wait();
+
+            std::vector<RadeonRays::float3> data(fdata.size());
+            std::transform(fdata.cbegin(), fdata.cend(), data.begin(),
+                [](RadeonRays::float3 const& v)
+            {
+                float invw = 1.f / v.w;
+                return v * invw;
+            });
+
+            std::stringstream oss;
+            auto camera_position = g_camera->GetPosition();
+            auto camera_direction = g_camera->GetForwardVector();
+            oss << "../Output/" << g_modelname << "_p" << camera_position.x << camera_position.y << camera_position.z <<
+                "_d" << camera_direction.x << camera_direction.y << camera_direction.z << 
+                "_s" << g_num_samples << ".exr";
+
+            SaveFrameBuffer(oss.str(), &data[0]);
+        }
+
         std::cout << "Target sample count reached\n";
         ++g_samplecount;
+        exit(0);
     }
 
     //if (std::chrono::duration_cast<std::chrono::seconds>(time - updatetime).count() > 1)
@@ -752,7 +799,7 @@ void Update(bool update_required)
 
     if (g_benchmark)
     {
-        auto const kNumBenchmarkPasses = 25U;
+        auto const kNumBenchmarkPasses = 100U;
 
 
         g_cfgs[g_primary].renderer->RunBenchmark(*g_scene.get(), kNumBenchmarkPasses, g_stats);
@@ -946,55 +993,279 @@ int main(int argc, char * argv[])
         g_progressive = true;
     }
 
-    // Initialize GLFW
+    if (CmdOptionExists(argv, argv + argc, "-nowindow"))
     {
-        auto err = glfwInit();
-        if (err != GLFW_TRUE)
-        {
-            std::cout << "GLFW initialization failed\n";
-            return -1;
-        }
+        g_cmd_line_mode = true;
     }
-    // Setup window
-    glfwSetErrorCallback(OnError);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    if (!g_cmd_line_mode)
+    {
+        // Initialize GLFW
+        {
+            auto err = glfwInit();
+            if (err != GLFW_TRUE)
+            {
+                std::cout << "GLFW initialization failed\n";
+                return -1;
+            }
+        }
+        // Setup window
+        glfwSetErrorCallback(OnError);
+        glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #if __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // GLUT Window Initialization:
-    GLFWwindow* window = glfwCreateWindow(g_window_width, g_window_height, "Baikal standalone demo", nullptr, nullptr);
-    glfwMakeContextCurrent(window);
+        // GLUT Window Initialization:
+        GLFWwindow* window = glfwCreateWindow(g_window_width, g_window_height, "Baikal standalone demo", nullptr, nullptr);
+        glfwMakeContextCurrent(window);
 
 #ifndef __APPLE__
-    {
-        glewExperimental = GL_TRUE;
-        GLenum err = glewInit();
-        if (err != GLEW_OK)
         {
-            std::cout << "GLEW initialization failed\n";
+            glewExperimental = GL_TRUE;
+            GLenum err = glewInit();
+            if (err != GLEW_OK)
+            {
+                std::cout << "GLEW initialization failed\n";
+                return -1;
+            }
+        }
+#endif
+
+        ImGui_ImplGlfwGL3_Init(window, true);
+
+        try
+        {
+            InitGraphics();
+            InitCl();
+            InitData();
+            glfwSetMouseButtonCallback(window, OnMouseButton);
+            glfwSetCursorPosCallback(window, OnMouseMove);
+            glfwSetKeyCallback(window, OnKey);
+
+            StartRenderThreads();
+
+            // Collect some scene statistics
+            auto num_triangles = 0U;
+            auto num_instances = 0U;
+            {
+                std::unique_ptr<Baikal::Iterator> shape_iter(g_scene->CreateShapeIterator());
+
+                for (; shape_iter->IsValid(); shape_iter->Next())
+                {
+                    auto shape = shape_iter->ItemAs<Baikal::Shape const>();
+                    auto mesh = dynamic_cast<Baikal::Mesh const*>(shape);
+
+                    if (mesh)
+                    {
+                        num_triangles += mesh->GetNumIndices() / 3;
+                    }
+                    else
+                    {
+                        ++num_instances;
+                    }
+                }
+            }
+
+            bool update = false;
+            while (!glfwWindowShouldClose(window))
+            {
+
+                ImGui_ImplGlfwGL3_NewFrame();
+                Update(update);
+                Render(window);
+                update = false;
+
+                static float aperture = 0.0f;
+                static float focal_length = 35.f;
+                static float focus_distance = 1.f;
+                static int num_bounces = 5;
+                static char const* outputs =
+                    "Color\0"
+                    "World position\0"
+                    "Shading normal\0"
+                    "Geometric normal\0"
+                    "Texture coords\0"
+                    "Wire\0"
+                    "Albedo\0"
+                    "Tangent\0"
+                    "Bitangent\0"
+                    "Gloss\0\0"
+                    ;
+
+                static int output = 0;
+
+                if (g_gui_visible)
+                {
+                    ImGui::SetNextWindowSizeConstraints(ImVec2(380, 580), ImVec2(380, 580));
+                    ImGui::Begin("Baikal settings");
+                    ImGui::Text("Use arrow keys to move");
+                    ImGui::Text("PgUp/Down to climb/descent");
+                    ImGui::Text("Mouse+RMB to look around");
+                    ImGui::Text("F1 to hide/show GUI");
+                    ImGui::Separator();
+                    ImGui::Text("Device vendor: %s", g_cfgs[g_primary].context.GetDevice(0).GetVendor().c_str());
+                    ImGui::Text("Device name: %s", g_cfgs[g_primary].context.GetDevice(0).GetName().c_str());
+                    ImGui::Text("OpenCL: %s", g_cfgs[g_primary].context.GetDevice(0).GetVersion().c_str());
+                    ImGui::Separator();
+                    ImGui::Text("Resolution: %dx%d ", g_window_width, g_window_height);
+                    ImGui::Text("Scene: %s", g_modelname);
+                    ImGui::Text("Unique triangles: %d", num_triangles);
+                    ImGui::Text("Number of instances: %d", num_instances);
+                    ImGui::Separator();
+                    ImGui::SliderInt("GI bounces", &num_bounces, 1, 10);
+                    ImGui::SliderFloat("Aperture(mm)", &aperture, 0.0f, 100.0f);
+                    ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
+                    ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
+
+                    if (aperture != g_camera_aperture * 1000.f)
+                    {
+                        g_camera_aperture = aperture / 1000.f;
+                        g_camera->SetAperture(g_camera_aperture);
+                        update = true;
+                    }
+
+                    if (focus_distance != g_camera_focus_distance)
+                    {
+                        g_camera_focus_distance = focus_distance;
+                        g_camera->SetFocusDistance(g_camera_focus_distance);
+                        update = true;
+                    }
+
+                    if (focal_length != g_camera_focal_length * 1000.f)
+                    {
+                        g_camera_focal_length = focal_length / 1000.f;
+                        g_camera->SetFocalLength(g_camera_focal_length);
+                        update = true;
+                    }
+
+                    if (num_bounces != g_num_bounces)
+                    {
+                        g_num_bounces = num_bounces;
+                        for (int i = 0; i < g_cfgs.size(); ++i)
+                        {
+                            static_cast<Baikal::PtRenderer*>(g_cfgs[i].renderer.get())->SetNumBounces(g_num_bounces);
+                        }
+                        update = true;
+                    }
+
+                    if (static_cast<Baikal::Renderer::OutputType>(output) != g_ouput_type)
+                    {
+                        auto tmp = static_cast<Baikal::Renderer::OutputType>(output);
+
+                        for (int i = 0; i < g_cfgs.size(); ++i)
+                        {
+                            g_cfgs[i].renderer->SetOutput(g_ouput_type, nullptr);
+                            g_cfgs[i].renderer->SetOutput(tmp, g_outputs[i].output.get());
+                            g_ouput_type = tmp;
+                        }
+
+                        update = true;
+                    }
+
+                    ImGui::Combo("Output", &output, outputs);
+                    ImGui::Text(" ");
+                    ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                    ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
+                    ImGui::Separator();
+
+                    if (g_time_benchmark)
+                    {
+                        ImGui::ProgressBar(g_samplecount / 512.f);
+                    }
+
+                    if (!g_time_benchmark && !g_benchmark)
+                    {
+                        if (ImGui::Button("Start benchmark") && g_num_samples == -1)
+                        {
+                            g_time_bench_start_time = std::chrono::high_resolution_clock::now();
+                            g_time_benchmark = true;
+                            update = true;
+                        }
+
+                        if (!g_time_benchmark && ImGui::Button("Start RT benchmark"))
+                        {
+                            g_benchmark = true;
+                        }
+                    }
+
+                    if (g_time_benchmark && g_samplecount > 511)
+                    {
+                        g_time_benchmark = false;
+                        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>
+                            (std::chrono::high_resolution_clock::now() - g_time_bench_start_time).count();
+                        g_time_benchmark_time = delta / 1000.f;
+                        g_time_benchmarked = true;
+                    }
+
+                    if (g_time_benchmarked)
+                    {
+                        auto minutes = (int)(g_time_benchmark_time / 60.f);
+                        auto seconds = (int)(g_time_benchmark_time - minutes * 60);
+                        ImGui::Separator();
+
+                        ImVec4 color;
+                        std::string rating;
+                        ImGui::Text("Rendering time: %2dmin:%ds", minutes, seconds);
+                        if (GradeTimeBenchmarkResults(g_modelname, minutes * 60 + seconds, rating, color))
+                        {
+                            ImGui::TextColored(color, "Rating: %s", rating.c_str());
+                        }
+                        else
+                        {
+                            ImGui::Text("Rating: N/A");
+                        }
+                    }
+
+                    if (g_rt_benchmarked)
+                    {
+                        //if (GradeBenchmarkResults(g_modelname, general, rt))
+                        //{
+                        auto num_rays = g_stats.resolution.x * g_stats.resolution.y;
+                        auto primary = (float)(num_rays / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
+                        auto secondary = (float)(num_rays / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
+                        auto shadow = (float)(num_rays / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
+
+                        ImGui::Separator();
+                        ImGui::Text("Primary rays: %f Mrays/s", primary);
+                        ImGui::Text("Secondary rays: %f Mrays/s", secondary);
+                        ImGui::Text("Shadow rays: %f Mrays/s", shadow);
+                    }
+
+                    ImGui::End();
+
+                    ImGui::Render();
+                }
+
+                glfwSwapBuffers(window);
+                glfwPollEvents();
+            }
+
+            for (int i = 0; i < g_cfgs.size(); ++i)
+            {
+                if (i == g_primary)
+                    continue;
+
+                g_ctrl[i].stop.store(true);
+            }
+
+            glfwDestroyWindow(window);
+        }
+        catch (std::runtime_error& err)
+        {
+            glfwDestroyWindow(window);
+            std::cout << err.what();
             return -1;
         }
     }
-#endif
-
-    ImGui_ImplGlfwGL3_Init(window, true);
-
-    try
+    else
     {
-        InitGraphics();
         InitCl();
         InitData();
-        glfwSetMouseButtonCallback(window, OnMouseButton);
-        glfwSetCursorPosCallback(window, OnMouseMove);
-        glfwSetKeyCallback(window, OnKey);
 
-        StartRenderThreads();
-
-        // Collect some scene statistics
         auto num_triangles = 0U;
         auto num_instances = 0U;
         {
@@ -1016,194 +1287,79 @@ int main(int argc, char * argv[])
             }
         }
 
-        bool update = false;
-        while (!glfwWindowShouldClose(window))
+        std::cout << "Number of triangles: " << num_triangles << "\n";
+        std::cout << "Number of instances: " << num_instances << "\n";
+
+        std::cout << "Running general benchmark...\n";
+
+        g_time_bench_start_time = std::chrono::high_resolution_clock::now();
+
+        for (auto i = 0U; i < 512; ++i)
         {
-
-            ImGui_ImplGlfwGL3_NewFrame();
-            Update(update);
-            Render(window);
-            update = false;
-
-            static float aperture = 0.0f;
-            static float focal_length = 35.f;
-            static float focus_distance = 1.f;
-            static int num_bounces = 5;
-            static char const* outputs =
-                "Color\0"
-                "World position\0"
-                "Shading normal\0"
-                "Geometric normal\0"
-                "Texture coords\0"
-                "Wire\0"
-                "Albedo\0"
-                "Tangent\0"
-                "Bitangent\0\0"
-            ;
-
-            static int output = 0;
-
-            if (g_gui_visible)
-            {
-                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 580), ImVec2(380, 580));
-                ImGui::Begin("Baikal settings");
-                ImGui::Text("Use arrow keys to move");
-                ImGui::Text("PgUp/Down to climb/descent");
-                ImGui::Text("Mouse+RMB to look around");
-                ImGui::Text("F1 to hide/show GUI");
-                ImGui::Separator();
-                ImGui::Text("Device vendor: %s", g_cfgs[g_primary].context.GetDevice(0).GetVendor().c_str());
-                ImGui::Text("Device name: %s", g_cfgs[g_primary].context.GetDevice(0).GetName().c_str());
-                ImGui::Text("OpenCL: %s", g_cfgs[g_primary].context.GetDevice(0).GetVersion().c_str());
-                ImGui::Separator();
-                ImGui::Text("Resolution: %dx%d ", g_window_width, g_window_height);
-                ImGui::Text("Scene: %s", g_modelname);
-                ImGui::Text("Unique triangles: %d", num_triangles);
-                ImGui::Text("Number of instances: %d", num_instances);
-                ImGui::Separator();
-                ImGui::SliderInt("GI bounces", &num_bounces, 1, 10);
-                ImGui::SliderFloat("Aperture(mm)", &aperture, 0.0f, 100.0f);
-                ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
-                ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
-
-                if (aperture != g_camera_aperture * 1000.f)
-                {
-                    g_camera_aperture = aperture / 1000.f;
-                    g_camera->SetAperture(g_camera_aperture);
-                    update = true;
-                }
-
-                if (focus_distance != g_camera_focus_distance)
-                {
-                    g_camera_focus_distance = focus_distance;
-                    g_camera->SetFocusDistance(g_camera_focus_distance);
-                    update = true;
-                }
-
-                if (focal_length != g_camera_focal_length * 1000.f)
-                {
-                    g_camera_focal_length = focal_length / 1000.f;
-                    g_camera->SetFocalLength(g_camera_focal_length);
-                    update = true;
-                }
-
-                if (num_bounces != g_num_bounces)
-                {
-                    g_num_bounces = num_bounces;
-                    for (int i = 0; i < g_cfgs.size(); ++i)
-                    {
-                        static_cast<Baikal::PtRenderer*>(g_cfgs[i].renderer.get())->SetNumBounces(g_num_bounces);
-                    }
-                    update = true;
-                }
-
-                if (static_cast<Baikal::Renderer::OutputType>(output) != g_ouput_type)
-                {
-                    auto tmp = static_cast<Baikal::Renderer::OutputType>(output);
-
-                    for (int i = 0; i < g_cfgs.size(); ++i)
-                    {
-                        g_cfgs[i].renderer->SetOutput(g_ouput_type, nullptr);
-                        g_cfgs[i].renderer->SetOutput(tmp, g_outputs[i].output.get());
-                        g_ouput_type = tmp;
-                    }
-
-                    update = true;
-                }
-
-                ImGui::Combo("Output", &output, outputs);
-                ImGui::Text(" ");
-                ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
-                ImGui::Separator();
-
-                if (g_time_benchmark)
-                {
-                    ImGui::ProgressBar(g_samplecount / 512.f);
-                }
-
-                if (!g_time_benchmark && !g_benchmark)
-                {
-                    if(ImGui::Button("Start benchmark") && g_num_samples == -1)
-                    {
-                        g_time_bench_start_time = std::chrono::high_resolution_clock::now();
-                        g_time_benchmark = true;
-                        update = true;
-                    }
-                    
-                    if (!g_time_benchmark && ImGui::Button("Start RT benchmark"))
-                    {
-                        g_benchmark = true;
-                    }
-                }
-
-                if (g_time_benchmark && g_samplecount > 511)
-                {
-                    g_time_benchmark = false;
-                    auto delta = std::chrono::duration_cast<std::chrono::milliseconds>
-                        (std::chrono::high_resolution_clock::now() - g_time_bench_start_time).count();
-                    g_time_benchmark_time = delta / 1000.f;
-                    g_time_benchmarked = true;
-                }
-
-                if (g_time_benchmarked)
-                {
-                    auto minutes = (int)(g_time_benchmark_time / 60.f);
-                    auto seconds = (int)(g_time_benchmark_time - minutes * 60);
-                    ImGui::Separator();
-
-                    ImVec4 color;
-                    std::string rating;
-                    ImGui::Text("Rendering time: %2dmin:%ds", minutes, seconds);
-                    if (GradeTimeBenchmarkResults(g_modelname, minutes * 60 + seconds, rating, color))
-                    {
-                        ImGui::TextColored(color, "Rating: %s", rating.c_str());
-                    }
-                    else
-                    {
-                        ImGui::Text("Rating: N/A");
-                    }
-                }
-
-                if (g_rt_benchmarked)
-                {
-                    //if (GradeBenchmarkResults(g_modelname, general, rt))
-                    //{
-                    auto num_rays = g_stats.resolution.x * g_stats.resolution.y;
-                    auto primary = (float)(num_rays / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
-                    auto secondary = (float)(num_rays / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
-                    auto shadow = (float)(num_rays / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
-
-                    ImGui::Separator();
-                    ImGui::Text("Primary rays: %f Mrays/s", primary);
-                    ImGui::Text("Secondary rays: %f Mrays/s", secondary);
-                    ImGui::Text("Shadow rays: %f Mrays/s", shadow);
-                }
-                
-                ImGui::End();
-
-                ImGui::Render();
-            }
-
-            glfwSwapBuffers(window);
-            glfwPollEvents();
+            g_cfgs[g_primary].renderer->Render(*g_scene);
         }
 
-        for (int i = 0; i < g_cfgs.size(); ++i)
-        {
-            if (i == g_primary)
-                continue;
+        g_cfgs[g_primary].context.Finish(0);
 
-            g_ctrl[i].stop.store(true);
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>
+            (std::chrono::high_resolution_clock::now() - g_time_bench_start_time).count();
+
+        g_time_benchmark_time = delta / 1000.f;
+
+        auto minutes = (int)(g_time_benchmark_time / 60.f);
+        auto seconds = (int)(g_time_benchmark_time - minutes * 60);
+
+        std::cout << "Rendering time: " << minutes << "min:" << seconds << "s\n";
+
+        std::string rating;
+        ImVec4 color;
+        if (GradeTimeBenchmarkResults(g_modelname, minutes * 60 + seconds, rating, color))
+        {
+            std::cout << "Rating: " << rating.c_str() << "\n";
+        }
+        else
+        {
+            std::cout << "Rating: N/A\n";
         }
 
-        glfwDestroyWindow(window);
-    }
-    catch (std::runtime_error& err)
-    {
-        glfwDestroyWindow(window);
-        std::cout << err.what();
-        return -1;
+        g_outputs[g_primary].output->GetData(&g_outputs[g_primary].fdata[0]);
+
+        float gamma = 2.2f;
+        for (int i = 0; i < (int)g_outputs[g_primary].fdata.size(); ++i)
+        {
+            g_outputs[g_primary].udata[4 * i] = (unsigned char)clamp(clamp(pow(g_outputs[g_primary].fdata[i].x / g_outputs[g_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
+            g_outputs[g_primary].udata[4 * i + 1] = (unsigned char)clamp(clamp(pow(g_outputs[g_primary].fdata[i].y / g_outputs[g_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
+            g_outputs[g_primary].udata[4 * i + 2] = (unsigned char)clamp(clamp(pow(g_outputs[g_primary].fdata[i].z / g_outputs[g_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
+            g_outputs[g_primary].udata[4 * i + 3] = 1;
+        }
+
+        auto& fdata = g_outputs[g_primary].fdata;
+        std::vector<RadeonRays::float3> data(fdata.size());
+        std::transform(fdata.cbegin(), fdata.cend(), data.begin(),
+            [](RadeonRays::float3 const& v)
+        {
+            float invw = 1.f / v.w;
+            return v * invw;
+        });
+
+        std::stringstream oss;
+        auto camera_position = g_camera->GetPosition();
+        auto camera_direction = g_camera->GetForwardVector();
+        oss << "../Output/" << g_modelname << ".exr";
+
+        SaveFrameBuffer(oss.str(), &data[0]);
+
+        std::cout << "Running RT benchmark...\n";
+        g_cfgs[g_primary].renderer->RunBenchmark(*g_scene, 100, g_stats);
+
+        auto num_rays = g_stats.resolution.x * g_stats.resolution.y;
+        auto primary = (float)(num_rays / (g_stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
+        auto secondary = (float)(num_rays / (g_stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
+        auto shadow = (float)(num_rays / (g_stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
+
+        std::cout << "Primary: " << primary << " Mrays/s\n";
+        std::cout << "Secondary: " << secondary << " Mrays/s\n";
+        std::cout << "Shadow: " << shadow << " Mrays/s\n";
     }
 
     return 0;

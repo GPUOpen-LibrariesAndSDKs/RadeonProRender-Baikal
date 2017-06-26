@@ -68,6 +68,8 @@ namespace Baikal
         virtual void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Update shape data only.
         virtual void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
+        // Update shape transforms
+        virtual void UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Update lights data only.
         virtual void UpdateLights(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Update material data.

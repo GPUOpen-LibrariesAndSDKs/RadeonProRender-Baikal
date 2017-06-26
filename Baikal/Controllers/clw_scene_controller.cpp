@@ -242,6 +242,58 @@ namespace Baikal
             out.visible_shapes.push_back(shape);
         }
     }
+
+    void ClwSceneController::UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const
+    {
+        // Create new shapes
+        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+
+        if (!shape_iter->IsValid())
+        {
+            throw std::runtime_error("No shapes in the scene");
+        }
+
+        // Split all shapes into meshes and instances sets.
+        std::set<Mesh const*> meshes;
+        // Excluded shapes are shapes which are not in the scene,
+        // but references by at least one instance.
+        std::set<Mesh const*> excluded_meshes;
+        std::set<Instance const*> instances;
+        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+
+        auto rr_iter = out.isect_shapes.begin();
+
+        // Start from ID 1
+        // Handle meshes
+        int id = 1;
+        for (auto& iter : meshes)
+        {
+            auto mesh = iter;
+            auto transform = mesh->GetTransform();
+            (*rr_iter)->SetTransform(transform, inverse(transform));
+            ++rr_iter;
+        }
+
+        // Handle excluded meshes
+        for (auto& iter : excluded_meshes)
+        {
+            auto mesh = iter;
+            auto transform = mesh->GetTransform();
+            (*rr_iter)->SetTransform(transform, inverse(transform));
+            ++rr_iter;
+        }
+
+        // Handle instances
+        for (auto& iter : instances)
+        {
+            auto instance = iter;
+            auto transform = instance->GetTransform();
+            (*rr_iter)->SetTransform(transform, inverse(transform));
+            ++rr_iter;
+        }
+
+        m_api->Commit();
+    }
     
     void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
@@ -418,9 +470,9 @@ namespace Baikal
             
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
-            
+
             shapes[num_shapes_written++] = shape;
-            
+
             // Check if mesh has a material and use default if not
             auto material = mesh->GetMaterial();
             if (!material)
@@ -462,13 +514,13 @@ namespace Baikal
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
             shape.start_material_idx = static_cast<int>(num_matids_written);
-            
+
             auto transform = mesh->GetTransform();
             shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
             shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             shape.transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             shape.transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            
+
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             
@@ -545,10 +597,157 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.indices, indices);
         m_context.UnmapBuffer(0, out.materialids, matids);
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
-        
+
         UpdateIntersector(scene, out);
-        
+
         ReloadIntersector(scene, out);
+    }
+
+    void ClwSceneController::UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
+    {
+        std::size_t num_material_ids = 0;
+        std::size_t num_matids_written = 0;
+        std::size_t num_shapes_written = 0;
+
+        auto shape_iter = scene.CreateShapeIterator();
+
+        // Sort shapes into meshes and instances sets.
+        std::set<Mesh const*> meshes;
+        // Excluded meshes are meshes which are not in the scene,
+        // but are references by at least one instance.
+        std::set<Mesh const*> excluded_meshes;
+        std::set<Instance const*> instances;
+        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+
+        // Calculate GPU array sizes. Do that only for meshes,
+        // since instances do not occupy space in vertex buffers.
+        // However instances still have their own material ids.
+        for (auto& iter : meshes)
+        {
+            auto mesh = iter;
+            num_material_ids += mesh->GetNumIndices() / 3;
+        }
+
+        // Excluded meshes still occupy space in vertex buffers.
+        for (auto& iter : excluded_meshes)
+        {
+            auto mesh = iter;
+            num_material_ids += mesh->GetNumIndices() / 3;
+        }
+
+        // Instances only occupy material IDs space.
+        for (auto& iter : instances)
+        {
+            auto instance = iter;
+            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
+            num_material_ids += mesh->GetNumIndices() / 3;
+        }
+
+        // Total number of entries in shapes GPU array
+        auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
+
+        int* matids = nullptr;
+        ClwScene::Shape* shapes = nullptr;
+
+        // Map arrays and prepare to write data
+        m_context.MapBuffer(0, out.materialids, CL_MAP_READ | CL_MAP_WRITE, &matids);
+        m_context.MapBuffer(0, out.shapes, CL_MAP_READ | CL_MAP_WRITE, &shapes).Wait();
+
+        auto current_shape = shapes;
+        for (auto& iter : meshes)
+        {
+            auto mesh = iter;
+
+            auto mesh_num_indices = mesh->GetNumIndices();
+
+            auto transform = mesh->GetTransform();
+            current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+            current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+            current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+            current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+
+            // Check if mesh has a material and use default if not
+            auto material = mesh->GetMaterial();
+            if (!material)
+            {
+                material = m_default_material.get();
+            }
+
+            auto matidx = mat_collector.GetItemIndex(material);
+            std::fill(matids + current_shape->start_material_idx, 
+                matids + current_shape->start_material_idx + mesh_num_indices / 3, 
+                matidx);
+
+            // Drop dirty flag
+            mesh->SetDirty(false);
+            ++current_shape;
+        }
+
+        // Excluded shapes are handled in almost the same way
+        // except materials.
+        for (auto& iter : excluded_meshes)
+        {
+            auto mesh = iter;
+
+            auto mesh_num_indices = mesh->GetNumIndices();
+
+            auto transform = mesh->GetTransform();
+            current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+            current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+            current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+            current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+
+            // Check if mesh has a material and use default if not
+            auto material = mesh->GetMaterial();
+            if (!material)
+            {
+                material = m_default_material.get();
+            }
+
+            auto matidx = mat_collector.GetItemIndex(material);
+            std::fill(matids + current_shape->start_material_idx,
+                matids + current_shape->start_material_idx + mesh_num_indices / 3,
+                matidx);
+
+            // Drop dirty flag
+            mesh->SetDirty(false);
+            ++current_shape;
+        }
+
+        // Handle instances
+        for (auto& iter : instances)
+        {
+            auto instance = iter;
+            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto material = instance->GetMaterial();
+            auto transform = instance->GetTransform();
+            auto mesh_num_indices = base_shape->GetNumIndices();
+
+            current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
+            current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
+            current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
+            current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
+
+            // Check if mesh has a material and use default if not
+            if (!material)
+            {
+                material = m_default_material.get();
+            }
+
+            auto matidx = mat_collector.GetItemIndex(material);
+            std::fill(matids + current_shape->start_material_idx,
+                matids + current_shape->start_material_idx + mesh_num_indices / 3,
+                matidx);
+
+            // Drop dirty flag
+            instance->SetDirty(false);
+            ++current_shape;
+        }
+
+        m_context.UnmapBuffer(0, out.materialids, matids);
+        m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
+
+
     }
     
     void ClwSceneController::UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const

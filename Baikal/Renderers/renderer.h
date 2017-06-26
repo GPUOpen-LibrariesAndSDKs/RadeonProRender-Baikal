@@ -60,6 +60,7 @@ namespace Baikal
             kAlbedo,
             kWorldTangent,
             kWorldBitangent,
+            kGloss,
             kMax
         };
 

@@ -249,18 +249,22 @@ namespace Baikal
                 for (; shape_iter->IsValid(); shape_iter->Next())
                 {
                     auto shape = shape_iter->ItemAs<Shape const>();
-                    
+
                     if (shape->IsDirty())
                     {
                         shapes_changed = true;
                         break;
                     }
                 }
-                
+
                 // Update shapes if needed
-                if (dirty & Scene1::kShapes || shapes_changed)
+                if (dirty & Scene1::kShapes)
                 {
                     UpdateShapes(scene, mat_collector, tex_collector, out);
+                }
+                else if (shapes_changed)
+                {
+                    UpdateShapeProperties(scene, mat_collector, tex_collector, out);
                 }
             }
             
