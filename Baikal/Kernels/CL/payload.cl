@@ -106,7 +106,7 @@ typedef struct _Material
             int nsmapidx;
             float fresnel;
             int padding0[3];
-        };
+        } a;
         
         struct
         {
@@ -115,7 +115,7 @@ typedef struct _Material
             int top_brdf_idx;
             int base_brdf_idx;
             int padding1[8];
-        };
+        } b;
         
         struct
         {
@@ -145,7 +145,7 @@ typedef struct _Material
             int sheen_tint_map_idx;
             int clearcoat_map_idx;
             int clearcoat_gloss_map_idx;
-        };
+        } c;
     };
     
     int type;
