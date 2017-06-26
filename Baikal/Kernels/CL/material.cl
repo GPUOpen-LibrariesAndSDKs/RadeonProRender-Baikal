@@ -51,10 +51,10 @@ void Material_Select(
     if (type != kFresnelBlend && type != kMix)
     {
         // If fresnel > 0 here we need to calculate Frensle factor (remove this workaround)
-        if (dg->mat.fresnel > 0.f)
+        if (dg->mat.simple.fresnel > 0.f)
         {
             float etai = 1.f;
-            float etat = dg->mat.ni;
+            float etat = dg->mat.simple.ni;
             float cosi = dot(dg->n, wi);
 
             // Revert normal and eta if needed
@@ -78,12 +78,12 @@ void Material_Select(
                 fresnel = FresnelDielectric(etai, etat, cosi, cost);
             }
 
-            dg->mat.fresnel = Bxdf_IsBtdf(dg) ? (1.f - fresnel) : fresnel;
+            dg->mat.simple.fresnel = Bxdf_IsBtdf(dg) ? (1.f - fresnel) : fresnel;
         }
         else
         {
             // Otherwise set multiplier to 1
-            dg->mat.fresnel = 1.f;
+            dg->mat.simple.fresnel = 1.f;
         }
     }
     // Here we deal with combined material and we have to sample
@@ -99,7 +99,7 @@ void Material_Select(
             if (mat.type == kFresnelBlend)
             {
                 float etai = 1.f;
-                float etat = mat.weight;
+                float etat = mat.compound.weight;
                 float cosi = dot(dg->n, wi);
 
                 // Revert normal and eta if needed
@@ -127,41 +127,41 @@ void Material_Select(
                 if (sample < fresnel)
                 {
                     // Sample top
-                    idx = mat.top_brdf_idx;
+                    idx = mat.compound.top_brdf_idx;
                     //
                     mat = scene->materials[idx];
-                    mat.fresnel = 1.f;
+                    mat.simple.fresnel = 1.f;
                 }
                 else
                 {
                     // Sample base
-                    idx = mat.base_brdf_idx;
+                    idx = mat.compound.base_brdf_idx;
                     // 
                     mat = scene->materials[idx];
-                    mat.fresnel = 1.f;
+                    mat.simple.fresnel = 1.f;
                 }
             }
             else
             {
                 float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
 
-                float weight = Texture_GetValue1f(mat.weight, dg->uv, TEXTURE_ARGS_IDX(mat.weight_map_idx));
+                float weight = Texture_GetValue1f(mat.compound.weight, dg->uv, TEXTURE_ARGS_IDX(mat.compound.weight_map_idx));
 
                 if (sample < weight)
                 {
                     // Sample top
-                    idx = mat.top_brdf_idx;
+                    idx = mat.compound.top_brdf_idx;
                     //
                     mat = scene->materials[idx];
-                    mat.fresnel = 1.f;
+                    mat.simple.fresnel = 1.f;
                 }
                 else
                 {
                     // Sample base
-                    idx = mat.base_brdf_idx;
+                    idx = mat.compound.base_brdf_idx;
                     //
                     mat = scene->materials[idx];
-                    mat.fresnel = 1.f;
+                    mat.simple.fresnel = 1.f;
                 }
             }
         }
