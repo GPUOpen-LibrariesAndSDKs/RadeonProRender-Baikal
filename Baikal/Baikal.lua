@@ -37,6 +37,7 @@ project "Baikal"
 
     if os.is("linux") then
         buildoptions "-std=c++11"
+        includedirs { "../3rdparty/glfw/include"}
         links {"OpenImageIO", "pthread"}
         if not _OPTIONS["benchmark"] then
             links{"GLEW", "GL", "glfw"}
