@@ -733,7 +733,7 @@ namespace Baikal
         switch (type)
         {
             case ClwScene::Bxdf::kZero:
-            clw_material->kx = RadeonRays::float4();
+            clw_material->a.kx = RadeonRays::float4();
             break;
             
             // We need to convert roughness for the following materials
@@ -746,12 +746,12 @@ namespace Baikal
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->ns = value.float_value.x;
-                    clw_material->nsmapidx = -1;
+                    clw_material->a.ns = value.float_value.x;
+                    clw_material->a.nsmapidx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->nsmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->a.nsmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -774,12 +774,12 @@ namespace Baikal
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->kx = value.float_value;
-                    clw_material->kxmapidx = -1;
+                    clw_material->a.kx = value.float_value;
+                    clw_material->a.kxmapidx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->kxmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->a.kxmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -814,33 +814,33 @@ namespace Baikal
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->fresnel = value.float_value.x > 0 ? 1.f : 0.f;
+                    clw_material->a.fresnel = value.float_value.x > 0 ? 1.f : 0.f;
                 }
                 else
                 {
-                    clw_material->fresnel = 0.f;
+                    clw_material->a.fresnel = 0.f;
                 }
                 
                 value = material->GetInputValue("ior");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->ni = value.float_value.x;
+                    clw_material->a.ni = value.float_value.x;
                 }
                 else
                 {
-                    clw_material->ni = 1.f;
+                    clw_material->a.ni = 1.f;
                 }
                 
                 value = material->GetInputValue("roughness");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->ns = value.float_value.x;
+                    clw_material->a.ns = value.float_value.x;
                 }
                 else
                 {
-                    clw_material->ns = 0.99f;
+                    clw_material->a.ns = 0.99f;
                 }
                 
                 break;
@@ -857,8 +857,8 @@ namespace Baikal
                 if (value0.type == Material::InputType::kMaterial &&
                     value1.type == Material::InputType::kMaterial)
                 {
-                    clw_material->base_brdf_idx = mat_collector.GetItemIndex(value0.mat_value);
-                    clw_material->top_brdf_idx = mat_collector.GetItemIndex(value1.mat_value);
+                    clw_material->b.base_brdf_idx = mat_collector.GetItemIndex(value0.mat_value);
+                    clw_material->b.top_brdf_idx = mat_collector.GetItemIndex(value1.mat_value);
                 }
                 else
                 {
@@ -868,29 +868,29 @@ namespace Baikal
                 
                 if (type == ClwScene::Bxdf::kMix)
                 {
-                    clw_material->fresnel = 0.f;
+                    clw_material->a.fresnel = 0.f;
                     
                     Material::InputValue value = material->GetInputValue("weight");
                     
                     if (value.type == Material::InputType::kTexture)
                     {
-                        clw_material->weight_map_idx = tex_collector.GetItemIndex(value.tex_value);
+                        clw_material->b.weight_map_idx = tex_collector.GetItemIndex(value.tex_value);
                     }
                     else
                     {
-                        clw_material->weight_map_idx = -1;
-                        clw_material->weight = value.float_value.x;
+                        clw_material->b.weight_map_idx = -1;
+                        clw_material->b.weight = value.float_value.x;
                     }
                 }
                 else
                 {
-                    clw_material->fresnel = 1.f;
+                    clw_material->a.fresnel = 1.f;
                     
                     Material::InputValue value = material->GetInputValue("ior");
                     
                     if (value.type == Material::InputType::kFloat4)
                     {
-                        clw_material->weight = value.float_value.x;
+                        clw_material->b.weight = value.float_value.x;
                     }
                     else
                     {
@@ -908,12 +908,12 @@ namespace Baikal
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->base_color = value.float_value;
-                    clw_material->base_color_map_idx = -1;
+                    clw_material->c.base_color = value.float_value;
+                    clw_material->c.base_color_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->base_color_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.base_color_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -924,12 +924,12 @@ namespace Baikal
                 value = material->GetInputValue("metallic");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->metallic = value.float_value.x;
-                    clw_material->metallic_map_idx = -1;
+                    clw_material->c.metallic = value.float_value.x;
+                    clw_material->c.metallic_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->metallic_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.metallic_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -940,7 +940,7 @@ namespace Baikal
                 value = material->GetInputValue("subsurface");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->subsurface = value.float_value.x;
+                    clw_material->c.subsurface = value.float_value.x;
                 }
                 else
                 {
@@ -951,12 +951,12 @@ namespace Baikal
                 value = material->GetInputValue("specular");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->specular = value.float_value.x;
-                    clw_material->specular_map_idx = -1;
+                    clw_material->c.specular = value.float_value.x;
+                    clw_material->c.specular_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->specular_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.specular_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -967,12 +967,12 @@ namespace Baikal
                 value = material->GetInputValue("specular_tint");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->specular_tint = value.float_value.x;
-                    clw_material->specular_tint_map_idx = -1;
+                    clw_material->c.specular_tint = value.float_value.x;
+                    clw_material->c.specular_tint_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->specular_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.specular_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -983,12 +983,12 @@ namespace Baikal
                 value = material->GetInputValue("anisotropy");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->anisotropy = value.float_value.x;
-                    clw_material->anisotropy_map_idx = -1;
+                    clw_material->c.anisotropy = value.float_value.x;
+                    clw_material->c.anisotropy_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->anisotropy_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.anisotropy_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -999,12 +999,12 @@ namespace Baikal
                 value = material->GetInputValue("sheen");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->sheen = value.float_value.x;
-                    clw_material->sheen_map_idx = -1;
+                    clw_material->c.sheen = value.float_value.x;
+                    clw_material->c.sheen_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->sheen_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.sheen_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -1015,12 +1015,12 @@ namespace Baikal
                 value = material->GetInputValue("sheen_tint");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->sheen_tint = value.float_value.x;
-                    clw_material->sheen_tint_map_idx = -1;
+                    clw_material->c.sheen_tint = value.float_value.x;
+                    clw_material->c.sheen_tint_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->sheen_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.sheen_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -1031,12 +1031,12 @@ namespace Baikal
                 value = material->GetInputValue("clearcoat");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->clearcoat = value.float_value.x;
-                    clw_material->clearcoat_map_idx = -1;
+                    clw_material->c.clearcoat = value.float_value.x;
+                    clw_material->c.clearcoat_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->clearcoat_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.clearcoat_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -1047,12 +1047,12 @@ namespace Baikal
                 value = material->GetInputValue("clearcoat_gloss");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->clearcoat_gloss = value.float_value.x;
-                    clw_material->clearcoat_gloss_map_idx = -1;
+                    clw_material->c.clearcoat_gloss = value.float_value.x;
+                    clw_material->c.clearcoat_gloss_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->clearcoat_gloss_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.clearcoat_gloss_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
@@ -1063,12 +1063,12 @@ namespace Baikal
                 value = material->GetInputValue("roughness");
                 if (value.type == Material::InputType::kFloat4)
                 {
-                    clw_material->roughness = value.float_value.x;
-                    clw_material->roughness_map_idx = -1;
+                    clw_material->c.roughness = value.float_value.x;
+                    clw_material->c.roughness_map_idx = -1;
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->roughness_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->c.roughness_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
                 }
                 else
                 {
