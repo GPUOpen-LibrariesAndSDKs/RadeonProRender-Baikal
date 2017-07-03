@@ -187,7 +187,7 @@ The following packages are required to build the renderer:
 ### Windows
 - Create Visual Studio 2015 Solution
 
-`./Tools/premake/win/premake5.exe vs2015`
+`Tools\premake\win\premake5.exe vs2015`
 
 ### OSX
 - Install Homebrew
