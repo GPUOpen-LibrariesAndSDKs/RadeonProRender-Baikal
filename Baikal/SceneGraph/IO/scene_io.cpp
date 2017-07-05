@@ -216,7 +216,7 @@ namespace Baikal
             // Set material
             auto idx = objshapes[s].mesh.material_ids[0];
 
-            if (idx > 0)
+            if (idx >= 0)
             {
                 mesh->SetMaterial(materials[idx]);
             }
