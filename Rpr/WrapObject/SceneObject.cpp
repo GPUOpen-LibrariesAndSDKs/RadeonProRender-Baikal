@@ -52,14 +52,14 @@ void SceneObject::Clear()
     for (std::unique_ptr<Baikal::Iterator> it_light(m_scene->CreateLightIterator()); it_light->IsValid();)
     {
         m_scene->DetachLight(it_light->ItemAs<const Baikal::Light>());
-        it_light.reset(m_scene->CreateLightIterator());
+        it_light = m_scene->CreateLightIterator();
     }
 
     //remove shapes
     for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid();)
     {
         m_scene->DetachShape(it_shape->ItemAs<const Baikal::Mesh>());
-        it_shape.reset(m_scene->CreateShapeIterator());
+        it_shape = m_scene->CreateShapeIterator();
     }
 }
 

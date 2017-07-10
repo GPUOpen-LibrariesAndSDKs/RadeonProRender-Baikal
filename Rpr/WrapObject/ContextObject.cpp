@@ -35,6 +35,8 @@ THE SOFTWARE.
 #include "SceneGraph/material.h"
 #include "SceneGraph/light.h"
 
+#include "RenderFactory/render_factory.h"
+
 namespace
 {
     struct ParameterDesc
@@ -138,11 +140,14 @@ void ContextObject::GetRenderStatistics(void * out_data, size_t * out_size_ret) 
     {
         //TODO: more statistics
         rpr_render_statistics* rs = static_cast<rpr_render_statistics*>(out_data);
+        rs->gpumem_usage = 0;
+        rs->gpumem_total = 0;
+        rs->gpumem_max_allocation = 0;
         for (const auto& cfg : m_cfgs)
         {
-            rs->gpumem_usage += cfg.renderer->m_vidmemws;
-            rs->gpumem_total += cfg.renderer->m_vidmemws;
-            rs->gpumem_max_allocation += cfg.renderer->m_vidmemws;
+            rs->gpumem_usage += cfg.renderer->GetWorkingSetSize();
+            rs->gpumem_total += cfg.renderer->GetWorkingSetSize();
+            rs->gpumem_max_allocation += cfg.renderer->GetWorkingSetSize();
         }
     }
     if (out_size_ret)
@@ -294,7 +299,7 @@ FramebufferObject* ContextObject::CreateFrameBuffer(rpr_framebuffer_format const
     }
     auto& c = m_cfgs[0];
     FramebufferObject* result = new FramebufferObject();
-    Baikal::Output* out = c.renderer->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height);
+    Baikal::Output* out = c.factory->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height).release();
     result->SetOutput(out);
     return result;
 }

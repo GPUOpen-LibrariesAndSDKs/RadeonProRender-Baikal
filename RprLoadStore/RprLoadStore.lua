@@ -8,6 +8,9 @@ project "RprLoadStore"
     configuration "x64"
 --         libdirs { os.getenv("AMDAPPSDKROOT").."lib/x86_64"} 
     configuration {} -- back to all configurations.
+
+    defines {"RPRS_EXPORT_API"}
+
     if( os.is("windows") ) then
          linkoptions { '/DEF:"RprLoadStore.def"' }
     end

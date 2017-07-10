@@ -21,6 +21,7 @@ THE SOFTWARE.
 ********************************************************************/
 #include <OpenImageIO/imageio.h>
 #include <map>
+#include <memory>
 
 #include "math/int2.h"
 #include "SceneGraph/texture.h"
@@ -289,7 +290,7 @@ MaterialObject::MaterialObject(const std::string& in_path)
     Clear();
 
     //load texture using oiio
-    ImageIo* oiio = ImageIo::CreateImageIo();
+    std::unique_ptr<ImageIo> oiio = ImageIo::CreateImageIo();
     Texture* texture = nullptr;
     try
     {
@@ -300,7 +301,6 @@ MaterialObject::MaterialObject(const std::string& in_path)
     }
 
     m_tex = texture;
-    delete oiio;
 }
 
 MaterialObject::~MaterialObject()
