@@ -11,10 +11,6 @@ project "RprLoadStore"
 
     defines {"RPRS_EXPORT_API"}
 
-    if( os.is("windows") ) then
-         linkoptions { '/DEF:"RprLoadStore.def"' }
-    end
-
     if( os.is("linux") ) then
         buildoptions { '-std=c++0x' }      
     end
