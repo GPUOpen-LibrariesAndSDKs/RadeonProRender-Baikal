@@ -949,7 +949,7 @@ __kernel void FillAOVs(
                 // Select BxDF
                 Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 
-                const float3 kd = Texture_GetValue3f(diffgeo.mat.kx.xyz, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.kxmapidx));
+                const float3 kd = Texture_GetValue3f(diffgeo.mat.simple.kx.xyz, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.kxmapidx));
 
                 aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
