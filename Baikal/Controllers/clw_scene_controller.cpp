@@ -32,7 +32,7 @@ namespace Baikal
         m_api->SetOption("acc.type", "fatbvh");
         //m_api->SetOption("bvh.forceflat", 1.f);
         m_api->SetOption("bvh.builder", "sah");
-        m_api->SetOption("bvh.sah.num_bins", 64.f);
+        m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
     
     Material const* ClwSceneController::GetDefaultMaterial() const

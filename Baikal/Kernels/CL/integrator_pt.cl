@@ -1027,7 +1027,7 @@ __kernel void FillAOVs(
                 else if (type == kMicrofacetGGX || type == kMicrofacetBeckmann ||
                     type == kMicrofacetRefractionGGX || type == kMicrofacetRefractionBeckmann)
                 {
-                    gloss = 1.f - Texture_GetValue1f(diffgeo.mat.ns, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.nsmapidx));
+                    gloss = 1.f - Texture_GetValue1f(diffgeo.mat.simple.ns, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.nsmapidx));
                 }
 
 
