@@ -1168,6 +1168,7 @@ int main(int argc, char * argv[])
 
                     ImGui::Combo("Output", &output, outputs);
                     ImGui::Text(" ");
+					ImGui::Text("Number of samples: %d", g_samplecount);
                     ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                     ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate * g_window_width * g_window_height) / 1000000.f);
                     ImGui::Separator();
