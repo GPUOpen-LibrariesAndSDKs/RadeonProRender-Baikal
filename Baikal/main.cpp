@@ -80,6 +80,7 @@ THE SOFTWARE.
 #include "Utils/shader_manager.h"
 #include "Utils/config_manager.h"
 #include "Utils/tiny_obj_loader.h"
+#include "PostEffects/bilateral_denoiser.h"
 
 Baikal::Scene1 scene;
 
@@ -639,15 +640,15 @@ void Update(bool update_required)
 
 #ifdef ENABLE_DENOISER
         Baikal::PostEffect::InputSet input_set;
-        input_set[Baikal::Renderer::OutputType::kColor] = g_outputs[g_primary].output;
-        input_set[Baikal::Renderer::OutputType::kWorldShadingNormal] = g_outputs[g_primary].output_normal;
-        input_set[Baikal::Renderer::OutputType::kWorldPosition] = g_outputs[g_primary].output_position;
-        input_set[Baikal::Renderer::OutputType::kAlbedo] = g_outputs[g_primary].output_albedo;
+        input_set[Baikal::Renderer::OutputType::kColor] = g_outputs[g_primary].output.get();
+        input_set[Baikal::Renderer::OutputType::kWorldShadingNormal] = g_outputs[g_primary].output_normal.get();
+        input_set[Baikal::Renderer::OutputType::kWorldPosition] = g_outputs[g_primary].output_position.get();
+        input_set[Baikal::Renderer::OutputType::kAlbedo] = g_outputs[g_primary].output_albedo.get();
         auto radius = 10U - RadeonRays::clamp((g_samplecount / 32), 1U, 9U);
         auto position_sensitivity = 5.f + 10.f * (radius / 10.f);
         auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
         auto color_sensitivity = (radius / 10.f) * 5.f;
-        auto albedo_sensitivity = 0.05f + (radius / 10.f) * 0.1f;
+        auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
         g_outputs[g_primary].denoiser->SetParameter("radius", radius);
         g_outputs[g_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
         g_outputs[g_primary].denoiser->SetParameter("normal_sensitivity", normal_sensitivity);
@@ -777,7 +778,7 @@ void Update(bool update_required)
         CLWKernel copykernel = static_cast<Baikal::PtRenderer*>(g_cfgs[g_primary].renderer.get())->GetCopyKernel();
 
 #ifdef ENABLE_DENOISER
-        auto output = g_outputs[g_primary].output_denoised;
+        auto output = g_outputs[g_primary].output_denoised.get();
 #else
         auto output = g_outputs[g_primary].output.get();
 #endif
