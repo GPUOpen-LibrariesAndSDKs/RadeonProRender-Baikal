@@ -232,6 +232,12 @@ namespace Baikal
         ++m_framecnt;
     }
 
+    // Get working set size
+    size_t PtRenderer::GetWorkingSetSize() const
+    {
+        return m_vidmemws;
+    }
+
     void PtRenderer::GenerateTileDomain(int2 const& output_size, int2 const& tile_origin,
         int2 const& tile_size, int2 const& subtile_size)
     {

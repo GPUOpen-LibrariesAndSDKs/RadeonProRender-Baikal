@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 #include "WrapObject/FramebufferObject.h"
 #include "WrapObject/Exception.h"
-#include "CLW/clwoutput.h"
+#include "Output/clwoutput.h"
 #include "OpenImageIO/imageio.h"
 #include "RadeonProRender.h"
 

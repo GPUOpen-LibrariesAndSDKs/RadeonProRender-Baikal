@@ -19,7 +19,23 @@
 #ifndef __RADEONPRORENDER_H
 #define __RADEONPRORENDER_H
 
+#if !RPR_STATIC_LIBRARY
+#ifdef WIN32
+    #ifdef RPR_EXPORT_API
+        #define RPR_API_ENTRY __declspec(dllexport)
+    #else
+        #define RPR_API_ENTRY __declspec(dllimport)
+    #endif
+#elif defined(__GNUC__)
+    #ifdef RPR_EXPORT_API
+        #define RPR_API_ENTRY __attribute__((visibility ("default")))
+    #else
+        #define RPR_API_ENTRY
+    #endif
+#endif
+#else
 #define RPR_API_ENTRY
+#endif
 
 #ifdef __cplusplus
 extern "C" {
