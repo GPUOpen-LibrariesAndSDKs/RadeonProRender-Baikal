@@ -66,14 +66,14 @@ void BilateralDenoise_main(
     {
         int idx = global_id.y * width + global_id.x;
 
-		float3 color = colors[idx].w > 1 ? (colors[idx].xyz / colors[idx].w) : colors[idx].xyz;
-		float3 normal = normals[idx].w > 1 ? (normals[idx].xyz / normals[idx].w) : normals[idx].xyz;
-		float3 position = positions[idx].w > 1 ? (positions[idx].xyz / positions[idx].w) : positions[idx].xyz;
-		float3 albedo = albedos[idx].w > 1 ? (albedos[idx].xyz / albedos[idx].w) : albedos[idx].xyz;
+        float3 color = colors[idx].w > 1 ? (colors[idx].xyz / colors[idx].w) : colors[idx].xyz;
+        float3 normal = normals[idx].w > 1 ? (normals[idx].xyz / normals[idx].w) : normals[idx].xyz;
+        float3 position = positions[idx].w > 1 ? (positions[idx].xyz / positions[idx].w) : positions[idx].xyz;
+        float3 albedo = albedos[idx].w > 1 ? (albedos[idx].xyz / albedos[idx].w) : albedos[idx].xyz;
 
         float3 filtered_color = 0.f;
         float sum = 0.f;
-		if (length(position) > 0.f)
+        if (length(position) > 0.f)
         {
             for (int i = -radius; i <= radius; ++i)
             {
@@ -91,12 +91,12 @@ void BilateralDenoise_main(
                     if (length(p) > 0.f)
                     {
                         filtered_color += c * C(p, position, sigma_position) *
-                        C(c, color, sigma_color) *
-                        C(n, normal, sigma_normal) *
-                        C(a, albedo, sigma_albedo);
+                            C(c, color, sigma_color) *
+                            C(n, normal, sigma_normal) *
+                            C(a, albedo, sigma_albedo);
                         sum += C(p, position, sigma_position) * C(c, color, sigma_color) *
-                        C(n, normal, sigma_normal) *
-                        C(a, albedo, sigma_albedo);
+                            C(n, normal, sigma_normal) *
+                            C(a, albedo, sigma_albedo);
                     }
                 }
             }

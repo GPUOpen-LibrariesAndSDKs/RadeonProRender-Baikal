@@ -5,7 +5,10 @@
 #include "../material.h"
 #include "../light.h"
 #include "../texture.h"
+#include "math/mathutils.h"
 
+#include <string>
+#include <map>
 
 #include "Utils/tiny_obj_loader.h"
 
@@ -19,7 +22,10 @@ namespace Baikal
         std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
     private:
         Material const* TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
+		Texture const* LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
 
+		mutable std::map<std::string, Material const*> m_material_cache;
+		mutable std::map<std::string, Texture const*> m_texture_cache;
     };
 
     std::unique_ptr<SceneIo> SceneIo::CreateSceneIoObj()
@@ -27,123 +33,144 @@ namespace Baikal
         return std::unique_ptr<SceneIo>(new SceneIoObj());
     }
 
+	Texture const* SceneIoObj::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
+	{
+		auto iter = m_texture_cache.find(name);
+
+		if (iter != m_texture_cache.cend())
+		{
+			return iter->second;
+		}
+		else
+		{
+			auto texture = io.LoadImage(basepath + name);
+			scene.AttachAutoreleaseObject(texture);
+			m_texture_cache[name] = texture;
+			return texture;
+		}
+	}
 
     Material const* SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
     {
-        RadeonRays::float3 emission(mat.emission[0], mat.emission[1], mat.emission[2]);
+		auto iter = m_material_cache.find(mat.name);
 
-        Material* material = nullptr;
+		if (iter != m_material_cache.cend())
+		{
+			return iter->second;
+		}
+		else
+		{
+			RadeonRays::float3 emission(mat.emission[0], mat.emission[1], mat.emission[2]);
 
-        // Check if this is emissive
-        if (emission.sqnorm() > 0)
-        {
-            // If yes create emissive brdf
-            material = new SingleBxdf(SingleBxdf::BxdfType::kEmissive);
+			Material* material = nullptr;
 
-            // Set albedo
-            if (!mat.diffuse_texname.empty())
-            {
-                auto texture = image_io.LoadImage(basepath + mat.diffuse_texname);
-                material->SetInputValue("albedo", texture);
-                scene.AttachAutoreleaseObject(texture);
-            }
-            else
-            {
-                material->SetInputValue("albedo", emission);
-            }
-        }
-        else
-        {
-            auto s = RadeonRays::float3(mat.specular[0], mat.specular[1], mat.specular[2]);
+			// Check if this is emissive
+			if (emission.sqnorm() > 0)
+			{
+				// If yes create emissive brdf
+				material = new SingleBxdf(SingleBxdf::BxdfType::kEmissive);
 
-            if ((s.sqnorm() > 0 || !mat.specular_texname.empty()))
-            {
-                // Otherwise create lambert
-                material = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
-                material->SetInputValue("ior", RadeonRays::float4(1.5f, 1.5f, 1.5f, 1.5f));
+				// Set albedo
+				if (!mat.diffuse_texname.empty())
+				{
+					auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+					material->SetInputValue("albedo", texture);
+				}
+				else
+				{
+					material->SetInputValue("albedo", emission);
+				}
+			}
+			else
+			{
+				auto s = RadeonRays::float3(mat.specular[0], mat.specular[1], mat.specular[2]);
 
-                Material* diffuse = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-                Material* specular = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
+				if ((s.sqnorm() > 0 || !mat.specular_texname.empty()))
+				{
+					// Otherwise create lambert
+					material = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+					material->SetInputValue("ior", RadeonRays::float4(1.5f, 1.5f, 1.5f, 1.5f));
 
-                specular->SetInputValue("roughness", 0.01f);
+					Material* diffuse = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+					Material* specular = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
 
-                // Set albedo
-                if (!mat.diffuse_texname.empty())
-                {
-                    auto texture = image_io.LoadImage(basepath + mat.diffuse_texname);
-                    diffuse->SetInputValue("albedo", texture);
-                    scene.AttachAutoreleaseObject(texture);
-                }
-                else
-                {
-                    diffuse->SetInputValue("albedo", RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
-                }
+					specular->SetInputValue("roughness", 0.01f);
 
-                // Set albedo
-                if (!mat.specular_texname.empty())
-                {
-                    auto texture = image_io.LoadImage(basepath + mat.specular_texname);
-                    specular->SetInputValue("albedo", texture);
-                    scene.AttachAutoreleaseObject(texture);
-                }
-                else
-                {
-                    specular->SetInputValue("albedo", s);
-                }
+					// Set albedo
+					if (!mat.diffuse_texname.empty())
+					{
+						auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+						diffuse->SetInputValue("albedo", texture);
+					}
+					else
+					{
+						diffuse->SetInputValue("albedo", RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
+					}
 
-                // Set normal
-                if (!mat.normal_texname.empty())
-                {
-                    auto texture = image_io.LoadImage(basepath + mat.normal_texname);
-                    diffuse->SetInputValue("normal", texture);
-                    specular->SetInputValue("normal", texture);
-                    scene.AttachAutoreleaseObject(texture);
-                }
+					// Set albedo
+					if (!mat.specular_texname.empty())
+					{
+						auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
+						specular->SetInputValue("albedo", texture);
+					}
+					else
+					{
+						specular->SetInputValue("albedo", s);
+					}
 
-                diffuse->SetName(mat.name + "-diffuse");
-                specular->SetName(mat.name + "-specular");
+					// Set normal
+					if (!mat.normal_texname.empty())
+					{
+						auto texture = LoadTexture(image_io, scene, basepath, mat.normal_texname);
+						diffuse->SetInputValue("normal", texture);
+						specular->SetInputValue("normal", texture);
+					}
 
-                material->SetInputValue("base_material", diffuse);
-                material->SetInputValue("top_material", specular);
+					diffuse->SetName(mat.name + "-diffuse");
+					specular->SetName(mat.name + "-specular");
 
-                scene.AttachAutoreleaseObject(diffuse);
-                scene.AttachAutoreleaseObject(specular);
-            }
-            else
-            {
-                // Otherwise create lambert
-                Material* diffuse = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+					material->SetInputValue("base_material", diffuse);
+					material->SetInputValue("top_material", specular);
 
-                // Set albedo
-                if (!mat.diffuse_texname.empty())
-                {
-                    auto texture = image_io.LoadImage(basepath + mat.diffuse_texname);
-                    diffuse->SetInputValue("albedo", texture);
-                    scene.AttachAutoreleaseObject(texture);
-                }
-                else
-                {
-                    diffuse->SetInputValue("albedo", RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
-                }
+					scene.AttachAutoreleaseObject(diffuse);
+					scene.AttachAutoreleaseObject(specular);
+				}
+				else
+				{
+					// Otherwise create lambert
+					Material* diffuse = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
 
-                // Set normal
-                if (!mat.normal_texname.empty())
-                {
-                    auto texture = image_io.LoadImage(basepath + mat.normal_texname);
-                    diffuse->SetInputValue("normal", texture);
-                    scene.AttachAutoreleaseObject(texture);
-                }
+					// Set albedo
+					if (!mat.diffuse_texname.empty())
+					{
+						auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+						diffuse->SetInputValue("albedo", texture);
+					}
+					else
+					{
+						diffuse->SetInputValue("albedo", RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
+					}
 
-                material = diffuse;
-            }
-        }
+					// Set normal
+					if (!mat.normal_texname.empty())
+					{
+						auto texture = LoadTexture(image_io, scene, basepath, mat.normal_texname);
+						diffuse->SetInputValue("normal", texture);
+					}
 
-        // Set material name
-        material->SetName(mat.name);
+					material = diffuse;
+				}
+			}
 
-        scene.AttachAutoreleaseObject(material);
+			// Set material name
+			material->SetName(mat.name);
 
-        return material;
+			m_material_cache[mat.name] = material;
+
+			scene.AttachAutoreleaseObject(material);
+
+			return material;
+		}
     }
 
     std::unique_ptr<Scene1> SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
@@ -228,7 +255,7 @@ namespace Baikal
             scene->AttachAutoreleaseObject(mesh);
 
             // If the mesh has emissive material we need to add area light for it
-            if (idx > 0 && emissives.find(materials[idx]) != emissives.cend())
+            if (idx >= 0 && emissives.find(materials[idx]) != emissives.cend())
             {
                 // Add area light for each polygon of emissive mesh
                 for (int l = 0; l < mesh->GetNumIndices() / 3 ;++l)
@@ -241,18 +268,18 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(10.f);
+        ibl->SetMultiplier(3.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
         DirectionalLight* light = new DirectionalLight();
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
-        light->SetEmittedRadiance(65.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
+        light->SetEmittedRadiance(2.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
         scene->AttachAutoreleaseObject(light);
 
         DirectionalLight* light1 = new DirectionalLight();
