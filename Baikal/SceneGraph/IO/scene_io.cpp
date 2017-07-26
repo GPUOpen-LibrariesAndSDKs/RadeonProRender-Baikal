@@ -23,10 +23,8 @@ namespace Baikal
         std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
     private:
         Material const* TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
-        Texture const* LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
 
         mutable std::map<std::string, Material const*> m_material_cache;
-        mutable std::map<std::string, Texture const*> m_texture_cache;
     };
 
     std::unique_ptr<SceneIo> SceneIo::CreateSceneIoObj()
@@ -34,7 +32,7 @@ namespace Baikal
         return std::unique_ptr<SceneIo>(new SceneIoObj());
     }
 
-    Texture const* SceneIoObj::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
+    Texture const* SceneIo::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
     {
         auto iter = m_texture_cache.find(name);
 

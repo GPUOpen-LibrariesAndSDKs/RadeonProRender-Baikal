@@ -36,9 +36,9 @@ namespace Baikal
         auto builder_type = "sah";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
         m_api->SetOption("acc.type", acc_type);
-        m_api->SetOption("bvh.force2level", 1.f);
+        //m_api->SetOption("bvh.force2level", 1.f);
         m_api->SetOption("bvh.builder", builder_type);
-        //m_api->SetOption("bvh.sah.num_bins", 4.f);
+        m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
     
     Material const* ClwSceneController::GetDefaultMaterial() const

@@ -33,6 +33,7 @@
 #include "math/matrix.h"
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "scene_object.h"
 
@@ -88,24 +89,30 @@ namespace Baikal
         
         // Set and get index array
         void SetIndices(std::uint32_t const* indices, std::size_t num_indices);
+        void SetIndices(std::vector<std::uint32_t>&& indices);
         std::size_t GetNumIndices() const;
         std::uint32_t const* GetIndices() const;
         
         // Set and get vertex array
         void SetVertices(RadeonRays::float3 const* vertices, std::size_t num_vertices);
         void SetVertices(float const* vertices, std::size_t num_vertices);
+        void SetVertices(std::vector<RadeonRays::float3>&& vertices);
+
         std::size_t GetNumVertices() const;
         RadeonRays::float3 const* GetVertices() const;
         
         // Set and get normal array
         void SetNormals(RadeonRays::float3 const* normals, std::size_t num_normals);
         void SetNormals(float const* normals, std::size_t num_normals);
+        void SetNormals(std::vector<RadeonRays::float3>&& normals);
+
         std::size_t GetNumNormals() const;
         RadeonRays::float3 const* GetNormals() const;
         
         // Set and get UV array
         void SetUVs(RadeonRays::float2 const* uvs, std::size_t num_uvs);
         void SetUVs(float const* uvs, std::size_t num_uvs);
+        void SetUVs(std::vector<RadeonRays::float2>&& uvs);
         std::size_t GetNumUVs() const;
         RadeonRays::float2 const* GetUVs() const;
 
@@ -114,15 +121,10 @@ namespace Baikal
         Mesh& operator = (Mesh const&) = delete;
         
     private:
-        std::unique_ptr<RadeonRays::float3[]> m_vertices;
-        std::unique_ptr<RadeonRays::float3[]> m_normals;
-        std::unique_ptr<RadeonRays::float2[]> m_uvs;
-        std::unique_ptr<std::uint32_t> m_indices;
-        
-        std::size_t m_num_vertices;
-        std::size_t m_num_normals;
-        std::size_t m_num_uvs;
-        std::size_t m_num_indices;
+        std::vector<RadeonRays::float3> m_vertices;
+        std::vector<RadeonRays::float3> m_normals;
+        std::vector<RadeonRays::float2> m_uvs;
+        std::vector<std::uint32_t> m_indices;
     };
     
     inline Shape::~Shape()
