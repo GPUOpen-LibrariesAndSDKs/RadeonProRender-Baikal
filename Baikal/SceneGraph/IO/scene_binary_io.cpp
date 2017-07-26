@@ -33,130 +33,126 @@ namespace Baikal
 
         std::map<RadeonRays::float3, Material*, less> c2mats;
 
-        for (int t = 0; t < 1; ++t) {
-            std::string full_path = filename;
+        std::string full_path = filename;
 
-            std::ifstream in(full_path, std::ios::binary | std::ios::in);
+        std::ifstream in(full_path, std::ios::binary | std::ios::in);
 
-            if (!in)
+        if (!in)
+        {
+            throw std::runtime_error("Cannot open file for reading");
+        }
+
+        std::uint32_t num_meshes = 0;
+        in.read((char*)&num_meshes, sizeof(std::uint32_t));
+
+        for (auto i = 0U; i < num_meshes; ++i)
+        {
+            auto mesh = new Mesh();
+
+            std::uint32_t num_indices = 0;
+            in.read((char*)&num_indices, sizeof(std::uint32_t));
+
+            std::uint32_t num_vertices = 0;
+            in.read((char*)&num_vertices, sizeof(std::uint32_t));
+
+
+            std::uint32_t num_normals = 0;
+            in.read((char*)&num_normals, sizeof(std::uint32_t));
+
+
+            std::uint32_t num_uvs = 0;
+            in.read((char*)&num_uvs, sizeof(std::uint32_t));
+
             {
-                throw std::runtime_error("Cannot open file for reading");
+                std::vector<std::uint32_t> indices(num_indices);
+                in.read((char*)&indices[0], num_indices * sizeof(std::uint32_t));
+
+                mesh->SetIndices(&indices[0], num_indices);
             }
 
-            std::uint32_t num_meshes = 0;
-            in.read((char*)&num_meshes, sizeof(std::uint32_t));
-
-            for (auto i = 0U; i < num_meshes; ++i)
             {
-                auto ttt = RadeonRays::translation(RadeonRays::float3(t * 5000, 0, 0));
-                auto mesh = new Mesh();
+                std::vector<RadeonRays::float3> vertices(num_vertices);
+                in.read((char*)&vertices[0], num_vertices * sizeof(RadeonRays::float3));
 
-                std::uint32_t num_indices = 0;
-                in.read((char*)&num_indices, sizeof(std::uint32_t));
+                mesh->SetVertices(&vertices[0], num_vertices);
+            }
 
-                std::uint32_t num_vertices = 0;
-                in.read((char*)&num_vertices, sizeof(std::uint32_t));
+            {
+                std::vector<RadeonRays::float3> normals(num_normals);
+                in.read((char*)&normals[0], num_normals * sizeof(RadeonRays::float3));
+
+                mesh->SetNormals(&normals[0], num_normals);
+            }
+
+            {
+                std::vector<RadeonRays::float2> uvs(num_uvs);
+                in.read((char*)&uvs[0], num_uvs * sizeof(RadeonRays::float2));
+
+                mesh->SetUVs(&uvs[0], num_uvs);
+            }
 
 
-                std::uint32_t num_normals = 0;
-                in.read((char*)&num_normals, sizeof(std::uint32_t));
+            {
+                Material* material = nullptr;
 
+                std::uint32_t flag = 0;
+                in.read(reinterpret_cast<char*>(&flag), sizeof(flag));
 
-                std::uint32_t num_uvs = 0;
-                in.read((char*)&num_uvs, sizeof(std::uint32_t));
-
+                if (!flag)
                 {
-                    std::vector<std::uint32_t> indices(num_indices);
-                    in.read((char*)&indices[0], num_indices * sizeof(std::uint32_t));
-
-                    mesh->SetIndices(&indices[0], num_indices);
-                }
-
-                {
-                    std::vector<RadeonRays::float3> vertices(num_vertices);
-                    in.read((char*)&vertices[0], num_vertices * sizeof(RadeonRays::float3));
-
-                    mesh->SetVertices(&vertices[0], num_vertices);
-                }
-
-                {
-                    std::vector<RadeonRays::float3> normals(num_normals);
-                    in.read((char*)&normals[0], num_normals * sizeof(RadeonRays::float3));
-
-                    mesh->SetNormals(&normals[0], num_normals);
-                }
-
-                {
-                    std::vector<RadeonRays::float2> uvs(num_uvs);
-                    in.read((char*)&uvs[0], num_uvs * sizeof(RadeonRays::float2));
-
-                    mesh->SetUVs(&uvs[0], num_uvs);
-                }
 
 
-                {
-                    Material* material = nullptr;
+                    RadeonRays::float3 albedo;
+                    in.read(reinterpret_cast<char*>(&albedo.x), sizeof(RadeonRays::float3));
 
-                    std::uint32_t flag = 0;
-                    in.read(reinterpret_cast<char*>(&flag), sizeof(flag));
+                    auto iter = c2mats.find(albedo);
 
-                    if (!flag)
+                    if (iter != c2mats.cend())
                     {
-
-
-                        RadeonRays::float3 albedo;
-                        in.read(reinterpret_cast<char*>(&albedo.x), sizeof(RadeonRays::float3));
-
-                        auto iter = c2mats.find(albedo);
-
-                        if (iter != c2mats.cend())
-                        {
-                            material = iter->second;
-                        }
-                        else
-                        {
-                            material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-                            material->SetInputValue("albedo", albedo);
-                            c2mats[albedo] = material;
-                            scene->AttachAutoreleaseObject(material);
-                        }
+                        material = iter->second;
                     }
                     else
                     {
-                        std::uint32_t size = 0;
-                        in.read(reinterpret_cast<char*>(&size), sizeof(size));
+                        material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+                        material->SetInputValue("albedo", albedo);
+                        c2mats[albedo] = material;
+                        scene->AttachAutoreleaseObject(material);
+                    }
+                }
+                else
+                {
+                    std::uint32_t size = 0;
+                    in.read(reinterpret_cast<char*>(&size), sizeof(size));
 
-                        std::vector<char> buff(size);
-                        in.read(&buff[0], sizeof(char) * size);
+                    std::vector<char> buff(size);
+                    in.read(&buff[0], sizeof(char) * size);
 
-                        std::string name(buff.cbegin(), buff.cend());
+                    std::string name(buff.cbegin(), buff.cend());
 
 
-                        auto iter = mats.find(name);
+                    auto iter = mats.find(name);
 
-                        if (iter != mats.cend())
-                        {
-                            material = iter->second;
-                        }
-                        else
-                        {
-                            auto texture = image_io->LoadImage(basepath + name);
-                            material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-                            material->SetInputValue("albedo", texture);
-                            mats[name] = material;
-                            scene->AttachAutoreleaseObject(texture);
-                            scene->AttachAutoreleaseObject(material);
-                        }
-
+                    if (iter != mats.cend())
+                    {
+                        material = iter->second;
+                    }
+                    else
+                    {
+                        auto texture = image_io->LoadImage(basepath + name);
+                        material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+                        material->SetInputValue("albedo", texture);
+                        mats[name] = material;
+                        scene->AttachAutoreleaseObject(texture);
+                        scene->AttachAutoreleaseObject(material);
                     }
 
-                    mesh->SetMaterial(material);
                 }
 
-                mesh->SetTransform(ttt);
-                scene->AttachShape(mesh);
-                scene->AttachAutoreleaseObject(mesh);
+                mesh->SetMaterial(material);
             }
+
+            scene->AttachShape(mesh);
+            scene->AttachAutoreleaseObject(mesh);
         }
 
 
@@ -257,7 +253,7 @@ namespace Baikal
                 std::uint32_t flag = 1;
 
                 auto name = albedo.tex_value->GetName();
-                std::uint32_t size = name.size();
+                auto size = name.size();
 
                 out.write(reinterpret_cast<char const*>(&flag), sizeof(flag));
                 out.write(reinterpret_cast<char const*>(&size), sizeof(size));

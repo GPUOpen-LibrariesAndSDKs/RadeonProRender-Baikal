@@ -35,7 +35,7 @@ namespace Baikal
     inline
     void Log(Stream& stream, F&& f, U&&... u)
     {
-#ifdef RR_LOG
+#ifdef ENABLE_LOG
         stream << std::forward<F>(f);
         Log(stream, std::forward<U>(u)...);
 #endif

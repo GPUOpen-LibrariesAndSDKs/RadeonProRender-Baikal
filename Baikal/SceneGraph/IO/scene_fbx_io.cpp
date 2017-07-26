@@ -7,6 +7,8 @@
 #include "SceneGraph/texture.h"
 #include "SceneGraph/IO/image_io.h"
 #include "math/mathutils.h"
+
+#ifdef ENABLE_FBX
 #include "math/matrix.h"
 #include "Utils/log.h"
 
@@ -30,9 +32,9 @@ namespace Baikal
         std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
 
     private:
-        void LoadMesh(FbxNode* node, Scene1& scene, ImageIo& io) const;
-        Material const* TranslateMaterial(FbxSurfaceMaterial* material, Scene1& scene, ImageIo& io) const;
-        Texture const* GetTexture(FbxSurfaceMaterial* material, const char* textureType, Scene1& scene, ImageIo& io) const;
+        void LoadMesh(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const;
+        Material const* TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const;
+        Texture const* GetTexture(FbxSurfaceMaterial* material, const char* textureType, std::string const& basepath, Scene1& scene, ImageIo& io) const;
 
         mutable std::map<FbxSurfaceMaterial*, Material const*> m_material_cache;
     };
@@ -58,7 +60,7 @@ namespace Baikal
         return res;
     }
 
-    Texture const* SceneFbxIo::GetTexture(FbxSurfaceMaterial* material, const char* slot, Scene1& scene, ImageIo& io) const
+    Texture const* SceneFbxIo::GetTexture(FbxSurfaceMaterial* material, const char* slot, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
         FbxProperty prop = material->FindProperty(slot);
 
@@ -72,14 +74,21 @@ namespace Baikal
             }
 
             std::string filepath = texture->GetRelativeFileName();
-
-            return LoadTexture(io, scene, "", filepath);
+            std::string path = "";
+            if ((filepath.find(":") != std::string::npos) || (filepath.at(0) == '/'))
+            {
+                return LoadTexture(io, scene, "", filepath);
+            }
+            else
+            {
+                return LoadTexture(io, scene, basepath, filepath);
+            }
         }
 
         return nullptr;
     }
 
-    Material const* SceneFbxIo::TranslateMaterial(FbxSurfaceMaterial* material, Scene1& scene, ImageIo& io) const
+    Material const* SceneFbxIo::TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
         auto iter = m_material_cache.find(material);
 
@@ -93,7 +102,7 @@ namespace Baikal
 
             auto albedo = material->FindProperty(FbxSurfaceMaterial::sDiffuse).Get<FbxDouble3>();
             auto mul = material->FindProperty(FbxSurfaceMaterial::sDiffuseFactor).Get<FbxDouble>();
-            auto texture = GetTexture(material, FbxSurfaceMaterial::sDiffuse, scene, io);
+            auto texture = GetTexture(material, FbxSurfaceMaterial::sDiffuse, basepath, scene, io);
 
             if (texture)
             { 
@@ -107,7 +116,7 @@ namespace Baikal
             auto specular_albedo = material->FindProperty(FbxSurfaceMaterial::sSpecular).Get<FbxDouble3>();
             auto specular_mul = material->FindProperty(FbxSurfaceMaterial::sSpecularFactor).Get<FbxDouble>();
             auto shininess = material->FindProperty(FbxSurfaceMaterial::sShininess).Get<FbxDouble>();
-            auto specular_texture = GetTexture(material, FbxSurfaceMaterial::sSpecular, scene, io);
+            auto specular_texture = GetTexture(material, FbxSurfaceMaterial::sSpecular, basepath, scene, io);
 
             if (specular_mul > 0.f && (specular_albedo[0] > 0.f ||
                 specular_albedo[1] > 0.f || specular_albedo[2] > 0.f))
@@ -151,7 +160,7 @@ namespace Baikal
         }
     }
 
-    void SceneFbxIo::LoadMesh(FbxNode* node, Scene1& scene, ImageIo& io) const
+    void SceneFbxIo::LoadMesh(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
         auto mesh = new Mesh();
         auto fbx_mesh = node->GetMesh();
@@ -228,7 +237,7 @@ namespace Baikal
             if (material_indices)
             {
                 auto fbx_material = node->GetMaterial(material_indices->GetAt(0));
-                mesh->SetMaterial(TranslateMaterial(fbx_material, scene, io));
+                mesh->SetMaterial(TranslateMaterial(fbx_material, basepath, scene, io));
             }
 
             mesh->SetVertices(std::move(vertices));
@@ -252,7 +261,11 @@ namespace Baikal
 
         LogInfo("Loading FBX ", filename, "... ");
         fbx_importer->Initialize(filename.c_str());
-        fbx_importer->Import(fbx_scene);
+        if (!fbx_importer->Import(fbx_scene))
+        {
+            throw std::runtime_error("Cannot load file: " + filename + "\n");
+        }
+        
         auto fbx_root_node = fbx_scene->GetRootNode();
         assert(fbx_root_node);
         LogInfo("Success");
@@ -284,7 +297,7 @@ namespace Baikal
             switch (attribs->GetAttributeType())
             {
             case FbxNodeAttribute::eMesh:
-                LoadMesh(node, *scene, *image_io);
+                LoadMesh(node, basepath, *scene, *image_io);
                 break;
 
             }
@@ -321,3 +334,16 @@ namespace Baikal
         return std::unique_ptr<Scene1>(scene);
     }
 }
+
+#else
+
+namespace Baikal
+{
+    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoFbx()
+    {
+        throw std::runtime_error("FBX support is disabled. Please build with --fbx premake option.\n");
+        return nullptr;
+    }
+}
+
+#endif
