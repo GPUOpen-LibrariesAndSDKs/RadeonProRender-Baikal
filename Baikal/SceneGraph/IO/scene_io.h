@@ -47,6 +47,8 @@ namespace Baikal
         static std::unique_ptr<SceneIo> CreateSceneIoObj();
         // Create test scene loader
         static std::unique_ptr<SceneIo> CreateSceneIoTest();
+        //
+        static std::unique_ptr<SceneIo> CreateSceneIoBinary();
 
         // Constructor
         SceneIo() = default;
@@ -55,6 +57,8 @@ namespace Baikal
         
         // Load the scene from file using resourse base path
         virtual std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const = 0;
+
+        virtual void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const {};
         
         // Disallow copying
         SceneIo(SceneIo const&) = delete;

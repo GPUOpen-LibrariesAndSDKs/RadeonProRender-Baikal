@@ -79,7 +79,6 @@ THE SOFTWARE.
 #include "Output/clwoutput.h"
 #include "Utils/shader_manager.h"
 #include "Utils/config_manager.h"
-#include "Utils/tiny_obj_loader.h"
 #include "PostEffects/bilateral_denoiser.h"
 
 Baikal::Scene1 scene;
@@ -143,8 +142,6 @@ float g_time_benchmark_time = 0.f;
 decltype(std::chrono::high_resolution_clock::now()) g_time_bench_start_time;
 
 
-
-using namespace tinyobj;
 
 #define CHECK_GL_ERROR assert(glGetError() == 0)
 

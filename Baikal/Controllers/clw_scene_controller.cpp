@@ -7,6 +7,7 @@
 #include "SceneGraph/texture.h"
 #include "SceneGraph/Collector/collector.h"
 #include "SceneGraph/iterator.h"
+#include "Utils/log.h"
 
 #include <chrono>
 #include <memory>
@@ -22,17 +23,22 @@ namespace Baikal
     : m_default_material(new SingleBxdf(SingleBxdf::BxdfType::kLambert)),
     m_context(context)
     {
+        LogInfo("Initializing OpenCL...\n");
         // Get raw CL data out of CLW context
         cl_device_id id = m_context.GetDevice(devidx).GetID();
         cl_command_queue queue = m_context.GetCommandQueue(devidx);
-        
+
         // Create intersection API
+        LogInfo("Initializing RadeonRays...\n");
         m_api = CreateFromOpenClContext(m_context, id, queue);
-        
-        m_api->SetOption("acc.type", "fatbvh");
-        //m_api->SetOption("bvh.forceflat", 1.f);
-        m_api->SetOption("bvh.builder", "sah");
-        m_api->SetOption("bvh.sah.num_bins", 16.f);
+
+        auto acc_type = "fatbvh";
+        auto builder_type = "sah";
+        LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
+        m_api->SetOption("acc.type", acc_type);
+        m_api->SetOption("bvh.force2level", 1.f);
+        m_api->SetOption("bvh.builder", builder_type);
+        //m_api->SetOption("bvh.sah.num_bins", 4.f);
     }
     
     Material const* ClwSceneController::GetDefaultMaterial() const
@@ -107,14 +113,14 @@ namespace Baikal
             
             ++idx;
         }
-        
+
         for (auto& i : excluded_meshes)
         {
             if (i == shape)
             {
                 return idx;
             }
-            
+
             ++idx;
         }
         
@@ -127,7 +133,7 @@ namespace Baikal
             
             ++idx;
         }
-        
+
         return -1;
     }
     
@@ -139,14 +145,14 @@ namespace Baikal
             m_api->DetachShape(shape);
             m_api->DeleteShape(shape);
         }
-        
+
         // Clear shapes cache
         out.isect_shapes.clear();
         // Only visible shapes are attached to the API.
         // So excluded meshes are pushed into isect_shapes, but
         // not to visible_shapes.
         out.visible_shapes.clear();
-        
+
         // Create new shapes
         std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
         
@@ -198,7 +204,7 @@ namespace Baikal
             out.visible_shapes.push_back(shape);
             rr_shapes[mesh] = shape;
         }
-        
+
         // Handle excluded meshes
         for (auto& iter : excluded_meshes)
         {
@@ -392,13 +398,21 @@ namespace Baikal
             auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
             num_material_ids += mesh->GetNumIndices() / 3;
         }
-        
+
+
+        LogInfo("Creating vertex buffer...\n");
         // Create CL arrays
         out.vertices = m_context.CreateBuffer<float3>(num_vertices, CL_MEM_READ_ONLY);
+
+        LogInfo("Creating normal buffer...\n");
         out.normals = m_context.CreateBuffer<float3>(num_normals, CL_MEM_READ_ONLY);
+
+        LogInfo("Creating UV buffer...\n");
         out.uvs = m_context.CreateBuffer<float2>(num_uvs, CL_MEM_READ_ONLY);
+
+        LogInfo("Creating index buffer...\n");
         out.indices = m_context.CreateBuffer<int>(num_indices, CL_MEM_READ_ONLY);
-        
+
         // Total number of entries in shapes GPU array
         auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
         out.shapes = m_context.CreateBuffer<ClwScene::Shape>(num_shapes, CL_MEM_READ_ONLY);
@@ -412,13 +426,14 @@ namespace Baikal
         ClwScene::Shape* shapes = nullptr;
         
         // Map arrays and prepare to write data
+        LogInfo("Mapping buffers...\n");
         m_context.MapBuffer(0, out.vertices, CL_MAP_WRITE, &vertices);
         m_context.MapBuffer(0, out.normals, CL_MAP_WRITE, &normals);
         m_context.MapBuffer(0, out.uvs, CL_MAP_WRITE, &uvs);
         m_context.MapBuffer(0, out.indices, CL_MAP_WRITE, &indices);
         m_context.MapBuffer(0, out.materialids, CL_MAP_WRITE, &matids);
         m_context.MapBuffer(0, out.shapes, CL_MAP_WRITE, &shapes).Wait();
-        
+
         // Keep associated shapes data for instance look up.
         // We retrieve data from here while serializing instances,
         // using base shape lookup.
@@ -590,7 +605,8 @@ namespace Baikal
             // Drop dirty flag
             instance->SetDirty(false);
         }
-        
+
+        LogInfo("Unmapping buffers...\n");
         m_context.UnmapBuffer(0, out.vertices, vertices);
         m_context.UnmapBuffer(0, out.normals, normals);
         m_context.UnmapBuffer(0, out.uvs, uvs);
@@ -598,6 +614,7 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.materialids, matids);
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
 
+        LogInfo("Updating intersector...\n");
         UpdateIntersector(scene, out);
 
         ReloadIntersector(scene, out);

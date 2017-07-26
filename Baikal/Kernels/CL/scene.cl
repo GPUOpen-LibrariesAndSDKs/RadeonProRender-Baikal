@@ -165,10 +165,6 @@ void Scene_FillDifferentialGeometry(// Scene
     // Calculate true normal
     diffgeo->ng = normalize(cross(v1 - v0, v2 - v0));
 
-    // Reverse geometric normal if shading normal points to different side
-    if (dot(diffgeo->ng, diffgeo->n) < 0.f)
-        diffgeo->ng = -diffgeo->ng;
-
     // Get material at shading point
     int material_idx = Scene_GetMaterialIndex(scene, shape_idx, prim_idx);
     diffgeo->mat = scene->materials[material_idx];
@@ -176,6 +172,12 @@ void Scene_FillDifferentialGeometry(// Scene
     // Get UVs
     float2 uv0, uv1, uv2;
     Scene_GetTriangleUVs(scene, shape_idx, prim_idx, &uv0, &uv1, &uv2);
+
+    // Reverse geometric normal if shading normal points to different side
+    if (dot(diffgeo->ng, diffgeo->n) < 0.f)
+    {
+        diffgeo->ng = -diffgeo->ng;
+    }
 
     /// Calculate tangent basis
     /// From PBRT book
