@@ -4,10 +4,6 @@
 namespace Baikal
 {
     Mesh::Mesh()
-    : m_num_indices(0)
-    , m_num_vertices(0)
-    , m_num_normals(0)
-    , m_num_uvs(0)
     {
     }
     
@@ -17,23 +13,26 @@ namespace Baikal
         assert(num_indices != 0);
         
         // Resize internal array and copy data
-        m_indices.reset(new std::uint32_t[num_indices]);
+        m_indices.resize(num_indices);
         
-        std::copy(indices, indices + num_indices, m_indices.get());
-        
-        m_num_indices = num_indices;
+        std::copy(indices, indices + num_indices, &m_indices[0]);
         
         SetDirty(true);
     }
-    
+
+    void Mesh::SetIndices(std::vector<std::uint32_t>&& indices)
+    {
+        m_indices = std::move(indices);
+    }
+
     std::size_t Mesh::GetNumIndices() const
     {
-        return m_num_indices;
+        return m_indices.size();
         
     }
     std::uint32_t const* Mesh::GetIndices() const
     {
-        return m_indices.get();
+        return &m_indices[0];
     }
     
     void Mesh::SetVertices(RadeonRays::float3 const* vertices, std::size_t num_vertices)
@@ -42,12 +41,10 @@ namespace Baikal
         assert(num_vertices != 0);
         
         // Resize internal array and copy data
-        m_vertices.reset(new RadeonRays::float3[num_vertices]);
-        
-        std::copy(vertices, vertices + num_vertices, m_vertices.get());
-        
-        m_num_vertices = num_vertices;
-        
+        m_vertices.resize(num_vertices);
+
+        std::copy(vertices, vertices + num_vertices, &m_vertices[0]);
+
         SetDirty(true);
     }
     
@@ -57,7 +54,7 @@ namespace Baikal
         assert(num_vertices != 0);
         
         // Resize internal array and copy data
-        m_vertices.reset(new RadeonRays::float3[num_vertices]);
+        m_vertices.resize(num_vertices);
         
         for (std::size_t i = 0; i < num_vertices; ++i)
         {
@@ -66,20 +63,24 @@ namespace Baikal
             m_vertices[i].z = vertices[3 * i + 2];
             m_vertices[i].w = 1;
         }
-        
-        m_num_vertices = num_vertices;
-        
+
         SetDirty(true);
     }
+
+    void Mesh::SetVertices(std::vector<RadeonRays::float3>&& vertices)
+    {
+        m_vertices = std::move(vertices);
+    }
+
     
     std::size_t Mesh::GetNumVertices() const
     {
-        return m_num_vertices;
+        return m_vertices.size();
     }
     
     RadeonRays::float3 const* Mesh::GetVertices() const
     {
-        return m_vertices.get();
+        return &m_vertices[0];
     }
     
     void Mesh::SetNormals(RadeonRays::float3 const* normals, std::size_t num_normals)
@@ -88,11 +89,9 @@ namespace Baikal
         assert(num_normals != 0);
         
         // Resize internal array and copy data
-        m_normals.reset(new RadeonRays::float3[num_normals]);
-        
-        std::copy(normals, normals + num_normals, m_normals.get());
+        m_normals.resize(num_normals);
 
-        m_num_normals = num_normals;
+        std::copy(normals, normals + num_normals, &m_normals[0]);
 
         SetDirty(true);
     }
@@ -103,7 +102,7 @@ namespace Baikal
         assert(num_normals != 0);
         
         // Resize internal array and copy data
-        m_normals.reset(new RadeonRays::float3[num_normals]);
+        m_normals.resize(num_normals);
         
         for (std::size_t i = 0; i < num_normals; ++i)
         {
@@ -112,34 +111,36 @@ namespace Baikal
             m_normals[i].z = normals[3 * i + 2];
             m_normals[i].w = 0;
         }
-        
-        m_num_normals = num_normals;
-        
+
         SetDirty(true);
     }
+
+    void Mesh::SetNormals(std::vector<RadeonRays::float3>&& normals)
+    {
+        m_normals = std::move(normals);
+    }
+
     
     std::size_t Mesh::GetNumNormals() const
     {
-        return m_num_normals;
+        return m_normals.size();
     }
-    
+
     RadeonRays::float3 const* Mesh::GetNormals() const
     {
-        return m_normals.get();
+        return &m_normals[0];
     }
-    
+
     void Mesh::SetUVs(RadeonRays::float2 const* uvs, std::size_t num_uvs)
     {
         assert(uvs);
         assert(num_uvs != 0);
         
         // Resize internal array and copy data
-        m_uvs.reset(new RadeonRays::float2[num_uvs]);
-        
-        std::copy(uvs, uvs + num_uvs, m_uvs.get());
-        
-        m_num_uvs = num_uvs;
-        
+        m_uvs.resize(num_uvs);
+
+        std::copy(uvs, uvs + num_uvs, &m_uvs[0]);
+
         SetDirty(true);
     }
     
@@ -149,26 +150,29 @@ namespace Baikal
         assert(num_uvs != 0);
         
         // Resize internal array and copy data
-        m_uvs.reset(new RadeonRays::float2[num_uvs]);
+        m_uvs.resize(num_uvs);
         
         for (std::size_t i = 0; i < num_uvs; ++i)
         {
             m_uvs[i].x = uvs[2 * i];
             m_uvs[i].y = uvs[2 * i + 1];
         }
-        
-        m_num_uvs = num_uvs;
-        
+
         SetDirty(true);
     }
-    
+
+    void Mesh::SetUVs(std::vector<RadeonRays::float2>&& uvs)
+    {
+        m_uvs = std::move(uvs);
+    }
+
     std::size_t Mesh::GetNumUVs() const
     {
-        return m_num_uvs;
+        return m_uvs.size();
     }
     
     RadeonRays::float2 const* Mesh::GetUVs() const
     {
-        return m_uvs.get();
+        return &m_uvs[0];
     }
 }

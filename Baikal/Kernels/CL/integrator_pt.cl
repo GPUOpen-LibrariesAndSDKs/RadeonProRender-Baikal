@@ -837,7 +837,11 @@ __kernel void FillAOVs(
     // World bitangent flag
     int world_bitangent_enabled,
     // World bitangent AOV
-    __global float4* aov_world_bitangent
+    __global float4* aov_world_bitangent,
+    // Gloss enabled flag
+    int gloss_enabled,
+    // Specularity map
+    __global float4* aov_gloss
 )
 {
     int globalid = get_global_id(0);
@@ -1003,6 +1007,32 @@ __kernel void FillAOVs(
                 
                 aov_world_bitangent[idx].xyz += diffgeo.dpdv;
                 aov_world_bitangent[idx].w += 1.f;
+            }
+
+            if (gloss_enabled)
+            {
+                float ngdotwi = dot(diffgeo.ng, wi);
+                bool backfacing = ngdotwi < 0.f;
+
+                // Select BxDF
+                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+
+                float gloss = 0.f;
+
+                int type = diffgeo.mat.type;
+                if (type == kIdealReflect || type == kIdealReflect || type == kPassthrough)
+                {
+                    gloss = 1.f;
+                }
+                else if (type == kMicrofacetGGX || type == kMicrofacetBeckmann ||
+                    type == kMicrofacetRefractionGGX || type == kMicrofacetRefractionBeckmann)
+                {
+                    gloss = 1.f - Texture_GetValue1f(diffgeo.mat.simple.ns, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.nsmapidx));
+                }
+
+
+                aov_gloss[idx].xyz += gloss;
+                aov_gloss[idx].w += 1.f;
             }
         }
     }

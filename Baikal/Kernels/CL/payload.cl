@@ -107,7 +107,7 @@ typedef struct _Material
             float fresnel;
             int padding0[3];
         } simple;
-        
+
         struct
         {
             float weight;
@@ -116,7 +116,7 @@ typedef struct _Material
             int base_brdf_idx;
             int padding1[8];
         } compound;
-        
+
         struct
         {
             float4 base_color;
@@ -147,7 +147,7 @@ typedef struct _Material
             int clearcoat_gloss_map_idx;
         } disney;
     };
-    
+
     int type;
     int bump_flag;
     int thin;

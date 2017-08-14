@@ -20,7 +20,24 @@ namespace Baikal
     SceneController<CompiledScene>::SceneController()
     {
     }
-    
+
+    template <typename CompiledScene>
+    inline
+    CompiledScene& SceneController<CompiledScene>::GetCachedScene(Scene1 const& scene) const
+    {
+        // Try to find scene in cache first
+        auto iter = m_scene_cache.find(&scene);
+
+        if (iter != m_scene_cache.cend())
+        {
+            return iter->second;
+        }
+        else
+        {
+            throw std::runtime_error("Scene has not been compiled");
+        }
+    }
+
     template <typename CompiledScene>
     inline
     CompiledScene& SceneController<CompiledScene>::CompileScene(
@@ -148,7 +165,7 @@ namespace Baikal
                                   // Return resulting set
                                   return textures;
                               });
-        
+
         // Commit textures
         tex_collector.Commit();
         
@@ -249,18 +266,22 @@ namespace Baikal
                 for (; shape_iter->IsValid(); shape_iter->Next())
                 {
                     auto shape = shape_iter->ItemAs<Shape const>();
-                    
+
                     if (shape->IsDirty())
                     {
                         shapes_changed = true;
                         break;
                     }
                 }
-                
+
                 // Update shapes if needed
-                if (dirty & Scene1::kShapes || shapes_changed)
+                if (dirty & Scene1::kShapes)
                 {
                     UpdateShapes(scene, mat_collector, tex_collector, out);
+                }
+                else if (shapes_changed)
+                {
+                    UpdateShapeProperties(scene, mat_collector, tex_collector, out);
                 }
             }
             

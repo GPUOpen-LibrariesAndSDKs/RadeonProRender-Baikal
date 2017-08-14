@@ -33,6 +33,38 @@ project "Baikal"
         configuration {"Release"}
             links {"OpenImageIO"}
         configuration {}
+		
+		if _OPTIONS["fbx"] then
+			defines {"ENABLE_FBX"}
+			;includedirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/include"}
+			includedirs {"K:/apps/FbxSDK/2017.1/include"}
+			
+			if _ACTION == "vs2015" then
+				configuration {"x64", "Debug"}
+					libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/debug"}
+				configuration {"x64", "Release"}
+					libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/release"}
+				configuration {"x32", "Debug"}
+					libdirs {"K:/apps/FbxSDK/2017.1/lib/vs2015/x86/debug"}
+				configuration {"x32", "Release"}
+					libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x86/release"}
+				configuration {}
+			end
+			
+			if _ACTION == "vs2013" then
+				configuration {"x64", "Debug"}
+					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/debug"}
+				configuration {"x64", "Release"}
+					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/release"}
+				configuration {"x32", "Debug"}
+					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/debug"}
+				configuration {"x32", "Release"}
+					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/release"}
+				configuration {}
+			end
+			
+			links {"libfbxsdk-md"}
+		end
     end
 
     if os.is("linux") then

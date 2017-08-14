@@ -68,11 +68,13 @@ namespace Baikal
         // Clear intersector and load meshes into it.
         void ReloadIntersector(Scene1 const& scene, ClwScene& inout) const;
 
-    private:
+    public:
         // Update camera data only.
         void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update shape data only.
         void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
+        // Update transform data only
+        void UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update lights data only.
         void UpdateLights(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update material data.
@@ -86,6 +88,7 @@ namespace Baikal
         
         // Update intersection API
         void UpdateIntersector(Scene1 const& scene, ClwScene& out) const;
+        void UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const;
         // Write out single material at data pointer.
         // Collectors are required to convert texture and material pointers into indices.
         void WriteMaterial(Material const* material, Collector& mat_collector, Collector& tex_collector, void* data) const;

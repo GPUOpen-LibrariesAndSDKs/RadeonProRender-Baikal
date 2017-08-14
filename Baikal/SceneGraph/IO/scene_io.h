@@ -30,10 +30,13 @@
 
 #include <string>
 #include <memory>
+#include <map>
 
 namespace Baikal
 {
     class Scene1;
+    class Texture;
+    class ImageIo;
     
     /**
      \brief Interface for scene loading
@@ -47,6 +50,10 @@ namespace Baikal
         static std::unique_ptr<SceneIo> CreateSceneIoObj();
         // Create test scene loader
         static std::unique_ptr<SceneIo> CreateSceneIoTest();
+        //
+        static std::unique_ptr<SceneIo> CreateSceneIoBinary();
+        //
+        static std::unique_ptr<SceneIo> CreateSceneIoFbx();
 
         // Constructor
         SceneIo() = default;
@@ -55,9 +62,18 @@ namespace Baikal
         
         // Load the scene from file using resourse base path
         virtual std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const = 0;
-        
+
+        virtual void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const {};
+
+    protected:
+        Texture const* LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
+
+    private:
         // Disallow copying
         SceneIo(SceneIo const&) = delete;
         SceneIo& operator = (SceneIo const&) = delete;
+
+        mutable std::map<std::string, Texture const*> m_texture_cache;
+
     };
 }

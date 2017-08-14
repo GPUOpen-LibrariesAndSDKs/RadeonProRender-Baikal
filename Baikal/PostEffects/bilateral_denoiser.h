@@ -92,7 +92,7 @@ namespace Baikal
         auto albedo = FindOutput(input_set, Renderer::OutputType::kAlbedo);
         auto out_color = static_cast<ClwOutput*>(&output);
 
-        auto denoise_kernel = m_program.GetKernel("BilateralDenoise_main");
+        auto denoise_kernel = GetKernel("BilateralDenoise_main");
 
         // Set kernel parameters
         int argc = 0;

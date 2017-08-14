@@ -19,38 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#ifndef COMMON_CL
-#define COMMON_CL
+#include "scene_io.h"
+#include <vector>
+#include <memory>
 
-#define PI 3.14159265358979323846f
-#define KERNEL __kernel
-#define GLOBAL __global
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-#ifndef APPLE
-#define INLINE __attribute__((always_inline))
-#endif
-
-#define HIT_MARKER 1
-#define MISS_MARKER -1
-#define INVALID_IDX -1
-
-#define CRAZY_LOW_THROUGHPUT 0.0f
-#define CRAZY_HIGH_RADIANCE 30.f
-#define CRAZY_HIGH_DISTANCE 1000000.f
-#define CRAZY_LOW_DISTANCE 0.001f
-#define REASONABLE_RADIANCE(x) (clamp((x), 0.f, CRAZY_HIGH_RADIANCE))
-#define NON_BLACK(x) (length(x) > 0.f)
-
-#define MULTISCATTER
-
-#define RANDOM 1
-#define SOBOL 2
-#define CMJ 3
-
-#define SAMPLER CMJ
-
-#define CMJ_DIM 16
-
-#define BDPT_MAX_SUBPATH_LEN 3
-
-#endif // COMMON_CL
+namespace Baikal
+{
+    // Create fake test IO
+    class SceneBinaryIo : public SceneIo
+    {
+    public:
+        SceneBinaryIo() = default;
+        // Load scene (this class uses filename to determine what scene to generate)
+        std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
+        void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const override;
+    };
+}

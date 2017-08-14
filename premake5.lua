@@ -14,6 +14,11 @@ newoption {
 }
 
 newoption {
+    trigger     = "fbx",
+    description = "Enable FBX import"
+}
+
+newoption {
     trigger     = "rpr",
     description = "Enable RadeonProRender API lib"
 }

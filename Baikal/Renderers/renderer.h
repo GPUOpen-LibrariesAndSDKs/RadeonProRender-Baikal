@@ -24,7 +24,7 @@ THE SOFTWARE.
  \file renderer.h
  \author Dmitry Kozlov
  \version 1.0
- \brief Contains declaration of Baikal::Renderer class, core interface 
+ \brief Contains declaration of Baikal::Renderer class, core interface
         representing representing the renderer.
  */
 #pragma once
@@ -43,7 +43,7 @@ namespace Baikal
     /**
      \brief Interface for the renderer.
 
-     Renderer implemenation is taking the scene and producing its image into 
+     Renderer implemenation is taking the scene and producing its image into
      an output surface.
      */
     class Renderer
@@ -60,6 +60,7 @@ namespace Baikal
             kAlbedo,
             kWorldTangent,
             kWorldBitangent,
+            kGloss,
             kMax
         };
 
@@ -73,7 +74,7 @@ namespace Baikal
          \param output Output to clear
          */
         virtual void Clear(RadeonRays::float3 const& val, Output& output)
-                                                                    const = 0;
+            const = 0;
 
         /**
          \brief Render single iteration.
@@ -87,9 +88,9 @@ namespace Baikal
 
         \param scene Scene to render
         */
-		virtual void RenderTile(Scene1 const& scene,
-                                RadeonRays::int2 const& tile_origin,
-                                RadeonRays::int2 const& tile_size) = 0;
+        virtual void RenderTile(Scene1 const& scene,
+            RadeonRays::int2 const& tile_origin,
+            RadeonRays::int2 const& tile_size) = 0;
 
         /**
         \brief Get the memory working set size in bytes.
@@ -111,6 +112,16 @@ namespace Baikal
         virtual Output* GetOutput(OutputType type) const;
 
         /**
+        \brief The method decouples potentially expensive 
+            scene compilation process from the render call.
+            This method should be called in order for scene changes
+            to take effect.
+
+        \param scene The output to render into.
+        */
+        virtual void CompileScene(Scene1 const& scene) const = 0;
+
+        /**
             Disallow copies and moves.
          */
         Renderer(Renderer const&) = delete;
@@ -130,11 +141,11 @@ namespace Baikal
         };
 
         virtual void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes,
-                                  BenchmarkStats& stats) {}
+            BenchmarkStats& stats) {}
 
     private:
         std::array<Output*, static_cast<std::size_t>(OutputType::kMax)>
-                                                                m_outputs;
+            m_outputs;
     };
 
     inline Renderer::Renderer()
