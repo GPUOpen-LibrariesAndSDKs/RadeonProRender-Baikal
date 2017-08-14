@@ -19,6 +19,12 @@ using namespace RadeonRays;
 
 namespace Baikal
 {
+    static std::size_t align16(std::size_t value)
+    {
+        return (value + 0xF) / 0x10 * 0x10;
+    }
+
+
     ClwSceneController::ClwSceneController(CLWContext context, int devidx)
     : m_default_material(new SingleBxdf(SingleBxdf::BxdfType::kLambert)),
     m_context(context)
@@ -32,26 +38,26 @@ namespace Baikal
         LogInfo("Initializing RadeonRays...\n");
         m_api = CreateFromOpenClContext(m_context, id, queue);
 
-        auto acc_type = "fatbvh";
-        auto builder_type = "sah";
+        auto acc_type = "bvh";
+        auto builder_type = "median";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
         m_api->SetOption("acc.type", acc_type);
         //m_api->SetOption("bvh.force2level", 1.f);
         m_api->SetOption("bvh.builder", builder_type);
-        m_api->SetOption("bvh.sah.num_bins", 16.f);
+        //m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
-    
+
     Material const* ClwSceneController::GetDefaultMaterial() const
     {
         return m_default_material.get();
     }
-    
+
     ClwSceneController::~ClwSceneController()
     {
         // Delete API
         IntersectionApi::Delete(m_api);
     }
-    
+
     static void SplitMeshesAndInstances(Iterator* shape_iter, std::set<Mesh const*>& meshes, std::set<Instance const*>& instances, std::set<Mesh const*>& excluded_meshes)
     {
         // Clear all sets
@@ -71,7 +77,7 @@ namespace Baikal
                 return false;
             }
         };
-        
+
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
             auto shape = shape_iter->ItemAs<Shape const>();
@@ -136,7 +142,7 @@ namespace Baikal
 
         return -1;
     }
-    
+
     void ClwSceneController::UpdateIntersector(Scene1 const& scene, ClwScene& out) const
     {
         // Detach and delete all shapes
@@ -858,17 +864,17 @@ namespace Baikal
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
             auto tex = tex_iter->ItemAs<Texture const>();
-            
+
             WriteTexture(tex, tex_data_buffer_size, textures + num_textures_written);
-            
+
             ++num_textures_written;
-            
-            tex_data_buffer_size += tex->GetSizeInBytes();
+
+            tex_data_buffer_size += align16(tex->GetSizeInBytes());
         }
-        
+
         // Unmap material buffer
         m_context.UnmapBuffer(0, out.textures, textures);
-        
+
         // Recreate material buffer if it needs resize
         if (tex_data_buffer_size > out.texturedata.GetElementCount())
         {
@@ -888,12 +894,12 @@ namespace Baikal
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
             auto tex = tex_iter->ItemAs<Texture const>();
-            
+
             WriteTextureData(tex, data + num_bytes_written);
-            
-            num_bytes_written += tex->GetSizeInBytes();
+
+            num_bytes_written += align16(tex->GetSizeInBytes());
         }
-        
+
         // Unmap material buffer
         m_context.UnmapBuffer(0, out.texturedata, data);
     }

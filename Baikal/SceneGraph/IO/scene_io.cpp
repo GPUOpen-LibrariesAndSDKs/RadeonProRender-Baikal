@@ -279,7 +279,7 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
+        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
