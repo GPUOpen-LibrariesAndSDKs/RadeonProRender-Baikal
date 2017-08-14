@@ -42,10 +42,11 @@ namespace Baikal
         }
         else
         {
+            LogInfo("Loading ", name, "\n");
             auto texture = io.LoadImage(basepath + name);
+            texture->SetName(name);
             scene.AttachAutoreleaseObject(texture);
             m_texture_cache[name] = texture;
-            LogInfo("Loading ", name, "\n");
             return texture;
         }
     }

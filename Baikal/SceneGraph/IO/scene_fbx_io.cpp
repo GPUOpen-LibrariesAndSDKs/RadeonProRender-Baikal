@@ -33,6 +33,7 @@ namespace Baikal
 
     private:
         void LoadMesh(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const;
+        void LoadLight(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const;
         Material const* TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const;
         Texture const* GetTexture(FbxSurfaceMaterial* material, const char* textureType, std::string const& basepath, Scene1& scene, ImageIo& io) const;
 
@@ -62,6 +63,7 @@ namespace Baikal
 
     Texture const* SceneFbxIo::GetTexture(FbxSurfaceMaterial* material, const char* slot, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
+        //return nullptr;
         FbxProperty prop = material->FindProperty(slot);
 
         for (auto i = 0; i < prop.GetSrcObjectCount<FbxFileTexture>(); i++)
@@ -75,13 +77,21 @@ namespace Baikal
 
             std::string filepath = texture->GetRelativeFileName();
             std::string path = "";
-            if ((filepath.find(":") != std::string::npos) || (filepath.at(0) == '/'))
+
+            try
             {
-                return LoadTexture(io, scene, "", filepath);
+                if ((filepath.find(":") != std::string::npos) || (filepath.at(0) == '/'))
+                {
+                    return LoadTexture(io, scene, "", filepath);
+                }
+                else
+                {
+                    return LoadTexture(io, scene, basepath, filepath);
+                }
             }
-            else
+            catch (std::exception& e)
             {
-                return LoadTexture(io, scene, basepath, filepath);
+                return nullptr;
             }
         }
 
@@ -103,6 +113,8 @@ namespace Baikal
             auto albedo = material->FindProperty(FbxSurfaceMaterial::sDiffuse).Get<FbxDouble3>();
             auto mul = material->FindProperty(FbxSurfaceMaterial::sDiffuseFactor).Get<FbxDouble>();
             auto texture = GetTexture(material, FbxSurfaceMaterial::sDiffuse, basepath, scene, io);
+            auto normal = GetTexture(material, FbxSurfaceMaterial::sNormalMap, basepath, scene, io);
+            auto bump = GetTexture(material, FbxSurfaceMaterial::sBump, basepath, scene, io);
 
             if (texture)
             { 
@@ -111,6 +123,15 @@ namespace Baikal
             else
             {
                 base->SetInputValue("albedo", mul * RadeonRays::float3(albedo[0], albedo[1], albedo[2]));
+            }
+
+            if (normal)
+            {
+                base->SetInputValue("normal", normal);
+            }
+            else if (bump)
+            {
+                base->SetInputValue("bump", normal);
             }
 
             auto specular_albedo = material->FindProperty(FbxSurfaceMaterial::sSpecular).Get<FbxDouble3>();
@@ -146,6 +167,15 @@ namespace Baikal
                 layered->SetInputValue("ior", RadeonRays::float3(1.5f, 1.5f, 1.5f, 1.5f));
                 res = layered;
 
+                if (normal)
+                {
+                    top->SetInputValue("normal", normal);
+                }
+                else if (bump)
+                {
+                    top->SetInputValue("bump", normal);
+                }
+
                 scene.AttachAutoreleaseObject(layered);
                 scene.AttachAutoreleaseObject(top);
             }
@@ -160,6 +190,66 @@ namespace Baikal
         }
     }
 
+    void SceneFbxIo::LoadLight(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const
+    {
+        auto fbx_light = node->GetLight();
+        auto transform = FbxMatrix(node->EvaluateGlobalTransform());
+
+        auto intensity = fbx_light->Intensity.Get();
+        auto color = fbx_light->Color.Get();
+        auto position = node->LclTranslation.Get();
+        auto rotation = node->LclRotation.Get();
+
+        auto rotation_matrix = RadeonRays::rotation_x(rotation[0] / 180.f * PI) * 
+            RadeonRays::rotation_y(rotation[2] / 180.f * PI) *
+            RadeonRays::rotation_z(-rotation[1] / 180.f * PI);
+
+        switch (fbx_light->LightType.Get())
+        {
+        case FbxLight::ePoint:
+        {
+            auto light = new PointLight();
+            light->SetName(node->GetName());
+            scene.AttachAutoreleaseObject(light);
+
+            light->SetEmittedRadiance(intensity * RadeonRays::float3(color[0], color[1], color[2]));
+            light->SetPosition(RadeonRays::float3(position[0], position[1], position[2]));
+
+            scene.AttachLight(light);
+            return;
+        }
+        case FbxLight::eDirectional:
+        {
+            auto light = new DirectionalLight();
+            light->SetName(node->GetName());
+            scene.AttachAutoreleaseObject(light);
+
+            light->SetEmittedRadiance(intensity * RadeonRays::float3(color[0], color[1], color[2]));
+            light->SetDirection(rotation_matrix * RadeonRays::float3(0, -1, 0, 0));
+
+            scene.AttachLight(light);
+            return;
+        }
+        case FbxLight::eSpot:
+        {
+            auto light = new SpotLight();
+            light->SetName(node->GetName());
+            scene.AttachAutoreleaseObject(light);
+
+            light->SetEmittedRadiance(intensity * RadeonRays::float3(color[0], color[1], color[2]));
+            light->SetPosition(RadeonRays::float3(position[0], position[1], position[2]));
+            light->SetDirection(rotation_matrix * RadeonRays::float3(0, -1, 0, 0));
+
+            auto inner_angle = fbx_light->InnerAngle.Get();
+            auto outer_angle = fbx_light->OuterAngle.Get();
+            light->SetConeShape(RadeonRays::float2(std::cos(inner_angle / 180.f * PI), std::cos(outer_angle / 180.f * PI)));
+
+            scene.AttachLight(light);
+            return;
+        }
+        }
+    }
+
     void SceneFbxIo::LoadMesh(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
         auto mesh = new Mesh();
@@ -167,7 +257,6 @@ namespace Baikal
 
         auto transform = FbxMatrix(node->EvaluateGlobalTransform());
         auto invtransp = node->EvaluateGlobalTransform().Inverse().Transpose();
-        //mesh->SetTransform(transform);
 
         mesh->SetName(node->GetName());
 
@@ -268,11 +357,10 @@ namespace Baikal
         
         auto fbx_root_node = fbx_scene->GetRootNode();
         assert(fbx_root_node);
-        LogInfo("Success");
+        LogInfo("Success\n");
 
         FbxGeometryConverter converter(fbx_manager);
         converter.Triangulate(fbx_scene, true);
-
 
         std::stack<FbxNode*> node_stack;
 
@@ -299,7 +387,9 @@ namespace Baikal
             case FbxNodeAttribute::eMesh:
                 LoadMesh(node, basepath, *scene, *image_io);
                 break;
-
+            case FbxNodeAttribute::eLight:
+                LoadLight(node, basepath, *scene, *image_io);
+                break;
             }
         }
 
@@ -313,7 +403,7 @@ namespace Baikal
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(1.f);
+        ibl->SetMultiplier(3.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light

@@ -154,11 +154,23 @@ namespace Baikal
         }
     }
 
+    void PtRenderer::CompileScene(Scene1 const& scene) const
+    {
+        m_scene_controller.CompileScene(scene,
+            m_render_data->mat_collector,
+            m_render_data->tex_collector);
+    }
+
     // Render the scene into the output
     void PtRenderer::RenderTile(Scene1 const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
         auto api = m_scene_controller.GetIntersectionApi();
-        auto& clwscene = m_scene_controller.CompileScene(scene, m_render_data->mat_collector, m_render_data->tex_collector);
+        auto& clwscene = m_scene_controller.GetCachedScene(scene);
+
+        if (scene.GetCamera()->IsDirty())
+        {
+            m_scene_controller.UpdateCamera(scene, m_render_data->mat_collector, m_render_data->tex_collector,  clwscene);
+        }
 
         // Number of rays to generate
         auto output = GetOutput(OutputType::kColor);

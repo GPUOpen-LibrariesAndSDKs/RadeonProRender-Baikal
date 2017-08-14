@@ -57,13 +57,14 @@ namespace Baikal
         
         // Given a scene this method produces (or loads from cache) corresponding GPU representation.
         CompiledScene& CompileScene(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector) const;
-        
+
+        CompiledScene& GetCachedScene(Scene1 const& scene) const;
     protected:
         // Recompile the scene from scratch, i.e. not loading from cache.
         // All the buffers are recreated and reloaded.
         void RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const;
-        
-    private:
+
+    public:
         // Update camera data only.
         virtual void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Update shape data only.

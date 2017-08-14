@@ -7,6 +7,7 @@
 #include "SceneGraph/texture.h"
 #include "SceneGraph/IO/image_io.h"
 #include "math/mathutils.h"
+#include "Utils/log.h"
 
 #include <fstream>
 
@@ -44,6 +45,8 @@ namespace Baikal
 
         std::uint32_t num_meshes = 0;
         in.read((char*)&num_meshes, sizeof(std::uint32_t));
+
+        LogInfo("Number of objects: ", num_meshes, "\n");
 
         for (auto i = 0U; i < num_meshes; ++i)
         {
@@ -100,12 +103,10 @@ namespace Baikal
 
                 if (!flag)
                 {
-
-
                     RadeonRays::float3 albedo;
                     in.read(reinterpret_cast<char*>(&albedo.x), sizeof(RadeonRays::float3));
 
-                    auto iter = c2mats.find(albedo);
+                    /*auto iter = c2mats.find(albedo);
 
                     if (iter != c2mats.cend())
                     {
@@ -117,7 +118,7 @@ namespace Baikal
                         material->SetInputValue("albedo", albedo);
                         c2mats[albedo] = material;
                         scene->AttachAutoreleaseObject(material);
-                    }
+                    }*/
                 }
                 else
                 {
@@ -127,28 +128,28 @@ namespace Baikal
                     std::vector<char> buff(size);
                     in.read(&buff[0], sizeof(char) * size);
 
-                    std::string name(buff.cbegin(), buff.cend());
+                    //std::string name(buff.cbegin(), buff.cend());
 
+                    //auto iter = mats.find(name);
 
-                    auto iter = mats.find(name);
-
-                    if (iter != mats.cend())
-                    {
-                        material = iter->second;
-                    }
-                    else
-                    {
-                        auto texture = image_io->LoadImage(basepath + name);
-                        material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-                        material->SetInputValue("albedo", texture);
-                        mats[name] = material;
-                        scene->AttachAutoreleaseObject(texture);
-                        scene->AttachAutoreleaseObject(material);
-                    }
+                    //if (iter != mats.cend())
+                    //{
+                    //    material = iter->second;
+                    //}
+                    //else
+                    //{
+                    //    LogInfo("Loading texture ", name, "\n");
+                    //    auto texture = image_io->LoadImage(basepath + name);
+                    //    //material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+                    //    //material->SetInputValue("albedo", texture);
+                    //    //mats[name] = material;
+                    //    //scene->AttachAutoreleaseObject(texture);
+                    //    //scene->AttachAutoreleaseObject(material);
+                    //}
 
                 }
 
-                mesh->SetMaterial(material);
+                mesh->SetMaterial(nullptr);
             }
 
             scene->AttachShape(mesh);
@@ -253,6 +254,7 @@ namespace Baikal
                 std::uint32_t flag = 1;
 
                 auto name = albedo.tex_value->GetName();
+                //LogInfo("Saving texture ", name, "\n");
                 auto size = name.size();
 
                 out.write(reinterpret_cast<char const*>(&flag), sizeof(flag));

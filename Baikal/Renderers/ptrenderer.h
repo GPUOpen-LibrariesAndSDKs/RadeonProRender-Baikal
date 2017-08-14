@@ -68,6 +68,9 @@ namespace Baikal
         void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes,
                           BenchmarkStats& stats) override;
 
+        // Rebuild necessary data structures and update scene buffers
+        void CompileScene(Scene1 const& scene) const override;
+
     protected:
         // Resize output-dependent buffers
         void ResizeWorkingSet(Output const& output);

@@ -615,6 +615,7 @@ void Update(bool update_required)
         {
             if (i == g_primary)
             {
+                g_cfgs[i].renderer->CompileScene(*g_scene);
                 g_cfgs[i].renderer->Clear(float3(0, 0, 0), *g_outputs[i].output);
 
 #ifdef ENABLE_DENOISER
@@ -645,10 +646,10 @@ void Update(bool update_required)
         input_set[Baikal::Renderer::OutputType::kWorldShadingNormal] = g_outputs[g_primary].output_normal.get();
         input_set[Baikal::Renderer::OutputType::kWorldPosition] = g_outputs[g_primary].output_position.get();
         input_set[Baikal::Renderer::OutputType::kAlbedo] = g_outputs[g_primary].output_albedo.get();
-        auto radius = 10U - RadeonRays::clamp((g_samplecount / 32), 1U, 9U);
+        auto radius = 10U - RadeonRays::clamp((g_samplecount / 16), 1U, 9U);
         auto position_sensitivity = 5.f + 10.f * (radius / 10.f);
         auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
-        auto color_sensitivity = (radius / 10.f) * 5.f;
+        auto color_sensitivity = (radius / 10.f) * 2.f;
         auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
         g_outputs[g_primary].denoiser->SetParameter("radius", radius);
         g_outputs[g_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
@@ -833,6 +834,7 @@ void RenderThread(ControlData& cd)
         if (std::atomic_compare_exchange_strong(&cd.clear, &result, 0))
         {
             renderer->Clear(float3(0, 0, 0), *output);
+            renderer->CompileScene(*g_scene);
             update = true;
         }
 
@@ -1072,7 +1074,7 @@ int main(int argc, char * argv[])
                 }
             }
 
-            bool update = false;
+            static bool update = true;
             while (!glfwWindowShouldClose(window))
             {
 

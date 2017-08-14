@@ -68,7 +68,7 @@ namespace Baikal
         // Clear intersector and load meshes into it.
         void ReloadIntersector(Scene1 const& scene, ClwScene& inout) const;
 
-    private:
+    public:
         // Update camera data only.
         void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update shape data only.

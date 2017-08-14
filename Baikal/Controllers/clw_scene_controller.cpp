@@ -226,7 +226,7 @@ namespace Baikal
                                            // Number of primitives
                                            static_cast<int>(mesh->GetNumIndices() / 3)
                                            );
-            
+
             auto transform = mesh->GetTransform();
             shape->SetTransform(transform, inverse(transform));
             shape->SetId(id++);
