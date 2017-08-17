@@ -19,61 +19,57 @@ project "Baikal"
         includedirs { "../3rdparty/glew/include", "../3rdparty/freeglut/include",
         "../3rdparty/oiio/include", "../3rdparty/glfw/include"}
         links {"RadeonRays", "glfw3"}
-        if not _OPTIONS["benchmark"] then
-            links {"glew", "OpenGL32", "glfw3"}
-        end
-            libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
-                        "../3rdparty/freeglut/lib/%{cfg.platform}",
-                        "../3rdparty/embree/lib/%{cfg.platform}",
-                        "../3rdparty/oiio/lib/%{cfg.platform}",
-			"../3rdparty/glfw/lib/%{cfg.platform}" }
+        links {"glew", "OpenGL32", "glfw3"}
+        libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
+                    "../3rdparty/freeglut/lib/%{cfg.platform}",
+                    "../3rdparty/embree/lib/%{cfg.platform}",
+                    "../3rdparty/oiio/lib/%{cfg.platform}",
+        "../3rdparty/glfw/lib/%{cfg.platform}" }
 
         configuration {"Debug"}
             links {"OpenImageIOD"}
         configuration {"Release"}
             links {"OpenImageIO"}
         configuration {}
-		
-		if _OPTIONS["fbx"] then
-			defines {"ENABLE_FBX"}
-			;includedirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/include"}
-			includedirs {"K:/apps/FbxSDK/2017.1/include"}
-			
-			if _ACTION == "vs2015" then
-				configuration {"x64", "Debug"}
-					libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/debug"}
-				configuration {"x64", "Release"}
-					libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/release"}
-				configuration {"x32", "Debug"}
-					libdirs {"K:/apps/FbxSDK/2017.1/lib/vs2015/x86/debug"}
-				configuration {"x32", "Release"}
-					libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x86/release"}
-				configuration {}
-			end
-			
-			if _ACTION == "vs2013" then
-				configuration {"x64", "Debug"}
-					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/debug"}
-				configuration {"x64", "Release"}
-					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/release"}
-				configuration {"x32", "Debug"}
-					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/debug"}
-				configuration {"x32", "Release"}
-					libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/release"}
-				configuration {}
-			end
-			
-			links {"libfbxsdk-md"}
-		end
+        
+        if _OPTIONS["fbx"] then
+            defines {"ENABLE_FBX"}
+            ;includedirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/include"}
+            includedirs {"K:/apps/FbxSDK/2017.1/include"}
+            
+            if _ACTION == "vs2015" then
+                configuration {"x64", "Debug"}
+                    libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/debug"}
+                configuration {"x64", "Release"}
+                    libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/release"}
+                configuration {"x32", "Debug"}
+                    libdirs {"K:/apps/FbxSDK/2017.1/lib/vs2015/x86/debug"}
+                configuration {"x32", "Release"}
+                    libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x86/release"}
+                configuration {}
+            end
+            
+            if _ACTION == "vs2013" then
+                configuration {"x64", "Debug"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/debug"}
+                configuration {"x64", "Release"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/release"}
+                configuration {"x32", "Debug"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/debug"}
+                configuration {"x32", "Release"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/release"}
+                configuration {}
+            end
+            
+            links {"libfbxsdk-md"}
+        end
     end
 
     if os.is("linux") then
         buildoptions "-std=c++11"
         includedirs { "../3rdparty/glfw/include"}
         links {"OpenImageIO", "pthread"}
-        if not _OPTIONS["benchmark"] then
-            links{"GLEW", "GL", "glfw"}
-        end
+        links{"GLEW", "GL", "glfw"}
         os.execute("rm -rf obj");
     end
 
@@ -100,13 +96,6 @@ project "Baikal"
         end
     end
 
-    if _OPTIONS["benchmark"] then
-        defines{"APP_BENCHMARK"}
-        removefiles{"../App/main.cpp",
-                    "../App/Utils/shader_manager.cpp",}
-    else
-        removefiles {"../App/main_benchmark.cpp"}
-    end
     -- if _OPTIONS["embed_kernels"] then
     --      configuration {}
     --      defines {"FR_EMBED_KERNELS"}
