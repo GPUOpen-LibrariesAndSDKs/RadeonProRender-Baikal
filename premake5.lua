@@ -9,11 +9,6 @@ newoption {
 }
 
 newoption {
-    trigger = "benchmark",
-    description = "Benchmark with command line interface instead of App."
-}
-
-newoption {
     trigger     = "fbx",
     description = "Enable FBX import"
 }
