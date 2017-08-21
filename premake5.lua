@@ -77,6 +77,10 @@ if fileExists("./Baikal/Baikal.lua") then
 	dofile("./Baikal/Baikal.lua")
 end
 
+if fileExists("./BaikalStandalone/BaikalStandalone.lua") then
+	dofile("./BaikalStandalone/BaikalStandalone.lua")
+end
+
 if fileExists("./Gtest/gtest.lua") then
 	dofile("./Gtest/gtest.lua")
 end

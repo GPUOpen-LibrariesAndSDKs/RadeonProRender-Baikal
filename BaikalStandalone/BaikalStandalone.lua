@@ -1,10 +1,10 @@
-project "Baikal"
-    kind "StaticLib"
-    location "../Baikal"
-    links {"RadeonRays", "CLW", "Calc"}
-    files { "../Baikal/**.inl", "../Baikal/**.h", "../Baikal/**.cpp", "../Baikal/**.cl", "../Baikal/**.fsh", "../Baikal/**.vsh" }
+project "BaikalStandalone"
+    kind "ConsoleApp"
+    location "../BaikalStandalone"
+    links {"RadeonRays", "CLW", "Calc", "Baikal"}
+    files { "../BaikalStandalone/**.inl", "../BaikalStandalone/**.h", "../BaikalStandalone/**.cpp", "../BaikalStandalone/**.cl", "../BaikalStandalone/**.fsh", "../BaikalStandalone/**.vsh" }
 
-    includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "."}
+    includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "."}
 
     if os.is("macosx") then
         sysincludedirs {"/usr/local/include"}

@@ -23,7 +23,7 @@ THE SOFTWARE.
 
 int main(int argc, char * argv[])
 {
-	Baikal::Application app(argc, argv);
-	app.Run();
-	return 0;
+    Baikal::Application app(argc, argv);
+    app.Run();
+    return 0;
 }
