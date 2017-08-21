@@ -666,7 +666,7 @@ namespace tinyobj {
             const size_t nIndexs = shape.mesh.indices.size();
             if (nIndexs % 3 == 0) {
                 shape.mesh.normals.resize(shape.mesh.positions.size());
-                for (register size_t iIndices = 0; iIndices < nIndexs; iIndices += 3) {
+                for (size_t iIndices = 0; iIndices < nIndexs; iIndices += 3) {
                     float3 v1, v2, v3;
                     memcpy(&v1, &shape.mesh.positions[shape.mesh.indices[iIndices] * 3],
                         sizeof(float3));

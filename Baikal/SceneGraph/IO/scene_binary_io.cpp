@@ -96,8 +96,6 @@ namespace Baikal
 
 
             {
-                Material* material = nullptr;
-
                 std::uint32_t flag = 0;
                 in.read(reinterpret_cast<char*>(&flag), sizeof(flag));
 

@@ -414,9 +414,6 @@ namespace Baikal
                 std::cout << "\tRating: N/A\n";
             }
 
-            auto& stats = m_settings.stats;
-
-
             auto num_rays = m_settings.stats.resolution.x * m_settings.stats.resolution.y;
             auto primary = (float)(num_rays / (m_settings.stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
             auto secondary = (float)(num_rays / (m_settings.stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
@@ -463,7 +460,7 @@ namespace Baikal
             ImGui::Text("OpenCL: %s", m_cl->GetDevice(0).GetVersion().c_str());
             ImGui::Separator();
             ImGui::Text("Resolution: %dx%d ", m_settings.width, m_settings.height);
-            ImGui::Text("Scene: %s", m_settings.modelname);
+            ImGui::Text("Scene: %s", m_settings.modelname.c_str());
             ImGui::Text("Unique triangles: %d", m_num_triangles);
             ImGui::Text("Number of instances: %d", m_num_instances);
             ImGui::Separator();

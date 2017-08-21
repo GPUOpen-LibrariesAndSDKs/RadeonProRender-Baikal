@@ -35,9 +35,9 @@ namespace Baikal
         AppSettings();
 
         //model load settings
-        char* path;
-        char* modelname;
-        char* envmapname;
+        std::string path;
+        std::string modelname;
+        std::string envmapname;
 
         //render
         int width;

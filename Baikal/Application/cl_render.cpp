@@ -530,8 +530,6 @@ namespace Baikal
         });
 
         std::stringstream oss;
-        auto camera_position = m_camera->GetPosition();
-        auto camera_direction = m_camera->GetForwardVector();
         oss << "../Output/" << settings.modelname << ".exr";
 
         SaveImage(oss.str(), settings.width, settings.height, &data[0]);
