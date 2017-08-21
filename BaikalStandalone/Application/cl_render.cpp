@@ -152,14 +152,10 @@ namespace Baikal
 
         {
             // Load OBJ scene
-            //auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
             auto fbx = filename.find(".fbx") != std::string::npos;
             auto scene_io = fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
             auto scene_io1 = Baikal::SceneIo::CreateSceneIoBinary();
-            //m_scene = scene_io->LoadScene("sphere+plane+ibl", basepath);
             m_scene = scene_io->LoadScene(filename, basepath);
-            //scene_io1->SaveScene(*m_scene, filename + ".bin", basepath);
-            //m_scene = scene_io1->LoadScene(filename + ".bin", basepath);
 
             // Enable this to generate new materal mapping for a model
 #if 0
