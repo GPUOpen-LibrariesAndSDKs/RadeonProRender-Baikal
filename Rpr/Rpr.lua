@@ -3,7 +3,7 @@ project "Rpr"
     location "../Rpr"
     links {"RadeonRays", "CLW", "Calc"}
     files { "../Rpr/**.h", "../Rpr/**.cpp", "../Baikal/**.h", "../Baikal/**.cpp" }
-    removefiles{"../Baikal/main.cpp","../Baikal/main_benchmark.cpp", "../Baikal/ImGUI/imgui_impl_glfw_gl3.cpp"}
+    removefiles{"../Baikal/Application/**", "../Baikal/main.cpp", "../Baikal/ImGUI/imgui_impl_glfw_gl3.cpp"}
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "." }
 
     defines {"RPR_EXPORT_API"}
