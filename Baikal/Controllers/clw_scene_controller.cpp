@@ -277,7 +277,6 @@ namespace Baikal
 
         // Start from ID 1
         // Handle meshes
-        int id = 1;
         for (auto& iter : meshes)
         {
             auto mesh = iter;
@@ -629,8 +628,6 @@ namespace Baikal
     void ClwSceneController::UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         std::size_t num_material_ids = 0;
-        std::size_t num_matids_written = 0;
-        std::size_t num_shapes_written = 0;
 
         auto shape_iter = scene.CreateShapeIterator();
 
@@ -665,9 +662,6 @@ namespace Baikal
             auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
             num_material_ids += mesh->GetNumIndices() / 3;
         }
-
-        // Total number of entries in shapes GPU array
-        auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
 
         int* matids = nullptr;
         ClwScene::Shape* shapes = nullptr;

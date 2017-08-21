@@ -93,6 +93,11 @@ namespace Baikal
             RadeonRays::int2 const& tile_size) = 0;
 
         /**
+        \brief Get the memory working set size in bytes.
+        */
+        virtual size_t GetWorkingSetSize() const = 0;
+
+        /**
          \brief Set the output for rendering.
 
          \param output The output to render into.

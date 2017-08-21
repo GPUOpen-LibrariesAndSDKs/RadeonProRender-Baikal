@@ -369,6 +369,12 @@ namespace Baikal
         ++m_framecnt;
     }
 
+    // Get working set size
+    size_t BdptRenderer::GetWorkingSetSize() const
+    {
+        return m_vidmemws;
+    }
+
     void BdptRenderer::IncrementSampleCounter(ClwScene const& scene, int2 const& tile_size)
     {
         int num_rays = tile_size.x * tile_size.y;

@@ -234,7 +234,7 @@ Available premake options:
 ## Run
 
 ## Run Baikal standalone app
- - `export LD_LIBRARY_PATH=<Radeon Rays_SDK path>/Radeon Rays/lib/x64/:${LD_LIBRARY_PATH}`
+ - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/Bin/Release/x64/:${LD_LIBRARY_PATH}`
  - `cd Baikal`
  - `../Bin/Release/x64/Baikal64`
 

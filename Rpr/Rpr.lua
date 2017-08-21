@@ -6,6 +6,8 @@ project "Rpr"
     removefiles{"../Baikal/main.cpp","../Baikal/main_benchmark.cpp", "../Baikal/ImGUI/imgui_impl_glfw_gl3.cpp"}
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "." }
 
+    defines {"RPR_EXPORT_API"}
+
     if os.is("macosx") then
         sysincludedirs {"/usr/local/include"}
         libdirs {"/usr/local/lib"}
@@ -16,7 +18,6 @@ project "Rpr"
 
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/oiio/include"  }
-        linkoptions { '/DEF:"RadeonProRender.def"' }
 
         links {"RadeonRays",}
         links {"glew", "OpenGL32"}

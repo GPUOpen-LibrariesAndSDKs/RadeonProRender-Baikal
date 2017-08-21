@@ -52,6 +52,8 @@ namespace Baikal
         void Render(Scene1 const& scene) override;
         // Render single tile
         void RenderTile(Scene1 const& scene, RadeonRays::int2 const& tile_origin, RadeonRays::int2 const& tile_size) override;
+        // Get working set size
+        size_t GetWorkingSetSize() const override;
         // Set output
         void SetOutput(OutputType type, Output* output) override;
         // Set number of light bounces
