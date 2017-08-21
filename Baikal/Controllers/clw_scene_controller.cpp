@@ -47,9 +47,9 @@ namespace Baikal
         m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
 
-    Material const* ClwSceneController::GetDefaultMaterial() const
+    MaterialPtr ClwSceneController::GetDefaultMaterial() const
     {
-        return m_default_material.get();
+        return m_default_material;
     }
 
     ClwSceneController::~ClwSceneController()
@@ -80,7 +80,9 @@ namespace Baikal
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
-            auto shape = shape_iter->ItemAs<Shape const>();
+            auto wp = shape_iter->ItemAs<Shape const>();
+            auto sp = wp.lock();
+            auto shape = sp.get();
             
             if (!is_instance(shape))
             {
@@ -94,7 +96,7 @@ namespace Baikal
         
         for (auto& i : instances)
         {
-            auto base_mesh = static_cast<Mesh const*>(i->GetBaseShape());
+            auto base_mesh = static_cast<Mesh const*>(i->GetBaseShape().get());
             if (meshes.find(base_mesh) == meshes.cend())
             {
                 excluded_meshes.emplace(base_mesh);
@@ -244,7 +246,7 @@ namespace Baikal
         for (auto& iter: instances)
         {
             auto instance = iter;
-            auto rr_mesh = rr_shapes[instance->GetBaseShape()];
+            auto rr_mesh = rr_shapes[instance->GetBaseShape().get()];
             auto shape = m_api->CreateInstance(rr_mesh);
             
             auto transform = instance->GetTransform();
@@ -309,7 +311,7 @@ namespace Baikal
     void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         // TODO: support different camera types here
-        auto camera = static_cast<PerspectiveCamera const*>(scene.GetCamera());
+        auto camera = static_cast<PerspectiveCamera const*>(scene.GetCamera().get());
         
         // Create light buffer if needed
         if (out.camera.GetElementCount() == 0)
@@ -400,7 +402,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape().get());
             num_material_ids += mesh->GetNumIndices() / 3;
         }
 
@@ -497,10 +499,10 @@ namespace Baikal
             auto material = mesh->GetMaterial();
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
             
-            auto matidx = mat_collector.GetItemIndex(material);
+            auto matidx = mat_collector.GetItemIndex(material.get());
             std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, matidx);
             
             num_matids_written += mesh_num_indices / 3;
@@ -573,7 +575,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape().get());
             auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
             auto mesh_num_indices = base_shape->GetNumIndices();
@@ -599,10 +601,10 @@ namespace Baikal
             // If instance do not have a material, use default one.
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
             
-            auto mat_idx = mat_collector.GetItemIndex(material);
+            auto mat_idx = mat_collector.GetItemIndex(material.get());
             std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, mat_idx);
             
             num_matids_written += mesh_num_indices / 3;
@@ -659,7 +661,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape().get());
             num_material_ids += mesh->GetNumIndices() / 3;
         }
 
@@ -687,10 +689,10 @@ namespace Baikal
             auto material = mesh->GetMaterial();
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
 
-            auto matidx = mat_collector.GetItemIndex(material);
+            auto matidx = mat_collector.GetItemIndex(material.get());
             std::fill(matids + current_shape->start_material_idx, 
                 matids + current_shape->start_material_idx + mesh_num_indices / 3, 
                 matidx);
@@ -718,10 +720,10 @@ namespace Baikal
             auto material = mesh->GetMaterial();
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
 
-            auto matidx = mat_collector.GetItemIndex(material);
+            auto matidx = mat_collector.GetItemIndex(material.get());
             std::fill(matids + current_shape->start_material_idx,
                 matids + current_shape->start_material_idx + mesh_num_indices / 3,
                 matidx);
@@ -735,7 +737,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape().get());
             auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
             auto mesh_num_indices = base_shape->GetNumIndices();
@@ -748,10 +750,10 @@ namespace Baikal
             // Check if mesh has a material and use default if not
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
 
-            auto matidx = mat_collector.GetItemIndex(material);
+            auto matidx = mat_collector.GetItemIndex(material.get());
             std::fill(matids + current_shape->start_material_idx,
                 matids + current_shape->start_material_idx + mesh_num_indices / 3,
                 matidx);
@@ -801,7 +803,8 @@ namespace Baikal
             // Iterate and serialize
             for (; mat_iter->IsValid(); mat_iter->Next())
             {
-                WriteMaterial(mat_iter->ItemAs<Material const>(), mat_collector, tex_collector, materials + num_materials_written);
+                auto sp = mat_iter->ItemAs<Material const>().lock();
+                WriteMaterial(sp.get(), mat_collector, tex_collector, materials + num_materials_written);
                 ++num_materials_written;
             }
         }
@@ -857,7 +860,8 @@ namespace Baikal
         // Iterate and serialize
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
-            auto tex = tex_iter->ItemAs<Texture const>();
+            auto sp = tex_iter->ItemAs<Texture const>().lock();
+            auto tex = sp.get();
 
             WriteTexture(tex, tex_data_buffer_size, textures + num_textures_written);
 
@@ -887,7 +891,8 @@ namespace Baikal
         // Write texture data for all textures
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
-            auto tex = tex_iter->ItemAs<Texture const>();
+            auto sp = tex_iter->ItemAs<Texture const>().lock();
+            auto tex = sp.get();
 
             WriteTextureData(tex, data + num_bytes_written);
 
@@ -967,7 +972,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->simple.nsmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->simple.nsmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -995,7 +1000,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->simple.kxmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->simple.kxmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1007,7 +1012,7 @@ namespace Baikal
                 
                 if (value.type == Material::InputType::kTexture && value.tex_value)
                 {
-                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
+                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value.get());
                     clw_material->bump_flag = 0;
                 }
                 else
@@ -1016,7 +1021,7 @@ namespace Baikal
                     
                     if (value.type == Material::InputType::kTexture && value.tex_value)
                     {
-                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
+                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value.get());
                         clw_material->bump_flag = 1;
                     }
                     else
@@ -1073,8 +1078,8 @@ namespace Baikal
                 if (value0.type == Material::InputType::kMaterial &&
                     value1.type == Material::InputType::kMaterial)
                 {
-                    clw_material->compound.base_brdf_idx = mat_collector.GetItemIndex(value0.mat_value);
-                    clw_material->compound.top_brdf_idx = mat_collector.GetItemIndex(value1.mat_value);
+                    clw_material->compound.base_brdf_idx = mat_collector.GetItemIndex(value0.mat_value.get());
+                    clw_material->compound.top_brdf_idx = mat_collector.GetItemIndex(value1.mat_value.get());
                 }
                 else
                 {
@@ -1090,7 +1095,7 @@ namespace Baikal
                     
                     if (value.type == Material::InputType::kTexture)
                     {
-                        clw_material->compound.weight_map_idx = tex_collector.GetItemIndex(value.tex_value);
+                        clw_material->compound.weight_map_idx = tex_collector.GetItemIndex(value.tex_value.get());
                     }
                     else
                     {
@@ -1129,7 +1134,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.base_color_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.base_color_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1145,7 +1150,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.metallic_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.metallic_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1172,7 +1177,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.specular_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.specular_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1188,7 +1193,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.specular_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.specular_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1204,7 +1209,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.anisotropy_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.anisotropy_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1220,7 +1225,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.sheen_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.sheen_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1236,7 +1241,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.sheen_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.sheen_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1252,7 +1257,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.clearcoat_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.clearcoat_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1268,7 +1273,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.clearcoat_gloss_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.clearcoat_gloss_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1284,7 +1289,7 @@ namespace Baikal
                 }
                 else if (value.type == Material::InputType::kTexture)
                 {
-                    clw_material->disney.roughness_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
+                    clw_material->disney.roughness_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value.get()) : -1;
                 }
                 else
                 {
@@ -1296,7 +1301,7 @@ namespace Baikal
                 
                 if (value.type == Material::InputType::kTexture && value.tex_value)
                 {
-                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
+                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value.get());
                     clw_material->bump_flag = 0;
                 }
                 else
@@ -1305,7 +1310,7 @@ namespace Baikal
                     
                     if (value.type == Material::InputType::kTexture && value.tex_value)
                     {
-                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
+                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value.get());
                         clw_material->bump_flag = 1;
                     }
                     else
@@ -1394,7 +1399,7 @@ namespace Baikal
                 // TODO: support this
                 clw_light->multiplier = static_cast<ImageBasedLight const*>(light)->GetMultiplier();
                 auto tex = static_cast<ImageBasedLight const*>(light)->GetTexture();
-                clw_light->tex = tex_collector.GetItemIndex(tex);
+                clw_light->tex = tex_collector.GetItemIndex(tex.get());
                 clw_light->texdiffuse = clw_light->tex;
                 break;
             }
@@ -1406,7 +1411,7 @@ namespace Baikal
                 
                 std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
                 
-                auto idx = GetShapeIdx(shape_iter.get(), shape);
+                auto idx = GetShapeIdx(shape_iter.get(), shape.get());
                 
                 clw_light->shapeidx = static_cast<int>(idx);
                 clw_light->primidx = static_cast<int>(static_cast<AreaLight const*>(light)->GetPrimitiveIdx());
@@ -1445,12 +1450,12 @@ namespace Baikal
         {
             for (; light_iter->IsValid(); light_iter->Next())
             {
-                auto light = light_iter->ItemAs<Light const>();
-                WriteLight(scene, light, tex_collector, lights + num_lights_written);
+                auto light = light_iter->ItemAs<Light const>().lock();
+                WriteLight(scene, light.get(), tex_collector, lights + num_lights_written);
 
                 
                 // Find and update IBL idx
-                auto ibl = dynamic_cast<ImageBasedLight const*>(light_iter->ItemAs<Light const>());
+                auto ibl = light_iter->ItemAs<ImageBasedLight const>().lock();
                 if (ibl)
                 {
                     out.envmapidx = static_cast<int>(num_lights_written);

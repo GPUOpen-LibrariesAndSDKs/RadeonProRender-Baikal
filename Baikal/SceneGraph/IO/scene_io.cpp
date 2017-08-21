@@ -22,9 +22,9 @@ namespace Baikal
         // Load scene from file
         std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
     private:
-        Material const* TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
+        MaterialPtr TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
 
-        mutable std::map<std::string, Material const*> m_material_cache;
+        mutable std::map<std::string, MaterialPtr> m_material_cache;
     };
 
     std::unique_ptr<SceneIo> SceneIo::CreateSceneIoObj()
@@ -32,7 +32,7 @@ namespace Baikal
         return std::unique_ptr<SceneIo>(new SceneIoObj());
     }
 
-    Texture const* SceneIo::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
+    TexturePtr SceneIo::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
     {
         auto iter = m_texture_cache.find(name);
 
@@ -43,15 +43,14 @@ namespace Baikal
         else
         {
             LogInfo("Loading ", name, "\n");
-            auto texture = io.LoadImage(basepath + name);
+            auto texture = TexturePtr(io.LoadImage(basepath + name));
             texture->SetName(name);
-            scene.AttachAutoreleaseObject(texture);
             m_texture_cache[name] = texture;
             return texture;
         }
     }
 
-    Material const* SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
+    MaterialPtr SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
     {
         auto iter = m_material_cache.find(mat.name);
 
@@ -130,11 +129,8 @@ namespace Baikal
                     diffuse->SetName(mat.name + "-diffuse");
                     specular->SetName(mat.name + "-specular");
 
-                    material->SetInputValue("base_material", diffuse);
-                    material->SetInputValue("top_material", specular);
-
-                    scene.AttachAutoreleaseObject(diffuse);
-                    scene.AttachAutoreleaseObject(specular);
+                    material->SetInputValue("base_material", MaterialPtr(diffuse));
+                    material->SetInputValue("top_material", MaterialPtr(specular));
                 }
                 else
                 {
@@ -166,11 +162,9 @@ namespace Baikal
             // Set material name
             material->SetName(mat.name);
 
-            m_material_cache[mat.name] = material;
-
-            scene.AttachAutoreleaseObject(material);
-
-            return material;
+            MaterialPtr res(material);
+            m_material_cache[mat.name] = res;
+            return res;
         }
     }
 
@@ -199,8 +193,8 @@ namespace Baikal
 
         // Enumerate and translate materials
         // Keep track of emissive subset
-        std::set<Material const*> emissives;
-        std::vector<Material const*> materials(objmaterials.size());
+        std::set<MaterialPtr> emissives;
+        std::vector<MaterialPtr> materials(objmaterials.size());
         for (int i = 0; i < (int)objmaterials.size(); ++i)
         {
             // Translate material
@@ -217,7 +211,7 @@ namespace Baikal
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
             // Create empty mesh
-            Mesh* mesh = new Mesh();
+            MeshPtr mesh(new Mesh());
 
             // Set vertex and index data
             auto num_vertices = objshapes[s].mesh.positions.size() / 3;
@@ -262,41 +256,33 @@ namespace Baikal
             // Attach to the scene
             scene->AttachShape(mesh);
 
-            // Attach for autorelease
-            scene->AttachAutoreleaseObject(mesh);
-
             // If the mesh has emissive material we need to add area light for it
             if (idx >= 0 && emissives.find(materials[idx]) != emissives.cend())
             {
                 // Add area light for each polygon of emissive mesh
                 for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
                 {
-                    AreaLight* light = new AreaLight(mesh, l);
+                    AreaLightPtr light(new AreaLight(mesh, l));
                     scene->AttachLight(light);
-                    scene->AttachAutoreleaseObject(light);
                 }
             }
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
-        scene->AttachAutoreleaseObject(ibl_texture);
+        TexturePtr ibl_texture(image_io->LoadImage("../Resources/Textures/studio015.hdr"));
 
-        ImageBasedLight* ibl = new ImageBasedLight();
+        ImageBasedLightPtr  ibl(new ImageBasedLight());
         ibl->SetTexture(ibl_texture);
         ibl->SetMultiplier(1.f);
-        scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
-        DirectionalLight* light = new DirectionalLight();
+        DirectionalLightPtr light(new DirectionalLight());
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
         light->SetEmittedRadiance(1.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
-        scene->AttachAutoreleaseObject(light);
 
-        DirectionalLight* light1 = new DirectionalLight();
+        DirectionalLightPtr light1(new DirectionalLight());
         light1->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
-        scene->AttachAutoreleaseObject(light1);
 
         scene->AttachLight(light);
         //scene->AttachLight(light1);

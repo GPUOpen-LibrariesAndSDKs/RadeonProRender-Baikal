@@ -2,9 +2,84 @@
 #include "iterator.h"
 
 #include <cassert>
+#include <memory>
 
 namespace Baikal
 {
+    Material::InputValue::~InputValue()
+    {
+        Clean();
+    }
+    Material::InputValue::InputValue(const InputValue& v)
+    {
+        switch (v.type)
+        {
+        case InputType::kFloat4:
+            float_value = v.float_value;
+            break;
+        case InputType::kTexture:
+            //initiate empty shared_ptr
+            new (&tex_value)TextureCPtr();
+            tex_value = v.tex_value;
+            break;
+        case InputType::kMaterial:
+            //initiate empty shared_ptr
+            new (&mat_value)MaterialCPtr;
+            mat_value = v.mat_value;
+            break;
+        default:
+            throw("unhandled material input type");
+        }
+
+        type = v.type;
+    }
+    Material::InputValue& Material::InputValue::operator=(const Material::InputValue& v)
+    {
+        //clean current shared_ptrs
+        Clean();
+        switch (v.type)
+        {
+        case InputType::kFloat4:
+            float_value = v.float_value;
+            break;
+        case InputType::kTexture:
+            //initiate empty shared_ptr
+            new (&tex_value)TextureCPtr();
+            tex_value = v.tex_value;
+            break;
+        case InputType::kMaterial:
+            //initiate empty shared_ptr
+            new (&mat_value)MaterialCPtr;
+            mat_value = v.mat_value;
+            break;
+        default:
+            throw("unhandled material input type");
+        }
+
+        type = v.type;
+        return *this;
+    }
+
+    void Material::InputValue::Clean()
+    {
+        switch (type)
+        {
+        case InputType::kFloat4:
+            break;
+        case InputType::kTexture:
+            tex_value.~shared_ptr();
+            break;
+        case InputType::kMaterial:
+            mat_value.~shared_ptr();
+            break;
+        default:
+            break;
+        }
+        type = InputType::kFloat4;
+        float_value = RadeonRays::float4();
+    }
+
+
     class Material::InputIterator : public Iterator
     {
     public:
@@ -36,9 +111,22 @@ namespace Baikal
         }
         
         // Get underlying item
-        void const* Item() const override
+        std::weak_ptr<void const> Item() const override
         {
-            return &m_cur->second;
+            std::weak_ptr<void const> res;
+            switch (m_cur->second.value.type)
+            {
+            case Material::InputType::kFloat4:
+                res = std::make_shared<RadeonRays::float4>(m_cur->second.value.float_value);
+                break;
+            case Material::InputType::kMaterial:
+                res = m_cur->second.value.mat_value;
+                break;
+            case Material::InputType::kTexture:
+                res = m_cur->second.value.tex_value;
+                break;
+            }
+            return res;
         }
         
     private:
@@ -63,18 +151,18 @@ namespace Baikal
         
         assert(input.info.supported_types.size() > 0);
         
-        input.value.type = *input.info.supported_types.begin();
+        InputType type = *input.info.supported_types.begin();
         
-        switch (input.value.type)
+        switch (type)
         {
             case InputType::kFloat4:
                 input.value.float_value = RadeonRays::float4();
                 break;
             case InputType::kTexture:
-                input.value.tex_value = nullptr;
+                input.value = InputValue(TextureCPtr(nullptr));
                 break;
             case InputType::kMaterial:
-                input.value.mat_value = nullptr;
+                input.value = InputValue(MaterialCPtr(nullptr));
                 break;
             default:
                 break;
@@ -92,7 +180,7 @@ namespace Baikal
     // Iterator of dependent materials (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
-        std::set<Material const*> materials;
+        std::set<MaterialCPtr> materials;
         
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&materials](std::pair<std::string, Input> const& map_entry)
@@ -106,13 +194,13 @@ namespace Baikal
                       );
         
         return std::unique_ptr<Iterator>(
-            new ContainerIterator<std::set<Material const*>>(std::move(materials)));
+            new ContainerIterator<std::set<MaterialCPtr>>(std::move(materials)));
     }
     
     // Iterator of textures (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateTextureIterator() const
     {
-        std::set<Texture const*> textures;
+        std::set<TextureCPtr> textures;
         
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&textures](std::pair<std::string, Input> const& map_entry)
@@ -126,7 +214,7 @@ namespace Baikal
                       );
         
         return std::unique_ptr<Iterator>(
-            new ContainerIterator<std::set<Texture const*>>(std::move(textures)));
+            new ContainerIterator<std::set<TextureCPtr>>(std::move(textures)));
     }
     
     // Iterator of inputs
@@ -147,8 +235,7 @@ namespace Baikal
             
             if (input.info.supported_types.find(InputType::kFloat4) != input.info.supported_types.cend())
             {
-                input.value.type = InputType::kFloat4;
-                input.value.float_value = value;
+                input.value = InputValue(value);
                 SetDirty(true);
             }
             else
@@ -162,7 +249,7 @@ namespace Baikal
         }
     }
     
-    void Material::SetInputValue(std::string const& name, Texture const* texture)
+    void Material::SetInputValue(std::string const& name, TexturePtr texture)
     {
         auto input_iter = m_inputs.find(name);
         
@@ -172,8 +259,7 @@ namespace Baikal
             
             if (input.info.supported_types.find(InputType::kTexture) != input.info.supported_types.cend())
             {
-                input.value.type = InputType::kTexture;
-                input.value.tex_value = texture;
+                input.value = InputValue(texture);
                 SetDirty(true);
             }
             else
@@ -187,7 +273,7 @@ namespace Baikal
         }
     }
     
-    void Material::SetInputValue(std::string const& name, Material const* material)
+    void Material::SetInputValue(std::string const& name, MaterialPtr material)
     {
         auto input_iter = m_inputs.find(name);
         
@@ -197,8 +283,7 @@ namespace Baikal
             
             if (input.info.supported_types.find(InputType::kMaterial) != input.info.supported_types.cend())
             {
-                input.value.type = InputType::kMaterial;
-                input.value.mat_value = material;
+                input.value = InputValue(material);
                 SetDirty(true);
             }
             else
@@ -250,8 +335,8 @@ namespace Baikal
         RegisterInput("roughness", "Roughness", {InputType::kFloat4, InputType::kTexture});
         
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
-        SetInputValue("normal", static_cast<Texture const*>(nullptr));
-        SetInputValue("bump", static_cast<Texture const*>(nullptr));
+        SetInputValue("normal", TexturePtr());
+        SetInputValue("bump", TexturePtr());
     }
     
     SingleBxdf::BxdfType SingleBxdf::GetBxdfType() const
@@ -322,8 +407,8 @@ namespace Baikal
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
         SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
         SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
-        SetInputValue("normal", static_cast<Texture const*>(nullptr));
-        SetInputValue("bump", static_cast<Texture const*>(nullptr));
+        SetInputValue("normal", TexturePtr());
+        SetInputValue("bump", TexturePtr());
     }
     
     // Check if material has emissive components

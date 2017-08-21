@@ -28,13 +28,15 @@
  */
 #pragma once
 
+#include "light.h"
+#include "camera.h"
+#include "shape.h"
+
 #include <memory>
 
 namespace Baikal
 {
-    class Light;
     class Shape;
-    class Volume;
     class Camera;
     class Iterator;
     class SceneObject;
@@ -66,8 +68,8 @@ namespace Baikal
         ~Scene1();
         
         // Add or remove lights
-        void AttachLight(Light const* light);
-        void DetachLight(Light const* light);
+        void AttachLight(LightPtr light);
+        void DetachLight(LightPtr light);
         
         // Get the number of lights in the scene
         std::size_t GetNumLights() const;
@@ -75,8 +77,8 @@ namespace Baikal
         std::unique_ptr<Iterator> CreateLightIterator() const;
         
         // Add or remove shapes
-        void AttachShape(Shape const* shape);
-        void DetachShape(Shape const* shape);
+        void AttachShape(ShapePtr shape);
+        void DetachShape(ShapePtr shape);
         
         // Get number of shapes in the scene
         std::size_t GetNumShapes() const;
@@ -84,8 +86,8 @@ namespace Baikal
         std::unique_ptr<Iterator> CreateShapeIterator() const;
         
         // Set and get camera
-        void SetCamera(Camera const* camera);
-        Camera const* GetCamera() const;
+        void SetCamera(CameraPtr camera);
+        CameraPtr GetCamera() const;
         
         // Get state change since last clear
         DirtyFlags GetDirtyFlags() const;
@@ -96,10 +98,6 @@ namespace Baikal
         
         // Check if the scene is ready for rendering
         bool IsValid() const;
-        
-        // Autorelase objects are deleted when scene is destroyed
-        void AttachAutoreleaseObject(SceneObject const* object);
-        void DetachAutoreleaseObject(SceneObject const* object);
         
         // Forbidden stuff
         Scene1(Scene1 const&) = delete;

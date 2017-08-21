@@ -150,34 +150,29 @@ namespace Baikal
                 mesh->SetMaterial(nullptr);
             }
 
-            scene->AttachShape(mesh);
-            scene->AttachAutoreleaseObject(mesh);
+            scene->AttachShape(ShapePtr(mesh));
         }
 
 
 
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
-        scene->AttachAutoreleaseObject(ibl_texture);
+        TexturePtr ibl_texture = TexturePtr(image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr"));
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
         ibl->SetMultiplier(1.f);
-        scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
         DirectionalLight* light = new DirectionalLight();
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.4f)));
         light->SetEmittedRadiance(7.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
-        scene->AttachAutoreleaseObject(light);
 
         DirectionalLight* light1 = new DirectionalLight();
         light1->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
-        scene->AttachAutoreleaseObject(light1);
 
-        scene->AttachLight(light);
+        scene->AttachLight(LightPtr(light));
         //scene->AttachLight(light1);
-        scene->AttachLight(ibl);
+        scene->AttachLight(LightPtr(ibl));
 
         return std::unique_ptr<Scene1>(scene);
     }
@@ -193,7 +188,7 @@ namespace Baikal
             throw std::runtime_error("Cannot open file for writing");
         }
 
-        auto default_material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+        auto default_material = MaterialPtr(new SingleBxdf(SingleBxdf::BxdfType::kLambert));
 
         auto num_shapes = (std::uint32_t)scene.GetNumShapes();
         out.write((char*)&num_shapes, sizeof(std::uint32_t));
@@ -202,7 +197,7 @@ namespace Baikal
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
-            auto mesh = shape_iter->ItemAs<Mesh const>();
+            auto mesh = shape_iter->ItemAs<Mesh const>().lock();
             auto num_indices = (std::uint32_t)mesh->GetNumIndices();
             out.write((char*)&num_indices, sizeof(std::uint32_t));
 
@@ -227,11 +222,11 @@ namespace Baikal
                 material = default_material;
             }
 
-            auto diffuse = dynamic_cast<SingleBxdf const*>(material);
+            auto diffuse = dynamic_cast<SingleBxdf const*>(material.get());
 
             if (!diffuse)
             {
-                diffuse = dynamic_cast<SingleBxdf const*>(material->GetInputValue("base_material").mat_value);
+                diffuse = dynamic_cast<SingleBxdf const*>(material->GetInputValue("base_material").mat_value.get());
             }
 
             if (!diffuse)

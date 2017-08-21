@@ -39,7 +39,10 @@
 namespace Baikal
 {
     class Material;
-    
+    class Texture;
+    using TexturePtr = std::shared_ptr<Texture>;
+    using TextureCPtr = std::shared_ptr<Texture const>;
+
     /**
      \brief Texture class.
      

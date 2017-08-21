@@ -36,11 +36,20 @@
 #include "math/float3.h"
 
 #include "scene_object.h"
+#include "texture.h"
 
 namespace Baikal
 {
     class Iterator;
-    class Texture;
+    class Material;
+    class SingleBxdf;
+    class MultiBxdf;
+    class DisneyBxdf;
+    using MaterialPtr = std::shared_ptr<Material>;
+    using MaterialCPtr = std::shared_ptr<Material const>;
+    using SingleBxdfPtr = std::shared_ptr<SingleBxdf>;
+    using MultiBxdfPtr = std::shared_ptr<MultiBxdf>;
+    using DisneyBxdfPtr = std::shared_ptr<DisneyBxdf>;
 
     /**
      \brief High level material interface
@@ -53,7 +62,7 @@ namespace Baikal
         // Material input type
         enum class InputType
         {
-            kFloat4,
+            kFloat4 = 0,
             kTexture,
             kMaterial
         };
@@ -70,8 +79,9 @@ namespace Baikal
         };
 
         // Input value description
-        struct InputValue
+        class InputValue
         {
+        public:
             // Current type
             InputType type;
             
@@ -79,9 +89,19 @@ namespace Baikal
             union
             {
                 RadeonRays::float4 float_value;
-                Texture const* tex_value;
-                Material const* mat_value;
+                TextureCPtr tex_value;
+                MaterialCPtr mat_value;
             };
+
+            InputValue(const RadeonRays::float4& val) : type(InputType::kFloat4), float_value(val) {}
+            InputValue(const TextureCPtr& val) : type(InputType::kTexture), tex_value(val) {}
+            InputValue(const MaterialCPtr& val) : type(InputType::kMaterial), mat_value(val) {}
+            InputValue() : type(InputType::kFloat4) , float_value(RadeonRays::float4()) {}
+            ~InputValue();
+            InputValue(const InputValue& v);
+            InputValue& operator=(const InputValue& v);
+        private:
+            void Clean();
         };
 
         // Full input state
@@ -109,8 +129,8 @@ namespace Baikal
         // If specific data type is not supported throws std::runtime_error
         void SetInputValue(std::string const& name,
                            RadeonRays::float4 const& value);
-        void SetInputValue(std::string const& name, Texture const* texture);
-        void SetInputValue(std::string const& name, Material const* material);
+        void SetInputValue(std::string const& name, TexturePtr texture);
+        void SetInputValue(std::string const& name, MaterialPtr material);
 
         InputValue GetInputValue(std::string const& name) const;
 
@@ -139,7 +159,7 @@ namespace Baikal
         // Thin material
         bool m_thin;;
     };
-
+    
     inline Material::~Material()
     {
     }

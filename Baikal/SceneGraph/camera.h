@@ -32,6 +32,7 @@
 #include "math/float2.h"
 
 #include "scene_object.h"
+#include <memory>
 
 namespace Baikal
 {
@@ -130,6 +131,8 @@ namespace Baikal
         friend std::ostream& operator << (std::ostream& o, PerspectiveCamera const& p);
     };
     
+    using CameraPtr = std::shared_ptr<Camera>;
+
     inline void PerspectiveCamera::SetFocusDistance(float distance)
     {
         m_focus_distance = distance;

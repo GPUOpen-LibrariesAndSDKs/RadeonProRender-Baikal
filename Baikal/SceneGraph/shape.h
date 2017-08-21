@@ -36,11 +36,18 @@
 #include <vector>
 
 #include "scene_object.h"
+#include "material.h"
 
 namespace Baikal
 {
-    class Material;
-    
+    class Mesh;
+    class Shape;
+    class Instance;
+    using ShapePtr = std::shared_ptr<Shape>;
+    using ShapeCPtr = std::shared_ptr<Shape const>;
+    using MeshPtr = std::shared_ptr<Mesh>;
+    using InstancePtr = std::shared_ptr<Instance>;
+
     /**
      \brief Shape base interface.
      
@@ -55,8 +62,8 @@ namespace Baikal
         virtual ~Shape() = 0;
 
         // Get and set material
-        void SetMaterial(Material const* material);
-        Material const* GetMaterial() const;
+        void SetMaterial(MaterialCPtr material);
+        MaterialCPtr GetMaterial() const;
 
         // Get and set transform
         void SetTransform(RadeonRays::matrix const& t);
@@ -70,13 +77,15 @@ namespace Baikal
         Shape(Shape const&) = delete;
         Shape& operator = (Shape const&) = delete;
     private:
-        Material const* m_material;
+        MaterialCPtr m_material;
 
         RadeonRays::matrix m_transform;
 
         bool m_shadow;
     };
-    
+
+
+
     /**
      \brief Triangle mesh class.
      
@@ -137,13 +146,13 @@ namespace Baikal
     {
     }
     
-    inline void Shape::SetMaterial(Material const* material)
+    inline void Shape::SetMaterial(MaterialCPtr material)
     {
         m_material = material;
         SetDirty(true);
     }
     
-    inline Material const* Shape::GetMaterial() const
+    inline MaterialCPtr Shape::GetMaterial() const
     {
         return m_material;
     }
@@ -178,32 +187,32 @@ namespace Baikal
     class Instance : public Shape
     {
     public:
-        Instance(Shape const* base_shape = nullptr);
+        Instance(ShapeCPtr const& base_shape);
 
         // Get and set base shape
-        void SetBaseShape(Shape const* base_shape);
-        Shape const* GetBaseShape() const;
+        void SetBaseShape(ShapeCPtr const& base_shape);
+        ShapeCPtr const GetBaseShape() const;
 
         // Forbidden stuff
         Instance(Instance const&) = delete;
         Instance& operator = (Instance const&) = delete;
 
     private:
-        Shape const* m_base_shape;
+        ShapeCPtr m_base_shape;
     };
 
-    inline Instance::Instance(Shape const* base_shape)
+    inline Instance::Instance(ShapeCPtr const& base_shape)
         : m_base_shape(base_shape)
     {
     }
 
-    inline void Instance::SetBaseShape(Shape const* base_shape)
+    inline void Instance::SetBaseShape(ShapeCPtr const& base_shape)
     {
         m_base_shape = base_shape;
         SetDirty(true);
     }
 
-    inline Shape const* Instance::GetBaseShape() const
+    inline ShapeCPtr const Instance::GetBaseShape() const
     {
         return m_base_shape;
     }

@@ -37,12 +37,27 @@
 #include "iterator.h"
 
 #include "scene_object.h"
+#include "texture.h"
 #include "shape.h"
 
 namespace Baikal
 {
-    class Texture;
-    
+    class Light;
+    class AreaLight;
+    class DirectionalLight;
+    class PointLight;
+    class SpotLight;
+    class ImageBasedLight;
+    using LightPtr = std::shared_ptr<Light>;
+    using LightCPtr = std::shared_ptr<Light const>;
+    using AreaLightPtr = std::shared_ptr<AreaLight>;
+    using DirectionalLightPtr = std::shared_ptr<DirectionalLight>;
+    using PointLightPtr = std::shared_ptr<PointLight>;
+    using SpotLightPtr = std::shared_ptr<SpotLight>;
+    using ImageBasedLightPtr = std::shared_ptr<ImageBasedLight>;
+
+
+
     /**
      \brief Light base interface.
      
@@ -147,8 +162,8 @@ namespace Baikal
     public:
         ImageBasedLight();
         // Get and set illuminant texture
-        void SetTexture(Texture const* texture);
-        Texture const* GetTexture() const;
+        void SetTexture(TextureCPtr texture);
+        TextureCPtr GetTexture() const;
         
         // Get and set multiplier.
         // Multiplier is used to adjust emissive power.
@@ -160,7 +175,7 @@ namespace Baikal
         
     private:
         // Illuminant texture
-        Texture const* m_texture;
+        TextureCPtr m_texture;
         // Emissive multiplier
         float m_multiplier;
     };
@@ -169,20 +184,20 @@ namespace Baikal
     class AreaLight: public Light
     {
     public:
-        AreaLight(Shape const* shape, std::size_t idx);
+        AreaLight(ShapeCPtr shape, std::size_t idx);
         // Get parent shape
-        Shape const* GetShape() const;
+        ShapeCPtr GetShape() const;
         // Get parent prim idx
         std::size_t GetPrimitiveIdx() const;
         
     private:
         // Parent shape
-        Shape const* m_shape;
+        ShapeCPtr m_shape;
         // Parent primitive index
         std::size_t m_prim_idx;
     };
 
-    inline AreaLight::AreaLight(Shape const* shape, std::size_t idx)
+    inline AreaLight::AreaLight(ShapeCPtr shape, std::size_t idx)
     : m_shape(shape)
     , m_prim_idx(idx)
     {
@@ -237,13 +252,13 @@ namespace Baikal
         return m_angles;
     }
     
-    inline void ImageBasedLight::SetTexture(Texture const* texture)
+    inline void ImageBasedLight::SetTexture(TextureCPtr texture)
     {
         m_texture = texture;
         SetDirty(true);
     }
     
-    inline Texture const* ImageBasedLight::GetTexture() const
+    inline TextureCPtr ImageBasedLight::GetTexture() const
     {
         return m_texture;
     }
@@ -253,7 +268,7 @@ namespace Baikal
         return m_prim_idx;
     }
     
-    inline Shape const* AreaLight::GetShape() const
+    inline ShapeCPtr AreaLight::GetShape() const
     {
         return m_shape;
     }
@@ -277,13 +292,13 @@ namespace Baikal
     
     inline Iterator* ImageBasedLight::CreateTextureIterator() const
     {
-        std::set<Texture const*> result;
+        std::set<TextureCPtr> result;
         
         if (m_texture)
         {
             result.insert(m_texture);
         }
         
-        return new ContainerIterator<std::set<Texture const*>>(std::move(result));
+        return new ContainerIterator<std::set<TextureCPtr>>(std::move(result));
     }
 }

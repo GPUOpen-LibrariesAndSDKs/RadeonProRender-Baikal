@@ -29,7 +29,7 @@
 #pragma once
 #include <memory>
 #include <map>
-#include <set>
+#include <vector>
 #include <functional>
 
 
@@ -58,9 +58,9 @@ namespace Baikal
     class Collector
     {
     public:
-        using ExpandFunc = std::function<std::set<void const*>(void const*)>;
-        using ChangedFunc = std::function<bool(void const*)>;
-        using FinalizeFunc = std::function<void(void const*)>;
+        using ExpandFunc = std::function<std::vector<std::weak_ptr<void const> >(std::weak_ptr<void const>)>;
+        using ChangedFunc = std::function<bool(std::weak_ptr<void const>)>;
+        using FinalizeFunc = std::function<void(std::weak_ptr<void const>)>;
         
         // Constructor
         Collector();

@@ -157,7 +157,7 @@ namespace Baikal
         float camroty = 0.f;
 
         const float kMouseSensitivity = 0.001125f;
-        auto camera = m_cl->GetCamera();
+        auto camera = dynamic_cast<PerspectiveCamera*>(m_cl->GetCamera().get());
         if (!m_settings.benchmark && !m_settings.time_benchmark)
         {
             float2 delta = g_mouse_delta * float2(kMouseSensitivity, kMouseSensitivity);
@@ -469,7 +469,8 @@ namespace Baikal
             ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
             ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
 
-            auto camera = m_cl->GetCamera();
+            auto camera = dynamic_cast<PerspectiveCamera*>(m_cl->GetCamera().get());
+
             if (aperture != m_settings.camera_aperture * 1000.f)
             {
                 m_settings.camera_aperture = aperture / 1000.f;
@@ -597,7 +598,8 @@ namespace Baikal
 
             for (; shape_iter->IsValid(); shape_iter->Next())
             {
-                auto shape = shape_iter->ItemAs<Baikal::Shape const>();
+                auto sp = shape_iter->ItemAs<Baikal::Shape const>().lock();
+                auto shape = sp.get();
                 auto mesh = dynamic_cast<Baikal::Mesh const*>(shape);
 
                 if (mesh)
