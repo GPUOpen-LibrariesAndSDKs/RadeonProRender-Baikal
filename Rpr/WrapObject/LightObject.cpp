@@ -58,16 +58,16 @@ LightObject::LightObject(Type type)
     switch (type)
     {
     case Type::kPointLight:
-        m_light = new Baikal::PointLight();
+        m_light.reset(new Baikal::PointLight());
         break;
     case Type::kSpotLight:
-        m_light = new Baikal::SpotLight();
+        m_light.reset(new Baikal::SpotLight());
         break;
     case Type::kDirectionalLight:
-        m_light = new Baikal::DirectionalLight();
+        m_light.reset(new Baikal::DirectionalLight());
         break;
     case Type::kEnvironmentLight:
-        m_light = new Baikal::ImageBasedLight();
+        m_light.reset(new Baikal::ImageBasedLight());
         break; 
     default:
         throw Exception(RPR_ERROR_INVALID_PARAMETER, "LightObject: unexpected light type");
@@ -76,8 +76,6 @@ LightObject::LightObject(Type type)
 
 LightObject::~LightObject()
 {
-    delete m_light;
-    m_light = nullptr;
 }
 
 void LightObject::SetRadiantPower(const RadeonRays::float3& p)
@@ -93,20 +91,20 @@ RadeonRays::float3 LightObject::GetRadiantPower()
 
 void LightObject::SetSpotConeShape(const RadeonRays::float2& cone)
 {
-    Baikal::SpotLight* spot = dynamic_cast<Baikal::SpotLight*>(m_light);
+    Baikal::SpotLight* spot = dynamic_cast<Baikal::SpotLight*>(m_light.get());
     spot->SetConeShape(cone);
 }
 
 RadeonRays::float2 LightObject::GetSpotConeShape()
 {
-    Baikal::SpotLight* spot = dynamic_cast<Baikal::SpotLight*>(m_light);
+    Baikal::SpotLight* spot = dynamic_cast<Baikal::SpotLight*>(m_light.get());
     return spot->GetConeShape();
 }
 
 
 void LightObject::SetEnvTexture(MaterialObject* img)
 {
-    Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(m_light);
+    Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(m_light.get());
     ibl->SetTexture(img->GetTexture());
     m_env_tex = img;
 }
@@ -119,13 +117,13 @@ MaterialObject* LightObject::GetEnvTexture()
 
 void LightObject::SetEnvMultiplier(rpr_float mult)
 {
-    Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(m_light);
+    Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(m_light.get());
     ibl->SetMultiplier(mult);
 }
 
 rpr_float LightObject::GetEnvMultiplier()
 {
-    Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(m_light);
+    Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(m_light.get());
     return ibl->GetMultiplier();
 }
 

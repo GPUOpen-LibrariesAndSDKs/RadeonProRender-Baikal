@@ -62,7 +62,7 @@ public:
 
     void SetTransform(const RadeonRays::matrix& m);
 
-    Baikal::Camera* GetCamera() { return m_cam; }
+    Baikal::CameraPtr GetCamera() { return m_cam; }
 private:
-    Baikal::PerspectiveCamera* m_cam;
+    std::shared_ptr<Baikal::PerspectiveCamera> m_cam;
 };

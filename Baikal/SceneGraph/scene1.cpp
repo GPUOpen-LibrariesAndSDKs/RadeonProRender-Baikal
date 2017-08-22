@@ -17,7 +17,7 @@ namespace Baikal
     {
         ShapeList m_shapes;
         LightList m_lights;
-        CameraPtr m_camera;
+        CameraCPtr m_camera;
 
         DirtyFlags m_dirty_flags;
     };
@@ -48,18 +48,18 @@ namespace Baikal
         m_impl->m_dirty_flags = m_impl->m_dirty_flags | flag;
     }
 
-    void Scene1::SetCamera(CameraPtr camera)
+    void Scene1::SetCamera(CameraCPtr camera)
     {
         m_impl->m_camera = camera;
         SetDirtyFlag(kCamera);
     }
 
-    CameraPtr Scene1::GetCamera() const
+    CameraCPtr Scene1::GetCamera() const
     {
         return m_impl->m_camera;
     }
 
-    void Scene1::AttachLight(LightPtr light)
+    void Scene1::AttachLight(LightCPtr light)
     {
         assert(light);
 
@@ -77,7 +77,7 @@ namespace Baikal
         }
     }
 
-    void Scene1::DetachLight(LightPtr light)
+    void Scene1::DetachLight(LightCPtr light)
     {
         // Check if the light is in the scene
         LightList::const_iterator citer =  std::find(m_impl->m_lights.cbegin(),
@@ -105,7 +105,7 @@ namespace Baikal
             (m_impl->m_shapes.begin(), m_impl->m_shapes.end()));
     }
     
-    void Scene1::AttachShape(ShapePtr shape)
+    void Scene1::AttachShape(ShapeCPtr shape)
     {
         assert(shape);
         
@@ -123,7 +123,7 @@ namespace Baikal
         }
     }
     
-    void Scene1::DetachShape(ShapePtr shape)
+    void Scene1::DetachShape(ShapeCPtr shape)
     {
         assert(shape);
         

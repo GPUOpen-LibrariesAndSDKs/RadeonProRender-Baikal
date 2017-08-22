@@ -79,8 +79,6 @@ ShapeObject::ShapeObject(Baikal::Shape* shape, ShapeObject* base_shape_obj)
 
 ShapeObject::~ShapeObject()
 {
-    delete m_shape;
-    m_shape = nullptr;
     m_base_obj = nullptr;
 }
 
@@ -183,7 +181,7 @@ void ShapeObject::SetMaterial(MaterialObject* mat)
 
 uint64_t ShapeObject::GetVertexCount()
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -193,7 +191,7 @@ uint64_t ShapeObject::GetVertexCount()
 
 void ShapeObject::GetVertexData(float* out) const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -213,7 +211,7 @@ void ShapeObject::GetVertexData(float* out) const
 
 uint64_t ShapeObject::GetNormalCount()
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -222,7 +220,7 @@ uint64_t ShapeObject::GetNormalCount()
 }
 void ShapeObject::GetNormalData(float* out) const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -242,7 +240,7 @@ void ShapeObject::GetNormalData(float* out) const
 
 uint64_t ShapeObject::GetUVCount()
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -250,7 +248,7 @@ uint64_t ShapeObject::GetUVCount()
     return mesh->GetNumUVs();
 }const RadeonRays::float2* ShapeObject::GetUVData() const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -260,7 +258,7 @@ uint64_t ShapeObject::GetUVCount()
 
 const uint32_t* ShapeObject::GetIndicesData() const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -270,7 +268,7 @@ const uint32_t* ShapeObject::GetIndicesData() const
 
 uint64_t ShapeObject::GetIndicesCount() const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");

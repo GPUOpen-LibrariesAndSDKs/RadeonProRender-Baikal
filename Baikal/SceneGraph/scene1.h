@@ -68,8 +68,8 @@ namespace Baikal
         ~Scene1();
         
         // Add or remove lights
-        void AttachLight(LightPtr light);
-        void DetachLight(LightPtr light);
+        void AttachLight(LightCPtr light);
+        void DetachLight(LightCPtr light);
         
         // Get the number of lights in the scene
         std::size_t GetNumLights() const;
@@ -77,8 +77,8 @@ namespace Baikal
         std::unique_ptr<Iterator> CreateLightIterator() const;
         
         // Add or remove shapes
-        void AttachShape(ShapePtr shape);
-        void DetachShape(ShapePtr shape);
+        void AttachShape(ShapeCPtr shape);
+        void DetachShape(ShapeCPtr shape);
         
         // Get number of shapes in the scene
         std::size_t GetNumShapes() const;
@@ -86,8 +86,8 @@ namespace Baikal
         std::unique_ptr<Iterator> CreateShapeIterator() const;
         
         // Set and get camera
-        void SetCamera(CameraPtr camera);
-        CameraPtr GetCamera() const;
+        void SetCamera(CameraCPtr camera);
+        CameraCPtr GetCamera() const;
         
         // Get state change since last clear
         DirtyFlags GetDirtyFlags() const;

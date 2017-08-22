@@ -132,6 +132,7 @@ namespace Baikal
     };
     
     using CameraPtr = std::shared_ptr<Camera>;
+    using CameraCPtr = std::shared_ptr<Camera const>;
 
     inline void PerspectiveCamera::SetFocusDistance(float distance)
     {

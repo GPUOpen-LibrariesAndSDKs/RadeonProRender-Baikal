@@ -249,7 +249,7 @@ namespace Baikal
         }
     }
     
-    void Material::SetInputValue(std::string const& name, TexturePtr texture)
+    void Material::SetInputValue(std::string const& name, TextureCPtr texture)
     {
         auto input_iter = m_inputs.find(name);
         
@@ -273,7 +273,7 @@ namespace Baikal
         }
     }
     
-    void Material::SetInputValue(std::string const& name, MaterialPtr material)
+    void Material::SetInputValue(std::string const& name, MaterialCPtr material)
     {
         auto input_iter = m_inputs.find(name);
         

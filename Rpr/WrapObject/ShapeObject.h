@@ -72,9 +72,9 @@ public:
     uint64_t GetIndicesCount() const;
 
     ShapeObject* GetBaseShape() { return m_base_obj; }
-    Baikal::Shape* GetShape() { return m_shape; }
+    Baikal::ShapePtr GetShape() { return m_shape; }
 private:
-    Baikal::Shape* m_shape;
+    Baikal::ShapePtr m_shape;
     MaterialObject* m_current_mat;
     ShapeObject* m_base_obj;
 };

@@ -26,11 +26,7 @@ THE SOFTWARE.
 #include "math/float2.h"
 #include "math/float3.h"
 #include "RadeonProRender.h"
-
-namespace Baikal
-{
-    class Light;
-}
+#include "SceneGraph/light.h"
 
 class MaterialObject;
 
@@ -49,7 +45,7 @@ public:
     virtual ~LightObject();
 
     Type GetType() const { return m_type; };
-    Baikal::Light* GetLight() const { return m_light; };
+    Baikal::LightCPtr GetLight() const { return m_light; };
     
     //light methods
     void SetTransform(const RadeonRays::matrix& transform);
@@ -68,7 +64,7 @@ public:
     void SetEnvMultiplier(rpr_float mult);
     rpr_float GetEnvMultiplier();
 private:
-    Baikal::Light* m_light;
+    Baikal::LightPtr m_light;
     Type m_type;
     //only for GetEnvTexture() method
     MaterialObject* m_env_tex;

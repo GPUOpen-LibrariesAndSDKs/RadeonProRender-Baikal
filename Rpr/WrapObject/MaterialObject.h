@@ -24,6 +24,8 @@ THE SOFTWARE.
 #include "WrapObject.h"
 #include "RadeonProRender.h"
 #include "math/float3.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/light.h"
 
 #include <string>
 #include <map>
@@ -91,8 +93,8 @@ public:
     void SetInputValue(const std::string& input_name, const RadeonRays::float4& val);
 
     Type GetType() { return m_type; }
-    Baikal::Texture* GetTexture() { return m_tex; }
-    Baikal::Material* GetMaterial() { return m_mat; }
+    Baikal::TextureCPtr GetTexture() { return m_tex; }
+    Baikal::MaterialCPtr GetMaterial() { return m_mat; }
     //rprMaterialGetInfo:
     uint64_t GetInputCount();
     rpr_uint GetInputType(int i);
@@ -123,11 +125,10 @@ private:
 
     Type m_type;
     bool m_is_tex;
-    union
-    {
-        Baikal::Texture* m_tex;
-        Baikal::Material* m_mat;
-    };
+    
+    Baikal::TexturePtr m_tex;
+    Baikal::MaterialPtr m_mat;
+    
     //output materials
     std::set<MaterialObject*> m_out_mats;
 

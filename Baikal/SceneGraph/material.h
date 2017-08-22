@@ -129,8 +129,8 @@ namespace Baikal
         // If specific data type is not supported throws std::runtime_error
         void SetInputValue(std::string const& name,
                            RadeonRays::float4 const& value);
-        void SetInputValue(std::string const& name, TexturePtr texture);
-        void SetInputValue(std::string const& name, MaterialPtr material);
+        void SetInputValue(std::string const& name, TextureCPtr texture);
+        void SetInputValue(std::string const& name, MaterialCPtr material);
 
         InputValue GetInputValue(std::string const& name) const;
 
