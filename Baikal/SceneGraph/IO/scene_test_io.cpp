@@ -203,24 +203,6 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
             scene->AttachAutoreleaseObject(ibl);
-            
-            SingleBxdf* green = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-            green->SetInputValue("albedo", float4(0.1f, 0.2f, 0.1f, 1.f));
-            
-            SingleBxdf* spec = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
-            spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
-            spec->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
-            
-            MultiBxdf* mix = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
-            mix->SetInputValue("base_material", green);
-            mix->SetInputValue("top_material", spec);
-            mix->SetInputValue("ior", float4(1.33f, 1.33f, 1.33f, 1.33f));
-
-            mesh->SetMaterial(mix);
-            
-            scene->AttachAutoreleaseObject(green);
-            scene->AttachAutoreleaseObject(spec);
-            scene->AttachAutoreleaseObject(mix);
         }
         else if (filename == "sphere+plane+area")
         {

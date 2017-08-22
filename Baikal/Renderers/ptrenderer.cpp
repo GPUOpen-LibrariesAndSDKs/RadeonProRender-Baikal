@@ -384,7 +384,7 @@ namespace Baikal
         m_render_data->fr_intersections = CreateFromOpenClBuffer(api, m_render_data->intersections);
         m_render_data->fr_hitcount = CreateFromOpenClBuffer(api, m_render_data->hitcount);
 
-        std::cout << "Vidmem usage (working set): " << m_vidmemws / (1024 * 1024) << "Mb\n";
+        //std::cout << "Vidmem usage (working set): " << m_vidmemws / (1024 * 1024) << "Mb\n";
     }
 
     void PtRenderer::FillAOVs(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size)

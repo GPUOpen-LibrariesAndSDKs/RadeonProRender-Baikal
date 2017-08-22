@@ -100,31 +100,30 @@ namespace Baikal
         //
         return tex;
     }
-    
+
     void Oiio::SaveImage(std::string const& filename, Texture const* texture) const
     {
         OIIO_NAMESPACE_USING;
-        
+
         ImageOutput* out = ImageOutput::create(filename);
         
         if (!out)
         {
             throw std::runtime_error("Can't create image file on disk");
         }
-        
+
         auto dim = texture->GetSize();
         auto fmt = GetTextureForemat(texture->GetFormat());
-        
+
         ImageSpec spec(dim.x, dim.y, 4, fmt);
-        
+
         out->open(filename, spec);
-        
+
         out->write_image(fmt, texture->GetData());
 
         out->close();
-        
     }
-    
+
     std::unique_ptr<ImageIo> ImageIo::CreateImageIo()
     {
         return std::unique_ptr<ImageIo>(new Oiio());
