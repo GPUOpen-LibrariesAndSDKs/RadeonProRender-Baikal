@@ -79,6 +79,8 @@ public:
     CameraObject* CreateCamera();
     FramebufferObject* CreateFrameBuffer(rpr_framebuffer_format const in_format, rpr_framebuffer_desc const * in_fb_desc);
 private:
+    void PrepareScene();
+
     //render configs
     std::vector<ConfigManager::Config> m_cfgs;
     //know framefubbers used as AOV outputs

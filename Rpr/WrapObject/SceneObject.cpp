@@ -186,3 +186,9 @@ void SceneObject::RemoveEmissive()
 	}
 	m_emmisive_lights.clear();
 }
+
+bool SceneObject::IsDirty()
+{
+    auto dirty = m_scene->GetDirtyFlags();
+    return dirty != Baikal::Scene1::kNone;
+}
