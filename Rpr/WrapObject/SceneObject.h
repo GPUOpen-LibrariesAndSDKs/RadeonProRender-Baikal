@@ -62,6 +62,7 @@ public:
 
 	void AddEmissive();
 	void RemoveEmissive();
+    bool IsDirty();
 	Baikal::Scene1* GetScene() { return m_scene; };
 private:
     Baikal::Scene1* m_scene;
@@ -69,5 +70,4 @@ private:
 	std::vector<Baikal::AreaLight*> m_emmisive_lights;//area lights fro emissive shapes
     std::vector<ShapeObject*> m_shapes;
     std::vector<LightObject*> m_lights;
-
 };

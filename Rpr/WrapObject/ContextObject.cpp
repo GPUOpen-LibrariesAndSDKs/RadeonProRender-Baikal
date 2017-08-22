@@ -206,9 +206,9 @@ FramebufferObject* ContextObject::GetAOV(rpr_int in_aov)
 
 void ContextObject::Render()
 {
-	m_current_scene->AddEmissive();
+    PrepareScene();
 
-	//render
+    //render
     for (auto& c : m_cfgs)
     {
         c.renderer->Render(*m_current_scene->GetScene());
@@ -218,7 +218,8 @@ void ContextObject::Render()
 
 void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_uint ymax)
 {
-    m_current_scene->AddEmissive();
+    PrepareScene();
+
     const RadeonRays::int2 origin = { (int)xmin, (int)ymin };
     const RadeonRays::int2 size = { (int)xmax - (int)xmin, (int)ymax - (int)ymin };
     //render
@@ -331,5 +332,18 @@ void ContextObject::SetParameter(const std::string& input, const std::string& va
     if (it == kContextParameterDescriptions.end())
     {
         throw Exception(RPR_ERROR_INVALID_PARAMETER_TYPE, "ContextObject: invalid context input type.");
+    }
+}
+
+void ContextObject::PrepareScene()
+{
+    m_current_scene->AddEmissive();
+
+    if (m_current_scene->IsDirty())
+    {
+        for (auto& c : m_cfgs)
+        {
+            c.renderer->CompileScene(*m_current_scene->GetScene());
+        }
     }
 }
