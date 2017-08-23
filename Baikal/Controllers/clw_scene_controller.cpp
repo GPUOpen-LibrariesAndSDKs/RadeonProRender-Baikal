@@ -1455,7 +1455,7 @@ namespace Baikal
 
                 
                 // Find and update IBL idx
-                auto ibl = light_iter->ItemAs<ImageBasedLight const>().lock();
+                auto ibl = std::dynamic_pointer_cast<ImageBasedLight const>(light);
                 if (ibl)
                 {
                     out.envmapidx = static_cast<int>(num_lights_written);

@@ -89,10 +89,10 @@ RadeonRays::float3 LightObject::GetRadiantPower()
 }
 
 
-void LightObject::SetSpotConeShape(const RadeonRays::float2& cone)
+void LightObject::SetSpotConeShape(const RadeonRays::float2& cone_angles)
 {
     Baikal::SpotLight* spot = dynamic_cast<Baikal::SpotLight*>(m_light.get());
-    spot->SetConeShape(cone);
+    spot->SetConeShape(RadeonRays::float2(cos(cone_angles.x), cos(cone_angles.y)));
 }
 
 RadeonRays::float2 LightObject::GetSpotConeShape()
