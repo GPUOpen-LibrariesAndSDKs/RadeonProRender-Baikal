@@ -96,6 +96,7 @@ namespace Baikal
         mesh->SetNormals(&normals[0], normals.size());
         mesh->SetUVs(&uvs[0], uvs.size());
         mesh->SetIndices(&indices[0], indices.size());
+        mesh->SetName("sphere");
 
         return mesh;
     }
@@ -136,6 +137,7 @@ namespace Baikal
         mesh->SetNormals(normals, 4);
         mesh->SetUVs(uvs, 4);
         mesh->SetIndices(indices, 6);
+        mesh->SetName("quad");
      
         return mesh;
     }
@@ -148,7 +150,33 @@ namespace Baikal
         
         auto image_io(ImageIo::CreateImageIo());
         
-        if (filename == "quad+ibl")
+        if (filename == "quad+spot")
+        {
+            Mesh* quad = CreateQuad(
+            {
+                RadeonRays::float3(-5, 0, -5),
+                RadeonRays::float3(5, 0, -5),
+                RadeonRays::float3(5, 0, 5),
+                RadeonRays::float3(-5, 0, 5),
+            }
+            , false);
+
+            scene->AttachShape(quad);
+            scene->AttachAutoreleaseObject(quad);
+
+            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+            scene->AttachAutoreleaseObject(ibl_texture);
+
+            SpotLight* light = new SpotLight();
+            light->SetPosition(RadeonRays::float3(0.f, 1.f, 0.f));
+            light->SetEmittedRadiance(RadeonRays::float3(10.f, 10.f, 10.f));
+            light->SetConeShape(RadeonRays::float2(0.05f, 0.1f));
+            //light->SetConeShape
+            scene->AttachLight(light);
+            scene->AttachAutoreleaseObject(light);
+
+        }
+        else if (filename == "quad+ibl")
         {
             Mesh* quad = CreateQuad(
             {
