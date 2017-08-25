@@ -1145,4 +1145,9 @@ namespace Baikal
     void BdptRenderer::RunBenchmark(Scene1 const& scene, std::uint32_t num_passes, BenchmarkStats& stats)
     {
     }
+
+    void BdptRenderer::SetRandomSeed(std::uint32_t seed)
+    {
+        std::srand(seed);
+    }
 }

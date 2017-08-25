@@ -122,6 +122,14 @@ namespace Baikal
         virtual void CompileScene(Scene1 const& scene) const = 0;
 
         /**
+        \brief Set random seed value for the renderer. Renders 
+        with the same random seed are guaranteed to be the same.
+
+        \param seed Seed value
+        */
+        virtual void SetRandomSeed(std::uint32_t seed) = 0;
+
+        /**
             Disallow copies and moves.
          */
         Renderer(Renderer const&) = delete;

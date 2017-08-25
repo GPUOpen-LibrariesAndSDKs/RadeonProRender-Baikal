@@ -851,4 +851,9 @@ namespace Baikal
 
         stats.samples_pes_sec = 0;
     }
+
+    void PtRenderer::SetRandomSeed(std::uint32_t seed)
+    {
+        std::srand(seed);
+    }
 }

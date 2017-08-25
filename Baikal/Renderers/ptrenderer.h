@@ -73,6 +73,9 @@ namespace Baikal
         // Rebuild necessary data structures and update scene buffers
         void CompileScene(Scene1 const& scene) const override;
 
+        // Set initial random value for the renderer
+        void SetRandomSeed(std::uint32_t seed) override;
+
     protected:
         // Resize output-dependent buffers
         void ResizeWorkingSet(Output const& output);
