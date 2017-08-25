@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include <memory>
 #include <algorithm>
 #include <cstdlib>
+#include <sstream>
 
 extern int g_argc;
 extern char** g_argv;
@@ -57,9 +58,19 @@ public:
 
         char* device_index_option = GetCmdOption(g_argv, g_argv + g_argc, "-device");
         char* platform_index_option = GetCmdOption(g_argv, g_argv + g_argc, "-platform");
+        char* generate_option = GetCmdOption(g_argv, g_argv + g_argc, "-genref");
+        char* tolerance_option = GetCmdOption(g_argv, g_argv + g_argc, "-tolerance");
+        char* refpath_option = GetCmdOption(g_argv, g_argv + g_argc, "-ref");
+        char* outpath_option = GetCmdOption(g_argv, g_argv + g_argc, "-out");
 
         auto platform_index = platform_index_option ? (int)atoi(platform_index_option) : 0;
         auto device_index = device_index_option ? (int)atoi(device_index_option) : 0;
+        m_generate = generate_option ? true : false;
+        m_tolerance = tolerance_option ? (int)atoi(tolerance_option) : 20;
+        m_reference_path = refpath_option ? refpath_option : "ReferenceImages";
+        m_output_path = outpath_option ? outpath_option : "OutputImages";
+        m_reference_path.append("/");
+        m_output_path.append("/");
 
         ASSERT_LT(platform_index, platforms.size());
         ASSERT_LT(device_index, platforms[platform_index].GetDeviceCount());
@@ -75,6 +86,8 @@ public:
 
         ASSERT_NO_THROW(LoadSphereTestScene());
         ASSERT_NO_THROW(SetupCamera());
+
+        ASSERT_NO_THROW(m_renderer->SetRandomSeed(0));
     }
 
     virtual void TearDown()
@@ -108,10 +121,9 @@ public:
         m_scene->SetCamera(m_camera.get());
     }
 
-
     void SaveOutput(std::string const& file_name) const
     {
-        std::string path = "OutputImages/";
+        std::string path = m_generate ? m_reference_path : m_output_path;
         path.append(file_name);
 
         OIIO_NAMESPACE_USING;
@@ -123,8 +135,8 @@ public:
         std::vector<float3> data1(width * height);
         m_output->GetData(&data[0]);
 
-        for (auto y = 0; y < height; ++y)
-            for (auto x = 0; x < width; ++x)
+        for (auto y = 0u; y < height; ++y)
+            for (auto x = 0u; x < width; ++x)
             {
 
                 float3 val = data[(height - 1 - y) * width + x];
@@ -149,6 +161,58 @@ public:
 
         delete out;
     }
+
+    void LoadImage(std::string const& file_name, std::vector<char>& data)
+    {
+        OIIO_NAMESPACE_USING
+
+        ImageInput* input = ImageInput::open(file_name);
+
+        ImageSpec const& spec = input->spec();
+
+        auto size = spec.width * spec.height * spec.depth * 4;
+
+        data.resize(size);
+
+        // Read data to storage
+        input->read_image(TypeDesc::UINT8, &data[0], sizeof(char) * 4);
+
+        // Close handle
+        input->close();
+
+        delete input;
+    }
+
+    bool CompareToReference(std::string const& file_name)
+    {
+        if (m_generate)
+            return true;
+
+        std::string path_to_output = m_output_path;
+        path_to_output.append(file_name);
+        std::string path_to_reference = m_reference_path;
+        path_to_reference.append(file_name);
+
+        std::vector<char> output_data;
+        std::vector<char> reference_data;
+
+        LoadImage(path_to_output, output_data);
+        LoadImage(path_to_reference, reference_data);
+
+        auto num_values = output_data.size();
+        auto difference = 0;
+        for (auto i = 0u; i < num_values; ++i)
+        {
+            if (output_data[i] != reference_data[i])
+            {
+                ++difference;
+            }
+        }
+
+        return difference <= m_tolerance;
+    }
+
+
 
     std::string test_name() const
     {
@@ -175,6 +239,12 @@ public:
     std::unique_ptr<Baikal::Output> m_output;
     std::unique_ptr<Baikal::Scene1> m_scene;
     std::unique_ptr<Baikal::PerspectiveCamera> m_camera;
+
+    std::string m_reference_path;
+    std::string m_output_path;
+
+    bool m_generate;
+    std::uint32_t m_tolerance;
 };
 
 
@@ -196,6 +266,9 @@ TEST_F(BasicTest, RenderTestScene)
     }
 
     SaveOutput(test_name() + ".png");
+    ASSERT_TRUE(CompareToReference(test_name() + ".png"));
 }
+
+
 
 

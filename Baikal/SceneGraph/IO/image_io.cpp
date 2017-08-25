@@ -80,13 +80,13 @@ namespace Baikal
         else
         {
             auto size = spec.width * spec.height * spec.depth * sizeof(RadeonRays::float3);
-            
+
             // Resize storage
             texturedata = new char[size];
-            
+
             // Read data to storage
             input->read_image(TypeDesc::FLOAT, texturedata, sizeof(RadeonRays::float3));
-            
+
             // Close handle
             input->close();
         }

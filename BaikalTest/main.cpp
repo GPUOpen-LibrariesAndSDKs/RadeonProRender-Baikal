@@ -24,6 +24,7 @@ THE SOFTWARE.
 #include "CLW.h"
 
 #include "basic.h"
+#include "camera.h"
 
 int g_argc;
 char** g_argv;

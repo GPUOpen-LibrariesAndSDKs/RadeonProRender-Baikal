@@ -219,19 +219,19 @@ namespace Baikal
     {
         return m_e;
     }
-    
+
     inline void Light::SetEmittedRadiance(RadeonRays::float3 const& e)
     {
         m_e = e;
         SetDirty(true);
     }
-    
+
     inline void SpotLight::SetConeShape(RadeonRays::float2 angles)
     {
         m_angles = angles;
         SetDirty(true);
     }
-    
+
     inline RadeonRays::float2 SpotLight::GetConeShape() const
     {
         return m_angles;
