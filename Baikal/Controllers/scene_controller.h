@@ -30,13 +30,13 @@
 
 #include <memory>
 #include <map>
+#include "SceneGraph/material.h"
 
 namespace Baikal
 {
     class Scene1;
     class Collector;
     class Bundle;
-    class Material;
     class Light;
     class Texture;
     
@@ -78,7 +78,7 @@ namespace Baikal
         // Update texture data only.
         virtual void UpdateTextures(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Default material
-        virtual Material const* GetDefaultMaterial() const = 0;
+        virtual MaterialPtr GetDefaultMaterial() const = 0;
         // If m_current_scene changes
         virtual void UpdateCurrentScene(Scene1 const& scene, CompiledScene& out) const = 0;
         

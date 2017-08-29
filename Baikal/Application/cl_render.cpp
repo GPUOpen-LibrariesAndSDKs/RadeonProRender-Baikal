@@ -190,22 +190,23 @@ namespace Baikal
             , settings.camera_at
             , settings.camera_up));
 
-        m_scene->SetCamera(m_camera.get());
+        m_scene->SetCamera(m_camera);
 
         // Adjust sensor size based on current aspect ratio
         float aspect = (float)settings.width / settings.height;
         settings.camera_sensor_size.y = settings.camera_sensor_size.x / aspect;
+        PerspectiveCamera* cam = dynamic_cast<PerspectiveCamera*>(m_camera.get());
 
-        m_camera->SetSensorSize(settings.camera_sensor_size);
-        m_camera->SetDepthRange(settings.camera_zcap);
-        m_camera->SetFocalLength(settings.camera_focal_length);
-        m_camera->SetFocusDistance(settings.camera_focus_distance);
-        m_camera->SetAperture(settings.camera_aperture);
+        cam->SetSensorSize(settings.camera_sensor_size);
+        cam->SetDepthRange(settings.camera_zcap);
+        cam->SetFocalLength(settings.camera_focal_length);
+        cam->SetFocusDistance(settings.camera_focus_distance);
+        cam->SetAperture(settings.camera_aperture);
 
-        std::cout << "Camera type: " << (m_camera->GetAperture() > 0.f ? "Physical" : "Pinhole") << "\n";
-        std::cout << "Lens focal length: " << m_camera->GetFocalLength() * 1000.f << "mm\n";
-        std::cout << "Lens focus distance: " << m_camera->GetFocusDistance() << "m\n";
-        std::cout << "F-Stop: " << 1.f / (m_camera->GetAperture() * 10.f) << "\n";
+        std::cout << "Camera type: " << (cam->GetAperture() > 0.f ? "Physical" : "Pinhole") << "\n";
+        std::cout << "Lens focal length: " << cam->GetFocalLength() * 1000.f << "mm\n";
+        std::cout << "Lens focus distance: " << cam->GetFocusDistance() << "m\n";
+        std::cout << "F-Stop: " << 1.f / (cam->GetAperture() * 10.f) << "\n";
         std::cout << "Sensor size: " << settings.camera_sensor_size.x * 1000.f << "x" << settings.camera_sensor_size.y * 1000.f << "mm\n";
     }
 
@@ -390,8 +391,9 @@ namespace Baikal
         });
 
         std::stringstream oss;
-        auto camera_position = m_camera->GetPosition();
-        auto camera_direction = m_camera->GetForwardVector();
+        PerspectiveCamera* cam = dynamic_cast<PerspectiveCamera*>(m_camera.get());
+        auto camera_position = cam->GetPosition();
+        auto camera_direction = cam->GetForwardVector();
         oss << "../Output/" << settings.modelname << "_p" << camera_position.x << camera_position.y << camera_position.z <<
             "_d" << camera_direction.x << camera_direction.y << camera_direction.z <<
             "_s" << settings.num_samples << ".exr";

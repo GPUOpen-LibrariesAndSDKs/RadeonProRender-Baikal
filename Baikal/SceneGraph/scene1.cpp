@@ -1,6 +1,4 @@
 #include "scene1.h"
-#include "light.h"
-#include "camera.h"
 #include "iterator.h"
 
 #include <vector>
@@ -11,20 +9,17 @@
 namespace Baikal
 {
     // Data structures for shapes and lights
-    using ShapeList = std::vector<Shape const*>;
-    using LightList = std::vector<Light const*>;
-    using AutoreleasePool = std::set<SceneObject const*>;
+    using ShapeList = std::vector<ShapeCPtr>;
+    using LightList = std::vector<LightCPtr>;
 
     // Internal data
     struct Scene1::SceneImpl
     {
         ShapeList m_shapes;
         LightList m_lights;
-        Camera const* m_camera;
+        CameraCPtr m_camera;
 
         DirtyFlags m_dirty_flags;
-
-        AutoreleasePool m_autorelease_pool;
     };
 
     Scene1::Scene1()
@@ -36,10 +31,6 @@ namespace Baikal
 
     Scene1::~Scene1()
     {
-        for(auto& i : m_impl->m_autorelease_pool)
-        {
-            delete i;
-        }
     }
 
     Scene1::DirtyFlags Scene1::GetDirtyFlags() const
@@ -57,18 +48,18 @@ namespace Baikal
         m_impl->m_dirty_flags = m_impl->m_dirty_flags | flag;
     }
 
-    void Scene1::SetCamera(Camera const* camera)
+    void Scene1::SetCamera(CameraCPtr camera)
     {
         m_impl->m_camera = camera;
         SetDirtyFlag(kCamera);
     }
 
-    Camera const* Scene1::GetCamera() const
+    CameraCPtr Scene1::GetCamera() const
     {
         return m_impl->m_camera;
     }
 
-    void Scene1::AttachLight(Light const* light)
+    void Scene1::AttachLight(LightCPtr light)
     {
         assert(light);
 
@@ -86,7 +77,7 @@ namespace Baikal
         }
     }
 
-    void Scene1::DetachLight(Light const* light)
+    void Scene1::DetachLight(LightCPtr light)
     {
         // Check if the light is in the scene
         LightList::const_iterator citer =  std::find(m_impl->m_lights.cbegin(),
@@ -114,7 +105,7 @@ namespace Baikal
             (m_impl->m_shapes.begin(), m_impl->m_shapes.end()));
     }
     
-    void Scene1::AttachShape(Shape const* shape)
+    void Scene1::AttachShape(ShapeCPtr shape)
     {
         assert(shape);
         
@@ -132,7 +123,7 @@ namespace Baikal
         }
     }
     
-    void Scene1::DetachShape(Shape const* shape)
+    void Scene1::DetachShape(ShapeCPtr shape)
     {
         assert(shape);
         
@@ -154,46 +145,14 @@ namespace Baikal
     {
         return m_impl->m_shapes.size();
     }
-    
-    void Scene1::AttachAutoreleaseObject(SceneObject const* object)
-    {
-        assert(object);
-        
-        // Check if the light is already in the scene
-        AutoreleasePool::const_iterator citer =
-        std::find(m_impl->m_autorelease_pool.cbegin(),
-                  m_impl->m_autorelease_pool.cend(), object);
-        
-        // And insert only if not
-        if (citer == m_impl->m_autorelease_pool.cend())
-        {
-            m_impl->m_autorelease_pool.insert(object);
-        }
-    }
-    
-    void Scene1::DetachAutoreleaseObject(SceneObject const* object)
-    {
-        assert(object);
-        
-        // Check if the light is already in the scene
-        AutoreleasePool::const_iterator citer =
-        std::find(m_impl->m_autorelease_pool.cbegin(),
-                  m_impl->m_autorelease_pool.cend(), object);
-        
-        // And insert only if not
-        if (citer != m_impl->m_autorelease_pool.cend())
-        {
-            m_impl->m_autorelease_pool.erase(citer);
-        }
-    }
-    
+
     std::unique_ptr<Iterator> Scene1::CreateLightIterator() const
     {
         return std::unique_ptr<Iterator>(
             new IteratorImpl<LightList::const_iterator>
             (m_impl->m_lights.begin(), m_impl->m_lights.end()));
     }
-    
+
     bool Scene1::IsValid() const
     {
         return GetCamera() &&

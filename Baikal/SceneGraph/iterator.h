@@ -27,6 +27,8 @@
  \version 1.0
  \brief Contains declaration of Baikal object iterators.
  */
+#include <memory>
+
 namespace Baikal
 {
     /** 
@@ -49,13 +51,13 @@ namespace Baikal
         virtual void Next() = 0;
         
         // Retrieve underlying object
-        virtual void const* Item() const = 0;
+        virtual std::weak_ptr<void const> Item() const = 0;
 
         // Sets the iterator into its initial state (beginning of the sequence)
         virtual void Reset() = 0;
         
         // Retrieve with uncoditional cast: caller is responsible of all the implications, no type check here
-        template <typename T> T* ItemAs() const { return reinterpret_cast<T*>(Item()); }
+        template <typename T> std::weak_ptr<T> ItemAs() const { return std::static_pointer_cast<T>(std::shared_ptr<void const>(Item())); }
         
         // Disable copies and moves
         Iterator(Iterator const&) = delete;
@@ -80,7 +82,7 @@ namespace Baikal
         // Nothing to go to
         void Next() override {}
         // Dereferencing always returns nullptr
-        void const* Item() const override { return nullptr; }
+        std::weak_ptr<void const> Item() const override { return std::weak_ptr<void const>(); }
         // Nothing to reset
         void Reset() override {}
     };
@@ -114,7 +116,7 @@ namespace Baikal
         }
         
         // Get underlying item
-        void const* Item() const override
+        std::weak_ptr<void const> Item() const override
         {
             return *m_cur;
         }
@@ -155,7 +157,7 @@ namespace Baikal
         }
         
         // Get underlying item
-        void const* Item() const override
+        std::weak_ptr<void const> Item() const override
         {
             return *m_cur;
         }

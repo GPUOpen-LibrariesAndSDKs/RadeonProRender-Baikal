@@ -7,7 +7,7 @@
 namespace Baikal
 {
     using ItemMap = std::map<void const*, int>;
-    using ItemSet = std::set<void const*>;
+    using ItemSet = std::set<std::shared_ptr<void const> >;
     
     class BundleImpl : public Bundle
     {
@@ -67,7 +67,8 @@ namespace Baikal
         int idx = 0;
         for (auto& i : m_impl->m_set)
         {
-            m_impl->m_map[i] = idx++;
+            void const* raw = i.get();
+            m_impl->m_map[raw] = idx++;
         }
     }
     

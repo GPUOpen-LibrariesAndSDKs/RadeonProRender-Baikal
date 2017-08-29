@@ -51,14 +51,16 @@ void SceneObject::Clear()
     //remove lights
     for (std::unique_ptr<Baikal::Iterator> it_light(m_scene->CreateLightIterator()); it_light->IsValid();)
     {
-        m_scene->DetachLight(it_light->ItemAs<const Baikal::Light>());
+        Baikal::LightCPtr light = it_light->ItemAs<const Baikal::Light>().lock();
+        m_scene->DetachLight(light);
         it_light = m_scene->CreateLightIterator();
     }
 
     //remove shapes
     for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid();)
     {
-        m_scene->DetachShape(it_shape->ItemAs<const Baikal::Mesh>());
+        Baikal::ShapeCPtr shape = it_shape->ItemAs<const Baikal::Mesh>().lock();
+        m_scene->DetachShape(shape);
         it_shape = m_scene->CreateShapeIterator();
     }
 }
@@ -116,7 +118,7 @@ void SceneObject::DetachLight(LightObject* light)
 void SceneObject::SetCamera(CameraObject* cam)
 {
     m_current_camera = cam;
-    Baikal::Camera* baikal_cam = cam ? cam->GetCamera() : nullptr;
+    Baikal::CameraPtr baikal_cam = cam ? cam->GetCamera() : nullptr;
     m_scene->SetCamera(baikal_cam);
 }
 
@@ -134,7 +136,7 @@ void SceneObject::GetLightList(void* out_list)
 void SceneObject::AddEmissive()
 {
     //TODO: check scene isn't changed
-    //recreate amissives if scene is dirty
+    //recreate emissive if scene is dirty
     if (!m_scene->GetDirtyFlags())
 	{
 		return;
@@ -144,18 +146,18 @@ void SceneObject::AddEmissive()
 	//handle emissive materials
 	for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid(); it_shape->Next())
 	{
-		const Baikal::Shape* shape = it_shape->ItemAs<const Baikal::Shape>();
-		const Baikal::Mesh* mesh = dynamic_cast<const Baikal::Mesh*>(shape);
+		Baikal::ShapeCPtr shape = it_shape->ItemAs<const Baikal::Shape>().lock();
+		std::shared_ptr<Baikal::Mesh const> mesh = std::dynamic_pointer_cast<Baikal::Mesh const>(shape);
 		//instance case
 		if (!mesh)
 		{
-			const Baikal::Instance* inst = dynamic_cast<const Baikal::Instance*>(shape);
+            std::shared_ptr<Baikal::Instance const> inst = std::dynamic_pointer_cast<Baikal::Instance const>(shape);
 			assert(inst);
-			mesh = dynamic_cast<const Baikal::Mesh*>(inst->GetBaseShape());
+			mesh = std::dynamic_pointer_cast<Baikal::Mesh const>(inst->GetBaseShape());
 		}
 		assert(mesh);
 
-		const Baikal::Material* mat = mesh->GetMaterial();
+		const Baikal::MaterialCPtr mat = mesh->GetMaterial();
 		if (!mat)
 		{
 			continue;
@@ -166,9 +168,8 @@ void SceneObject::AddEmissive()
 			// Add area light for each polygon of emissive mesh
 			for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
 			{
-				Baikal::AreaLight* light = new Baikal::AreaLight(mesh, l);
+				std::shared_ptr<Baikal::AreaLight> light(new Baikal::AreaLight(mesh, l));
 				m_scene->AttachLight(light);
-				m_scene->AttachAutoreleaseObject(light);
 				m_emmisive_lights.push_back(light);
 			}
 		}
@@ -180,9 +181,6 @@ void SceneObject::RemoveEmissive()
 	for (auto light : m_emmisive_lights)
 	{
 		m_scene->DetachLight(light);
-		m_scene->DetachAutoreleaseObject(light);
-
-		delete light;
 	}
 	m_emmisive_lights.clear();
 }

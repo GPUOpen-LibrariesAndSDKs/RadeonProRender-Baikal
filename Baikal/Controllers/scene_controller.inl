@@ -67,16 +67,17 @@ namespace Baikal
         mat_collector.Collect(*shape_iter,
                               // This function adds all materials to resulting map
                               // recursively via Material dependency API
-                              [default_material](void const* item) ->
-                              std::set<void const*>
+                              [default_material](std::weak_ptr<void const> item) ->
+                              std::vector<std::weak_ptr<void const> >
                               {
                                   // Resulting material set
-                                  std::set<void const*> mats;
+                                  std::vector<std::weak_ptr<void const> > mats;
                                   // Material stack
-                                  std::stack<Material const*> material_stack;
+                                  std::stack<std::weak_ptr<Material const> > material_stack;
                                   
                                   // Get material from current shape
-                                  auto shape = reinterpret_cast<Shape const*>(item);
+                                  auto item_sp = item.lock();
+                                  auto shape = reinterpret_cast<Shape const*>(item_sp.get());
                                   auto material = shape->GetMaterial();
                                   
                                   // If shape does not have a material, use default one
@@ -92,21 +93,20 @@ namespace Baikal
                                   while (!material_stack.empty())
                                   {
                                       // Get current material
-                                      Material const* m = material_stack.top();
+                                      auto m = material_stack.top();
                                       material_stack.pop();
                                       
                                       // Emplace into the set
-                                      mats.emplace(m);
+                                      mats.push_back(m);
                                       
                                       // Create dependency iterator
-                                      auto mat_iter = m->CreateMaterialIterator();
+                                      auto mat_iter = m.lock()->CreateMaterialIterator();
                                       
                                       // Push all dependencies into the stack
                                       for (; mat_iter->IsValid(); mat_iter->Next())
                                       {
-                                          material_stack.push(
-                                            mat_iter->ItemAs<Material const>()
-                                          );
+                                          auto sp = mat_iter->ItemAs<Material const>().lock();
+                                          material_stack.push(sp);
                                       }
                                   }
                                   
@@ -123,12 +123,12 @@ namespace Baikal
         
         // Collect textures from materials
         tex_collector.Collect(*mat_iter,
-                              [](void const* item) -> std::set<void const*>
+                              [](std::weak_ptr<void const> item) -> std::vector<std::weak_ptr<void const> >
                               {
                                   // Texture set
-                                  std::set<void const*> textures;
-                                  
-                                  auto material = reinterpret_cast<Material const*>(item);
+                                  std::vector<std::weak_ptr<void const> > textures;
+                                  auto mat_sp = item.lock();
+                                  auto material = reinterpret_cast<Material const*>(mat_sp.get());
                                   
                                   // Create texture dependency iterator
                                   auto tex_iter = material->CreateTextureIterator();
@@ -136,7 +136,7 @@ namespace Baikal
                                   // Emplace all dependent textures
                                   for (; tex_iter->IsValid(); tex_iter->Next())
                                   {
-                                      textures.emplace(tex_iter->ItemAs<Texture const>());
+                                      textures.push_back(tex_iter->ItemAs<Texture const>());
                                   }
                                   
                                   // Return resulting set
@@ -146,12 +146,13 @@ namespace Baikal
         
         // Collect textures from lights
         tex_collector.Collect(*light_iter,
-                              [](void const* item) -> std::set<void const*>
+                              [](std::weak_ptr<void const> item) -> std::vector<std::weak_ptr<void const> >
                               {
                                   // Resulting set
-                                  std::set<void const*> textures;
+                                  std::vector<std::weak_ptr<void const> > textures;
                                   
-                                  auto light = reinterpret_cast<Light const*>(item);
+                                  auto light_sp = item.lock();
+                                  auto light = reinterpret_cast<Light const*>(light_sp.get());
                                   
                                   // Create texture dependency iterator
                                   auto tex_iter = light->CreateTextureIterator();
@@ -159,7 +160,7 @@ namespace Baikal
                                   // Emplace all dependent textures
                                   for (; tex_iter->IsValid(); tex_iter->Next())
                                   {
-                                      textures.emplace(tex_iter->ItemAs<Texture const>());
+                                      textures.push_back(tex_iter->ItemAs<Texture const>());
                                   }
                                   
                                   // Return resulting set
@@ -187,9 +188,10 @@ namespace Baikal
             scene.ClearDirtyFlags();
             
             // Drop dirty flags for materials
-            mat_collector.Finalize([](void const* item)
+            mat_collector.Finalize([](std::weak_ptr<void const> item)
                                    {
-                                       auto material = reinterpret_cast<Material const*>(item);
+                                       auto sp = item.lock();
+                                       auto material = reinterpret_cast<Material const*>(sp.get());
                                        material->SetDirty(false);
                                    });
             
@@ -234,7 +236,7 @@ namespace Baikal
                 
                 for (; light_iter->IsValid(); light_iter->Next())
                 {
-                    auto light = light_iter->ItemAs<Light const>();
+                    auto light = light_iter->ItemAs<Light const>().lock();
                     
                     if (light->IsDirty())
                     {
@@ -265,7 +267,7 @@ namespace Baikal
                 
                 for (; shape_iter->IsValid(); shape_iter->Next())
                 {
-                    auto shape = shape_iter->ItemAs<Shape const>();
+                    auto shape = shape_iter->ItemAs<Shape const>().lock();
 
                     if (shape->IsDirty())
                     {
@@ -289,9 +291,10 @@ namespace Baikal
             // We are passing material dirty state detection function in there.
             if (!out.material_bundle ||
                 mat_collector.NeedsUpdate(out.material_bundle.get(),
-                                          [](void const* ptr)->bool
+                                          [](std::weak_ptr<void const> ptr)->bool
                                           {
-                                              auto mat = reinterpret_cast<Material const*>(ptr);
+                                              auto sp = ptr.lock();
+                                              auto mat = reinterpret_cast<Material const*>(sp.get());
                                               return mat->IsDirty();
                                           }
                                           ))
@@ -302,8 +305,9 @@ namespace Baikal
             // If textures need an update, do it.
             if (tex_collector.GetNumItems() > 0 && (
                                                     !out.texture_bundle ||
-                                                    tex_collector.NeedsUpdate(out.texture_bundle.get(), [](void const* ptr) {
-                auto tex = reinterpret_cast<Texture const*>(ptr);
+                                                    tex_collector.NeedsUpdate(out.texture_bundle.get(), [](std::weak_ptr<void const> ptr) {
+                auto sp = ptr.lock();
+                auto tex = reinterpret_cast<Texture const*>(sp.get());
                 return tex->IsDirty(); })))
             {
                 UpdateTextures(scene, mat_collector, tex_collector, out);
@@ -321,9 +325,10 @@ namespace Baikal
             scene.ClearDirtyFlags();
             
             // Clear material dirty flags
-            mat_collector.Finalize([](void const* item)
+            mat_collector.Finalize([](std::weak_ptr<void const> item)
                                    {
-                                       auto material = reinterpret_cast<Material const*>(item);
+                                       auto sp = item.lock();
+                                       auto material = reinterpret_cast<Material const*>(sp.get());
                                        material->SetDirty(false);
                                    });
             

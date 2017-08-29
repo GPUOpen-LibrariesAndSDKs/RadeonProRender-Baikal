@@ -150,181 +150,150 @@ namespace Baikal
         
         if (filename == "quad+ibl")
         {
-            Mesh* quad = CreateQuad(
+            MeshPtr quad(CreateQuad(
             {
                 RadeonRays::float3(-5, 0, -5),
                 RadeonRays::float3(5, 0, -5),
                 RadeonRays::float3(5, 0, 5),
                 RadeonRays::float3(-5, 0, 5),
             }
-            , false);
+            , false));
             
             scene->AttachShape(quad);
-            scene->AttachAutoreleaseObject(quad);
             
-            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
-            scene->AttachAutoreleaseObject(ibl_texture);
+            TexturePtr ibl_texture(image_io->LoadImage("../Resources/Textures/studio015.hdr"));
             
-            ImageBasedLight* ibl = new ImageBasedLight();
-            ibl->SetTexture(ibl_texture);
+            ImageBasedLightPtr ibl(new ImageBasedLight());
+            ibl->SetTexture(TexturePtr(ibl_texture));
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
-            scene->AttachAutoreleaseObject(ibl);
             
-            SingleBxdf* green = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+            SingleBxdfPtr green(new SingleBxdf(SingleBxdf::BxdfType::kLambert));
             green->SetInputValue("albedo", float4(0.1f, 0.2f, 0.1f, 1.f));
             
-            SingleBxdf* spec = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
+            SingleBxdfPtr spec(new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX));
             spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
             spec->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
             
-            MultiBxdf* mix = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+            MultiBxdfPtr mix(new MultiBxdf(MultiBxdf::Type::kFresnelBlend));
             mix->SetInputValue("base_material", green);
             mix->SetInputValue("top_material", spec);
             mix->SetInputValue("ior", float4(1.33f, 1.33f, 1.33f, 1.33f));
             
             quad->SetMaterial(mix);
-            
-            scene->AttachAutoreleaseObject(green);
-            scene->AttachAutoreleaseObject(spec);
-            scene->AttachAutoreleaseObject(mix);
         }
         else if (filename == "sphere+ibl")
         {
-            auto mesh = CreateSphere(64, 32, 2.f, float3());
+            MeshPtr mesh(CreateSphere(64, 32, 2.f, float3()));
             scene->AttachShape(mesh);
-            scene->AttachAutoreleaseObject(mesh);
             
-            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
-            scene->AttachAutoreleaseObject(ibl_texture);
+            TexturePtr ibl_texture(image_io->LoadImage("../Resources/Textures/studio015.hdr"));
             
-            ImageBasedLight* ibl = new ImageBasedLight();
-            ibl->SetTexture(ibl_texture);
+            ImageBasedLightPtr ibl(new ImageBasedLight());
+            ibl->SetTexture(TexturePtr(ibl_texture));
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
-            scene->AttachAutoreleaseObject(ibl);
             
-            SingleBxdf* green = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+            SingleBxdfPtr green(new SingleBxdf(SingleBxdf::BxdfType::kLambert));
             green->SetInputValue("albedo", float4(0.1f, 0.2f, 0.1f, 1.f));
             
-            SingleBxdf* spec = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
+            SingleBxdfPtr spec(new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX));
             spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
             spec->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
             
-            MultiBxdf* mix = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+            MultiBxdfPtr mix(new MultiBxdf(MultiBxdf::Type::kFresnelBlend));
             mix->SetInputValue("base_material", green);
             mix->SetInputValue("top_material", spec);
             mix->SetInputValue("ior", float4(1.33f, 1.33f, 1.33f, 1.33f));
 
             mesh->SetMaterial(mix);
-            
-            scene->AttachAutoreleaseObject(green);
-            scene->AttachAutoreleaseObject(spec);
-            scene->AttachAutoreleaseObject(mix);
         }
         else if (filename == "sphere+plane+area")
         {
-            auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
+            MeshPtr mesh(CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f)));
             scene->AttachShape(mesh);
-            scene->AttachAutoreleaseObject(mesh);
 
-            SingleBxdf* grey = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
+            SingleBxdfPtr grey(new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX));
             grey->SetInputValue("albedo", float4(0.99f, 0.99f, 0.99f, 1.f));
             grey->SetInputValue("roughness", float4(0.025f, 0.025f, 0.025f, 1.f));
 
-            Mesh* floor = CreateQuad(
+            MeshPtr floor(CreateQuad(
                                     {
                                         RadeonRays::float3(-8, 0, -8),
                                         RadeonRays::float3(8, 0, -8),
                                         RadeonRays::float3(8, 0, 8),
                                         RadeonRays::float3(-8, 0, 8),
                                     }
-                                    , false);
+                                    , false));
             scene->AttachShape(floor);
-            scene->AttachAutoreleaseObject(floor);
             
             floor->SetMaterial(grey);
             mesh->SetMaterial(grey);
 
-            SingleBxdf* emissive = new SingleBxdf(SingleBxdf::BxdfType::kEmissive);
+            SingleBxdfPtr emissive(new SingleBxdf(SingleBxdf::BxdfType::kEmissive));
             emissive->SetInputValue("albedo", 1.f * float4(3.1f, 3.f, 2.8f, 1.f));
             
-            Mesh* light = CreateQuad(
+            MeshPtr light(CreateQuad(
                                      {
                                          RadeonRays::float3(-2, 6, -2),
                                          RadeonRays::float3(2, 6, -2),
                                          RadeonRays::float3(2, 6, 2),
                                          RadeonRays::float3(-2, 6, 2),
                                      }
-                                     , true);
+                                     , true));
             scene->AttachShape(light);
-            scene->AttachAutoreleaseObject(light);
             
             light->SetMaterial(emissive);
 
-            AreaLight* l1 = new AreaLight(light, 0);
-            AreaLight* l2 = new AreaLight(light, 1);
+            AreaLightPtr l1(new AreaLight(light, 0));
+            AreaLightPtr l2(new AreaLight(light, 1));
 
             scene->AttachLight(l1);
             scene->AttachLight(l2);
-            scene->AttachAutoreleaseObject(l1);
-            scene->AttachAutoreleaseObject(l2);
-
-            scene->AttachAutoreleaseObject(emissive);
-            scene->AttachAutoreleaseObject(grey);
         }
         else if (filename == "sphere+plane+ibl")
         {
-            auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.2f, 0.f));
+            MeshPtr mesh(CreateSphere(64, 32, 2.f, float3(0.f, 2.2f, 0.f)));
             scene->AttachShape(mesh);
-            scene->AttachAutoreleaseObject(mesh);
 
-            SingleBxdf* refract = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
+            SingleBxdfPtr refract(new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetRefractionGGX));
             refract->SetInputValue("albedo", float4(0.7f, 1.f, 0.7f, 1.f));
             refract->SetInputValue("ior", float4(1.5f, 1.5f, 1.5f, 1.f));
             refract->SetInputValue("roughness", float4(0.02f, 0.02f, 0.02f, 1.f));
 
 
-            SingleBxdf* spec = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
+            SingleBxdfPtr spec(new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX));
             spec->SetInputValue("albedo", float4(0.7f, 1.f, 0.7f, 1.f));
             spec->SetInputValue("roughness", float4(0.02f, 0.02f, 0.02f, 1.f));
 
-            MultiBxdf* mix = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+            MultiBxdfPtr mix(new MultiBxdf(MultiBxdf::Type::kFresnelBlend));
             mix->SetInputValue("base_material", refract);
             mix->SetInputValue("top_material", spec);
             mix->SetInputValue("ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
 
-            scene->AttachAutoreleaseObject(spec);
-            scene->AttachAutoreleaseObject(refract);
-            scene->AttachAutoreleaseObject(mix);
-
             mesh->SetMaterial(mix);
 
-            Mesh* floor = CreateQuad(
+            MeshPtr floor(CreateQuad(
                                      {
                                          RadeonRays::float3(-8, 0, -8),
                                          RadeonRays::float3(8, 0, -8),
                                          RadeonRays::float3(8, 0, 8),
                                          RadeonRays::float3(-8, 0, 8),
                                      }
-                                     , false);
+                                     , false));
             scene->AttachShape(floor);
-            scene->AttachAutoreleaseObject(floor);
             
-            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
-            scene->AttachAutoreleaseObject(ibl_texture);
+            TexturePtr ibl_texture(image_io->LoadImage("../Resources/Textures/sky.hdr"));
             
-            ImageBasedLight* ibl = new ImageBasedLight();
+            ImageBasedLightPtr ibl(new ImageBasedLight());
             ibl->SetTexture(ibl_texture);
             ibl->SetMultiplier(3.f);
             scene->AttachLight(ibl);
-            scene->AttachAutoreleaseObject(ibl);
         }
         else if (filename == "100spheres+plane+ibl+disney")
         {
-            auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
+            MeshPtr mesh(CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f)));
             scene->AttachShape(mesh);
-            scene->AttachAutoreleaseObject(mesh);
             
             std::vector<std::string> params =
             {
@@ -346,7 +315,7 @@ namespace Baikal
                 float3(0.5f, 0.5f, 0.5f);
                 for (int j = 0; j < 10; ++j)
                 {
-                    DisneyBxdf* disney = new DisneyBxdf();
+                    DisneyBxdfPtr disney(new DisneyBxdf());
                     disney->SetInputValue("albedo", color);
                     
                     if (params[i] == "roughness")
@@ -399,37 +368,32 @@ namespace Baikal
                     float3 value = float3( j / 10.f, j / 10.f, j / 10.f);
                     disney->SetInputValue(params[i], value);
                     
-                    auto instance = new Instance(mesh);
+                    InstancePtr instance(new Instance(mesh));
                     matrix t = RadeonRays::translation(float3(i * 2 - 9, 0.f, j * 2 - 9));
                     instance->SetTransform(t);
                     scene->AttachShape(instance);
-                    scene->AttachAutoreleaseObject(instance);
                     
                     instance->SetMaterial(disney);
-                    scene->AttachAutoreleaseObject(disney);
                 }
             }
             
             
-            Mesh* floor = CreateQuad(
+            MeshPtr floor(CreateQuad(
                                      {
                                          RadeonRays::float3(-15, 0, -15),
                                          RadeonRays::float3(15, 0, -15),
                                          RadeonRays::float3(15, 0, 15),
                                          RadeonRays::float3(-15, 0, 15),
                                      }
-                                     , false);
+                                     , false));
             scene->AttachShape(floor);
-            scene->AttachAutoreleaseObject(floor);
             
-            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
-            scene->AttachAutoreleaseObject(ibl_texture);
+            TexturePtr ibl_texture(image_io->LoadImage("../Resources/Textures/sky.hdr"));
             
-            ImageBasedLight* ibl = new ImageBasedLight();
+            ImageBasedLightPtr ibl(new ImageBasedLight());
             ibl->SetTexture(ibl_texture);
             ibl->SetMultiplier(3.f);
             scene->AttachLight(ibl);
-            scene->AttachAutoreleaseObject(ibl);
         }
         
         return std::unique_ptr<Scene1>(scene);

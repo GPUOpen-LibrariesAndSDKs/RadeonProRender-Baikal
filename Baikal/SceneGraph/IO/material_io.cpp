@@ -14,6 +14,7 @@
 #include <sstream>
 #include <map>
 #include <stack>
+#include <vector>
 
 namespace Baikal
 {
@@ -42,8 +43,8 @@ namespace Baikal
         // Texture to name map
         std::map<Texture const*, std::string> m_tex2name;
 
-        std::map<std::string, Texture const*> m_name2tex;
-        std::map<std::uint64_t, Material const*> m_id2mat;
+        std::map<std::string, TexturePtr> m_name2tex;
+        std::map<std::uint64_t, MaterialPtr> m_id2mat;
 
         struct ResolveRequest
         {
@@ -146,7 +147,7 @@ namespace Baikal
         {
             printer.PushAttribute("type", "texture");
 
-            auto iter = m_tex2name.find(value.tex_value);
+            auto iter = m_tex2name.find(value.tex_value.get());
 
             if (iter != m_tex2name.cend())
             {
@@ -155,11 +156,11 @@ namespace Baikal
             else
             {
                 std::ostringstream oss;
-                oss << (std::uint64_t)value.tex_value << ".jpg";
+                oss << (std::uint64_t)value.tex_value.get() << ".jpg";
 
-                io.SaveImage(m_base_path + oss.str(), value.tex_value);
+                io.SaveImage(m_base_path + oss.str(), value.tex_value.get());
 
-                m_tex2name[value.tex_value] = oss.str();
+                m_tex2name[value.tex_value.get()] = oss.str();
 
                 printer.PushAttribute("value", oss.str().c_str());
             }
@@ -168,7 +169,7 @@ namespace Baikal
         {
             printer.PushAttribute("type", "material");
 
-            printer.PushAttribute("value", (int)(reinterpret_cast<std::uint64_t>(value.mat_value)));
+            printer.PushAttribute("value", (int)(reinterpret_cast<std::uint64_t>(value.mat_value.get())));
         }
 
         printer.CloseElement();
@@ -284,11 +285,11 @@ namespace Baikal
 
         for (mat_iter.Reset();mat_iter.IsValid(); mat_iter.Next())
         {
-            auto material = mat_iter.ItemAs<Material const>();
+            auto material = mat_iter.ItemAs<Material const>().lock();
 
             if (material)
             {
-                WriteMaterial(*image_io, printer, material);
+                WriteMaterial(*image_io, printer, material.get());
             }
         }
 
@@ -325,7 +326,7 @@ namespace Baikal
             }
             else
             {
-                auto texture = io.LoadImage(m_base_path + filename);
+                auto texture = TexturePtr(io.LoadImage(m_base_path + filename));
                 material->SetInputValue(name, texture);
                 m_name2tex[name] = texture;
             }
@@ -396,7 +397,7 @@ namespace Baikal
             LoadInput(io, material, *input);
         }
 
-        m_id2mat[id] = material;
+        m_id2mat[id] = MaterialPtr(material);
 
         return material;
     }
@@ -419,11 +420,11 @@ namespace Baikal
 
         auto image_io = ImageIo::CreateImageIo();
 
-        std::set<Material*> materials;
+        std::set<MaterialPtr> materials;
         for (auto element = doc.FirstChildElement(); element; element = element->NextSiblingElement())
         {
             Material* material = LoadMaterial(*image_io, *element);
-            materials.insert(material);
+            materials.insert(MaterialPtr(material));
         }
 
         // Fix up non-resolved stuff
@@ -432,7 +433,7 @@ namespace Baikal
             i.material->SetInputValue(i.input, m_id2mat[i.id]);
         }
 
-        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Material*>>(std::move(materials)));
+        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<MaterialPtr>>(std::move(materials)));
     }
 
     void MaterialIo::SaveMaterialsFromScene(std::string const& filename, Scene1 const& scene)
@@ -444,15 +445,16 @@ namespace Baikal
         mat_collector.Collect(*shape_iter,
             // This function adds all materials to resulting map
             // recursively via Material dependency API
-            [](void const* item) -> std::set<void const*>
+            [](std::weak_ptr<void const> item) -> std::vector<std::weak_ptr<void const> >
         {
             // Resulting material set
-            std::set<void const*> mats;
+            std::vector<std::weak_ptr<void const> > mats;
             // Material stack
-            std::stack<Material const*> material_stack;
+            std::stack<std::weak_ptr<Material const> > material_stack;
 
             // Get material from current shape
-            auto shape = reinterpret_cast<Shape const*>(item);
+            auto sp = item.lock();
+            auto shape = reinterpret_cast<Shape const*>(sp.get());
             auto material = shape->GetMaterial();
 
             if (material)
@@ -465,19 +467,20 @@ namespace Baikal
             while (!material_stack.empty())
             {
                 // Get current material
-                Material const* m = material_stack.top();
+                auto m = material_stack.top();
                 material_stack.pop();
 
                 // Emplace into the set
-                mats.emplace(m);
+                mats.push_back(m);
 
                 // Create dependency iterator
-                std::unique_ptr<Iterator> mat_iter(m->CreateMaterialIterator());
+                std::unique_ptr<Iterator> mat_iter(m.lock()->CreateMaterialIterator());
 
                 // Push all dependencies into the stack
                 for (; mat_iter->IsValid(); mat_iter->Next())
                 {
-                    material_stack.push(mat_iter->ItemAs<Material const>());
+                    auto sp = mat_iter->ItemAs<Material const>().lock();
+                    material_stack.push(sp);
                 }
             }
 
@@ -492,11 +495,11 @@ namespace Baikal
 
     void MaterialIo::ReplaceSceneMaterials(Scene1& scene, Iterator& iterator, MaterialMap const& mapping)
     {
-        std::map<std::string, Material const*> name2mat;
+        std::map<std::string, MaterialCPtr> name2mat;
 
         for (iterator.Reset(); iterator.IsValid(); iterator.Next())
         {
-            auto material = iterator.ItemAs<Material const>();
+            auto material = iterator.ItemAs<Material const>().lock();
             auto name = material->GetName();
             name2mat[name] = material;
         }
@@ -506,7 +509,7 @@ namespace Baikal
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
             // TODO: remove this hack
-            auto shape = const_cast<Shape*>(shape_iter->ItemAs<Shape const>());
+            auto shape = std::const_pointer_cast<Shape>(shape_iter->ItemAs<Shape const>().lock());
             auto material = shape->GetMaterial();
 
             if (!material)
@@ -554,16 +557,17 @@ namespace Baikal
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
-            auto material = shape_iter->ItemAs<Shape const>()->GetMaterial();
+            auto sp = shape_iter->ItemAs<Shape const>().lock();
+            auto material = sp->GetMaterial();
 
-            if (material && serialized_mats.find(material) == serialized_mats.cend())
+            if (material && serialized_mats.find(material.get()) == serialized_mats.cend())
             {
                 auto name = material->GetName();
                 printer.OpenElement("Mapping");
                 printer.PushAttribute("from", name.c_str());
                 printer.PushAttribute("to", name.c_str());
                 printer.CloseElement();
-                serialized_mats.emplace(material);
+                serialized_mats.emplace(material.get());
             }
         }
 

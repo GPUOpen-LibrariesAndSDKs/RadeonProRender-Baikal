@@ -82,7 +82,7 @@ namespace Baikal
         // Update texture data only.
         void UpdateTextures(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Get default material
-        Material const* GetDefaultMaterial() const override;
+        MaterialPtr GetDefaultMaterial() const override;
         // If m_current_scene changes
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
         
@@ -107,6 +107,6 @@ namespace Baikal
         // Intersection API
         RadeonRays::IntersectionApi* m_api;
         // Default material
-        std::unique_ptr<Material> m_default_material;
+        MaterialPtr m_default_material;
     };
 }
