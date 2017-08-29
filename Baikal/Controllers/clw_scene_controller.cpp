@@ -40,7 +40,7 @@ namespace Baikal
         LogInfo("Initializing RadeonRays...\n");
         m_api = CreateFromOpenClContext(m_context, id, queue);
 
-        auto acc_type = "bvh";
+        auto acc_type = "fatbvh";
         auto builder_type = "sah";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
         m_api->SetOption("acc.type", acc_type);
@@ -1421,7 +1421,7 @@ namespace Baikal
             break;
         }
     }
-    
+
     void ClwSceneController::UpdateLights(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         std::size_t num_lights_written = 0;
