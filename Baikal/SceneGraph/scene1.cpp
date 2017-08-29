@@ -200,4 +200,27 @@ namespace Baikal
         GetNumLights() > 0 &&
         GetNumShapes() > 0;
     }
+
+    RadeonRays::bbox Scene1::GetWorldAABB() const
+    {
+        auto iter = CreateShapeIterator();
+
+        RadeonRays::bbox result;
+        for (; iter->IsValid(); iter->Next())
+        {
+            auto aabb = iter->ItemAs<Shape const>()->GetWorldAABB();
+            result.grow(aabb);
+        }
+
+        return result;
+    }
+
+    float Scene1::GetRadius() const
+    {
+        auto aabb = GetWorldAABB();
+
+        auto c = aabb.center();
+
+        return std::sqrt((aabb.pmax - c).sqnorm());
+    }
 }

@@ -31,6 +31,7 @@
 #include "math/float3.h"
 #include "math/float2.h"
 #include "math/matrix.h"
+#include "math/bbox.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -66,6 +67,10 @@ namespace Baikal
         void SetShadow(bool shadow);
         bool GetShadow() const;
 
+        // Local AABB
+        virtual RadeonRays::bbox GetLocalAABB() const = 0;
+        RadeonRays::bbox GetWorldAABB() const;
+
         // Forbidden stuff
         Shape(Shape const&) = delete;
         Shape& operator = (Shape const&) = delete;
@@ -86,13 +91,13 @@ namespace Baikal
     {
     public:
         Mesh();
-        
+
         // Set and get index array
         void SetIndices(std::uint32_t const* indices, std::size_t num_indices);
         void SetIndices(std::vector<std::uint32_t>&& indices);
         std::size_t GetNumIndices() const;
         std::uint32_t const* GetIndices() const;
-        
+
         // Set and get vertex array
         void SetVertices(RadeonRays::float3 const* vertices, std::size_t num_vertices);
         void SetVertices(float const* vertices, std::size_t num_vertices);
@@ -100,7 +105,7 @@ namespace Baikal
 
         std::size_t GetNumVertices() const;
         RadeonRays::float3 const* GetVertices() const;
-        
+
         // Set and get normal array
         void SetNormals(RadeonRays::float3 const* normals, std::size_t num_normals);
         void SetNormals(float const* normals, std::size_t num_normals);
@@ -116,6 +121,13 @@ namespace Baikal
         std::size_t GetNumUVs() const;
         RadeonRays::float2 const* GetUVs() const;
 
+        // Local space AABB
+        RadeonRays::bbox GetLocalAABB() const override;
+
+        // We need to override it since mesh changes trigger
+        // m_aabb_cached flag reset
+        void SetDirty(bool dirty) const override;
+
         // Forbidden stuff
         Mesh(Mesh const&) = delete;
         Mesh& operator = (Mesh const&) = delete;
@@ -125,6 +137,9 @@ namespace Baikal
         std::vector<RadeonRays::float3> m_normals;
         std::vector<RadeonRays::float2> m_uvs;
         std::vector<std::uint32_t> m_indices;
+
+        mutable RadeonRays::bbox m_aabb;
+        mutable bool m_aabb_cached;
     };
     
     inline Shape::~Shape()
@@ -183,6 +198,9 @@ namespace Baikal
         // Get and set base shape
         void SetBaseShape(Shape const* base_shape);
         Shape const* GetBaseShape() const;
+
+        // Local space AABB
+        RadeonRays::bbox GetLocalAABB() const override;
 
         // Forbidden stuff
         Instance(Instance const&) = delete;

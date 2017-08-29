@@ -48,6 +48,8 @@ typedef struct
     int env_light_idx;
     // Number of emissive objects
     int num_lights;
+    // Light distribution 
+    GLOBAL int const* restrict light_distribution;
 } Scene;
 
 // Get triangle vertices given scene, shape index and prim index
@@ -228,13 +230,21 @@ INLINE void DifferentialGeometry_CalculateTangentTransforms(DifferentialGeometry
     diffgeo->tangent_to_world.m2.w = diffgeo->p.z;
 }
 
+#define POWER_SAMPLING
+
 // Sample light index
 INLINE int Scene_SampleLight(Scene const* scene, float sample, float* pdf)
 {
+#ifndef POWER_SAMPLING
     int num_lights = scene->num_lights;
     int light_idx = clamp((int)(sample * num_lights), 0, num_lights - 1);
     *pdf = 1.f / num_lights;
     return light_idx;
+#else
+    int num_lights = scene->num_lights;
+    int light_idx = Distribution1D_SampleDiscreet(sample, scene->light_distribution, pdf);
+    return light_idx;
+#endif
 }
 
 #endif

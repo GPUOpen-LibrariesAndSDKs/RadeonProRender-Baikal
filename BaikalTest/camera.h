@@ -74,3 +74,52 @@ TEST_F(CameraTest, CameraSensorSize)
         ASSERT_TRUE(CompareToReference(oss.str()));
     }
 }
+
+TEST_F(CameraTest, CameraAperture)
+{
+    std::vector<float> values = { 0.1f, 0.01f, 0.05f, 0.025f };
+
+    m_camera->SetFocusDistance(6.f);
+
+    for (auto v : values)
+    {
+        ClearOutput();
+        m_camera->SetAperture(v);
+        ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        }
+
+        std::ostringstream oss;
+        oss << test_name() << v << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+}
+
+TEST_F(CameraTest, CameraFocusDistance)
+{
+    std::vector<float> values = { 1.f, 3.f, 6.f, 9.f, 15.f };
+
+    m_camera->SetAperture(0.15f);
+
+    for (auto v : values)
+    {
+        ClearOutput();
+
+        m_camera->SetFocusDistance(v);
+
+        ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        }
+
+        std::ostringstream oss;
+        oss << test_name() << v << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+}

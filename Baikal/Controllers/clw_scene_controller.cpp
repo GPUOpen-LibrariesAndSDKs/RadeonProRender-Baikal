@@ -7,7 +7,9 @@
 #include "SceneGraph/texture.h"
 #include "SceneGraph/Collector/collector.h"
 #include "SceneGraph/iterator.h"
+#include "Utils/distribution1d.h"
 #include "Utils/log.h"
+
 
 #include <chrono>
 #include <memory>
@@ -38,7 +40,7 @@ namespace Baikal
         LogInfo("Initializing RadeonRays...\n");
         m_api = CreateFromOpenClContext(m_context, id, queue);
 
-        auto acc_type = "fatbvh";
+        auto acc_type = "bvh";
         auto builder_type = "sah";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
         m_api->SetOption("acc.type", acc_type);
@@ -1425,22 +1427,27 @@ namespace Baikal
         std::size_t num_lights_written = 0;
         
         auto num_lights = scene.GetNumLights();
-        
+        auto distribution_buffer_size = (1 + 1 + num_lights + num_lights);
+
         // Create light buffer if needed
         if (num_lights > out.lights.GetElementCount())
         {
             out.lights = m_context.CreateBuffer<ClwScene::Light>(num_lights, CL_MEM_READ_ONLY);
+            out.light_distributions = m_context.CreateBuffer<int>(distribution_buffer_size, CL_MEM_READ_ONLY);
         }
-        
+
         ClwScene::Light* lights = nullptr;
-        
+
         m_context.MapBuffer(0, out.lights, CL_MAP_WRITE, &lights).Wait();
-        
         std::unique_ptr<Iterator> light_iter(scene.CreateLightIterator());
-        
+
         // Disable IBL by default
         out.envmapidx = -1;
-        
+
+        // Allocate intermediate storage for lights power distribution
+        std::vector<float> light_power(num_lights);
+        std::uint32_t k = 0;
+
         // Serialize
         {
             for (; light_iter->IsValid(); light_iter->Next())
@@ -1455,14 +1462,47 @@ namespace Baikal
                 {
                     out.envmapidx = static_cast<int>(num_lights_written);
                 }
-                
+
                 ++num_lights_written;
                 light->SetDirty(false);
+
+                auto power = light->GetPower(scene);
+
+                // TODO: move luminance calculation into utility function
+                light_power[k++] = 0.2126f * power.x + 0.7152f * power.y + 0.0722f * power.z;
             }
         }
-        
+
         m_context.UnmapBuffer(0, out.lights, lights);
-        
+
+        // Create distribution over light sources based on their power
+        Distribution1D light_distribution(&light_power[0], light_power.size());
+
+        // Write distribution data
+        int* distribution_ptr = nullptr;
+        m_context.MapBuffer(0, out.light_distributions, CL_MAP_WRITE, &distribution_ptr).Wait();
+        auto current = distribution_ptr;
+
+        // Write the number of segments first
+        *current++ = (int)light_distribution.m_num_segments;
+
+        // Then write num_segments  + 1 CDF values
+        auto values = reinterpret_cast<float*>(current);
+        for (auto i = 0u; i < light_distribution.m_num_segments + 1; ++i)
+        {
+            values[i] = light_distribution.m_cdf[i];
+        }
+
+        // Then write num_segments PDF values
+        values += light_distribution.m_num_segments + 1;
+
+        for (auto i = 0u; i < light_distribution.m_num_segments; ++i)
+        {
+            values[i] = light_distribution.m_func_values[i] / light_distribution.m_func_sum;
+        }
+
+        m_context.UnmapBuffer(0, out.light_distributions, distribution_ptr);
+
         out.num_lights = static_cast<int>(num_lights_written);
     }
     

@@ -92,13 +92,13 @@ float3 EnvironmentLight_Sample(// Light
                                float* pdf
                               )
 {
-    float3 d = Sample_MapToHemisphere(sample, dg->n, 1.f);
+    float3 d = Sample_MapToHemisphere(sample, dg->n, 0.f);
 
     // Generate direction
     *wo = 100000.f * d;
 
     // Envmap PDF
-    *pdf = fabs(dot(dg->n, normalize(d))) / PI;
+    *pdf = 1.f / (2.f * PI);
 
     // Sample envmap
     return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(light->tex));
@@ -118,7 +118,7 @@ float EnvironmentLight_GetPdf(
                               TEXTURE_ARG_LIST
                               )
 {
-    return max(0.f, fabs(dot(dg->n, normalize(wo)))/ PI);
+    return 1.f / (2.f * PI);
 }
 
 

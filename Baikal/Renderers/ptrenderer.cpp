@@ -504,6 +504,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.texturedata);
         shadekernel.SetArg(argc++, scene.envmapidx);
         shadekernel.SetArg(argc++, scene.lights);
+        shadekernel.SetArg(argc++, scene.light_distributions);
         shadekernel.SetArg(argc++, scene.num_lights);
         shadekernel.SetArg(argc++, rand_uint());
         shadekernel.SetArg(argc++, m_render_data->random);
@@ -550,6 +551,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.texturedata);
         shadekernel.SetArg(argc++, scene.envmapidx);
         shadekernel.SetArg(argc++, scene.lights);
+        shadekernel.SetArg(argc++, scene.light_distributions);
         shadekernel.SetArg(argc++, scene.num_lights);
         shadekernel.SetArg(argc++, rand_uint());
         shadekernel.SetArg(argc++, m_render_data->random);
@@ -717,6 +719,8 @@ namespace Baikal
         misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
         misskernel.SetArg(argc++, m_render_data->hitcount);
         misskernel.SetArg(argc++, scene.lights);
+        misskernel.SetArg(argc++, scene.light_distributions);
+        misskernel.SetArg(argc++, scene.num_lights);
         misskernel.SetArg(argc++, scene.envmapidx);
         misskernel.SetArg(argc++, scene.textures);
         misskernel.SetArg(argc++, scene.texturedata);
