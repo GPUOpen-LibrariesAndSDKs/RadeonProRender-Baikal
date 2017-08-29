@@ -51,7 +51,7 @@ namespace Baikal
     {
         m_p = eye;
         m_forward = normalize(at - eye);
-        m_right = cross(m_forward, normalize(up));
+        m_right = normalize(cross(m_forward, up));
         m_up = cross(m_right, m_forward);
         SetDirty(true);
     }
