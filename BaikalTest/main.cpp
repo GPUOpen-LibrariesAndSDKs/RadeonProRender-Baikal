@@ -23,8 +23,10 @@ THE SOFTWARE.
 
 #include "CLW.h"
 
+#include "internal.h"
 #include "basic.h"
 #include "camera.h"
+#include "light.h"
 
 int g_argc;
 char** g_argv;
