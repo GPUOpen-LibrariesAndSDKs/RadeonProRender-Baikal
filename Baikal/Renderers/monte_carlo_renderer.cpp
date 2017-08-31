@@ -305,4 +305,9 @@ namespace Baikal
 
         m_estimator->Benchmark(scene, num_rays, stats);
     }
+
+    void MonteCarloRenderer::SetMaxBounces(std::uint32_t max_bounces)
+    {
+        m_estimator->SetMaxBounces(max_bounces);
+    }
 }

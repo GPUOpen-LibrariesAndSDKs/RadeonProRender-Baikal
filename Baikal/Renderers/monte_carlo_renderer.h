@@ -36,7 +36,6 @@ THE SOFTWARE.
 
 namespace Baikal
 {
-    class Estimator;
     class ClwOutput;
     struct ClwScene;
 
@@ -72,6 +71,9 @@ namespace Baikal
         CLWKernel GetAccumulateKernel();
         // Run render benchmark
         void Benchmark(ClwScene const& scene, Estimator::RayTracingStats& stats);
+
+        // Set max number of light bounces
+        void SetMaxBounces(std::uint32_t max_bounces);
 
     protected:
         void GeneratePrimaryRays(ClwScene const& scene, Output const& output,

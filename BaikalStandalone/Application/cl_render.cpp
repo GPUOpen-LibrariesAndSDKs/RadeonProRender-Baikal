@@ -537,7 +537,7 @@ namespace Baikal
     {
         for (int i = 0; i < m_cfgs.size(); ++i)
         {
-            //static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[i].renderer.get())->SetNumBounces(num_bounces);
+            static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[i].renderer.get())->SetMaxBounces(num_bounces);
         }
     }
 
@@ -550,4 +550,5 @@ namespace Baikal
         }
         m_output_type = type;
     }
+
 } // Baikal

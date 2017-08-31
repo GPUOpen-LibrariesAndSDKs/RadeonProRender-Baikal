@@ -228,7 +228,6 @@ namespace Baikal
         struct RenderData;
 
         std::unique_ptr<RenderData> m_render_data;
-        std::uint32_t m_num_bounces;
         mutable std::uint32_t m_sample_counter;
     };
 }

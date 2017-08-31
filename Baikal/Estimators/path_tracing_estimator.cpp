@@ -76,7 +76,6 @@ namespace Baikal
         ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl")
         , Estimator(api)
         , m_sample_counter(0)
-        , m_num_bounces(5)
         , m_render_data(new RenderData)
     {
         // Create parallel primitives
@@ -158,7 +157,7 @@ namespace Baikal
         InitPathData(num_estimates);
 
         // Initialize first pass
-        for (auto pass = 0u; pass < m_num_bounces; ++pass)
+        for (auto pass = 0u; pass < GetMaxBounces(); ++pass)
         {
             // Clear ray hits buffer
             GetContext().FillBuffer(

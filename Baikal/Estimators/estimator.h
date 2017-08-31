@@ -61,6 +61,7 @@ namespace Baikal
 
         Estimator(RadeonRays::IntersectionApi* api)
             : m_intersector(api)
+            , m_max_bounces(5u)
         {
         }
 
@@ -205,10 +206,27 @@ namespace Baikal
             return m_intersector;
         }
 
+        /**
+        \brief Set max number of light bounces.
+
+        \param num_bounces
+        */
+        void SetMaxBounces(std::uint32_t num_bounces) {
+            m_max_bounces = num_bounces;
+        }
+
+        /**
+        \brief Get max number of light bounces.
+        */
+        std::uint32_t GetMaxBounces() {
+            return m_max_bounces;
+        }
+
         Estimator(Estimator const&) = delete;
         Estimator& operator = (Estimator const&) = delete;
 
     private:
         RadeonRays::IntersectionApi* m_intersector;
+        std::uint32_t m_max_bounces;
     };
 }
