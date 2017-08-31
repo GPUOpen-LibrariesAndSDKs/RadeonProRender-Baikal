@@ -38,7 +38,7 @@ THE SOFTWARE.
 namespace Baikal
 {
     class Output;
-    class Scene1;
+    struct ClwScene;
 
     /**
      \brief Interface for the renderer.
@@ -73,29 +73,26 @@ namespace Baikal
          \param val Value to clear to
          \param output Output to clear
          */
-        virtual void Clear(RadeonRays::float3 const& val, Output& output)
-            const = 0;
+        virtual 
+        void Clear(RadeonRays::float3 const& val, Output& output) const = 0;
 
         /**
          \brief Render single iteration.
 
          \param scene Scene to render
          */
-        virtual void Render(Scene1 const& scene) = 0;
+        virtual
+        void Render(ClwScene const& scene) = 0;
 
         /**
         \brief Render single iteration.
 
         \param scene Scene to render
         */
-        virtual void RenderTile(Scene1 const& scene,
+        virtual
+        void RenderTile(ClwScene const& scene,
             RadeonRays::int2 const& tile_origin,
             RadeonRays::int2 const& tile_size) = 0;
-
-        /**
-        \brief Get the memory working set size in bytes.
-        */
-        virtual size_t GetWorkingSetSize() const = 0;
 
         /**
          \brief Set the output for rendering.
@@ -112,17 +109,7 @@ namespace Baikal
         virtual Output* GetOutput(OutputType type) const;
 
         /**
-        \brief The method decouples potentially expensive 
-            scene compilation process from the render call.
-            This method should be called in order for scene changes
-            to take effect.
-
-        \param scene The output to render into.
-        */
-        virtual void CompileScene(Scene1 const& scene) const = 0;
-
-        /**
-        \brief Set random seed value for the renderer. Renders 
+        \brief Set random seed value for the renderer. Renders
         with the same random seed are guaranteed to be the same.
 
         \param seed Seed value
@@ -134,22 +121,6 @@ namespace Baikal
          */
         Renderer(Renderer const&) = delete;
         Renderer& operator = (Renderer const&) = delete;
-
-        // Temporary functionality
-        struct BenchmarkStats
-        {
-            std::uint32_t num_passes;
-
-            RadeonRays::int2 resolution;
-            float primary_rays_time_in_ms;
-            float secondary_rays_time_in_ms;
-            float shadow_rays_time_in_ms;
-            //msamples per second
-            float samples_pes_sec;
-        };
-
-        virtual void RunBenchmark(Scene1 const& scene, std::uint32_t num_passes,
-            BenchmarkStats& stats) {}
 
     private:
         std::array<Output*, static_cast<std::size_t>(OutputType::kMax)>

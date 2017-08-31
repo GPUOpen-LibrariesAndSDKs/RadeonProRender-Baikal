@@ -23,7 +23,12 @@
 #pragma once
 
 #include "render_factory.h"
+#include "radeon_rays_cl.h"
 #include "CLW.h"
+
+#include "SceneGraph/clwscene.h"
+
+#include <memory>
 
 
 namespace Baikal
@@ -35,23 +40,30 @@ namespace Baikal
      each other since many of them might use either CPU or GPU implementation.
      Entities create via the same factory are known to be compatible.
      */
-    class ClwRenderFactory : public RenderFactory
+    class ClwRenderFactory : public RenderFactory<ClwScene>
     {
     public:
-        ClwRenderFactory(CLWContext context, int device_index);
-        
+        ClwRenderFactory(CLWContext context);
+
         // Create a renderer of specified type
-        std::unique_ptr<Renderer> CreateRenderer(RendererType type) const
-                                                                    override;
+        std::unique_ptr<Renderer> 
+            CreateRenderer(RendererType type) const override;
         // Create an output of specified type
-        std::unique_ptr<Output> CreateOutput(std::uint32_t w, std::uint32_t h)
-                                                                const override;
+        std::unique_ptr<Output> 
+            CreateOutput(std::uint32_t w, std::uint32_t h) const override;
         // Create post effect of specified type
-        std::unique_ptr<PostEffect> CreatePostEffect(PostEffectType type)
-                                                                const override;
-        
+        std::unique_ptr<PostEffect> 
+            CreatePostEffect(PostEffectType type) const override;
+
+        std::unique_ptr<SceneController<ClwScene>>
+            CreateSceneController() const override;
+
     private:
         CLWContext m_context;
-        int m_device_index;
+
+        using RadeonRaysInstanceDelete = decltype(RadeonRays::IntersectionApi::Delete);
+
+        std::unique_ptr<RadeonRays::IntersectionApi,
+            void(*)(RadeonRays::IntersectionApi*)> m_intersector;
     };
 }

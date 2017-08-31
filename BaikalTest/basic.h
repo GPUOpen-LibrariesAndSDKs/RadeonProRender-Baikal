@@ -24,8 +24,8 @@ THE SOFTWARE.
 #include "gtest/gtest.h"
 
 #include "CLW.h"
-#include "Renderers/ptrenderer.h"
-#include "RenderFactory/render_factory.h"
+#include "Renderers/renderer.h"
+#include "RenderFactory/clw_render_factory.h"
 #include "Output/output.h"
 #include "SceneGraph/camera.h"
 #include "SceneGraph/IO/scene_io.h"
@@ -73,14 +73,15 @@ public:
         m_output_path.append("/");
 
         ASSERT_LT(platform_index, platforms.size());
-        ASSERT_LT(device_index, platforms[platform_index].GetDeviceCount());
+        ASSERT_LT((std::uint32_t)device_index, platforms[platform_index].GetDeviceCount());
 
         auto platform = platforms[platform_index];
         auto device = platform.GetDevice(device_index);
         auto context = CLWContext::Create(device);
 
-        ASSERT_NO_THROW(m_factory = Baikal::RenderFactory::CreateClwRenderFactory(context, 0));
-        ASSERT_NO_THROW(m_renderer = m_factory->CreateRenderer(Baikal::RenderFactory::RendererType::kUnidirectionalPathTracer));
+        ASSERT_NO_THROW(m_factory = std::make_unique<Baikal::ClwRenderFactory>(context));
+        ASSERT_NO_THROW(m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer));
+        ASSERT_NO_THROW(m_controller = m_factory->CreateSceneController());
         ASSERT_NO_THROW(m_output = m_factory->CreateOutput(kOutputWidth, kOutputHeight));
         ASSERT_NO_THROW(m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get()));
 
@@ -200,7 +201,7 @@ public:
         LoadImage(path_to_reference, reference_data);
 
         auto num_values = output_data.size();
-        auto difference = 0;
+        auto difference = 0u;
         for (auto i = 0u; i < num_values; ++i)
         {
             if (output_data[i] != reference_data[i])
@@ -235,7 +236,8 @@ public:
     }
 
     std::unique_ptr<Baikal::Renderer> m_renderer;
-    std::unique_ptr<Baikal::RenderFactory> m_factory;
+    std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
+    std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> m_factory;
     std::unique_ptr<Baikal::Output> m_output;
     std::unique_ptr<Baikal::Scene1> m_scene;
     std::unique_ptr<Baikal::PerspectiveCamera> m_camera;
@@ -258,11 +260,13 @@ TEST_F(BasicTest, RenderTestScene)
 {
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     SaveOutput(test_name() + ".png");

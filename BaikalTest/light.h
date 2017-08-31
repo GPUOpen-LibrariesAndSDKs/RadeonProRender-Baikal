@@ -71,11 +71,13 @@ TEST_F(LightTest, PointLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -91,11 +93,13 @@ TEST_F(LightTest, PointLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene1 = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene1));
     }
 
     {
@@ -114,11 +118,11 @@ TEST_F(LightTest, PointLightMany)
         RadeonRays::float3(0.f, 1.f, 0.f));
 
 
-    auto num_lights = 16;
+    auto num_lights = 16u;
     std::vector<float3> positions;
     std::vector<float3> colors;
 
-    float step = 2 * M_PI / num_lights;
+    float step = (float)(2.f * M_PI / num_lights);
     for (auto i = 0u; i < num_lights; ++i)
     {
         auto x = 5.f * std::cos(i * step);
@@ -142,11 +146,13 @@ TEST_F(LightTest, PointLightMany)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < num_lights * kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -188,11 +194,13 @@ TEST_F(LightTest, DirectionalLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -208,11 +216,13 @@ TEST_F(LightTest, DirectionalLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene1 = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene1));
     }
 
     {
@@ -261,11 +271,13 @@ TEST_F(LightTest, SpotLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -281,11 +293,13 @@ TEST_F(LightTest, SpotLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene1 = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene1));
     }
 
     {
@@ -309,11 +323,13 @@ TEST_F(LightTest, AreaLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -359,11 +375,13 @@ TEST_F(LightTest, DirectionalAndAreaLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -408,11 +426,13 @@ TEST_F(LightTest, PointAndAreaLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -464,11 +484,13 @@ TEST_F(LightTest, SpotAndAreaLight)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -514,11 +536,13 @@ TEST_F(LightTest, EmissiveSphere)
         }
     }
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {
@@ -570,11 +594,13 @@ TEST_F(LightTest, DirectionalAndEmissiveSphere)
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+    auto& scene = m_controller->GetCachedScene(*m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
-        ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+        ASSERT_NO_THROW(m_renderer->Render(scene));
     }
 
     {

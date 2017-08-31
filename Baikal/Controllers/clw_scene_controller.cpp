@@ -27,19 +27,11 @@ namespace Baikal
     }
 
 
-    ClwSceneController::ClwSceneController(CLWContext context, int devidx)
-    : m_default_material(new SingleBxdf(SingleBxdf::BxdfType::kLambert)),
-    m_context(context)
+    ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api)
+    : m_default_material(new SingleBxdf(SingleBxdf::BxdfType::kLambert))
+    , m_context(context)
+    , m_api(api)
     {
-        LogInfo("Initializing OpenCL...\n");
-        // Get raw CL data out of CLW context
-        cl_device_id id = m_context.GetDevice(devidx).GetID();
-        cl_command_queue queue = m_context.GetCommandQueue(devidx);
-
-        // Create intersection API
-        LogInfo("Initializing RadeonRays...\n");
-        m_api = CreateFromOpenClContext(m_context, id, queue);
-
         auto acc_type = "fatbvh";
         auto builder_type = "sah";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
@@ -56,8 +48,6 @@ namespace Baikal
 
     ClwSceneController::~ClwSceneController()
     {
-        // Delete API
-        IntersectionApi::Delete(m_api);
     }
 
     static void SplitMeshesAndInstances(Iterator* shape_iter, std::set<Mesh const*>& meshes, std::set<Instance const*>& instances, std::set<Mesh const*>& excluded_meshes)

@@ -41,8 +41,8 @@ namespace Baikal
     template <typename CompiledScene>
     inline
     CompiledScene& SceneController<CompiledScene>::CompileScene(
-        Scene1 const& scene, Collector& mat_collector,
-        Collector& tex_collector) const
+        Scene1 const& scene
+    ) const
     {
         // The overall approach is:
         // 1) Check if materials have changed, update collector if yes
@@ -55,16 +55,16 @@ namespace Baikal
         // updating necessary parts.
         
         // We need to make sure collectors are empty before proceeding
-        mat_collector.Clear();
-        tex_collector.Clear();
-        
+        m_material_collector.Clear();
+        m_texture_collector.Clear();
+
         // Create shape and light iterators
         auto shape_iter = scene.CreateShapeIterator();
         auto light_iter = scene.CreateLightIterator();
         
         auto default_material = GetDefaultMaterial();
         // Collect materials from shapes first
-        mat_collector.Collect(*shape_iter,
+        m_material_collector.Collect(*shape_iter,
                               // This function adds all materials to resulting map
                               // recursively via Material dependency API
                               [default_material](void const* item) ->
@@ -115,14 +115,14 @@ namespace Baikal
                               });
         
         // Commit stuff (we can iterate over it after commit has happened)
-        mat_collector.Commit();
+        m_material_collector.Commit();
         
         // Now we need to collect textures from our materials
         // Create material iterator
-        auto mat_iter = mat_collector.CreateIterator();
+        auto mat_iter = m_material_collector.CreateIterator();
         
         // Collect textures from materials
-        tex_collector.Collect(*mat_iter,
+        m_texture_collector.Collect(*mat_iter,
                               [](void const* item) -> std::set<void const*>
                               {
                                   // Texture set
@@ -145,7 +145,7 @@ namespace Baikal
         
         
         // Collect textures from lights
-        tex_collector.Collect(*light_iter,
+        m_texture_collector.Collect(*light_iter,
                               [](void const* item) -> std::set<void const*>
                               {
                                   // Resulting set
@@ -167,7 +167,7 @@ namespace Baikal
                               });
 
         // Commit textures
-        tex_collector.Commit();
+        m_texture_collector.Commit();
         
         // Try to find scene in cache first
         auto iter = m_scene_cache.find(&scene);
@@ -178,7 +178,7 @@ namespace Baikal
             auto res = m_scene_cache.emplace(std::make_pair(&scene, CompiledScene()));
             
             // Recompile all the stuff into cached scene
-            RecompileFull(scene, mat_collector, tex_collector, res.first->second);
+            RecompileFull(scene, m_material_collector, m_texture_collector, res.first->second);
             
             // Set scene as current
             m_current_scene = &scene;
@@ -187,7 +187,7 @@ namespace Baikal
             scene.ClearDirtyFlags();
             
             // Drop dirty flags for materials
-            mat_collector.Finalize([](void const* item)
+            m_material_collector.Finalize([](void const* item)
                                    {
                                        auto material = reinterpret_cast<Material const*>(item);
                                        material->SetDirty(false);
@@ -216,7 +216,7 @@ namespace Baikal
             // Update camera if needed
             if (dirty & Scene1::kCamera || camera_changed)
             {
-                UpdateCamera(scene, mat_collector, tex_collector, out);
+                UpdateCamera(scene, m_material_collector, m_texture_collector, out);
             }
             
             {
@@ -247,7 +247,7 @@ namespace Baikal
                 // Update lights if needed
                 if (dirty & Scene1::kLights || lights_changed)
                 {
-                    UpdateLights(scene, mat_collector, tex_collector, out);
+                    UpdateLights(scene, m_material_collector, m_texture_collector, out);
                 }
             }
             
@@ -277,18 +277,18 @@ namespace Baikal
                 // Update shapes if needed
                 if (dirty & Scene1::kShapes)
                 {
-                    UpdateShapes(scene, mat_collector, tex_collector, out);
+                    UpdateShapes(scene, m_material_collector, m_texture_collector, out);
                 }
                 else if (shapes_changed)
                 {
-                    UpdateShapeProperties(scene, mat_collector, tex_collector, out);
+                    UpdateShapeProperties(scene, m_material_collector, m_texture_collector, out);
                 }
             }
             
             // If materials need an update, do it.
             // We are passing material dirty state detection function in there.
             if (!out.material_bundle ||
-                mat_collector.NeedsUpdate(out.material_bundle.get(),
+                m_material_collector.NeedsUpdate(out.material_bundle.get(),
                                           [](void const* ptr)->bool
                                           {
                                               auto mat = reinterpret_cast<Material const*>(ptr);
@@ -296,17 +296,17 @@ namespace Baikal
                                           }
                                           ))
             {
-                UpdateMaterials(scene, mat_collector, tex_collector, out);
+                UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
             }
             
             // If textures need an update, do it.
-            if (tex_collector.GetNumItems() > 0 && (
+            if (m_texture_collector.GetNumItems() > 0 && (
                                                     !out.texture_bundle ||
-                                                    tex_collector.NeedsUpdate(out.texture_bundle.get(), [](void const* ptr) {
+                                                    m_texture_collector.NeedsUpdate(out.texture_bundle.get(), [](void const* ptr) {
                 auto tex = reinterpret_cast<Texture const*>(ptr);
                 return tex->IsDirty(); })))
             {
-                UpdateTextures(scene, mat_collector, tex_collector, out);
+                UpdateTextures(scene, m_material_collector, m_texture_collector, out);
             }
             
             // Set current scene
@@ -321,7 +321,7 @@ namespace Baikal
             scene.ClearDirtyFlags();
             
             // Clear material dirty flags
-            mat_collector.Finalize([](void const* item)
+            m_material_collector.Finalize([](void const* item)
                                    {
                                        auto material = reinterpret_cast<Material const*>(item);
                                        material->SetDirty(false);
@@ -334,16 +334,16 @@ namespace Baikal
     
     template <typename CompiledScene>
     inline
-    void SceneController<CompiledScene>::RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const
+    void SceneController<CompiledScene>::RecompileFull(Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, CompiledScene& out) const
     {
-        UpdateCamera(scene, mat_collector, tex_collector, out);
+        UpdateCamera(scene, m_material_collector, m_texture_collector, out);
         
-        UpdateLights(scene, mat_collector, tex_collector, out);
+        UpdateLights(scene, m_material_collector, m_texture_collector, out);
         
-        UpdateShapes(scene, mat_collector, tex_collector, out);
+        UpdateShapes(scene, m_material_collector, m_texture_collector, out);
         
-        UpdateMaterials(scene, mat_collector, tex_collector, out);
+        UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
         
-        UpdateTextures(scene, mat_collector, tex_collector, out);
+        UpdateTextures(scene, m_material_collector, m_texture_collector, out);
     }
 }

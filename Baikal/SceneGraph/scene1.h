@@ -65,7 +65,7 @@ namespace Baikal
         Scene1();
         // Destructor
         ~Scene1();
-        
+
         // Add or remove lights
         void AttachLight(Light const* light);
         void DetachLight(Light const* light);

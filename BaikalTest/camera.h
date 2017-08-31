@@ -36,10 +36,13 @@ TEST_F(CameraTest, CameraFocalLength)
     {
         ClearOutput();
         m_camera->SetFocalLength(v);
-        ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+        auto& scene = m_controller->GetCachedScene(*m_scene);
+
         for (auto i = 0u; i < kNumIterations; ++i)
         {
-            ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+            ASSERT_NO_THROW(m_renderer->Render(scene));
         }
 
         std::ostringstream oss;
@@ -62,10 +65,14 @@ TEST_F(CameraTest, CameraSensorSize)
     {
         ClearOutput();
         m_camera->SetSensorSize(RadeonRays::float2(v.first, v.second));
-        ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+        
+        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+        auto& scene = m_controller->GetCachedScene(*m_scene);
+
         for (auto i = 0u; i < kNumIterations; ++i)
         {
-            ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+            ASSERT_NO_THROW(m_renderer->Render(scene));
         }
 
         std::ostringstream oss;
@@ -85,10 +92,14 @@ TEST_F(CameraTest, CameraAperture)
     {
         ClearOutput();
         m_camera->SetAperture(v);
-        ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+
+        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+        auto& scene = m_controller->GetCachedScene(*m_scene);
+
         for (auto i = 0u; i < kNumIterations; ++i)
         {
-            ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+            ASSERT_NO_THROW(m_renderer->Render(scene));
         }
 
         std::ostringstream oss;
@@ -110,11 +121,13 @@ TEST_F(CameraTest, CameraFocusDistance)
 
         m_camera->SetFocusDistance(v);
 
-        ASSERT_NO_THROW(m_renderer->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+
+        auto& scene = m_controller->GetCachedScene(*m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
-            ASSERT_NO_THROW(m_renderer->Render(*m_scene));
+            ASSERT_NO_THROW(scene);
         }
 
         std::ostringstream oss;

@@ -27,8 +27,7 @@
 #include <mutex>
 
 #include "RenderFactory/render_factory.h"
-#include "Renderers/ptrenderer.h"
-#include "Renderers/bdptrenderer.h"
+#include "Renderers/monte_carlo_renderer.h"
 #include "Output/clwoutput.h"
 #include "Application/app_utils.h"
 #include "Utils/config_manager.h"

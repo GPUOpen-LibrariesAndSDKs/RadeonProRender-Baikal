@@ -23,13 +23,13 @@ THE SOFTWARE.
 #define CONFIG_MANAGER_H
 
 #include "CLW.h"
+#include "RenderFactory/clw_render_factory.h"
 #include <vector>
 #include <memory>
 
 namespace Baikal
 {
     class Renderer;
-    class RenderFactory;
 }
 
 class ConfigManager
@@ -54,12 +54,11 @@ public:
     struct Config
     {
         DeviceType type;
-        int devidx;
         std::unique_ptr<Baikal::Renderer> renderer;
-        std::unique_ptr<Baikal::RenderFactory> factory;
+        std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> controller;
+        std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> factory;
         CLWContext context;
         bool caninterop;
-
     };
 
     static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);

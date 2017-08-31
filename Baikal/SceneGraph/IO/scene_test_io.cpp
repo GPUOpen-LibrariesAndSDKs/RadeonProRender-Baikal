@@ -28,8 +28,7 @@ namespace Baikal
     {
         return std::unique_ptr<SceneIo>(new SceneIoTest());
     }
-    
-    
+
     // Create spehere mesh
     Mesh* CreateSphere(std::uint32_t lat, std::uint32_t lon, float r, RadeonRays::float3 const& c)
     {
@@ -41,7 +40,6 @@ namespace Baikal
         std::vector<RadeonRays::float2> uvs(num_verts);
         std::vector<std::uint32_t> indices (num_tris * 3);
 
-        
         auto t = 0U;
         for(auto j = 1U; j < lat - 1; j++)
             for(auto i = 0U; i < lon; i++)
@@ -174,7 +172,6 @@ namespace Baikal
             //light->SetConeShape
             scene->AttachLight(light);
             scene->AttachAutoreleaseObject(light);
-
         }
         else if (filename == "quad+ibl")
         {
@@ -232,15 +229,28 @@ namespace Baikal
             scene->AttachLight(ibl);
             scene->AttachAutoreleaseObject(ibl);
         }
-        else if (filename == "sphere+plane+area")
+        else if (filename == "sphere+plane")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
             scene->AttachShape(mesh);
             scene->AttachAutoreleaseObject(mesh);
 
-            SingleBxdf* grey = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
-            grey->SetInputValue("albedo", float4(0.99f, 0.99f, 0.99f, 1.f));
-            grey->SetInputValue("roughness", float4(0.025f, 0.025f, 0.025f, 1.f));
+            Mesh* floor = CreateQuad(
+            {
+                RadeonRays::float3(-8, 0, -8),
+                RadeonRays::float3(8, 0, -8),
+                RadeonRays::float3(8, 0, 8),
+                RadeonRays::float3(-8, 0, 8),
+            }
+            , false);
+            scene->AttachShape(floor);
+            scene->AttachAutoreleaseObject(floor);
+        }
+        else if (filename == "sphere+plane+area")
+        {
+            auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
+            scene->AttachShape(mesh);
+            scene->AttachAutoreleaseObject(mesh);
 
             Mesh* floor = CreateQuad(
                                     {
@@ -252,9 +262,6 @@ namespace Baikal
                                     , false);
             scene->AttachShape(floor);
             scene->AttachAutoreleaseObject(floor);
-            
-            floor->SetMaterial(grey);
-            mesh->SetMaterial(grey);
 
             SingleBxdf* emissive = new SingleBxdf(SingleBxdf::BxdfType::kEmissive);
             emissive->SetInputValue("albedo", 1.f * float4(3.1f, 3.f, 2.8f, 1.f));
@@ -281,7 +288,6 @@ namespace Baikal
             scene->AttachAutoreleaseObject(l2);
 
             scene->AttachAutoreleaseObject(emissive);
-            scene->AttachAutoreleaseObject(grey);
         }
         else if (filename == "sphere+plane+ibl")
         {
@@ -410,7 +416,7 @@ namespace Baikal
                     disney->SetInputValue(params[i], value);
                     
                     auto instance = new Instance(mesh);
-                    matrix t = RadeonRays::translation(float3(i * 2 - 9, 0.f, j * 2 - 9));
+                    matrix t = RadeonRays::translation(float3(i * 2.f - 9.f, 0.f, j * 2.f - 9.f));
                     instance->SetTransform(t);
                     scene->AttachShape(instance);
                     scene->AttachAutoreleaseObject(instance);

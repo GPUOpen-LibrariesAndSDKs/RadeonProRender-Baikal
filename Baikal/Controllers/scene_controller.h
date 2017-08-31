@@ -28,19 +28,19 @@
  */
 #pragma once
 
+#include "SceneGraph/Collector/collector.h"
+
 #include <memory>
 #include <map>
 
 namespace Baikal
 {
     class Scene1;
-    class Collector;
     class Bundle;
     class Material;
     class Light;
     class Texture;
-    
-    
+
     /**
      \brief Tracks changes of a scene and serialized data if needed.
      
@@ -56,7 +56,7 @@ namespace Baikal
         virtual ~SceneController() = default;
         
         // Given a scene this method produces (or loads from cache) corresponding GPU representation.
-        CompiledScene& CompileScene(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector) const;
+        CompiledScene& CompileScene(Scene1 const& scene) const;
 
         CompiledScene& GetCachedScene(Scene1 const& scene) const;
     protected:
@@ -86,6 +86,9 @@ namespace Baikal
         mutable Scene1 const* m_current_scene;
         // Scene cache map (CPU scene -> GPU scene mapping)
         mutable std::map<Scene1 const*, CompiledScene> m_scene_cache;
+
+        mutable Collector m_material_collector;
+        mutable Collector m_texture_collector;
     };
 }
 
