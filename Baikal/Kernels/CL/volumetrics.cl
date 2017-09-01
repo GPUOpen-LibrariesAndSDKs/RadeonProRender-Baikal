@@ -120,6 +120,8 @@ __kernel void EvaluateVolume(
     __global ray const* rays,
     // Pixel indices
     __global int const* pixelindices,
+    // Output indices
+    __global int const* output_indices,
     // Number of rays
     __global int const* numrays,
     // Volumes
@@ -145,7 +147,7 @@ __kernel void EvaluateVolume(
     )
 {
     int globalid = get_global_id(0);
-    
+
     // Only handle active rays
     if (globalid < *numrays)
     {

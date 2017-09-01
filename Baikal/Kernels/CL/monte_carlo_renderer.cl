@@ -449,6 +449,20 @@ void PerspectiveCameraDof_GenerateVertices(
     }
 }
 
+uint Part1By1(uint x)
+{
+    x &= 0x0000ffff;                  // x = ---- ---- ---- ---- fedc ba98 7654 3210
+    x = (x ^ (x << 8)) & 0x00ff00ff; // x = ---- ---- fedc ba98 ---- ---- 7654 3210
+    x = (x ^ (x << 4)) & 0x0f0f0f0f; // x = ---- fedc ---- ba98 ---- 7654 ---- 3210
+    x = (x ^ (x << 2)) & 0x33333333; // x = --fe --dc --ba --98 --76 --54 --32 --10
+    x = (x ^ (x << 1)) & 0x55555555; // x = -f-e -d-c -b-a -9-8 -7-6 -5-4 -3-2 -1-0
+    return x;
+}
+
+uint Morton2D(uint x, uint y)
+{
+    return (Part1By1(y) << 1) + Part1By1(x);
+}
 
 KERNEL void GenerateTileDomain(
     int output_width,
@@ -471,6 +485,7 @@ KERNEL void GenerateTileDomain(
     {
         // TODO: implement subtile support
         int idx = tile_start_idx + tile_y * output_width + tile_x;
+        //int idx = tile_start_idx + Morton2D(tile_x, tile_y);
         pixelidx0[tile_y * tile_width + tile_x] = idx;
     }
 

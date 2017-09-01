@@ -37,6 +37,7 @@ namespace Baikal
         CLWBuffer<Intersection> intersections;
         CLWBuffer<int> compacted_indices;
         CLWBuffer<int> pixelindices[2];
+        CLWBuffer<int> output_indices;
         CLWBuffer<int> iota;
 
         CLWBuffer<float3> lightsamples;
@@ -111,6 +112,7 @@ namespace Baikal
         m_render_data->compacted_indices = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->pixelindices[0] = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->pixelindices[1] = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
+        m_render_data->output_indices = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->hitcount = GetContext().CreateBuffer<int>(1, CL_MEM_READ_WRITE);
 
         // Recreate FR buffers
@@ -138,7 +140,7 @@ namespace Baikal
 
     CLWBuffer<int> PathTracingEstimator::GetOutputIndexBuffer() const
     {
-        return m_render_data->pixelindices[0];
+        return m_render_data->output_indices;
     }
 
     CLWBuffer<int> PathTracingEstimator::GetRayCountBuffer() const
@@ -155,6 +157,9 @@ namespace Baikal
     )
     {
         InitPathData(num_estimates);
+
+        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
+        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, num_estimates);
 
         // Initialize first pass
         for (auto pass = 0u; pass < GetMaxBounces(); ++pass)
@@ -260,6 +265,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->intersections);
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->output_indices);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
         shadekernel.SetArg(argc++, scene.vertices);
         shadekernel.SetArg(argc++, scene.normals);
@@ -308,6 +314,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->intersections);
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->output_indices);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
         shadekernel.SetArg(argc++, scene.vertices);
         shadekernel.SetArg(argc++, scene.normals);
@@ -354,6 +361,7 @@ namespace Baikal
         int argc = 0;
         evalkernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
         evalkernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        evalkernel.SetArg(argc++, m_render_data->output_indices);
         evalkernel.SetArg(argc++, m_render_data->hitcount);
         evalkernel.SetArg(argc++, scene.volumes);
         evalkernel.SetArg(argc++, scene.textures);
@@ -388,6 +396,7 @@ namespace Baikal
         misskernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
         misskernel.SetArg(argc++, m_render_data->intersections);
         misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        misskernel.SetArg(argc++, m_render_data->output_indices);
         misskernel.SetArg(argc++, (cl_int)size);
         misskernel.SetArg(argc++, scene.lights);
         misskernel.SetArg(argc++, scene.envmapidx);
@@ -415,6 +424,7 @@ namespace Baikal
         // Set kernel parameters
         int argc = 0;
         gatherkernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
+        gatherkernel.SetArg(argc++, m_render_data->output_indices);
         gatherkernel.SetArg(argc++, m_render_data->hitcount);
         gatherkernel.SetArg(argc++, m_render_data->shadowhits);
         gatherkernel.SetArg(argc++, m_render_data->lightsamples);
@@ -475,6 +485,7 @@ namespace Baikal
         misskernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
         misskernel.SetArg(argc++, m_render_data->intersections);
         misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        misskernel.SetArg(argc++, m_render_data->output_indices);
         misskernel.SetArg(argc++, m_render_data->hitcount);
         misskernel.SetArg(argc++, scene.lights);
         misskernel.SetArg(argc++, scene.light_distributions);

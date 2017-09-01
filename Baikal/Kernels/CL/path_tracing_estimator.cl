@@ -38,7 +38,7 @@ THE SOFTWARE.
 
 KERNEL
 void InitPathData(
-    GLOBAL int const* restrict src_index,
+    GLOBAL int const* restrict src_index, 
     GLOBAL int* restrict dst_index,
     GLOBAL int const* restrict num_elements,
     GLOBAL Path* restrict paths
@@ -62,7 +62,7 @@ void InitPathData(
 
 // This kernel only handles scattered paths.
 // It applies direct illumination and generates
-// path continuation if multiscattering is enabled.
+// path continuation if multiscattering is enabled. 
 KERNEL void ShadeVolume(
     // Ray batch
     GLOBAL ray const* restrict rays,
@@ -72,6 +72,8 @@ KERNEL void ShadeVolume(
     GLOBAL int const* restrict hit_indices,
     // Pixel indices
     GLOBAL int const*  restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
     // Number of rays
     GLOBAL int const*  restrict num_hits,
     // Vertices
@@ -253,6 +255,8 @@ KERNEL void ShadeSurface(
     GLOBAL int const* restrict hit_indices,
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
     // Number of rays
     GLOBAL int const* restrict num_hits,
     // Vertices
@@ -382,7 +386,7 @@ KERNEL void ShadeSurface(
 
                 // In this case we hit after an application of MIS process at previous step.
                 // That means BRDF weight has been already applied.
-                output[pixel_idx] += Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight;
+                output[output_indices[pixel_idx]] += Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight;
             }
 
             Path_Kill(path);
@@ -530,6 +534,8 @@ KERNEL void ShadeBackgroundEnvMap(
     GLOBAL Intersection const* restrict isects,
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
     // Number of rays
     int num_rays,
     GLOBAL Light const* restrict lights,
@@ -548,6 +554,7 @@ KERNEL void ShadeBackgroundEnvMap(
     if (global_id < num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
+        int output_idx = output_indices[pixel_idx];
 
         // In case of a miss
         if (isects[global_id].shapeid < 0 && env_light_idx != -1)
@@ -558,22 +565,22 @@ KERNEL void ShadeBackgroundEnvMap(
             Light light = lights[env_light_idx];
 
             if (volume_idx == -1)
-                output[pixel_idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex));
+                output[output_idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex));
             else
             {
-                output[pixel_idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) *
+                output[output_idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) *
                     Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
 
-                output[pixel_idx].xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                output[output_idx].xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
             }
         }
 
-        if (isnan(output[pixel_idx].x) || isnan(output[pixel_idx].y) || isnan(output[pixel_idx].z))
+        if (isnan(output[output_idx].x) || isnan(output[output_idx].y) || isnan(output[output_idx].z))
         {
-            output[pixel_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
+            output[output_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
         }
 
-        output[pixel_idx].w += 1.f;
+        output[output_idx].w += 1.f;
     }
 }
 
@@ -581,6 +588,8 @@ KERNEL void ShadeBackgroundEnvMap(
 KERNEL void GatherLightSamples(
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
     // Number of rays
     GLOBAL int* restrict num_rays,
     // Shadow rays hits
@@ -599,6 +608,7 @@ KERNEL void GatherLightSamples(
     {
         // Get pixel id for this sample set
         int pixel_idx = pixel_indices[global_id];
+        int output_idx = output_indices[pixel_idx];
 
         // Prepare accumulator variable
         float3 radiance = make_float3(0.f, 0.f, 0.f);
@@ -614,37 +624,7 @@ KERNEL void GatherLightSamples(
         }
 
         // Divide by number of light samples (samples already have built-in throughput)
-        output[pixel_idx].xyz += radiance;
-    }
-}
-
-///< Handle light samples and visibility info and add contribution to final buffer
-KERNEL void GatherOcclusion(
-    // Pixel indices
-    GLOBAL int const* restrict pixel_indices,
-    // Number of rays
-    GLOBAL int const* restrict num_rays,
-    // Shadow rays hits
-    GLOBAL int const* restrict shadow_hits,
-    // Light samples
-    GLOBAL float3 const* restrict light_samples,
-    // throughput
-    GLOBAL float3 const* restrict throughput,
-    // Radiance sample buffer
-    GLOBAL float4* restrict output
-)
-{
-    int global_id = get_global_id(0);
-
-    if (global_id < *num_rays)
-    {
-        // Get pixel id for this sample set
-        int pixel_idx = pixel_indices[global_id];
-
-        float visibility = (shadow_hits[global_id] == 1) ? 0.f : 1.f;
-
-        output[pixel_idx].xyz += visibility;
-        output[pixel_idx].w += 1.f;
+        output[output_idx].xyz += radiance; 
     }
 }
 
@@ -718,9 +698,11 @@ KERNEL void ShadeMiss(
     // Ray batch
     GLOBAL ray const* restrict rays,
     // Intersection data
-    GLOBAL Intersection const* restrict isects,
+    GLOBAL Intersection const* restrict isects, 
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
     // Number of rays
     GLOBAL int const* restrict num_rays,
     GLOBAL Light const* restrict lights,
@@ -742,6 +724,7 @@ KERNEL void ShadeMiss(
     if (global_id < *num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
+        int output_idx = output_indices[pixel_idx];
 
         GLOBAL Path const* path = paths + pixel_idx;
 
@@ -757,7 +740,7 @@ KERNEL void ShadeMiss(
             float weight = BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf);
 
             float3 t = Path_GetThroughput(path);
-            output[pixel_idx].xyz += REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
+            output[output_idx].xyz += REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
         }
     }
 }

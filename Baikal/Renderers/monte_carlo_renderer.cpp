@@ -52,6 +52,7 @@ namespace Baikal
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
     {
+        m_estimator->SetWorkBufferSize(kTileSizeX * kTileSizeY);
     }
 
     void MonteCarloRenderer::Clear(RadeonRays::float3 const& val, Output& output) const
@@ -171,7 +172,7 @@ namespace Baikal
 
     void MonteCarloRenderer::SetOutput(OutputType type, Output* output)
     {
-        if (output)
+       /* if (output)
         {
             auto required_size = output->width() * output->height();
 
@@ -179,7 +180,7 @@ namespace Baikal
             {
                 m_estimator->SetWorkBufferSize(required_size);
             }
-        }
+        }*/
 
         Renderer::SetOutput(type, output);
     }
