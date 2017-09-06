@@ -32,6 +32,7 @@ THE SOFTWARE.
 #include "SceneGraph/material.h"
 
 #include "Renderers/monte_carlo_renderer.h"
+#include "Renderers/adaptive_renderer.h"
 
 #include <fstream>
 #include <sstream>
@@ -304,10 +305,14 @@ namespace Baikal
 #endif
 
             int argc = 0;
+            auto renderer = static_cast<AdaptiveRenderer*>(m_cfgs[m_primary].renderer.get());
+
             copykernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(output)->data());
+            //copykernel.SetArg(argc++, renderer->GetVarianceBuffer());
             copykernel.SetArg(argc++, output->width());
             copykernel.SetArg(argc++, output->height());
             copykernel.SetArg(argc++, 2.2f);
+            //copykernel.SetArg(argc++, 1.f);
             copykernel.SetArg(argc++, m_cl_interop_image);
 
             int globalsize = output->width() * output->height();

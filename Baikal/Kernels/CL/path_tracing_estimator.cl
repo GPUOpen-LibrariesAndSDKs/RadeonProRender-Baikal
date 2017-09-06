@@ -102,7 +102,7 @@ KERNEL void ShadeVolume(
     int num_lights,
     // RNG seed
     uint rng_seed,
-    // Sampler state
+    // Sampler state 
     GLOBAL uint* restrict random,
     // Sobol matrices
     GLOBAL uint const* restrict sobol_mat,
@@ -386,7 +386,9 @@ KERNEL void ShadeSurface(
 
                 // In this case we hit after an application of MIS process at previous step.
                 // That means BRDF weight has been already applied.
-                output[output_indices[pixel_idx]] += Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight;
+                float3 v = Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight;
+                int output_index = output_indices[pixel_idx];
+                atomic_add_float3(&output[output_index], v);
             }
 
             Path_Kill(path);
@@ -436,13 +438,13 @@ KERNEL void ShadeSurface(
         // Sample bxdf
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdf_pdf);
 
-        // If we have light to sample we can hopefully do mis
-        if (light_idx > -1)
+        // If we have light to sample we can hopefully do mis 
+        if (light_idx > -1) 
         {
             // Sample light
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &lightwo, &light_pdf);
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
-            light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf);
+            light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
 
             // Apply MIS to account for both
             if (NON_BLACK(le) && light_pdf > 0.0f && !Bxdf_IsSingular(&diffgeo))
@@ -554,7 +556,9 @@ KERNEL void ShadeBackgroundEnvMap(
     if (global_id < num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
-        int output_idx = output_indices[pixel_idx];
+        int output_index = output_indices[pixel_idx];
+
+        float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
 
         // In case of a miss
         if (isects[global_id].shapeid < 0 && env_light_idx != -1)
@@ -564,23 +568,23 @@ KERNEL void ShadeBackgroundEnvMap(
 
             Light light = lights[env_light_idx];
 
+
             if (volume_idx == -1)
-                output[output_idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex));
+                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex));
             else
             {
-                output[output_idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) *
+                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) *
                     Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
 
-                output[output_idx].xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                v.xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
             }
         }
 
-        if (isnan(output[output_idx].x) || isnan(output[output_idx].y) || isnan(output[output_idx].z))
-        {
-            output[output_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
-        }
-
-        output[output_idx].w += 1.f;
+        //if (isnan(v.x) || isnan(v.y) || isnan(v.z))
+        //{
+            //output[output_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
+        //}
+        atomic_add_float4(&output[output_index], v);
     }
 }
 
@@ -608,10 +612,10 @@ KERNEL void GatherLightSamples(
     {
         // Get pixel id for this sample set
         int pixel_idx = pixel_indices[global_id];
-        int output_idx = output_indices[pixel_idx];
+        int output_index = output_indices[pixel_idx];
 
         // Prepare accumulator variable
-        float3 radiance = make_float3(0.f, 0.f, 0.f);
+        float4 radiance = 0.f;
 
         // Start collecting samples
         {
@@ -619,12 +623,12 @@ KERNEL void GatherLightSamples(
             if (shadow_hits[global_id] == -1)
             {
                 // Add its contribution to radiance accumulator
-                radiance += light_samples[global_id];
+                radiance.xyz += light_samples[global_id];
             }
         }
 
         // Divide by number of light samples (samples already have built-in throughput)
-        output[output_idx].xyz += radiance; 
+        atomic_add_float4(&output[output_index], radiance);
     }
 }
 
@@ -724,7 +728,7 @@ KERNEL void ShadeMiss(
     if (global_id < *num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
-        int output_idx = output_indices[pixel_idx];
+        int output_index = output_indices[pixel_idx];
 
         GLOBAL Path const* path = paths + pixel_idx;
 
@@ -740,7 +744,9 @@ KERNEL void ShadeMiss(
             float weight = BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf);
 
             float3 t = Path_GetThroughput(path);
-            output[output_idx].xyz += REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
+            float4 v = 0.f;
+            v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
+            atomic_add_float4(&output[output_index], v);
         }
     }
 }

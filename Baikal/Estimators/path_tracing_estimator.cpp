@@ -153,6 +153,7 @@ namespace Baikal
         std::size_t num_estimates,
         QualityLevel quality,
         CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices,
         bool atomic_update
     )
     {
@@ -182,11 +183,11 @@ namespace Baikal
             );
 
             // Apply scattering
-            EvaluateVolume(scene, pass, num_estimates, output);
+            EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
             if (pass > 0 && scene.envmapidx > -1)
             {
-                ShadeMiss(scene, pass, num_estimates, output);
+                ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
             }
 
             // Convert intersections to predicates
@@ -206,14 +207,14 @@ namespace Baikal
             RestorePixelIndices(pass, num_estimates);
 
             // Shade hits
-            ShadeVolume(scene, pass, num_estimates, output);
+            ShadeVolume(scene, pass, num_estimates, output, use_output_indices);
 
             // Shade hits
-            ShadeSurface(scene, pass, num_estimates, output);
+            ShadeSurface(scene, pass, num_estimates, output, use_output_indices);
 
             // Shade missing rays
             if (pass == 0)
-                ShadeBackground(scene, pass, num_estimates, output);
+                ShadeBackground(scene, pass, num_estimates, output, use_output_indices);
 
             // Intersect shadow rays
             GetIntersector()->QueryOcclusion(
@@ -226,7 +227,7 @@ namespace Baikal
             );
 
             // Gather light samples and account for visibility
-            GatherLightSamples(scene, pass, num_estimates, output);
+            GatherLightSamples(scene, pass, num_estimates, output, use_output_indices);
 
             GetContext().Flush(0);
         }
@@ -253,11 +254,14 @@ namespace Baikal
         ClwScene const& scene,
         int pass,
         std::size_t size,
-        CLWBuffer<RadeonRays::float3> output
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
     )
     {
         // Fetch kernel
         auto shadekernel = GetKernel("ShadeSurface");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         // Set kernel parameters
         int argc = 0;
@@ -265,7 +269,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->intersections);
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
-        shadekernel.SetArg(argc++, m_render_data->output_indices);
+        shadekernel.SetArg(argc++, output_indices);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
         shadekernel.SetArg(argc++, scene.vertices);
         shadekernel.SetArg(argc++, scene.normals);
@@ -302,11 +306,14 @@ namespace Baikal
         ClwScene const& scene,
         int pass,
         std::size_t size,
-        CLWBuffer<RadeonRays::float3> output
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
     )
     {
         // Fetch kernel
         auto shadekernel = GetKernel("ShadeVolume");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         // Set kernel parameters
         int argc = 0;
@@ -314,7 +321,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->intersections);
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
-        shadekernel.SetArg(argc++, m_render_data->output_indices);
+        shadekernel.SetArg(argc++, output_indices);
         shadekernel.SetArg(argc++, m_render_data->hitcount);
         shadekernel.SetArg(argc++, scene.vertices);
         shadekernel.SetArg(argc++, scene.normals);
@@ -351,17 +358,20 @@ namespace Baikal
         ClwScene const& scene,
         int pass,
         std::size_t size,
-        CLWBuffer<RadeonRays::float3> output
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
     )
     {
         // Fetch kernel
         auto evalkernel = GetKernel("EvaluateVolume");
 
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
         // Set kernel parameters
         int argc = 0;
         evalkernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
         evalkernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
-        evalkernel.SetArg(argc++, m_render_data->output_indices);
+        evalkernel.SetArg(argc++, output_indices);
         evalkernel.SetArg(argc++, m_render_data->hitcount);
         evalkernel.SetArg(argc++, scene.volumes);
         evalkernel.SetArg(argc++, scene.textures);
@@ -385,18 +395,21 @@ namespace Baikal
         ClwScene const& scene,
         int pass,
         std::size_t size,
-        CLWBuffer<RadeonRays::float3> output
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
     )
     {
         // Fetch kernel
         auto misskernel = GetKernel("ShadeBackgroundEnvMap");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         // Set kernel parameters
         int argc = 0;
         misskernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
         misskernel.SetArg(argc++, m_render_data->intersections);
         misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
-        misskernel.SetArg(argc++, m_render_data->output_indices);
+        misskernel.SetArg(argc++, output_indices);
         misskernel.SetArg(argc++, (cl_int)size);
         misskernel.SetArg(argc++, scene.lights);
         misskernel.SetArg(argc++, scene.envmapidx);
@@ -415,16 +428,19 @@ namespace Baikal
         ClwScene const& scene,
         int pass,
         std::size_t size,
-        CLWBuffer<RadeonRays::float3> output
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
     )
     {
         // Fetch kernel
         auto gatherkernel = GetKernel("GatherLightSamples");
 
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
         // Set kernel parameters
         int argc = 0;
         gatherkernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
-        gatherkernel.SetArg(argc++, m_render_data->output_indices);
+        gatherkernel.SetArg(argc++, output_indices);
         gatherkernel.SetArg(argc++, m_render_data->hitcount);
         gatherkernel.SetArg(argc++, m_render_data->shadowhits);
         gatherkernel.SetArg(argc++, m_render_data->lightsamples);
@@ -476,16 +492,19 @@ namespace Baikal
         ClwScene const& scene,
         int pass,
         std::size_t size,
-        CLWBuffer<RadeonRays::float3> output
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
     )
     {
         auto misskernel = GetKernel("ShadeMiss");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         int argc = 0;
         misskernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
         misskernel.SetArg(argc++, m_render_data->intersections);
         misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
-        misskernel.SetArg(argc++, m_render_data->output_indices);
+        misskernel.SetArg(argc++, output_indices);
         misskernel.SetArg(argc++, m_render_data->hitcount);
         misskernel.SetArg(argc++, scene.lights);
         misskernel.SetArg(argc++, scene.light_distributions);
@@ -605,10 +624,10 @@ namespace Baikal
         RestorePixelIndices(0, num_estimates);
 
         // Shade hits
-        ShadeSurface(scene, 0, num_estimates, temporary);
+        ShadeSurface(scene, 0, num_estimates, temporary, false);
 
         // Shade missing rays
-        ShadeMiss(scene, 0, num_estimates, temporary);
+        ShadeMiss(scene, 0, num_estimates, temporary, false);
 
         // Intersect ray batch
         start = std::chrono::high_resolution_clock::now();
@@ -634,7 +653,7 @@ namespace Baikal
                 / 1000.f);
 
         // Gather light samples and account for visibility
-        GatherLightSamples(scene, 0, num_estimates, temporary);
+        GatherLightSamples(scene, 0, num_estimates, temporary, false);
 
         //
         GetContext().Flush(0);

@@ -159,6 +159,7 @@ namespace Baikal
         \param num_estimates Number of items in ray buffer.
         \param quality Quality of the estimate.
         \param output Output buffer.
+        \param use_output_indices If set to false assumes 1 to 1 correspondence between the ray and the output
         \param atomic_update Tells an estimator that indices might contain duplicate elements and
                 hence atomic update is required while updating output buffer.
         */
@@ -167,6 +168,7 @@ namespace Baikal
             std::size_t num_estimates,
             QualityLevel quality,
             CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices = true,
             bool atomic_update = false
         ) = 0;
 

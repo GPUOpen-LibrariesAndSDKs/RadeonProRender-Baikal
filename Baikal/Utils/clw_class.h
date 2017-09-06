@@ -12,7 +12,7 @@ namespace Baikal
         virtual ~ClwClass() = default;
         
     protected:
-        CLWContext GetContext() { return m_context; }
+        CLWContext GetContext() const { return m_context; }
         CLWKernel GetKernel(std::string const& name);
         std::string GetBuildOpts() const { return m_buildopts; }
         

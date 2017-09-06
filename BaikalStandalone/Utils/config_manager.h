@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include "CLW.h"
 #include "RenderFactory/clw_render_factory.h"
+#include "Renderers/renderer.h"
 #include <vector>
 #include <memory>
 

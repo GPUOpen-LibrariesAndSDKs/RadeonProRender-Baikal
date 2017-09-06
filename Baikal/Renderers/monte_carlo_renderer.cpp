@@ -58,6 +58,7 @@ namespace Baikal
     void MonteCarloRenderer::Clear(RadeonRays::float3 const& val, Output& output) const
     {
         static_cast<ClwOutput&>(output).Clear(val);
+        m_sample_counter = 0u;
     }
 
     void MonteCarloRenderer::Render(ClwScene const& scene)
@@ -99,7 +100,7 @@ namespace Baikal
             auto num_rays = tile_size.x * tile_size.y;
             auto output_size = int2(output->width(), output->height());
 
-            GenerateTileDomain(output_size, tile_origin, tile_size, tile_size);
+            GenerateTileDomain(output_size, tile_origin, tile_size);
             GeneratePrimaryRays(scene, *output, tile_size);
 
             m_estimator->Estimate(
@@ -121,8 +122,7 @@ namespace Baikal
     void MonteCarloRenderer::GenerateTileDomain(
         int2 const& output_size, 
         int2 const& tile_origin,
-        int2 const& tile_size, 
-        int2 const& subtile_size
+        int2 const& tile_size
     )
     {
         // Fetch kernel
@@ -136,15 +136,17 @@ namespace Baikal
         generate_kernel.SetArg(argc++, tile_origin.y);
         generate_kernel.SetArg(argc++, tile_size.x);
         generate_kernel.SetArg(argc++, tile_size.y);
-        generate_kernel.SetArg(argc++, subtile_size.x);
-        generate_kernel.SetArg(argc++, subtile_size.y);
+        generate_kernel.SetArg(argc++, rand_uint());
+        generate_kernel.SetArg(argc++, m_sample_counter);
+        generate_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kRandomSeed));
+        generate_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kSobolLUT));
         generate_kernel.SetArg(argc++, m_estimator->GetOutputIndexBuffer());
         generate_kernel.SetArg(argc++, m_estimator->GetRayCountBuffer());
 
         // Run shading kernel
         {
-            size_t gs[] = { static_cast<size_t>((tile_size.x + 7) / 8 * 8), static_cast<size_t>((tile_size.y + 7) / 8 * 8) };
-            size_t ls[] = { 8, 8 };
+            size_t gs[] = { static_cast<size_t>((tile_size.x + 15) / 16 * 16), static_cast<size_t>((tile_size.y + 15) / 16 * 16) };
+            size_t ls[] = { 16, 16 };
 
             GetContext().Launch2D(0, gs, ls, generate_kernel);
         }
@@ -172,15 +174,6 @@ namespace Baikal
 
     void MonteCarloRenderer::SetOutput(OutputType type, Output* output)
     {
-       /* if (output)
-        {
-            auto required_size = output->width() * output->height();
-
-            if (required_size > m_estimator->GetWorkBufferSize())
-            {
-                m_estimator->SetWorkBufferSize(required_size);
-            }
-        }*/
 
         Renderer::SetOutput(type, output);
     }
@@ -193,7 +186,7 @@ namespace Baikal
         auto output_size = int2(output->width(), output->height());
 
         // Generate tile domain
-        GenerateTileDomain(output_size, tile_origin, tile_size, tile_size);
+        GenerateTileDomain(output_size, tile_origin, tile_size);
 
         // Generate primary
         GeneratePrimaryRays(scene, *output, tile_size);
@@ -301,7 +294,7 @@ namespace Baikal
         int num_rays = output->width() * output->height();
         int2 tile_size = int2(output->width(), output->height());
 
-        GenerateTileDomain(tile_size, int2(), tile_size, int2());
+        GenerateTileDomain(tile_size, int2(), tile_size);
         GeneratePrimaryRays(scene, *output, tile_size);
 
         m_estimator->Benchmark(scene, num_rays, stats);

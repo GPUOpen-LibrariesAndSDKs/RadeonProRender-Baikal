@@ -124,6 +124,7 @@ namespace Baikal
             std::size_t num_estimates,
             QualityLevel quality,
             CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices = true,
             bool atomic_update = false
         ) override;
 
@@ -180,42 +181,48 @@ namespace Baikal
             ClwScene const& scene,
             int pass,
             std::size_t size,
-            CLWBuffer<RadeonRays::float3> output
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
         );
 
         void EvaluateVolume(
             ClwScene const& scene,
             int pass,
             std::size_t size,
-            CLWBuffer<RadeonRays::float3> output
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
         );
 
         void ShadeMiss(
             ClwScene const& scene,
             int pass,
             std::size_t size,
-            CLWBuffer<RadeonRays::float3> output
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
         );
 
         void GatherLightSamples(
             ClwScene const& scene,
             int pass,
             std::size_t size,
-            CLWBuffer<RadeonRays::float3> output
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
         );
 
         void ShadeVolume(
             ClwScene const& scene,
             int pass,
             std::size_t size,
-            CLWBuffer<RadeonRays::float3> output
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
         );
 
         void ShadeBackground(
             ClwScene const& scene,
             int pass,
             std::size_t size,
-            CLWBuffer<RadeonRays::float3> output
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
         );
 
         // Restore pixel indices after compaction

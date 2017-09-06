@@ -133,7 +133,7 @@ __kernel void EvaluateVolume(
     // Sampler state
     __global uint* random,
     // Sobol matrices
-    __global uint const* sobolmat,
+    __global uint const* sobol_mat,
     // Current bounce 
     int bounce,
     // Current frame

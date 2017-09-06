@@ -59,7 +59,7 @@ void PerspectiveCamera_GeneratePaths(
     GLOBAL ray* restrict rays,
     // RNG data
     GLOBAL uint* restrict random,
-    GLOBAL uint const* restrict sobolmat
+    GLOBAL uint const* restrict sobol_mat
 )
 {
     int global_id = get_global_id(0);
@@ -142,7 +142,7 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
     GLOBAL ray* restrict rays,
     // RNG data
     GLOBAL uint* restrict random,
-    GLOBAL uint const* restrict sobolmat
+    GLOBAL uint const* restrict sobol_mat
 )
 {
     int global_id = get_global_id(0);
@@ -231,7 +231,7 @@ void PerspectiveCamera_GenerateVertices(
     uint frame,
     // RNG data
     GLOBAL uint* restrict random,
-    GLOBAL uint const* restrict sobolmat,
+    GLOBAL uint const* restrict sobol_mat,
     // Rays to generate
     GLOBAL ray* restrict rays,
     // Eye subpath vertices
@@ -345,7 +345,7 @@ void PerspectiveCameraDof_GenerateVertices(
     uint frame,
     // RNG data
     GLOBAL uint* restrict random,
-    GLOBAL uint const* restrict sobolmat,
+    GLOBAL uint const* restrict sobol_mat,
     // Rays to generate
     GLOBAL ray* restrict rays,
     // Eye subpath vertices
@@ -467,31 +467,134 @@ uint Morton2D(uint x, uint y)
 KERNEL void GenerateTileDomain(
     int output_width,
     int output_height,
-    int tile_offset_x,
-    int tile_offset_y,
-    int tile_width,
-    int tile_height,
-    int subtile_width,
-    int subtile_height,
-    GLOBAL int* restrict pixelidx0,
+    int offset_x,
+    int offset_y,
+    int width,
+    int height,
+    uint rng_seed,
+    uint frame,
+    GLOBAL uint* restrict random,
+    GLOBAL uint const* restrict sobol_mat,
+    GLOBAL int* restrict indices,
     GLOBAL int* restrict count
 )
 {
-    int tile_x = get_global_id(0);
-    int tile_y = get_global_id(1);
-    int tile_start_idx = output_width * tile_offset_y + tile_offset_x;
+    int2 global_id;
+    global_id.x = get_global_id(0);
+    global_id.y = get_global_id(1);
 
-    if (tile_x < tile_width && tile_y < tile_height)
+    int2 local_id;
+    local_id.x = get_local_id(0);
+    local_id.y = get_local_id(1);
+
+    int2 group_id;
+    group_id.x = get_group_id(0);
+    group_id.y = get_group_id(1);
+
+    int2 tile_size;
+    tile_size.x = get_local_size(0);
+    tile_size.y = get_local_size(1);
+
+    int num_tiles_x = output_width / tile_size.x;
+    int num_tiles_y = output_height / tile_size.y;
+
+    int start_idx = output_width * offset_y + offset_x;
+
+    if (global_id.x < width && global_id.y < height)
     {
-        // TODO: implement subtile support
-        int idx = tile_start_idx + tile_y * output_width + tile_x;
-        //int idx = tile_start_idx + Morton2D(tile_x, tile_y);
-        pixelidx0[tile_y * tile_width + tile_x] = idx;
+        int idx = start_idx +
+            (group_id.y * tile_size.y + local_id.y) * output_width +
+            (group_id.x * tile_size.x + local_id.x);
+
+        indices[global_id.y * width + global_id.x] = idx;
     }
 
-    if (tile_x == 0 && tile_y == 0)
+    if (global_id.x == 0 && global_id.y == 0)
     {
-        *count = tile_width * tile_height;
+        *count = width * height;
+    }
+}
+
+KERNEL void GenerateTileDomain_Adaptive(
+    int output_width,
+    int output_height,
+    int offset_x,
+    int offset_y,
+    int width,
+    int height,
+    uint rng_seed,
+    uint frame,
+    GLOBAL uint* restrict random,
+    GLOBAL uint const* restrict sobol_mat,
+    GLOBAL int const* restrict tile_distribution,
+    GLOBAL int* restrict indices,
+    GLOBAL int* restrict count
+)
+{
+    int2 global_id;
+    global_id.x = get_global_id(0);
+    global_id.y = get_global_id(1);
+
+    int2 local_id;
+    local_id.x = get_local_id(0);
+    local_id.y = get_local_id(1);
+
+    int2 group_id;
+    group_id.x = get_group_id(0);
+    group_id.y = get_group_id(1);
+
+    int2 tile_size;
+    tile_size.x = get_local_size(0);
+    tile_size.y = get_local_size(1);
+
+
+    // Initialize sampler  
+    Sampler sampler;
+    int x = global_id.x;
+    int y = global_id.y;
+#if SAMPLER == SOBOL
+    uint scramble = random[x + output_width * y] * 0x1fe3434f;
+
+    if (frame & 0xF)
+    {
+        random[x + output_width * y] = WangHash(scramble);
+    }
+
+    Sampler_Init(&sampler, frame, SAMPLE_DIM_IMG_PLANE_EVALUATE_OFFSET, scramble);
+#elif SAMPLER == RANDOM
+    uint scramble = x + output_width * y * rng_seed;
+    Sampler_Init(&sampler, scramble);
+#elif SAMPLER == CMJ
+    uint rnd = random[group_id.x + output_width *group_id.y];
+    uint scramble = rnd * 0x1fe3434f * ((frame + 133 * rnd) / (CMJ_DIM * CMJ_DIM));
+    Sampler_Init(&sampler, frame % (CMJ_DIM * CMJ_DIM), SAMPLE_DIM_IMG_PLANE_EVALUATE_OFFSET, scramble);
+#endif
+
+    float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+
+    float pdf;
+    int tile = Distribution1D_SampleDiscrete(sample.x, tile_distribution, &pdf);
+
+    int num_tiles_x = output_width / tile_size.x;
+    int num_tiles_y = output_height / tile_size.y;
+
+    int tile_y = clamp(tile / num_tiles_x , 0, num_tiles_y - 1);
+    int tile_x = clamp(tile % num_tiles_x, 0, num_tiles_x - 1);
+
+    int start_idx = output_width * offset_y + offset_x;
+
+    if (global_id.x < width && global_id.y < height)
+    {
+        int idx = start_idx +
+            (tile_y * tile_size.y + local_id.y) * output_width +
+            (tile_x * tile_size.x + local_id.x);
+
+        indices[global_id.y * width + global_id.x] = idx;
+    }
+
+    if (global_id.x == 0 && global_id.y == 0)
+    {
+        *count = width * height;
     }
 }
 
@@ -533,11 +636,11 @@ KERNEL void FillAOVs(
     // Sampler states
     GLOBAL uint* restrict random,
     // Sobol matrices
-    GLOBAL uint const* restrict sobolmat,
+    GLOBAL uint const* restrict sobol_mat, 
     // Frame
     int frame,
     // World position flag
-    int world_position_enabled,
+    int world_position_enabled, 
     // World position AOV
     GLOBAL float4* restrict aov_world_position,
     // World normal flag
@@ -785,6 +888,7 @@ KERNEL void AccumulateData(
     }
 }
 
+#define ADAPTIVITY_DEBUG
 // Copy data to interop texture if supported
 KERNEL void ApplyGammaAndCopyData(
     GLOBAL float4 const* data,
@@ -802,10 +906,106 @@ KERNEL void ApplyGammaAndCopyData(
     if (global_idx < img_width && global_idy < img_height)
     {
         float4 v = data[global_id];
+#ifdef ADAPTIVITY_DEBUG
+        float a = v.w < 1024 ? min(1.f, v.w / 1024.f) : 0.f;
+        float4 mul_color = make_float4(1.f, 1.f - a, 1.f - a, 1.f);
+        v *= mul_color;
+#endif
+
+
         float4 val = clamp(native_powr(v / v.w, 1.f / gamma), 0.f, 1.f);
         write_imagef(img, make_int2(global_idx, global_idy), val);
     }
+} 
+
+KERNEL void AccumulateSingleSample(
+    GLOBAL float4 const* restrict src_sample_data,
+    GLOBAL float4* restrict dst_accumulation_data,
+    GLOBAL int* restrict scatter_indices,
+    int num_elements
+)
+{
+    int global_id = get_global_id(0);
+
+    if (global_id < num_elements)
+    {
+        int idx = scatter_indices[global_id];
+        float4 sample = src_sample_data[global_id];
+        dst_accumulation_data[idx].xyz += sample.xyz;
+        dst_accumulation_data[idx].w += 1.f;
+    }
 }
 
+KERNEL void EstimateVariance(
+    GLOBAL float4 const* restrict image_buffer,
+    GLOBAL float* restrict variance_buffer,
+    int width,
+    int height
+)
+{
+    __local float3 lds[256];
+
+    int x = get_global_id(0);
+    int y = get_global_id(1);
+    int lx = get_local_id(0);
+    int ly = get_local_id(1);
+    int gx = get_group_id(0);
+    int gy = get_group_id(1);
+    int wx = get_local_size(0);
+    int wy = get_local_size(1);
+    int num_tiles = (width + wx - 1) / wx;
+    int lid = ly * wx + lx;
+
+    float3 value = 0.f;
+    if (x < width && y < height)
+    {
+        float4 rw = image_buffer[y * width + x]; rw /= rw.w;
+        value = rw.xyz;
+        //rw = y + 1 < height ? image_buffer[(y + 1) * width + x] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= rw.xyz;
+        //rw = y - 1 >= 0 ? image_buffer[(y - 1) * width + x] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= rw.xyz;
+        //rw = x + 1 < width ? image_buffer[y * width + x + 1] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= rw.xyz;
+        //rw = x - 1 >= 0 ? image_buffer[y * width + x - 1] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= rw.xyz;
+    }
+
+    lds[lid] = value;
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for (int offset = ((wx * wy) >> 1); offset > 0; offset >>= 1) 
+    {
+        if (lid < offset)
+        {
+            lds[lid] += lds[lid + offset];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    float3 mean = lds[0] / (wx * wy);
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    lds[lid] = (mean - value) * (mean - value);
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    for (int offset = ((wx * wy) >> 1); offset > 0; offset >>= 1)
+    {
+        if (lid < offset)
+        {
+            lds[lid] += lds[lid + offset];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (x < width && y < height)
+    {
+        if (lx == 0 && ly == 0)
+        {
+            float3 dev = lds[0] / (wx * wy - 1);
+            variance_buffer[gy * num_tiles + gx] = luminance(dev);
+        }
+    }
+}
 
 #endif // MONTE_CARLO_RENDERER_CL

@@ -34,7 +34,10 @@ namespace Baikal
     {
     public:
         // values are function values at equal spacing at numsegments points within [0,1] range
+        Distribution1D();
         Distribution1D(float const* values, std::uint32_t num_segments);
+
+        void Set(float const* values, std::uint32_t num_segments);
 
         // Sample one value using this distribution
         // u is uniformely distributed random var

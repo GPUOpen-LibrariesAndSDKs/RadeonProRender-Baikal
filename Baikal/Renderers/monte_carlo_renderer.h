@@ -76,25 +76,32 @@ namespace Baikal
         void SetMaxBounces(std::uint32_t max_bounces);
 
     protected:
-        void GeneratePrimaryRays(ClwScene const& scene, Output const& output,
-                                 int2 const& tile_size);
+        void GeneratePrimaryRays(
+            ClwScene const& scene,
+            Output const& output,
+            int2 const& tile_size
+        );
 
-        void FillAOVs(ClwScene const& scene, int2 const& tile_origin,
-                      int2 const& tile_size);
+        void FillAOVs(
+            ClwScene const& scene, 
+            int2 const& tile_origin,
+            int2 const& tile_size
+        );
 
-        void GenerateTileDomain(
+        virtual void GenerateTileDomain(
             int2 const& output_size,
             int2 const& tile_origin,
-            int2 const& tile_size,
-            int2 const& subtile_size
+            int2 const& tile_size
         );
+
+        Estimator& GetEstimator() { return *m_estimator;  }
 
         // Find non-zero AOV
         Output* FindFirstNonZeroOutput(bool include_color = true) const;
 
     public:
         std::unique_ptr<Estimator> m_estimator;
-        std::uint32_t m_sample_counter;
+        mutable std::uint32_t m_sample_counter;
     };
 
 }

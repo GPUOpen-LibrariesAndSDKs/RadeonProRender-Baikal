@@ -176,6 +176,12 @@ float3 GetOrthoVector(float3 n)
     return normalize(p);
 }
 
+float luminance(float3 v)
+{
+    // Luminance
+    return 0.2126f * v.x + 0.7152f * v.y + 0.0722f * v.z;
+}
+
 uint upper_power_of_two(uint v)
 {
     v--;
@@ -186,6 +192,49 @@ uint upper_power_of_two(uint v)
     v |= v >> 16;
     v++;
     return v;
+}
+
+INLINE
+void atomic_add_float(volatile __global float* addr, float value)
+{
+    union {
+        unsigned int u32;
+        float        f32;
+    } next, expected, current;
+    current.f32 = *addr;
+    do {
+        expected.f32 = current.f32;
+        next.f32 = expected.f32 + value;
+        current.u32 = atomic_cmpxchg((volatile __global unsigned int *)addr,
+            expected.u32, next.u32);
+    } while (current.u32 != expected.u32);
+}
+
+void atomic_add_float3(volatile __global float3* ptr, float3 value)
+{
+    volatile __global float* p = (volatile __global float*)ptr;
+    atomic_add_float(p, value.x);
+    atomic_add_float(p + 1, value.y);
+    atomic_add_float(p + 2, value.z);
+}
+
+void atomic_add_float4(volatile __global float4* ptr, float4 value)
+{
+    volatile __global float* p = (volatile __global float*)ptr;
+    atomic_add_float(p, value.x);
+    atomic_add_float(p + 1, value.y);
+    atomic_add_float(p + 2, value.z);
+    atomic_add_float(p + 3, value.z);
+}
+
+void add_float3(__global float3* ptr, float3 value)
+{
+    *ptr += value;
+}
+
+void add_float4(__global float4* ptr, float4 value)
+{
+    *ptr += value;
 }
 
 

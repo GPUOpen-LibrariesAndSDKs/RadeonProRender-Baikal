@@ -242,7 +242,7 @@ INLINE int Scene_SampleLight(Scene const* scene, float sample, float* pdf)
     return light_idx;
 #else
     int num_lights = scene->num_lights;
-    int light_idx = Distribution1D_SampleDiscreet(sample, scene->light_distribution, pdf);
+    int light_idx = Distribution1D_SampleDiscrete(sample, scene->light_distribution, pdf);
     return light_idx;
 #endif
 }

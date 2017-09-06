@@ -30,6 +30,7 @@ THE SOFTWARE.
 #define SAMPLE_DIM_SURFACE_OFFSET 4
 #define SAMPLE_DIM_VOLUME_APPLY_OFFSET 100
 #define SAMPLE_DIM_VOLUME_EVALUATE_OFFSET 200
+#define SAMPLE_DIM_IMG_PLANE_EVALUATE_OFFSET 200
 
 typedef struct
 {
@@ -48,8 +49,8 @@ typedef struct _Sampler
 } Sampler;
 
 #if SAMPLER == SOBOL
-#define SAMPLER_ARG_LIST __global uint const* sobolmat
-#define SAMPLER_ARGS sobolmat
+#define SAMPLER_ARG_LIST __global uint const* sobol_mat
+#define SAMPLER_ARGS sobol_mat
 #elif SAMPLER == RANDOM
 #define SAMPLER_ARG_LIST int unused
 #define SAMPLER_ARGS 0
@@ -391,7 +392,7 @@ float Distribution1D_Sample(float s, GLOBAL int const* data, float* pdf)
 }
 
 /// Sample 1D distribution
-int Distribution1D_SampleDiscreet(float s, GLOBAL int const* data, float* pdf)
+int Distribution1D_SampleDiscrete(float s, GLOBAL int const* data, float* pdf)
 {
     int num_segments = data[0];
 

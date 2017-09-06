@@ -23,7 +23,6 @@ THE SOFTWARE.
 
 #include "CLW.h"
 #include "RenderFactory/render_factory.h"
-#include "Renderers/monte_carlo_renderer.h"
 
 #ifndef APP_BENCHMARK
 

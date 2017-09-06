@@ -2,6 +2,7 @@
 
 #include "Output/clwoutput.h"
 #include "Renderers/monte_carlo_renderer.h"
+#include "Renderers/adaptive_renderer.h"
 #include "Estimators/path_tracing_estimator.h"
 #include "PostEffects/bilateral_denoiser.h"
 
@@ -28,7 +29,7 @@ namespace Baikal
         {
             case RendererType::kUnidirectionalPathTracer:
                 return std::unique_ptr<Renderer>(
-                    new MonteCarloRenderer(
+                    new AdaptiveRenderer(
                         m_context, 
                         std::make_unique<PathTracingEstimator>(m_context, m_intersector.get())
                         ));

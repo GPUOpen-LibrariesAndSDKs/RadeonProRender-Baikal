@@ -32,7 +32,7 @@ namespace Baikal
     , m_context(context)
     , m_api(api)
     {
-        auto acc_type = "fatbvh";
+        auto acc_type = "bvh";
         auto builder_type = "sah";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
         m_api->SetOption("acc.type", acc_type);

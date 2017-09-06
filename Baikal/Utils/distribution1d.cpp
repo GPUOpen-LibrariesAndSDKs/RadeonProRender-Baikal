@@ -6,11 +6,23 @@
 
 namespace Baikal
 {
-    Distribution1D::Distribution1D(float const* values, std::uint32_t num_segments)
-        : m_num_segments(num_segments)
-        , m_func_values(num_segments)
-        , m_cdf(num_segments + 1)
+    Distribution1D::Distribution1D()
+        : m_num_segments(0u)
     {
+    }
+
+    Distribution1D::Distribution1D(float const* values, std::uint32_t num_segments)
+    {
+        Set(values, num_segments);
+    }
+
+    void Distribution1D::Set(float const* values, std::uint32_t num_segments)
+    {
+        assert(num_segments > 0);
+        m_num_segments = num_segments;
+        m_func_values.resize(num_segments);
+        m_cdf.resize(num_segments + 1);
+
         // Copy function values
         std::copy(values, values + num_segments, m_func_values.begin());
 
@@ -33,6 +45,8 @@ namespace Baikal
 
     float Distribution1D::Sample1D(float u, float& pdf) const
     {
+        assert(m_num_segments > 0);
+
         // Find the segment here u lies
         // this one is in [0, N-1] and we need to handle corner case:
         // for 0 it returns 0 index
