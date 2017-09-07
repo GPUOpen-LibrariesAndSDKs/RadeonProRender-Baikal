@@ -584,17 +584,12 @@ KERNEL void ShadeBackgroundEnvMap(
             }
         }
 
-        //if (isnan(v.x) || isnan(v.y) || isnan(v.z))
-        //{
-            //output[output_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
-        //}
-
-        ADD_FLOAT4(&output[output_index], v);
+        ADD_FLOAT4(&output[output_index], v); 
     }
 }
 
 ///< Handle light samples and visibility info and add contribution to final buffer
-KERNEL void GatherLightSamples(
+KERNEL void GatherLightSamples(  
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
     // Output indices

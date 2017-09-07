@@ -160,9 +160,14 @@ namespace Baikal
         bool atomic_update
     )
     {
+        if (atomic_update)
+        {
+            Rebuild(" -D BAIKAL_ATOMIC_RESOLVE ");
+        }
+
         InitPathData(num_estimates);
 
-        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
+        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates); 
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, num_estimates);
 
         // Initialize first pass

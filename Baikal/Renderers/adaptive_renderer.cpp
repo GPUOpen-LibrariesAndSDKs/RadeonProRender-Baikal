@@ -6,7 +6,7 @@ namespace Baikal
     AdaptiveRenderer::AdaptiveRenderer(
         CLWContext context,
         std::unique_ptr<Estimator> estimator
-    ) : MonteCarloRenderer(context, std::move(estimator), "-D BAIKAL_ATOMIC_RESOLVE")
+    ) : MonteCarloRenderer(context, std::move(estimator))
     {
         auto samples_buffer_size = GetEstimator().GetWorkBufferSize();
         m_sample_buffer = GetContext().CreateBuffer<float3>(samples_buffer_size, CL_MEM_READ_WRITE);
@@ -53,7 +53,8 @@ namespace Baikal
                 num_rays,
                 Estimator::QualityLevel::kStandard,
                 m_sample_buffer,
-                false
+                false,
+                true
             );
 
             AccumulateSamples(m_sample_buffer, output->data(), num_rays);

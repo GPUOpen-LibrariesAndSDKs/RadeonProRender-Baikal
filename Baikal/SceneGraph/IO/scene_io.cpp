@@ -287,7 +287,7 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
         scene->AttachAutoreleaseObject(ibl_texture);
 
         ImageBasedLight* ibl = new ImageBasedLight();
@@ -306,7 +306,7 @@ namespace Baikal
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
         scene->AttachAutoreleaseObject(light1);
 
-        //scene->AttachLight(light);
+        scene->AttachLight(light);
         //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 

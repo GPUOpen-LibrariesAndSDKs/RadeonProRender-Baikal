@@ -43,7 +43,7 @@ THE SOFTWARE.
 KERNEL
 void PerspectiveCamera_GeneratePaths(
     // Camera
-    GLOBAL Camera const* restrict camera,
+    GLOBAL Camera const* restrict camera, 
     // Image resolution
     int output_width,
     int output_height,
