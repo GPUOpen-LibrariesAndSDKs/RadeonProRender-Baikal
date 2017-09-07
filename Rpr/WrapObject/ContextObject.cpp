@@ -143,13 +143,13 @@ void ContextObject::GetRenderStatistics(void * out_data, size_t * out_size_ret) 
         rs->gpumem_usage = 0;
         rs->gpumem_total = 0;
         rs->gpumem_max_allocation = 0;
-        for (const auto& cfg : m_cfgs)
-        {
+        //for (const auto& cfg : m_cfgs)
+        //{
             // TODO: implement me
             //rs->gpumem_usage += cfg.renderer->GetWorkingSetSize();
             //rs->gpumem_total += cfg.renderer->GetWorkingSetSize();
             //rs->gpumem_max_allocation += cfg.renderer->GetWorkingSetSize();
-        }
+        //}
     }
     if (out_size_ret)
     {

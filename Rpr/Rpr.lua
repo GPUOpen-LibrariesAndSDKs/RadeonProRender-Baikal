@@ -2,7 +2,7 @@ project "Rpr"
     kind "SharedLib"
     location "../Rpr"
     links {"RadeonRays", "CLW", "Calc"}
-    files { "../Rpr/**.h", "../Rpr/**.cpp", "../Baikal/**.h", "../Baikal/**.cpp", "../BaikalStandalone/Utils/**.cpp", "../BaikalStandalone/Utils/**.h" }
+    files { "../Rpr/**.h", "../Rpr/**.cpp", "../Baikal/**.h", "../Baikal/**.cpp", "../BaikalStandalone/Utils/config_manager.cpp", "../BaikalStandalone/Utils/config_manager.h" }
     removefiles{"../Baikal/main.cpp","../Baikal/main_benchmark.cpp", "../Baikal/ImGUI/imgui_impl_glfw_gl3.cpp"}
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "../BaikalStandalone", "." }
 
@@ -21,9 +21,9 @@ project "Rpr"
 
         links {"RadeonRays",}
         links {"glew", "OpenGL32"}
-        libdirs {   "../3rdparty/glew/lib/%{cfg.platform}", 
-                    "../3rdparty/freeglut/lib/%{cfg.platform}", 
-                    "../3rdparty/embree/lib/%{cfg.platform}", 
+        libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
+                    "../3rdparty/freeglut/lib/%{cfg.platform}",
+                    "../3rdparty/embree/lib/%{cfg.platform}",
                     "../3rdparty/oiio/lib/%{cfg.platform}"}
 
         configuration {"Debug"}
@@ -75,13 +75,13 @@ project "Rpr"
     configuration {"x64", "Release"}
         targetdir "../Bin/Release/x64"
     configuration {}
-    
+
     if os.is("windows") then
-        postbuildcommands  { 
-          'copy "..\\3rdparty\\glew\\bin\\%{cfg.platform}\\glew32.dll" "%{cfg.buildtarget.directory}"', 
+        postbuildcommands  {
+          'copy "..\\3rdparty\\glew\\bin\\%{cfg.platform}\\glew32.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\embree.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\tbb.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',
-          'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"' 
+          'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"'
         }
     end

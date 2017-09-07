@@ -155,8 +155,9 @@ ShapeObject* ShapeObject::CreateMesh(rpr_float const * in_vertices, size_t in_nu
     mesh->SetUVs(uvs.data(), uvs.size() / 2);
     mesh->SetIndices(inds.data(), inds.size());
 
-    return new ShapeObject(mesh, false);
+    return new ShapeObject(mesh, nullptr);
 }
+
 void ShapeObject::SetMaterial(MaterialObject* mat)
 {
     if (mat)
