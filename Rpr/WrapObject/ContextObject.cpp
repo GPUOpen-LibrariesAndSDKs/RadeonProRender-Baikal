@@ -145,9 +145,10 @@ void ContextObject::GetRenderStatistics(void * out_data, size_t * out_size_ret) 
         rs->gpumem_max_allocation = 0;
         for (const auto& cfg : m_cfgs)
         {
-            rs->gpumem_usage += cfg.renderer->GetWorkingSetSize();
-            rs->gpumem_total += cfg.renderer->GetWorkingSetSize();
-            rs->gpumem_max_allocation += cfg.renderer->GetWorkingSetSize();
+            // TODO: implement me
+            //rs->gpumem_usage += cfg.renderer->GetWorkingSetSize();
+            //rs->gpumem_total += cfg.renderer->GetWorkingSetSize();
+            //rs->gpumem_max_allocation += cfg.renderer->GetWorkingSetSize();
         }
     }
     if (out_size_ret)
@@ -211,7 +212,8 @@ void ContextObject::Render()
 	//render
     for (auto& c : m_cfgs)
     {
-        c.renderer->Render(*m_current_scene->GetScene());
+        auto& scene = c.controller->CompileScene(*m_current_scene->GetScene());
+        c.renderer->Render(scene);
     }
 
 }
@@ -224,7 +226,8 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
     //render
     for (auto& c : m_cfgs)
     {
-        c.renderer->RenderTile(*m_current_scene->GetScene(), origin, size);
+        auto& scene = c.controller->CompileScene(*m_current_scene->GetScene());
+        c.renderer->RenderTile(scene, origin, size);
     }
 }
 

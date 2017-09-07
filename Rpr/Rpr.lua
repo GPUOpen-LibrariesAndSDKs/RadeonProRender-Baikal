@@ -2,9 +2,9 @@ project "Rpr"
     kind "SharedLib"
     location "../Rpr"
     links {"RadeonRays", "CLW", "Calc"}
-    files { "../Rpr/**.h", "../Rpr/**.cpp", "../Baikal/**.h", "../Baikal/**.cpp" }
+    files { "../Rpr/**.h", "../Rpr/**.cpp", "../Baikal/**.h", "../Baikal/**.cpp", "../BaikalStandalone/Utils/**.cpp", "../BaikalStandalone/Utils/**.h" }
     removefiles{"../Baikal/main.cpp","../Baikal/main_benchmark.cpp", "../Baikal/ImGUI/imgui_impl_glfw_gl3.cpp"}
-    includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "." }
+    includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "../BaikalStandalone", "." }
 
     defines {"RPR_EXPORT_API"}
 
@@ -12,7 +12,7 @@ project "Rpr"
         sysincludedirs {"/usr/local/include"}
         libdirs {"/usr/local/lib"}
         linkoptions{ "-framework OpenGL", "-framework GLUT" }
-        buildoptions "-std=c++11 -stdlib=libc++"
+        buildoptions "-std=c++14 -stdlib=libc++"
         links {"OpenImageIO"}
     end
 
@@ -34,7 +34,7 @@ project "Rpr"
     end
 
     if os.is("linux") then
-        buildoptions "-std=c++11"
+        buildoptions "-std=c++14"
         links {"OpenImageIO", "pthread",}
         if not _OPTIONS["benchmark"] then
             links{"glut", "GLEW", "GL",}

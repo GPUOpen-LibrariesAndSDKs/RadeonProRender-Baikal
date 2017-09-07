@@ -65,7 +65,7 @@ project "BaikalStandalone"
     end
 
     if os.is("linux") then
-        buildoptions "-std=c++11"
+        buildoptions "-std=c++14"
         includedirs { "../3rdparty/glfw/include"}
         links {"OpenImageIO", "pthread"}
         links{"GLEW", "GL", "glfw"}

@@ -26,7 +26,7 @@ project "BaikalTest"
     end
 
     if os.is("linux") then
-        buildoptions "-std=c++11"
+        buildoptions "-std=c++14"
         links {"OpenImageIO", "pthread"}
         os.execute("rm -rf obj");
     end

@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "WrapObject/LightObject.h"
 
 #include "Utils/config_manager.h"
-#include "Renderers/ptrenderer.h"
+#include "Renderers/monte_carlo_renderer.h"
 
 #include <vector>
 #include "RadeonProRender.h"
