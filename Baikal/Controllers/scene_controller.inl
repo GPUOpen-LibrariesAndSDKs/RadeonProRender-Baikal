@@ -201,7 +201,21 @@ namespace Baikal
             // Exctract cached scene entry
             auto& out = iter->second;
             auto dirty = scene.GetDirtyFlags();
-            
+
+            bool should_update_materials = !out.material_bundle ||
+                m_material_collector.NeedsUpdate(out.material_bundle.get(),
+                    [](void const* ptr)->bool
+            {
+                auto mat = reinterpret_cast<Material const*>(ptr);
+                return mat->IsDirty();
+            });
+
+            bool should_update_textures = m_texture_collector.GetNumItems() > 0 && (
+                !out.texture_bundle ||
+                m_texture_collector.NeedsUpdate(out.texture_bundle.get(), [](void const* ptr) {
+                auto tex = reinterpret_cast<Texture const*>(ptr);
+                return tex->IsDirty(); }));
+
             // Check if we have valid camera
             auto camera = scene.GetCamera();
             
@@ -245,7 +259,8 @@ namespace Baikal
                 
                 
                 // Update lights if needed
-                if (dirty & Scene1::kLights || lights_changed)
+                if (dirty & Scene1::kLights || lights_changed || 
+                    should_update_textures || should_update_materials)
                 {
                     UpdateLights(scene, m_material_collector, m_texture_collector, out);
                 }
@@ -287,36 +302,25 @@ namespace Baikal
             
             // If materials need an update, do it.
             // We are passing material dirty state detection function in there.
-            if (!out.material_bundle ||
-                m_material_collector.NeedsUpdate(out.material_bundle.get(),
-                                          [](void const* ptr)->bool
-                                          {
-                                              auto mat = reinterpret_cast<Material const*>(ptr);
-                                              return mat->IsDirty();
-                                          }
-                                          ))
+            if (should_update_materials)
             {
                 UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
             }
-            
+
             // If textures need an update, do it.
-            if (m_texture_collector.GetNumItems() > 0 && (
-                                                    !out.texture_bundle ||
-                                                    m_texture_collector.NeedsUpdate(out.texture_bundle.get(), [](void const* ptr) {
-                auto tex = reinterpret_cast<Texture const*>(ptr);
-                return tex->IsDirty(); })))
+            if (should_update_textures)
             {
                 UpdateTextures(scene, m_material_collector, m_texture_collector, out);
             }
-            
+
             // Set current scene
             if (m_current_scene != &scene)
             {
                 m_current_scene = &scene;
-                
+
                 UpdateCurrentScene(scene, out);
             }
-            
+
             // Make sure to clear dirty flags
             scene.ClearDirtyFlags();
             

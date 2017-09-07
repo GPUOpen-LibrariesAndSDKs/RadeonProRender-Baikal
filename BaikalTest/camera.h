@@ -28,7 +28,7 @@ class CameraTest : public BasicTest
 
 };
 
-TEST_F(CameraTest, CameraFocalLength)
+TEST_F(CameraTest, Camera_FocalLength)
 {
     std::vector<float> values = { 0.014f, 0.035f, 0.05f, 0.085f, 0.135f };
 
@@ -52,7 +52,7 @@ TEST_F(CameraTest, CameraFocalLength)
     }
 }
 
-TEST_F(CameraTest, CameraSensorSize)
+TEST_F(CameraTest, Camera_SensorSize)
 {
     std::vector<std::pair<float, float>> values =
     {
@@ -82,7 +82,7 @@ TEST_F(CameraTest, CameraSensorSize)
     }
 }
 
-TEST_F(CameraTest, CameraAperture)
+TEST_F(CameraTest, Camera_Aperture)
 {
     std::vector<float> values = { 0.1f, 0.01f, 0.05f, 0.025f };
 
@@ -109,7 +109,7 @@ TEST_F(CameraTest, CameraAperture)
     }
 }
 
-TEST_F(CameraTest, CameraFocusDistance)
+TEST_F(CameraTest, Camera_FocusDistance)
 {
     std::vector<float> values = { 1.f, 3.f, 6.f, 9.f, 15.f };
 

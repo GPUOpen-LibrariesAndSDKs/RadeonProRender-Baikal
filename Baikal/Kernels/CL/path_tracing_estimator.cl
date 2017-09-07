@@ -623,12 +623,12 @@ KERNEL void GatherLightSamples(
             if (shadow_hits[global_id] == -1)
             {
                 // Add its contribution to radiance accumulator
-                radiance.xyz += light_samples[global_id];
+                radiance.xyz += light_samples[global_id];  
             }
         }
 
         // Divide by number of light samples (samples already have built-in throughput)
-        ADD_FLOAT4(&output[output_index], radiance);
+        ADD_FLOAT4(&output[output_index], radiance); 
     }
 }
 

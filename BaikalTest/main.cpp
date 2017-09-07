@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include "basic.h"
 #include "camera.h"
 #include "light.h"
+#include "material.h"
 
 int g_argc;
 char** g_argv;

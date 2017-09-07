@@ -40,7 +40,7 @@ class LightTest: public BasicTest
     }
 };
 
-TEST_F(LightTest, PointLight)
+TEST_F(LightTest, Light_PointLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f), 
@@ -110,7 +110,7 @@ TEST_F(LightTest, PointLight)
     }
 }
 
-TEST_F(LightTest, PointLightMany)
+TEST_F(LightTest, Light_PointLightMany)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -163,7 +163,7 @@ TEST_F(LightTest, PointLightMany)
     }
 }
 
-TEST_F(LightTest, DirectionalLight)
+TEST_F(LightTest, Light_DirectionalLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -233,7 +233,7 @@ TEST_F(LightTest, DirectionalLight)
     }
 }
 
-TEST_F(LightTest, SpotLight)
+TEST_F(LightTest, Light_SpotLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -310,7 +310,7 @@ TEST_F(LightTest, SpotLight)
     }
 }
 
-TEST_F(LightTest, AreaLight)
+TEST_F(LightTest, Light_AreaLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -341,7 +341,7 @@ TEST_F(LightTest, AreaLight)
 }
 
 
-TEST_F(LightTest, DirectionalAndAreaLight)
+TEST_F(LightTest, Light_DirectionalAndAreaLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -392,7 +392,7 @@ TEST_F(LightTest, DirectionalAndAreaLight)
     }
 }
 
-TEST_F(LightTest, PointAndAreaLight)
+TEST_F(LightTest, Light_PointAndAreaLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -443,7 +443,7 @@ TEST_F(LightTest, PointAndAreaLight)
     }
 }
 
-TEST_F(LightTest, SpotAndAreaLight)
+TEST_F(LightTest, Light_SpotAndAreaLight)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -501,7 +501,7 @@ TEST_F(LightTest, SpotAndAreaLight)
     }
 }
 
-TEST_F(LightTest, EmissiveSphere)
+TEST_F(LightTest, Light_EmissiveSphere)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -553,7 +553,7 @@ TEST_F(LightTest, EmissiveSphere)
     }
 }
 
-TEST_F(LightTest, DirectionalAndEmissiveSphere)
+TEST_F(LightTest, Light_DirectionalAndEmissiveSphere)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),

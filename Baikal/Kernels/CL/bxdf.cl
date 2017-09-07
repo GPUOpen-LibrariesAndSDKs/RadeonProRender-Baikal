@@ -118,7 +118,7 @@ void MicrofacetDistribution_Beckmann_SampleNormal(// Roughness
     float r2 = sample.y;
 
     // Sample halfway vector first, then reflect wi around that
-    float theta = atan(native_sqrt(-roughness*roughness*native_log(1.f - r1*0.99f)));
+    float theta = atan(native_sqrt(-roughness*roughness*native_log(1.f - r1*0.9999f)));
     float costheta = native_cos(theta);
     float sintheta = native_sin(theta);
 
@@ -140,7 +140,7 @@ float MicrofacetDistribution_Beckmann_G1(float roughness, float3 v, float3 m)
     float a = tannv > DENOM_EPS ? 1.f / (roughness * tannv) : 0.f;
     float a2 = a * a;
 
-    if (a < 1.6f)
+    if (a > 1.6f)
         return 1.f;
 
     return (3.535f * a + 2.181f * a2) / (1.f + 2.276f * a + 2.577f * a2);
@@ -341,10 +341,7 @@ float3 MicrofacetGGX_Evaluate(
     // F(eta) * D * G * ks / (4 * cosa * cosi)
     //return denom > 0.f ? F * ks * MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
     
-    float3 res = denom > 0.f ? F * ks * MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
-    if (length(res) < 0.1f)
-        res = 0.f;
-    return res;
+    return denom > 0.f ? F * ks * MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
 }
 
 

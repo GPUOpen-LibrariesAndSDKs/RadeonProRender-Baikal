@@ -819,7 +819,7 @@ namespace Baikal
         // Get new buffer size
         std::size_t tex_buffer_size = tex_collector.GetNumItems();
         std::size_t tex_data_buffer_size = 0;
-        
+
         if (tex_buffer_size == 0)
         {
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(1, CL_MEM_READ_ONLY);
