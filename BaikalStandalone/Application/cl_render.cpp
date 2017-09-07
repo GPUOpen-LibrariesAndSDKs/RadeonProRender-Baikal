@@ -298,14 +298,11 @@ namespace Baikal
 #endif
 
             int argc = 0;
-            auto renderer = static_cast<AdaptiveRenderer*>(m_cfgs[m_primary].renderer.get());
 
             copykernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(output)->data());
-            //copykernel.SetArg(argc++, renderer->GetVarianceBuffer());
             copykernel.SetArg(argc++, output->width());
             copykernel.SetArg(argc++, output->height());
             copykernel.SetArg(argc++, 2.2f);
-            //copykernel.SetArg(argc++, 1.f);
             copykernel.SetArg(argc++, m_cl_interop_image);
 
             int globalsize = output->width() * output->height();
@@ -318,8 +315,6 @@ namespace Baikal
 
         if (settings.benchmark)
         {
-            auto const kNumBenchmarkPasses = 100U;
-
             auto& scene = m_cfgs[m_primary].controller->CompileScene(*m_scene);
             static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
 

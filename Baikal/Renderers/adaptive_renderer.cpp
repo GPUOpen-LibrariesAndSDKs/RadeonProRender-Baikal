@@ -6,7 +6,7 @@ namespace Baikal
     AdaptiveRenderer::AdaptiveRenderer(
         CLWContext context,
         std::unique_ptr<Estimator> estimator
-    ) : MonteCarloRenderer(context, std::move(estimator))
+    ) : MonteCarloRenderer(context, std::move(estimator), "-D BAIKAL_ATOMIC_RESOLVE")
     {
         auto samples_buffer_size = GetEstimator().GetWorkBufferSize();
         m_sample_buffer = GetContext().CreateBuffer<float3>(samples_buffer_size, CL_MEM_READ_WRITE);
@@ -17,8 +17,6 @@ namespace Baikal
     {
         MonteCarloRenderer::Clear(val, output);
 
-        auto width = output.width();
-        auto height = output.height();
         GetContext().FillBuffer(0u, m_variance_buffer, 0.f, m_variance_buffer.GetElementCount()).Wait();
     }
 
@@ -68,7 +66,8 @@ namespace Baikal
                 std::vector<float> probabilities(variance_buffer_size);
                 GetContext().ReadBuffer(0u, m_variance_buffer, &probabilities[0], variance_buffer_size).Wait();
 
-                m_tile_distribution.Set(&probabilities[0], variance_buffer_size);
+                m_tile_distribution.Set(&probabilities[0],
+                                        (std::uint32_t)variance_buffer_size);
 
                 UpdateTileDistribution();
             }

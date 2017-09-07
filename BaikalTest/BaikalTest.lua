@@ -10,7 +10,7 @@ project "BaikalTest"
         sysincludedirs {"/usr/local/include"}
         libdirs {"/usr/local/lib" }
         linkoptions{ "-framework CoreFoundation -framework AppKit" }
-        buildoptions "-std=c++11 -stdlib=libc++"
+        buildoptions "-std=c++14 -stdlib=libc++"
         links {"OpenImageIO" }
     end
 
@@ -42,7 +42,7 @@ project "BaikalTest"
     configuration {}
 
     if os.is("windows") then
-        postbuildcommands  {                                                                             
+        postbuildcommands  {
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\embree.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\tbb.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',

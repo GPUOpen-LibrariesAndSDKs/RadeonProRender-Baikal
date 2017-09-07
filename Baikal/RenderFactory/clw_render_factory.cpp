@@ -6,6 +6,8 @@
 #include "Estimators/path_tracing_estimator.h"
 #include "PostEffects/bilateral_denoiser.h"
 
+#include <memory>
+
 namespace Baikal
 {
     ClwRenderFactory::ClwRenderFactory(CLWContext context)

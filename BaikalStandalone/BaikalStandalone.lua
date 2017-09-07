@@ -11,7 +11,7 @@ project "BaikalStandalone"
         includedirs{"../3rdparty/glfw/include"}
         libdirs {"/usr/local/lib", "../3rdparty/glfw/lib/x64"}
         linkoptions{ "-framework OpenGL -framework CoreFoundation -framework CoreGraphics -framework IOKit -framework AppKit -framework QuartzCore" }
-        buildoptions "-std=c++11 -stdlib=libc++"
+        buildoptions "-std=c++14 -stdlib=libc++"
         links {"OpenImageIO", "glfw3"}
     end
 
@@ -30,12 +30,12 @@ project "BaikalStandalone"
         configuration {"Release"}
             links {"OpenImageIO"}
         configuration {}
-        
+
         if _OPTIONS["fbx"] then
             defines {"ENABLE_FBX"}
             ;includedirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/include"}
             includedirs {"K:/apps/FbxSDK/2017.1/include"}
-            
+
             if _ACTION == "vs2015" then
                 configuration {"x64", "Debug"}
                     libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2015/x64/debug"}
@@ -47,7 +47,7 @@ project "BaikalStandalone"
                     libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2015/x86/release"}
                 configuration {}
             end
-            
+
             if _ACTION == "vs2013" then
                 configuration {"x64", "Debug"}
                     libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/debug"}
@@ -59,7 +59,7 @@ project "BaikalStandalone"
                     libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/release"}
                 configuration {}
             end
-            
+
             links {"libfbxsdk-md"}
         end
     end

@@ -8,7 +8,9 @@ namespace Baikal
     class ClwClass
     {
     public:
-        ClwClass(CLWContext context, std::string const& cl_file);
+        ClwClass(CLWContext context,
+                 std::string const& cl_file,
+                 std::string const& opts = "");
         virtual ~ClwClass() = default;
         
     protected:
@@ -23,7 +25,11 @@ namespace Baikal
         std::string m_buildopts;
     };
     
-    inline ClwClass::ClwClass(CLWContext context, std::string const& cl_file)
+    inline ClwClass::ClwClass(
+        CLWContext context,
+        std::string const& cl_file,
+        std::string const& opts
+                              )
     : m_context(context)
     {
         m_buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math "
@@ -40,6 +46,8 @@ namespace Baikal
                          ""
 #endif
                          );
+        
+        m_buildopts.append(opts);
         
         m_program = CLWProgram::CreateFromFile(cl_file.c_str(),
                                                m_buildopts.c_str(), m_context);

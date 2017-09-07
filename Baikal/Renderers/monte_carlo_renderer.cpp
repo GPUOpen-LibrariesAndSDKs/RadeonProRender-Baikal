@@ -42,13 +42,15 @@ namespace Baikal
 {
     using namespace RadeonRays;
 
-    int constexpr kMaxLightSamples = 1;
     int constexpr kTileSizeX = 1920;
     int constexpr kTileSizeY = 1080;
 
     // Constructor
-    MonteCarloRenderer::MonteCarloRenderer(CLWContext context, std::unique_ptr<Estimator> estimator)
-        : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl")
+    MonteCarloRenderer::MonteCarloRenderer(
+        CLWContext context,
+        std::unique_ptr<Estimator> estimator,
+        std::string const& opts)
+        : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl", opts)
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
     {
