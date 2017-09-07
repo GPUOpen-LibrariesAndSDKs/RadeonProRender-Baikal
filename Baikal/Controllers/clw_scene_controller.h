@@ -57,10 +57,10 @@ namespace Baikal
     {
     public:
         // Constructor
-        ClwSceneController(CLWContext context, int devidx);
+        ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api);
         // Destructor
         virtual ~ClwSceneController();
-        
+
         // Get underlying intersection API.
         RadeonRays::IntersectionApi* GetIntersectionApi() { return  m_api; }
 

@@ -19,53 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#ifndef CONFIG_MANAGER_H
-#define CONFIG_MANAGER_H
+#pragma once
 
-#include "CLW.h"
+#include <cstdint>
 #include <vector>
-#include <memory>
 
 namespace Baikal
 {
-    class Renderer;
-    class RenderFactory;
+    ///< The class represents 1D piecewise constant distribution of random variable.
+    ///< The PDF is proprtional to passed function defined at N points in [0,1] interval
+    ///< Partially taken from Pharr & Humphreys, but a bug with lower bound fixed.
+    ///<
+    struct Distribution1D
+    {
+    public:
+        // values are function values at equal spacing at numsegments points within [0,1] range
+        Distribution1D();
+        Distribution1D(float const* values, std::uint32_t num_segments);
+
+        void Set(float const* values, std::uint32_t num_segments);
+
+        // Sample one value using this distribution
+        // u is uniformely distributed random var
+        float Sample1D(float u, float& pdf) const;
+
+        // PDF
+        float pdf(float u) const;
+
+        // Function values
+        std::vector<float> m_func_values;
+        // Cumulative distribution function
+        std::vector<float> m_cdf;
+        // Number of segments
+        std::uint32_t m_num_segments;
+        // Integral of the function over the whole range (normalizer)
+        float m_func_sum;
+    };
 }
-
-class ConfigManager
-{
-public:
-
-    enum DeviceType
-    {
-        kPrimary,
-        kSecondary
-    };
-
-    enum Mode
-    {
-        kUseAll,
-        kUseGpus,
-        kUseSingleGpu,
-        kUseSingleCpu,
-        kUseCpus
-    };
-
-    struct Config
-    {
-        DeviceType type;
-        int devidx;
-        std::unique_ptr<Baikal::Renderer> renderer;
-        std::unique_ptr<Baikal::RenderFactory> factory;
-        CLWContext context;
-        bool caninterop;
-
-    };
-
-    static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);
-
-private:
-
-};
-
-#endif // CONFIG_MANAGER_H

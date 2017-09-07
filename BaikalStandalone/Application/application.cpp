@@ -239,7 +239,7 @@ namespace Baikal
             m_cl->SaveFrameBuffer(m_settings);
             std::cout << "Target sample count reached\n";
             ++m_settings.samplecount;
-            exit(0);
+            //exit(0);
         }
 
         m_cl->Update(m_settings);
@@ -414,14 +414,10 @@ namespace Baikal
                 std::cout << "\tRating: N/A\n";
             }
 
-            auto num_rays = m_settings.stats.resolution.x * m_settings.stats.resolution.y;
-            auto primary = (float)(num_rays / (m_settings.stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
-            auto secondary = (float)(num_rays / (m_settings.stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
-            auto shadow = (float)(num_rays / (m_settings.stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
             std::cout << "RT benchmark results:\n";
-            std::cout << "\tPrimary: " << primary << " Mrays/s\n";
-            std::cout << "\tSecondary: " << secondary << " Mrays/s\n";
-            std::cout << "\tShadow: " << shadow << " Mrays/s\n";
+            std::cout << "\tPrimary: " << m_settings.stats.primary_throughput * 1e-6f << " Mrays/s\n";
+            std::cout << "\tSecondary: " << m_settings.stats.secondary_throughput * 1e-6f << " Mrays/s\n";
+            std::cout << "\tShadow: " << m_settings.stats.shadow_throughput * 1e-6f << " Mrays/s\n";
         }
     }
 
@@ -518,7 +514,7 @@ namespace Baikal
                 ImGui::ProgressBar(m_settings.samplecount / 512.f);
             }
 
-            auto time_bench_start_time = std::chrono::high_resolution_clock::now();
+            static decltype(std::chrono::high_resolution_clock::now()) time_bench_start_time;
             if (!m_settings.time_benchmark && !m_settings.benchmark)
             {
                 if (ImGui::Button("Start benchmark") && m_settings.num_samples == -1)
@@ -565,17 +561,11 @@ namespace Baikal
             if (m_settings.rt_benchmarked)
             {
                 auto& stats = m_settings.stats;
-                //if (GradeBenchmarkResults(g_modelname, general, rt))
-                //{
-                auto num_rays = stats.resolution.x * stats.resolution.y;
-                auto primary = (float)(num_rays / (stats.primary_rays_time_in_ms * 0.001f) * 0.000001f);
-                auto secondary = (float)(num_rays / (stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f);
-                auto shadow = (float)(num_rays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f);
 
                 ImGui::Separator();
-                ImGui::Text("Primary rays: %f Mrays/s", primary);
-                ImGui::Text("Secondary rays: %f Mrays/s", secondary);
-                ImGui::Text("Shadow rays: %f Mrays/s", shadow);
+                ImGui::Text("Primary rays: %f Mrays/s", stats.primary_throughput * 1e-6f);
+                ImGui::Text("Secondary rays: %f Mrays/s", stats.secondary_throughput * 1e-6f);
+                ImGui::Text("Shadow rays: %f Mrays/s", stats.shadow_throughput * 1e-6f);
             }
 
             ImGui::End();

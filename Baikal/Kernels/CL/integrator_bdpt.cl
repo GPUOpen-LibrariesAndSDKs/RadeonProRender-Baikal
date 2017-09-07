@@ -100,7 +100,7 @@ KERNEL void GenerateLightVertices(
         num_lights
     };
 
-    int global_id = get_global_id(0);
+    int global_id = get_global_id(0); 
 
     // Check borders
     if (global_id < num_subpaths)

@@ -74,6 +74,9 @@ namespace Baikal
         // Get data size in bytes
         std::size_t GetSizeInBytes() const;
 
+        // Average normalized value
+        RadeonRays::float3 ComputeAverageValue() const;
+
         // Disallow copying
         Texture(Texture const&) = delete;
         Texture& operator = (Texture const&) = delete;
@@ -149,4 +152,6 @@ namespace Baikal
         
         return 4 * component_size * m_size.x * m_size.y;
     }
+
+
 }

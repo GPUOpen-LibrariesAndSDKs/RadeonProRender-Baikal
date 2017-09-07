@@ -27,6 +27,7 @@
 #include "radeon_rays.h"
 #include "Utils/config_manager.h"
 #include "Baikal/Renderers/renderer.h"
+#include "Baikal/Estimators/estimator.h"
 
 namespace Baikal
 {
@@ -71,7 +72,7 @@ namespace Baikal
         bool gui_visible;
 
         //bencmark
-        Renderer::BenchmarkStats stats;
+        Estimator::RayTracingStats stats;
         bool time_benchmarked;
         bool rt_benchmarked;
         bool time_benchmark;

@@ -19,11 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include "Application/application.h"
+#include "gtest/gtest.h"
 
-int main(int argc, char * argv[])
+#include "CLW.h"
+
+#include "internal.h"
+#include "basic.h"
+#include "camera.h"
+#include "light.h"
+#include "material.h"
+
+int g_argc;
+char** g_argv;
+
+int main(int argc, char** argv)
 {
-	Baikal::Application app(argc, argv);
-	app.Run();
-	return 0;
+    ::testing::InitGoogleTest(&argc, argv);
+    g_argc = argc;
+    g_argv = argv;
+    return RUN_ALL_TESTS();
 }

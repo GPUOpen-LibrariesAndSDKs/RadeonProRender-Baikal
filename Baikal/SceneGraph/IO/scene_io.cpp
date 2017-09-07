@@ -42,12 +42,20 @@ namespace Baikal
         }
         else
         {
-            LogInfo("Loading ", name, "\n");
-            auto texture = io.LoadImage(basepath + name);
-            texture->SetName(name);
-            scene.AttachAutoreleaseObject(texture);
-            m_texture_cache[name] = texture;
-            return texture;
+            try
+            {
+                LogInfo("Loading ", name, "\n");
+                auto texture = io.LoadImage(basepath + name);
+                texture->SetName(name);
+                scene.AttachAutoreleaseObject(texture);
+                m_texture_cache[name] = texture;
+                return texture;
+            }
+            catch (std::runtime_error)
+            {
+                LogInfo("Missing texture: ", name, "\n");
+                return nullptr;
+            }
         }
     }
 
@@ -123,8 +131,8 @@ namespace Baikal
                     if (!mat.bump_texname.empty())
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
-                        diffuse->SetInputValue("normal", texture);
-                        specular->SetInputValue("normal", texture);
+                        diffuse->SetInputValue("bump", texture);
+                        specular->SetInputValue("bump", texture);
                     }
 
                     diffuse->SetName(mat.name + "-diffuse");
@@ -156,7 +164,7 @@ namespace Baikal
                     if (!mat.bump_texname.empty())
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
-                        diffuse->SetInputValue("normal", texture);
+                        diffuse->SetInputValue("bump", texture);
                     }
 
                     material = diffuse;
@@ -284,13 +292,13 @@ namespace Baikal
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(1.f);
+        ibl->SetMultiplier(3.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
         DirectionalLight* light = new DirectionalLight();
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
-        light->SetEmittedRadiance(1.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
+        light->SetEmittedRadiance(30.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
         scene->AttachAutoreleaseObject(light);
 
         DirectionalLight* light1 = new DirectionalLight();

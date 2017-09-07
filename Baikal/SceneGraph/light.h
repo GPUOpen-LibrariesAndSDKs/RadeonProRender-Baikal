@@ -30,6 +30,7 @@
 
 #include "math/float3.h"
 #include "math/float2.h"
+#include "math/mathutils.h"
 #include <memory>
 #include <string>
 #include <set>
@@ -42,7 +43,8 @@
 namespace Baikal
 {
     class Texture;
-    
+    class Scene1;
+
     /**
      \brief Light base interface.
      
@@ -55,25 +57,26 @@ namespace Baikal
         Light();
         // Destructor
         virtual ~Light() = 0;
-        
+
         // Get total radiant power (integral)
         //virtual RadeonRays::float3 GetRadiantPower() const = 0;
-        
+
         // Set and get position
         RadeonRays::float3 GetPosition() const;
         void SetPosition(RadeonRays::float3 const& p);
-        
+
         // Set and get direction
         RadeonRays::float3 GetDirection() const;
         void SetDirection(RadeonRays::float3 const& d);
-        
+
         // Set and get emitted radiance (differential)
         RadeonRays::float3 GetEmittedRadiance() const;
         void SetEmittedRadiance(RadeonRays::float3 const& e);
-        
+
         // Iterator for all the textures used by the light
         virtual Iterator* CreateTextureIterator() const;
-        
+
+        virtual RadeonRays::float3 GetPower(Scene1 const& scene) const = 0;
     private:
         // Position
         RadeonRays::float3 m_p;
@@ -101,6 +104,7 @@ namespace Baikal
     class PointLight: public Light
     {
     public:
+        RadeonRays::float3 GetPower(Scene1 const& scene) const override;
     };
     
     /**
@@ -111,6 +115,7 @@ namespace Baikal
     class DirectionalLight: public Light
     {
     public:
+        RadeonRays::float3 GetPower(Scene1 const& scene) const override;
     };
     
     /**
@@ -126,7 +131,8 @@ namespace Baikal
         // and cone opening.
         void SetConeShape(RadeonRays::float2 angles);
         RadeonRays::float2 GetConeShape() const;
-        
+
+        RadeonRays::float3 GetPower(Scene1 const& scene) const override;
     private:
         // Opening angles (x - inner, y - outer)
         RadeonRays::float2 m_angles;
@@ -158,6 +164,7 @@ namespace Baikal
         // Iterator for all the textures used by the light
         Iterator* CreateTextureIterator() const override;
         
+        RadeonRays::float3 GetPower(Scene1 const& scene) const override;
     private:
         // Illuminant texture
         Texture const* m_texture;
@@ -174,116 +181,12 @@ namespace Baikal
         Shape const* GetShape() const;
         // Get parent prim idx
         std::size_t GetPrimitiveIdx() const;
-        
+
+        RadeonRays::float3 GetPower(Scene1 const& scene) const override;
     private:
         // Parent shape
         Shape const* m_shape;
         // Parent primitive index
         std::size_t m_prim_idx;
     };
-
-    inline AreaLight::AreaLight(Shape const* shape, std::size_t idx)
-    : m_shape(shape)
-    , m_prim_idx(idx)
-    {
-    }
-
-    inline RadeonRays::float3 Light::GetPosition() const
-    {
-        return m_p;
-    }
-    
-    inline void Light::SetPosition(RadeonRays::float3 const& p)
-    {
-        m_p = p;
-        SetDirty(true);
-    }
-    
-    inline RadeonRays::float3 Light::GetDirection() const
-    {
-        return m_d;
-    }
-    
-    inline void Light::SetDirection(RadeonRays::float3 const& d)
-    {
-        m_d = normalize(d);
-        SetDirty(true);
-    }
-    
-    inline Iterator* Light::CreateTextureIterator() const
-    {
-        return new EmptyIterator();
-    }
-    
-    inline RadeonRays::float3 Light::GetEmittedRadiance() const
-    {
-        return m_e;
-    }
-    
-    inline void Light::SetEmittedRadiance(RadeonRays::float3 const& e)
-    {
-        m_e = e;
-        SetDirty(true);
-    }
-    
-    inline void SpotLight::SetConeShape(RadeonRays::float2 angles)
-    {
-        m_angles = angles;
-        SetDirty(true);
-    }
-    
-    inline RadeonRays::float2 SpotLight::GetConeShape() const
-    {
-        return m_angles;
-    }
-    
-    inline void ImageBasedLight::SetTexture(Texture const* texture)
-    {
-        m_texture = texture;
-        SetDirty(true);
-    }
-    
-    inline Texture const* ImageBasedLight::GetTexture() const
-    {
-        return m_texture;
-    }
-    
-    inline std::size_t AreaLight::GetPrimitiveIdx() const
-    {
-        return m_prim_idx;
-    }
-    
-    inline Shape const* AreaLight::GetShape() const
-    {
-        return m_shape;
-    }
-    
-    inline ImageBasedLight::ImageBasedLight()
-    : m_texture(nullptr)
-    , m_multiplier(1.f)
-    {
-    }
-    
-    inline float ImageBasedLight::GetMultiplier() const
-    {
-        return m_multiplier;
-    }
-    
-    inline void ImageBasedLight::SetMultiplier(float m)
-    {
-        m_multiplier = m;
-        SetDirty(true);
-    }
-    
-    inline Iterator* ImageBasedLight::CreateTextureIterator() const
-    {
-        std::set<Texture const*> result;
-        
-        if (m_texture)
-        {
-            result.insert(m_texture);
-        }
-        
-        return new ContainerIterator<std::set<Texture const*>>(std::move(result));
-    }
 }

@@ -1,7 +1,7 @@
 project "Baikal"
-    kind "ConsoleApp"
+    kind "StaticLib"
     location "../Baikal"
-    links {"RadeonRays", "CLW", "Calc"}
+    links {"CLW", "Calc"}
     files { "../Baikal/**.inl", "../Baikal/**.h", "../Baikal/**.cpp", "../Baikal/**.cl", "../Baikal/**.fsh", "../Baikal/**.vsh" }
 
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "."}
@@ -11,14 +11,13 @@ project "Baikal"
         includedirs{"../3rdparty/glfw/include"}
         libdirs {"/usr/local/lib", "../3rdparty/glfw/lib/x64"}
         linkoptions{ "-framework OpenGL -framework CoreFoundation -framework CoreGraphics -framework IOKit -framework AppKit -framework QuartzCore" }
-        buildoptions "-std=c++11 -stdlib=libc++"
+        buildoptions "-std=c++14 -stdlib=libc++"
         links {"OpenImageIO", "glfw3"}
     end
 
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/freeglut/include",
         "../3rdparty/oiio/include", "../3rdparty/glfw/include"}
-        links {"RadeonRays", "glfw3"}
         links {"glew", "OpenGL32", "glfw3"}
         libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
                     "../3rdparty/freeglut/lib/%{cfg.platform}",
@@ -31,24 +30,23 @@ project "Baikal"
         configuration {"Release"}
             links {"OpenImageIO"}
         configuration {}
-        
+
         if _OPTIONS["fbx"] then
             defines {"ENABLE_FBX"}
-            ;includedirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/include"}
-            includedirs {"K:/apps/FbxSDK/2017.1/include"}
-            
+            includedirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/include"}
+
             if _ACTION == "vs2015" then
                 configuration {"x64", "Debug"}
-                    libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/debug"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2015/x64/debug"}
                 configuration {"x64", "Release"}
-                    libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x64/release"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2015/x64/release"}
                 configuration {"x32", "Debug"}
-                    libdirs {"K:/apps/FbxSDK/2017.1/lib/vs2015/x86/debug"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2015/x86/debug"}
                 configuration {"x32", "Release"}
-                    libdirs {"K:/apps/FbxSDK/2017.1//lib/vs2015/x86/release"}
+                    libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2015/x86/release"}
                 configuration {}
             end
-            
+
             if _ACTION == "vs2013" then
                 configuration {"x64", "Debug"}
                     libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x64/debug"}
@@ -60,48 +58,18 @@ project "Baikal"
                     libdirs {"C:/Program Files/Autodesk/FBX/FBX SDK/2017.1/lib/vs2013/x86/release"}
                 configuration {}
             end
-            
+
             links {"libfbxsdk-md"}
         end
     end
 
     if os.is("linux") then
-        buildoptions "-std=c++11"
+        buildoptions "-std=c++14"
         includedirs { "../3rdparty/glfw/include"}
         links {"OpenImageIO", "pthread"}
         links{"GLEW", "GL", "glfw"}
         os.execute("rm -rf obj");
     end
-
-    if _OPTIONS["use_vulkan"] then
-        local vulkanSDKPath = os.getenv( "VK_SDK_PATH" );
-        if vulkanSDKPath == nil then
-            vulkanSDKPath = os.getenv( "VULKAN_SDK" );
-        end
-        if vulkanSDKPath ~= nil then
-            configuration {"x32"}
-            libdirs { vulkanSDKPath .. "/Bin32" }
-            configuration {"x64"}
-            libdirs { vulkanSDKPath .. "/Bin" }
-            configuration {}
-        end
-        if os.is("macosx") then
-            --no Vulkan on macOs need to error out TODO
-        elseif os.is("linux") then
-            libdirs { vulkanSDKPath .. "/lib" }
-            links { "vulkan"}
-        elseif os.is("windows") then
-            links {"Anvil"}
-            links{"vulkan-1"}
-        end
-    end
-
-    -- if _OPTIONS["embed_kernels"] then
-    --      configuration {}
-    --      defines {"FR_EMBED_KERNELS"}
-    --      os.execute("python ../Tools/scripts/stringify.py ./CL/ > ./CL/cache/kernels.h")
---      print ">> App: CL kernels embedded"
---    end
 
     if _OPTIONS["denoiser"] then
         defines{"ENABLE_DENOISER"}

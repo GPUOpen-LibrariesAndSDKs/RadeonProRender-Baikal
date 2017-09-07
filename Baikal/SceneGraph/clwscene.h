@@ -38,6 +38,7 @@ namespace Baikal
         CLWBuffer<char> texturedata;
 
         CLWBuffer<Camera> camera;
+        CLWBuffer<int> light_distributions;
 
         std::unique_ptr<Bundle> material_bundle;
         std::unique_ptr<Bundle> texture_bundle;

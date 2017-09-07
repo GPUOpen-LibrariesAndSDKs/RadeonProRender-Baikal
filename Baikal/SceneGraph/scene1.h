@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include "math/bbox.h"
 
 namespace Baikal
 {
@@ -64,7 +65,7 @@ namespace Baikal
         Scene1();
         // Destructor
         ~Scene1();
-        
+
         // Add or remove lights
         void AttachLight(Light const* light);
         void DetachLight(Light const* light);
@@ -82,21 +83,27 @@ namespace Baikal
         std::size_t GetNumShapes() const;
         // Get shape iterator
         std::unique_ptr<Iterator> CreateShapeIterator() const;
-        
+
         // Set and get camera
         void SetCamera(Camera const* camera);
         Camera const* GetCamera() const;
-        
+
         // Get state change since last clear
         DirtyFlags GetDirtyFlags() const;
         // Set specified flag in dirty state
         void SetDirtyFlag(DirtyFlags flag) const;
         // Clear all flags
         void ClearDirtyFlags() const;
-        
+
         // Check if the scene is ready for rendering
         bool IsValid() const;
-        
+
+        // World space AABB
+        RadeonRays::bbox GetWorldAABB() const;
+
+        // World space bounding sphere radius
+        float GetRadius() const;
+
         // Autorelase objects are deleted when scene is destroyed
         void AttachAutoreleaseObject(SceneObject const* object);
         void DetachAutoreleaseObject(SceneObject const* object);

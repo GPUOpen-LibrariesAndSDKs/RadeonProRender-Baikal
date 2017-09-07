@@ -154,7 +154,6 @@ typedef struct _Material
     int nmapidx;
 } Material;
 
-
 enum LightType
 {
     kPoint = 0x1,

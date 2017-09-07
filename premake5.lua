@@ -77,12 +77,16 @@ if fileExists("./Baikal/Baikal.lua") then
 	dofile("./Baikal/Baikal.lua")
 end
 
+if fileExists("./BaikalStandalone/BaikalStandalone.lua") then
+	dofile("./BaikalStandalone/BaikalStandalone.lua")
+end
+
 if fileExists("./Gtest/gtest.lua") then
 	dofile("./Gtest/gtest.lua")
 end
 
-if fileExists("./UnitTest/UnitTest.lua") then
-	dofile("./UnitTest/UnitTest.lua")
+if fileExists("./BaikalTest/BaikalTest.lua") then
+	dofile("./BaikalTest/BaikalTest.lua")
 end
 
 if fileExists("./RadeonRaysPremakeAdapter/RadeonRays.lua") then

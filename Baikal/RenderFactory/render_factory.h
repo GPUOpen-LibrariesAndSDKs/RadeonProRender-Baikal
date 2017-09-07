@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "CLW.h"
+#include "Controllers/scene_controller.h"
 
 namespace Baikal
 {
@@ -38,6 +39,7 @@ namespace Baikal
         each other since many of them might use either CPU or GPU implementation. 
         Entities create via the same factory are known to be compatible.
      */
+    template <typename Scene> 
     class RenderFactory
     {
     public:
@@ -50,26 +52,24 @@ namespace Baikal
         {
             kBilateralDenoiser
         };
-        
-        static std::unique_ptr<RenderFactory> CreateClwRenderFactory(
-                                                            CLWContext context,
-                                                            int device_index);
-        
+
         RenderFactory() = default;
         virtual ~RenderFactory() = default;
-        
-        // Create a renderer of specified type
-        virtual std::unique_ptr<Renderer> CreateRenderer(RendererType type)
-                                                                    const = 0;
-        // Create an output of specified type
-        virtual std::unique_ptr<Output> CreateOutput(std::uint32_t w,
-                                                     std::uint32_t h) const = 0;
-        // Create post effect of specified type
-        virtual std::unique_ptr<PostEffect> CreatePostEffect(
-                                                PostEffectType type) const = 0;
-        
-        RenderFactory(RenderFactory const&) = delete;
-        RenderFactory const& operator = (RenderFactory const&) = delete;
+
+        virtual 
+        std::unique_ptr<Renderer> CreateRenderer(RendererType type) const = 0;
+
+        virtual 
+        std::unique_ptr<Output> CreateOutput(std::uint32_t w, std::uint32_t h) const = 0;
+
+        virtual 
+        std::unique_ptr<PostEffect> CreatePostEffect(PostEffectType type) const = 0;
+
+        virtual
+        std::unique_ptr<SceneController<Scene>> CreateSceneController() const = 0;
+
+        RenderFactory(RenderFactory<Scene> const&) = delete;
+        RenderFactory const& operator = (RenderFactory<Scene> const&) = delete;
     };
     
     

@@ -3,7 +3,8 @@
 
 namespace Baikal
 {
-    Mesh::Mesh()
+    Mesh::Mesh() :
+    m_aabb_cached(false)
     {
     }
     
@@ -174,5 +175,58 @@ namespace Baikal
     RadeonRays::float2 const* Mesh::GetUVs() const
     {
         return &m_uvs[0];
+    }
+
+    RadeonRays::bbox Shape::GetWorldAABB() const
+    {
+        RadeonRays::bbox result;
+        auto local_aabb = GetLocalAABB();
+        auto transform = GetTransform();
+
+        auto p0 = local_aabb.pmin;
+        auto p1 = local_aabb.pmax;
+        auto p2 = RadeonRays::float3(p0.x, p0.y, p1.z);
+        auto p3 = RadeonRays::float3(p0.x, p1.y, p0.z);
+        auto p4 = RadeonRays::float3(p1.x, p0.y, p0.z);
+        auto p5 = RadeonRays::float3(p0.x, p1.y, p1.z);
+        auto p6 = RadeonRays::float3(p1.x, p1.y, p0.z);
+        auto p7 = RadeonRays::float3(p1.x, p0.y, p1.z);
+
+        result.grow(transform * p0);
+        result.grow(transform * p1);
+        result.grow(transform * p2);
+        result.grow(transform * p3);
+        result.grow(transform * p4);
+        result.grow(transform * p5);
+        result.grow(transform * p6);
+        result.grow(transform * p7);
+
+        return result;
+    }
+
+    RadeonRays::bbox Mesh::GetLocalAABB() const
+    {
+        if (!m_aabb_cached)
+        {
+            m_aabb = RadeonRays::bbox();
+            for (auto i = 0; i < m_indices.size(); ++i)
+            {
+                m_aabb.grow(m_vertices[m_indices[i]]);
+            }
+            m_aabb_cached = true;
+        }
+
+        return m_aabb;
+    }
+
+    void Mesh::SetDirty(bool dirty) const
+    {
+        Shape::SetDirty(dirty);
+        m_aabb_cached = false;
+    }
+
+    RadeonRays::bbox Instance::GetLocalAABB() const
+    {
+        return m_base_shape->GetLocalAABB();
     }
 }

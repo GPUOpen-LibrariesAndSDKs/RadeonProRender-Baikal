@@ -31,6 +31,9 @@ THE SOFTWARE.
 #include "SceneGraph/IO/material_io.h"
 #include "SceneGraph/material.h"
 
+#include "Renderers/monte_carlo_renderer.h"
+#include "Renderers/adaptive_renderer.h"
+
 #include <fstream>
 #include <sstream>
 #include <thread>
@@ -63,7 +66,7 @@ namespace Baikal
 
         for (int i = 0; i < m_cfgs.size(); ++i)
         {
-            std::cout << i << ": " << m_cfgs[i].context.GetDevice(m_cfgs[i].devidx).GetName() << "\n";
+            std::cout << i << ": " << m_cfgs[i].context.GetDevice(0).GetName() << "\n";
         }
 
         settings.interop = false;
@@ -152,14 +155,10 @@ namespace Baikal
 
         {
             // Load OBJ scene
-            //auto scene_io = Baikal::SceneIo::CreateSceneIoTest();
             auto fbx = filename.find(".fbx") != std::string::npos;
             auto scene_io = fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
-            auto scene_io1 = Baikal::SceneIo::CreateSceneIoBinary();
-            //m_scene = scene_io->LoadScene("sphere+plane+ibl", basepath);
+            auto scene_io1 = Baikal::SceneIo::CreateSceneIoTest();
             m_scene = scene_io->LoadScene(filename, basepath);
-            //scene_io1->SaveScene(*m_scene, filename + ".bin", basepath);
-            //m_scene = scene_io1->LoadScene(filename + ".bin", basepath);
 
             // Enable this to generate new materal mapping for a model
 #if 0
@@ -216,7 +215,7 @@ namespace Baikal
         {
             if (i == m_primary)
             {
-                m_cfgs[i].renderer->CompileScene(*m_scene.get());
+                m_cfgs[i].controller->CompileScene(*m_scene.get());
                 m_cfgs[i].renderer->Clear(float3(0, 0, 0), *m_outputs[i].output);
 
 #ifdef ENABLE_DENOISER
@@ -229,7 +228,6 @@ namespace Baikal
             else
                 m_ctrl[i].clear.store(true);
         }
-
     }
 
     void AppClRender::Update(AppSettings& settings)
@@ -245,13 +243,10 @@ namespace Baikal
             if (std::atomic_compare_exchange_strong(&m_ctrl[i].newdata, &desired, 0))
             {
                 {
-                    //std::unique_lock<std::mutex> lock(m_ctrl[i].datamutex);
-                    //std::cout << "Start updating acc buffer\n"; std::cout.flush();
                     m_cfgs[m_primary].context.WriteBuffer(0, m_outputs[m_primary].copybuffer, &m_outputs[i].fdata[0], settings.width * settings.height);
-                    //std::cout << "Finished updating acc buffer\n"; std::cout.flush();
                 }
 
-                CLWKernel acckernel = static_cast<Baikal::PtRenderer*>(m_cfgs[m_primary].renderer.get())->GetAccumulateKernel();
+                auto acckernel = static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetAccumulateKernel();
 
                 int argc = 0;
                 acckernel.SetArg(argc++, m_outputs[m_primary].copybuffer);
@@ -283,13 +278,9 @@ namespace Baikal
                 m_outputs[m_primary].udata[4 * i + 3] = 1;
             }
 
-
             glActiveTexture(GL_TEXTURE0);
-
             glBindTexture(GL_TEXTURE_2D, m_tex);
-
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_outputs[m_primary].output->width(), m_outputs[m_primary].output->height(), GL_RGBA, GL_UNSIGNED_BYTE, &m_outputs[m_primary].udata[0]);
-
             glBindTexture(GL_TEXTURE_2D, 0);
         }
         else
@@ -298,7 +289,7 @@ namespace Baikal
             objects.push_back(m_cl_interop_image);
             m_cfgs[m_primary].context.AcquireGLObjects(0, objects);
 
-            CLWKernel copykernel = static_cast<Baikal::PtRenderer*>(m_cfgs[m_primary].renderer.get())->GetCopyKernel();
+            auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetCopyKernel();
 
 #ifdef ENABLE_DENOISER
             auto output = m_outputs[m_primary].output_denoised.get();
@@ -307,6 +298,7 @@ namespace Baikal
 #endif
 
             int argc = 0;
+
             copykernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(output)->data());
             copykernel.SetArg(argc++, output->width());
             copykernel.SetArg(argc++, output->height());
@@ -323,17 +315,8 @@ namespace Baikal
 
         if (settings.benchmark)
         {
-            auto const kNumBenchmarkPasses = 100U;
-
-
-            m_cfgs[m_primary].renderer->RunBenchmark(*m_scene.get(), kNumBenchmarkPasses, settings.stats);
-
-            //auto numrays = g_stats.resolution.x * g_stats.resolution.y;
-            //std::cout << "Baikal renderer benchmark\n";
-            //std::cout << "Number of primary rays: " << numrays << "\n";
-            //std::cout << "Primary rays: " << (float)(numrays / (stats.primary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.primary_rays_time_in_ms << "ms )\n";
-            //std::cout << "Secondary rays: " << (float)(numrays / (stats.secondary_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.secondary_rays_time_in_ms << "ms )\n";
-            //std::cout << "Shadow rays: " << (float)(numrays / (stats.shadow_rays_time_in_ms * 0.001f) * 0.000001f) << "mrays/s ( " << stats.shadow_rays_time_in_ms << "ms )\n";
+            auto& scene = m_cfgs[m_primary].controller->CompileScene(*m_scene);
+            static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
 
             settings.benchmark = false;
             settings.rt_benchmarked = true;
@@ -342,7 +325,8 @@ namespace Baikal
 
     void AppClRender::Render(int sample_cnt)
     {
-        m_cfgs[m_primary].renderer->Render(*m_scene.get());
+        auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene.get());
+        m_cfgs[m_primary].renderer->Render(scene);
 
 #ifdef ENABLE_DENOISER
         Baikal::PostEffect::InputSet input_set;
@@ -435,6 +419,7 @@ namespace Baikal
     void AppClRender::RenderThread(ControlData& cd)
     {
         auto renderer = m_cfgs[cd.idx].renderer.get();
+        auto controller = m_cfgs[cd.idx].controller.get();
         auto output = m_outputs[cd.idx].output.get();
 
         auto updatetime = std::chrono::high_resolution_clock::now();
@@ -447,11 +432,12 @@ namespace Baikal
             if (std::atomic_compare_exchange_strong(&cd.clear, &result, 0))
             {
                 renderer->Clear(float3(0, 0, 0), *output);
-                renderer->CompileScene(*m_scene);
+                controller->CompileScene(*m_scene);
                 update = true;
             }
 
-            renderer->Render(*m_scene.get());
+            auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene.get());
+            renderer->Render(scene);
 
             auto now = std::chrono::high_resolution_clock::now();
 
@@ -535,14 +521,16 @@ namespace Baikal
         SaveImage(oss.str(), settings.width, settings.height, &data[0]);
 
         std::cout << "Running RT benchmark...\n";
-        m_cfgs[m_primary].renderer->RunBenchmark(*m_scene, 100, settings.stats);
+
+        auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene);
+        static_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
     }
 
     void AppClRender::SetNumBounces(int num_bounces)
     {
         for (int i = 0; i < m_cfgs.size(); ++i)
         {
-            static_cast<Baikal::PtRenderer*>(m_cfgs[i].renderer.get())->SetNumBounces(num_bounces);
+            static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[i].renderer.get())->SetMaxBounces(num_bounces);
         }
     }
 
@@ -555,4 +543,5 @@ namespace Baikal
         }
         m_output_type = type;
     }
+
 } // Baikal
