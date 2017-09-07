@@ -42,12 +42,20 @@ namespace Baikal
         }
         else
         {
-            LogInfo("Loading ", name, "\n");
-            auto texture = io.LoadImage(basepath + name);
-            texture->SetName(name);
-            scene.AttachAutoreleaseObject(texture);
-            m_texture_cache[name] = texture;
-            return texture;
+            try
+            {
+                LogInfo("Loading ", name, "\n");
+                auto texture = io.LoadImage(basepath + name);
+                texture->SetName(name);
+                scene.AttachAutoreleaseObject(texture);
+                m_texture_cache[name] = texture;
+                return texture;
+            }
+            catch (std::runtime_error)
+            {
+                LogInfo("Missing texture: ", name, "\n");
+                return nullptr;
+            }
         }
     }
 
@@ -284,7 +292,7 @@ namespace Baikal
 
         ImageBasedLight* ibl = new ImageBasedLight();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(10.f);
+        ibl->SetMultiplier(3.f);
         scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
@@ -298,7 +306,7 @@ namespace Baikal
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
         scene->AttachAutoreleaseObject(light1);
 
-        scene->AttachLight(light);
+        //scene->AttachLight(light);
         //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 

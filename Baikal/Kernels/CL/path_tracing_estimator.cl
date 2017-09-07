@@ -502,6 +502,10 @@ KERNEL void ShadeSurface(
         {
             Path_SetSpecularFlag(path);
         }
+        else
+        {
+            Path_ClearSpecularFlag(path);
+        }
 
         bxdfwo = normalize(bxdfwo);
         float3 t = bxdf * fabs(dot(diffgeo.n, bxdfwo));
@@ -584,7 +588,8 @@ KERNEL void ShadeBackgroundEnvMap(
         //{
             //output[output_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
         //}
-        atomic_add_float4(&output[output_index], v);
+
+        atomic_add_float4(&output[output_index], v); 
     }
 }
 

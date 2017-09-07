@@ -224,7 +224,7 @@ void atomic_add_float4(volatile __global float4* ptr, float4 value)
     atomic_add_float(p, value.x);
     atomic_add_float(p + 1, value.y);
     atomic_add_float(p + 2, value.z);
-    atomic_add_float(p + 3, value.z);
+    atomic_add_float(p + 3, value.w);
 }
 
 void add_float3(__global float3* ptr, float3 value)

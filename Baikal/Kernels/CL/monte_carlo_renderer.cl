@@ -888,7 +888,7 @@ KERNEL void AccumulateData(
     }
 }
 
-#define ADAPTIVITY_DEBUG
+//#define ADAPTIVITY_DEBUG
 // Copy data to interop texture if supported
 KERNEL void ApplyGammaAndCopyData(
     GLOBAL float4 const* data,
@@ -911,7 +911,6 @@ KERNEL void ApplyGammaAndCopyData(
         float4 mul_color = make_float4(1.f, 1.f - a, 1.f - a, 1.f);
         v *= mul_color;
 #endif
-
 
         float4 val = clamp(native_powr(v / v.w, 1.f / gamma), 0.f, 1.f);
         write_imagef(img, make_int2(global_idx, global_idy), val);
@@ -936,6 +935,44 @@ KERNEL void AccumulateSingleSample(
     }
 }
 
+INLINE void group_reduce_add(__local float* lds, int size, int lid)
+{
+    for (int offset = (size >> 1); offset > 0; offset >>= 1)
+    {
+        if (lid < offset)
+        {
+            lds[lid] += lds[lid + offset];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+}
+
+INLINE void group_reduce_min(__local float* lds, int size, int lid)
+{
+    for (int offset = (size >> 1); offset > 0; offset >>= 1)
+    {
+        if (lid < offset)
+        {
+            lds[lid] = min(lds[lid], lds[lid + offset]);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+}
+
+
+INLINE void group_reduce_max(__local float* lds, int size, int lid)
+{
+    for (int offset = (size >> 1); offset > 0; offset >>= 1)
+    {
+        if (lid < offset)
+        {
+            lds[lid] = max(lds[lid], lds[lid + offset]);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+}
+
+
 KERNEL void EstimateVariance(
     GLOBAL float4 const* restrict image_buffer,
     GLOBAL float* restrict variance_buffer,
@@ -943,7 +980,7 @@ KERNEL void EstimateVariance(
     int height
 )
 {
-    __local float3 lds[256];
+    __local float lds[256];
 
     int x = get_global_id(0);
     int y = get_global_id(1);
@@ -956,54 +993,49 @@ KERNEL void EstimateVariance(
     int num_tiles = (width + wx - 1) / wx;
     int lid = ly * wx + lx;
 
-    float3 value = 0.f;
+    float value = 0.f;
     if (x < width && y < height)
     {
         float4 rw = image_buffer[y * width + x]; rw /= rw.w;
-        value = rw.xyz;
-        //rw = y + 1 < height ? image_buffer[(y + 1) * width + x] : image_buffer[y * width + x]; rw /= rw.w;
-        //value -= rw.xyz;
-        //rw = y - 1 >= 0 ? image_buffer[(y - 1) * width + x] : image_buffer[y * width + x]; rw /= rw.w;
-        //value -= rw.xyz;
-        //rw = x + 1 < width ? image_buffer[y * width + x + 1] : image_buffer[y * width + x]; rw /= rw.w;
-        //value -= rw.xyz;
-        //rw = x - 1 >= 0 ? image_buffer[y * width + x - 1] : image_buffer[y * width + x]; rw /= rw.w;
-        //value -= rw.xyz;
+        value = 4*luminance(clamp(rw.xyz, 0.f, 1.f));
+        rw = y + 1 < height ? image_buffer[(y + 1) * width + x] : image_buffer[y * width + x]; rw /= rw.w;
+        value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        rw = y - 1 >= 0 ? image_buffer[(y - 1) * width + x] : image_buffer[y * width + x]; rw /= rw.w;
+        value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        rw = x + 1 < width ? image_buffer[y * width + x + 1] : image_buffer[y * width + x]; rw /= rw.w;
+        value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        rw = x - 1 >= 0 ? image_buffer[y * width + x - 1] : image_buffer[y * width + x]; rw /= rw.w;
+        value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        //rw = y + 1 < height && x + 1 < width ? image_buffer[(y + 1) * width + x + 1] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        //rw = y - 1 >= 0 && x - 1 >= 0 ? image_buffer[(y - 1) * width + x - 1] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        //rw = y + 1 < height && x - 1 >= 0 ? image_buffer[(y + 1) * width + x - 1] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= luminance(clamp(rw.xyz, 0.f, 1.f));
+        //rw = y - 1 >= 0 && x + 1 < width ? image_buffer[(y - 1) * width + x + 1] : image_buffer[y * width + x]; rw /= rw.w;
+        //value -= luminance(clamp(rw.xyz, 0.f, 1.f));
     }
 
+    value = fabs(value);
     lds[lid] = value;
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for (int offset = ((wx * wy) >> 1); offset > 0; offset >>= 1) 
-    {
-        if (lid < offset)
-        {
-            lds[lid] += lds[lid + offset];
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
+    group_reduce_add(lds, 256, lid);
 
-    float3 mean = lds[0] / (wx * wy);
+    float mean = lds[0] / (wx * wy);
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    lds[lid] = (mean - value) * (mean - value);
+    /*lds[lid] = (mean - value) * (mean - value);
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for (int offset = ((wx * wy) >> 1); offset > 0; offset >>= 1)
-    {
-        if (lid < offset)
-        {
-            lds[lid] += lds[lid + offset];
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
+    group_reduce_add(lds, 256, lid);*/
 
     if (x < width && y < height)
     {
         if (lx == 0 && ly == 0)
         {
-            float3 dev = lds[0] / (wx * wy - 1);
-            variance_buffer[gy * num_tiles + gx] = luminance(dev);
+            //float dev = lds[0] / (wx * wy - 1);
+            variance_buffer[gy * num_tiles + gx] = mean;
         }
     }
 }

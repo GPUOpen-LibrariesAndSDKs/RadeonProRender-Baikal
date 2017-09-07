@@ -29,7 +29,7 @@ namespace Baikal
         {
             case RendererType::kUnidirectionalPathTracer:
                 return std::unique_ptr<Renderer>(
-                    new AdaptiveRenderer(
+                    new MonteCarloRenderer(
                         m_context, 
                         std::make_unique<PathTracingEstimator>(m_context, m_intersector.get())
                         ));

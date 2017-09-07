@@ -157,7 +157,7 @@ namespace Baikal
             // Load OBJ scene
             auto fbx = filename.find(".fbx") != std::string::npos;
             auto scene_io = fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
-            auto scene_io1 = Baikal::SceneIo::CreateSceneIoBinary();
+            auto scene_io1 = Baikal::SceneIo::CreateSceneIoTest();
             m_scene = scene_io->LoadScene(filename, basepath);
 
             // Enable this to generate new materal mapping for a model
@@ -243,10 +243,7 @@ namespace Baikal
             if (std::atomic_compare_exchange_strong(&m_ctrl[i].newdata, &desired, 0))
             {
                 {
-                    //std::unique_lock<std::mutex> lock(m_ctrl[i].datamutex);
-                    //std::cout << "Start updating acc buffer\n"; std::cout.flush();
                     m_cfgs[m_primary].context.WriteBuffer(0, m_outputs[m_primary].copybuffer, &m_outputs[i].fdata[0], settings.width * settings.height);
-                    //std::cout << "Finished updating acc buffer\n"; std::cout.flush();
                 }
 
                 auto acckernel = static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetAccumulateKernel();
@@ -281,13 +278,9 @@ namespace Baikal
                 m_outputs[m_primary].udata[4 * i + 3] = 1;
             }
 
-
             glActiveTexture(GL_TEXTURE0);
-
             glBindTexture(GL_TEXTURE_2D, m_tex);
-
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_outputs[m_primary].output->width(), m_outputs[m_primary].output->height(), GL_RGBA, GL_UNSIGNED_BYTE, &m_outputs[m_primary].udata[0]);
-
             glBindTexture(GL_TEXTURE_2D, 0);
         }
         else
