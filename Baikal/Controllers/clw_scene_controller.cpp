@@ -1466,7 +1466,7 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.lights, lights);
 
         // Create distribution over light sources based on their power
-        Distribution1D light_distribution(&light_power[0], light_power.size());
+        Distribution1D light_distribution(&light_power[0], (std::uint32_t)light_power.size());
 
         // Write distribution data
         int* distribution_ptr = nullptr;

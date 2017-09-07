@@ -388,7 +388,7 @@ KERNEL void ShadeSurface(
                 // That means BRDF weight has been already applied.
                 float3 v = Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight;
                 int output_index = output_indices[pixel_idx];
-                atomic_add_float3(&output[output_index], v);
+                ADD_FLOAT3(&output[output_index], v);
             }
 
             Path_Kill(path);
@@ -589,7 +589,7 @@ KERNEL void ShadeBackgroundEnvMap(
             //output[output_idx] = make_float4(100.f, 0.f, 0.f, 1.f);
         //}
 
-        atomic_add_float4(&output[output_index], v); 
+        ADD_FLOAT4(&output[output_index], v);
     }
 }
 
@@ -633,7 +633,7 @@ KERNEL void GatherLightSamples(
         }
 
         // Divide by number of light samples (samples already have built-in throughput)
-        atomic_add_float4(&output[output_index], radiance);
+        ADD_FLOAT4(&output[output_index], radiance);
     }
 }
 
@@ -751,7 +751,7 @@ KERNEL void ShadeMiss(
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;
             v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
-            atomic_add_float4(&output[output_index], v);
+            ADD_FLOAT4(&output[output_index], v);
         }
     }
 }

@@ -53,4 +53,12 @@ THE SOFTWARE.
 
 #define BDPT_MAX_SUBPATH_LEN 3
 
+#ifdef BAIKAL_ATOMIC_RESOLVE
+#define ADD_FLOAT3(x,y) atomic_add_float3((x),(y))
+#define ADD_FLOAT4(x,y) atomic_add_float4((x),(y))
+#else
+#define ADD_FLOAT3(x,y) add_float3((x),(y))
+#define ADD_FLOAT4(x,y) add_float4((x),(y))
+#endif
+
 #endif // COMMON_CL

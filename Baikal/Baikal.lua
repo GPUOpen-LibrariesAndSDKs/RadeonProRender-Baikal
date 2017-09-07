@@ -11,7 +11,7 @@ project "Baikal"
         includedirs{"../3rdparty/glfw/include"}
         libdirs {"/usr/local/lib", "../3rdparty/glfw/lib/x64"}
         linkoptions{ "-framework OpenGL -framework CoreFoundation -framework CoreGraphics -framework IOKit -framework AppKit -framework QuartzCore" }
-        buildoptions "-std=c++11 -stdlib=libc++"
+        buildoptions "-std=c++14 -stdlib=libc++"
         links {"OpenImageIO", "glfw3"}
     end
 

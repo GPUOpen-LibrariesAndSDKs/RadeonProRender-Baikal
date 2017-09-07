@@ -25,6 +25,8 @@ THE SOFTWARE.
 #include "estimator.h"
 #include "radeon_rays_cl.h"
 
+#include <memory>
+
 namespace Baikal
 {
     /**
@@ -40,6 +42,8 @@ namespace Baikal
             CLWContext context,
             RadeonRays::IntersectionApi* api
         );
+        
+        ~PathTracingEstimator() override;
 
         /**
         \brief Tells estimator about memory requirements (max number of entries in ray buffer).
@@ -174,7 +178,6 @@ namespace Baikal
 
 
     private:
-
         void InitPathData(std::size_t size);
 
         void ShadeSurface(

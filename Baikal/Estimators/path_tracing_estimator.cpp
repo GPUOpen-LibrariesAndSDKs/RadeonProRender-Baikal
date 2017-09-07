@@ -83,6 +83,9 @@ namespace Baikal
         m_render_data->pp = CLWParallelPrimitives(context, GetBuildOpts().c_str());
         m_render_data->sobolmat = context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
     }
+    
+    // For std::unique_ptr to work;
+    PathTracingEstimator::~PathTracingEstimator() = default;
 
     std::size_t PathTracingEstimator::GetWorkBufferSize() const
     {
@@ -592,7 +595,7 @@ namespace Baikal
             GetIntersector()->QueryIntersection(
                 m_render_data->fr_rays[0], 
                 m_render_data->fr_hitcount, 
-                num_estimates, 
+                (std::uint32_t)num_estimates,
                 m_render_data->fr_intersections, 
                 nullptr, 
                 nullptr
@@ -617,7 +620,7 @@ namespace Baikal
             m_render_data->hits,
             m_render_data->iota,
             m_render_data->compacted_indices,
-            num_estimates,
+            (std::uint32_t)num_estimates,
             m_render_data->hitcount);
 
         // Advance indices to keep pixel indices up to date
@@ -637,7 +640,7 @@ namespace Baikal
             GetIntersector()->QueryOcclusion(
                 m_render_data->fr_shadowrays, 
                 m_render_data->fr_hitcount, 
-                num_estimates, 
+                (std::uint32_t)num_estimates,
                 m_render_data->fr_shadowhits, 
                 nullptr, 
                 nullptr);
@@ -669,7 +672,7 @@ namespace Baikal
             GetIntersector()->QueryIntersection(
                 m_render_data->fr_rays[1],
                 m_render_data->fr_hitcount,
-                num_estimates,
+                (std::uint32_t)num_estimates,
                 m_render_data->fr_intersections,
                 nullptr,
                 nullptr
