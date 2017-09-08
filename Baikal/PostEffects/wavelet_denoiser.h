@@ -113,7 +113,7 @@ namespace Baikal
         auto color_width = color->width();
         auto color_height = color->height();
         
-        // Create ping pong buffers if they still need to be initiaized
+        // Create ping pong buffers if they still need to be initialized
         if (m_tmp_buffers[0] == nullptr || m_tmp_buffers[1] == nullptr)
         {
             m_tmp_buffers[0] = new ClwOutput(GetContext(), color_width, color_height);
