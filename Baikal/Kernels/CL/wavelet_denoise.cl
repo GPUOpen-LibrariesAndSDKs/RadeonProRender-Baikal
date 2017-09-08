@@ -35,10 +35,6 @@ void WaveletFilter_main(
     GLOBAL float4 const* restrict normals,
     // Positional data
     GLOBAL float4 const* restrict positions,
-    // Pass index
-    int passIndex,
-    // Num passes
-    int numPasses,
     // Image resolution
     int width,
     int height,

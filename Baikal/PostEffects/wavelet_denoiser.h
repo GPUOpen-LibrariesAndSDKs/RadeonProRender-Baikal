@@ -59,8 +59,6 @@ namespace Baikal
         const static uint32_t m_num_tmp_buffers = 2;
 
         ClwOutput*  m_tmp_buffers[m_num_tmp_buffers];
-        uint32_t    m_tmp_buffer_width;
-        uint32_t    m_tmp_buffer_height;
 
         // Number of wavelet passes
         uint32_t    m_max_wavelet_passes;
@@ -145,8 +143,6 @@ namespace Baikal
             filter_kernel.SetArg(argc++, current_input->data());
             filter_kernel.SetArg(argc++, normal->data());
             filter_kernel.SetArg(argc++, position->data());
-            filter_kernel.SetArg(argc++, pass_index);
-            filter_kernel.SetArg(argc++, m_max_wavelet_passes);
             filter_kernel.SetArg(argc++, color->width());
             filter_kernel.SetArg(argc++, color->height());
             filter_kernel.SetArg(argc++, step_width);
