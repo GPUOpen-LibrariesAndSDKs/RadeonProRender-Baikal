@@ -111,14 +111,13 @@ TEST_F(CameraTest, Camera_Aperture)
 
 TEST_F(CameraTest, Camera_FocusDistance)
 {
-    std::vector<float> values = { 1.f, 3.f, 6.f, 9.f, 15.f };
+    std::vector<float> values = { 1.f, 3.f, 6.f, 9.f };
 
     m_camera->SetAperture(0.15f);
 
     for (auto v : values)
     {
         ClearOutput();
-
         m_camera->SetFocusDistance(v);
 
         ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
@@ -127,7 +126,7 @@ TEST_F(CameraTest, Camera_FocusDistance)
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
-            ASSERT_NO_THROW(scene);
+            ASSERT_NO_THROW(m_renderer->Render(scene));
         }
 
         std::ostringstream oss;
