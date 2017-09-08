@@ -72,10 +72,10 @@ float MicrofacetDistribution_Beckmann_D(float roughness, float3 m)
     float ndotm = fabs(m.y);
     float ndotm2 = ndotm * ndotm;
     float sinmn = native_sqrt(1.f - clamp(ndotm * ndotm, 0.f, 1.f));
-    float tanmn = sinmn / ndotm;
+    float tanmn = ndotm > DENOM_EPS ? sinmn / ndotm : 0.f;
     float a2 = roughness * roughness;
 
-    return (1.f / (PI * a2 * ndotm2 * ndotm2)) * native_exp(-tanmn * tanmn / a2);
+    return ndotm > DENOM_EPS ? (1.f / (PI * a2 * ndotm2 * ndotm2)) * native_exp(-tanmn * tanmn / a2) : 0.f;
 }
 
 // PDF of the given direction
@@ -118,7 +118,7 @@ void MicrofacetDistribution_Beckmann_SampleNormal(// Roughness
     float r2 = sample.y;
 
     // Sample halfway vector first, then reflect wi around that
-    float theta = atan(native_sqrt(-roughness*roughness*native_log(1.f - r1*0.9999f)));
+    float theta = atan(native_sqrt(-roughness*roughness*native_log(max(DENOM_EPS, 1.f - r1))));
     float costheta = native_cos(theta);
     float sintheta = native_sin(theta);
 
@@ -136,8 +136,8 @@ float MicrofacetDistribution_Beckmann_G1(float roughness, float3 v, float3 m)
     float ndotv = fabs(v.y);
     float mdotv = fabs(dot(m, v));
     float sinnv = native_sqrt(1.f - clamp(ndotv * ndotv, 0.f, 1.f));
-    float tannv = sinnv / ndotv;
-    float a = tannv > DENOM_EPS ? 1.f / (roughness * tannv) : 0.f;
+    float tannv = ndotv > DENOM_EPS ? sinnv / ndotv : 0.f;
+    float a = tannv > DENOM_EPS ? 1.f / (roughness * tannv) : 0.f; 
     float a2 = a * a;
 
     if (a > 1.6f)
@@ -235,10 +235,10 @@ float MicrofacetDistribution_GGX_D(float roughness, float3 m)
     float ndotm = fabs(m.y);
     float ndotm2 = ndotm * ndotm;
     float sinmn = native_sqrt(1.f - clamp(ndotm * ndotm, 0.f, 1.f));
-    float tanmn = sinmn / ndotm;
+    float tanmn = ndotm > DENOM_EPS ? sinmn / ndotm : 0.f;
     float a2 = roughness * roughness;
     float denom = (PI * ndotm2 * ndotm2 * (a2 + tanmn * tanmn) * (a2 + tanmn * tanmn));
-    return denom > DENOM_EPS ? (a2 / denom) : 0.f;
+    return denom > DENOM_EPS ? (a2 / denom) : 1.f;
 }
 
 // PDF of the given direction
@@ -302,7 +302,7 @@ float MicrofacetDistribution_GGX_G1(float roughness, float3 v, float3 m)
     float mdotv = fabs(dot(m, v));
 
     float sinnv = native_sqrt(1.f - clamp(ndotv * ndotv, 0.f, 1.f));
-    float tannv = sinnv / ndotv;
+    float tannv = ndotv > DENOM_EPS ? sinnv / ndotv : 0.f;
     float a2 = roughness * roughness;
     return 2.f / (1.f + native_sqrt(1.f + a2 * tannv * tannv));
 }
@@ -315,7 +315,7 @@ float MicrofacetDistribution_GGX_G(float roughness, float3 wi, float3 wo, float3
 
 float3 MicrofacetGGX_Evaluate(
     // Geometry
-    DifferentialGeometry const* dg,
+    DifferentialGeometry const* dg, 
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -337,11 +337,8 @@ float3 MicrofacetGGX_Evaluate(
     float F = dg->mat.simple.fresnel;
 
     float denom = (4.f * costhetao * costhetai);
-
-    // F(eta) * D * G * ks / (4 * cosa * cosi)
-    //return denom > 0.f ? F * ks * MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
     
-    return denom > 0.f ? F * ks * MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
+    return denom > DENOM_EPS ? F * ks * MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
 }
 
 
@@ -835,8 +832,6 @@ float3 MicrofacetRefractionGGX_Sample(
 
     return MicrofacetRefractionGGX_Evaluate(dg, wi, *wo, TEXTURE_ARGS);
 }
-
-
 
 float3 MicrofacetRefractionBeckmann_Evaluate(
     // Geometry
