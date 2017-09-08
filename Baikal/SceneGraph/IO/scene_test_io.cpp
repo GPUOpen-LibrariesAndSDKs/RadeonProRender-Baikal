@@ -438,7 +438,7 @@ namespace Baikal
             scene->AttachShape(floor);
             scene->AttachAutoreleaseObject(floor);
             
-            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+            Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
             scene->AttachAutoreleaseObject(ibl_texture);
             
             ImageBasedLight* ibl = new ImageBasedLight();
