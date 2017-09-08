@@ -332,7 +332,7 @@ namespace Baikal
             
             ImageBasedLight* ibl = new ImageBasedLight();
             ibl->SetTexture(ibl_texture);
-            ibl->SetMultiplier(3.f);
+            ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
             scene->AttachAutoreleaseObject(ibl);
         }
@@ -443,7 +443,7 @@ namespace Baikal
             
             ImageBasedLight* ibl = new ImageBasedLight();
             ibl->SetTexture(ibl_texture);
-            ibl->SetMultiplier(3.f);
+            ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
             scene->AttachAutoreleaseObject(ibl);
         }
