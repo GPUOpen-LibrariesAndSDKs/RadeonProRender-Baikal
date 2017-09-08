@@ -1,7 +1,7 @@
 project "BaikalStandalone"
     kind "ConsoleApp"
     location "../BaikalStandalone"
-    links {"RadeonRays", "CLW", "Calc", "Baikal"}
+    links {"Baikal", "RadeonRays", "Calc", "CLW"}
     files { "../BaikalStandalone/**.inl", "../BaikalStandalone/**.h", "../BaikalStandalone/**.cpp", "../BaikalStandalone/**.cl", "../BaikalStandalone/**.fsh", "../BaikalStandalone/**.vsh" }
 
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "../Baikal", "."}
