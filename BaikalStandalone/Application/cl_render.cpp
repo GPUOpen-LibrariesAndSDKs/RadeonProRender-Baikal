@@ -39,6 +39,9 @@ THE SOFTWARE.
 #include <thread>
 #include <chrono>
 
+
+#include "PostEffects/wavelet_denoiser.h"
+
 namespace Baikal
 {
     AppClRender::AppClRender(AppSettings& settings, GLuint tex) : m_tex(tex), m_output_type(Renderer::OutputType::kColor)
@@ -325,6 +328,14 @@ namespace Baikal
 
     void AppClRender::Render(int sample_cnt)
     {
+#ifdef ENABLE_DENOISER
+        WaveletDenoiser* wavelet_denoiser = dynamic_cast<WaveletDenoiser*>(m_outputs[m_primary].denoiser.get());
+
+        if (wavelet_denoiser != nullptr)
+        {
+            wavelet_denoiser->Update(m_camera.get());
+        }
+#endif
         auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene.get());
         m_cfgs[m_primary].renderer->Render(scene);
 

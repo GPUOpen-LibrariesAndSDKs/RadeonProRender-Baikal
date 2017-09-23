@@ -25,10 +25,10 @@ THE SOFTWARE.
 namespace Baikal
 {
     /**
-    \brief Simple wavelet denoiser.
+    \brief SVGF wavelet denoiser.
 
-    \details WaveletDenoiser implements edge-avoiding A-Trous filter, taking into
-    account color, position and normal information.
+    \details SVGF implements wavelet filter with edge-stopping function. Edge-stopping function is tuned
+    by spatio-temporal variance. Temporal component is presented by sample reconstruction from history frames.
     Filter performs multiple passes, inserting pow(2, pass_index - 1) holes in 
     kernel on each pass.
     Parameters:
@@ -48,6 +48,7 @@ namespace Baikal
         virtual ~WaveletDenoiser();
         // Apply filter
         void Apply(InputSet const& input_set, Output& output) override;
+        void Update(PerspectiveCamera* camera);
 
     private: 
         // Find required output
@@ -58,23 +59,51 @@ namespace Baikal
         // Ping-pong buffers for wavelet pass
         const static uint32_t m_num_tmp_buffers = 2;
 
-        ClwOutput*  m_tmp_buffers[m_num_tmp_buffers];
+        uint32_t            m_current_buffer_index;
+
+        ClwOutput*          m_motion_buffer;
+        ClwOutput*          m_colors[m_num_tmp_buffers];
+        ClwOutput*          m_positions[m_num_tmp_buffers];
+        ClwOutput*          m_normals[m_num_tmp_buffers];
+        ClwOutput*          m_tmp_buffers[m_num_tmp_buffers];
+        ClwOutput*          m_moments[m_num_tmp_buffers];
 
         // Number of wavelet passes
-        uint32_t    m_max_wavelet_passes;
+        uint32_t            m_max_wavelet_passes;
+        
+        matrix              m_view_proj;
+        matrix              m_prev_view_proj;
+
+        CLWBuffer<float>    m_view_proj_buffer;
+        CLWBuffer<float>    m_prev_view_proj_buffer;
+
+        uint32_t            m_buffers_width;
+        uint32_t            m_buffers_height;
+
+        bool                m_buffers_initialized;
     };
 
     inline WaveletDenoiser::WaveletDenoiser(CLWContext context)
         : ClwPostEffect(context, "../Baikal/Kernels/CL/wavelet_denoise.cl")
         , m_max_wavelet_passes(5)
+        , m_buffers_width(0)
+        , m_buffers_height(0)
+        , m_current_buffer_index(0)
+        , m_buffers_initialized(false)
     {
         // Add necessary params
         RegisterParameter("color_sensitivity", RadeonRays::float4(0.07f, 0.f, 0.f, 0.f));
         RegisterParameter("position_sensitivity", RadeonRays::float4(0.03f, 0.f, 0.f, 0.f));
         RegisterParameter("normal_sensitivity", RadeonRays::float4(0.01f, 0.f, 0.f, 0.f));
 
-        m_tmp_buffers[0] = nullptr;
-        m_tmp_buffers[1] = nullptr;
+        for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
+        {
+            m_tmp_buffers[buffer_index] = nullptr;
+            m_colors[buffer_index] = nullptr;
+        }
+
+        m_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
+        m_prev_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
     }
 
     inline WaveletDenoiser::~WaveletDenoiser()
@@ -82,6 +111,7 @@ namespace Baikal
         for (uint32_t i = 0; i < m_num_tmp_buffers; i++)
         {
             delete m_tmp_buffers[i];
+            delete m_colors[i];
         }
     }
 
@@ -99,6 +129,9 @@ namespace Baikal
 
     inline void WaveletDenoiser::Apply(InputSet const& input_set, Output& output)
     {
+        uint32_t prev_buffer_index = m_current_buffer_index;
+        m_current_buffer_index = (m_current_buffer_index + 1) % m_num_tmp_buffers;
+
         auto sigma_color = GetParameter("color_sensitivity").x;
         auto sigma_position = GetParameter("position_sensitivity").x;
         auto sigma_normal = GetParameter("normal_sensitivity").x;
@@ -112,53 +145,242 @@ namespace Baikal
         auto color_height = color->height();
         
         // Create ping pong buffers if they still need to be initialized
-        if (m_tmp_buffers[0] == nullptr || m_tmp_buffers[1] == nullptr)
+        if (!m_buffers_initialized)
         {
-            m_tmp_buffers[0] = new ClwOutput(GetContext(), color_width, color_height);
-            m_tmp_buffers[1] = new ClwOutput(GetContext(), color_width, color_height);
+            for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
+            {
+                m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_colors[buffer_index]      = new ClwOutput(GetContext(), color_width, color_height);
+                m_positions[buffer_index]   = new ClwOutput(GetContext(), color_width, color_height);
+                m_normals[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
+                m_moments[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
+            }
+
+            m_motion_buffer     = new ClwOutput(GetContext(), color_width, color_height);
+
+            m_buffers_width        = color_width;
+            m_buffers_height       = color_height;
+            m_buffers_initialized  = true;
         }
         
-        // Resize if size of AOV has changed
-        if (color_width != m_tmp_buffers[0]->width() || color_height != m_tmp_buffers[0]->height())
+        // Resize AOV if main buffer size has changed
+        if (color_width != m_buffers_width || color_height != m_buffers_height)
         {
             for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
             {
                 delete m_tmp_buffers[buffer_index];
                 m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
+                delete m_colors[buffer_index];
+                m_colors[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
+                delete m_positions[buffer_index];
+                m_positions[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
+                delete m_normals[buffer_index];
+                m_normals[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
+                delete m_moments[buffer_index];
+                m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
             }
+
+            delete m_motion_buffer;
+            m_motion_buffer = new ClwOutput(GetContext(), color_width, color_height);
+
+            m_buffers_width = color_width;
+            m_buffers_height = color_height;
         }
 
-        auto filter_kernel = GetKernel("WaveletFilter_main");
-
-        for (uint32_t pass_index = 0; pass_index < m_max_wavelet_passes; pass_index++)
-        {          
-            Baikal::ClwOutput* current_input = pass_index == 0 ? color : m_tmp_buffers[pass_index % m_num_tmp_buffers];
-            Baikal::ClwOutput* current_output = pass_index < m_max_wavelet_passes - 1 ? m_tmp_buffers[(pass_index + 1) % m_num_tmp_buffers] : out_color;
-
-            const int step_width = 1 << pass_index;
+        // Copy buffers
+        {
+            auto copy_buffers_kernel = GetKernel("CopyBuffers_main");
 
             int argc = 0;
 
             // Set kernel parameters
-            filter_kernel.SetArg(argc++, current_input->data());
-            filter_kernel.SetArg(argc++, normal->data());
-            filter_kernel.SetArg(argc++, position->data());
-            filter_kernel.SetArg(argc++, color->width());
-            filter_kernel.SetArg(argc++, color->height());
-            filter_kernel.SetArg(argc++, step_width);
-            filter_kernel.SetArg(argc++, sigma_color);
-            filter_kernel.SetArg(argc++, sigma_normal);
-            filter_kernel.SetArg(argc++, sigma_position);
-            filter_kernel.SetArg(argc++, current_output->data());
+            copy_buffers_kernel.SetArg(argc++, color->data());
+            copy_buffers_kernel.SetArg(argc++, position->data());
+            copy_buffers_kernel.SetArg(argc++, normal->data());
+            copy_buffers_kernel.SetArg(argc++, color->width());
+            copy_buffers_kernel.SetArg(argc++, color->height());
+            copy_buffers_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
+            copy_buffers_kernel.SetArg(argc++, m_positions[m_current_buffer_index]->data());
+            copy_buffers_kernel.SetArg(argc++, m_normals[m_current_buffer_index]->data());
 
             // Run shading kernel
             {
                 size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
                 size_t ls[] = { 8, 8 };
 
-                GetContext().Launch2D(0, gs, ls, filter_kernel);
+                GetContext().Launch2D(0, gs, ls, copy_buffers_kernel);
+            }
+        }
+
+        // Generate screen space motion blur and depth buffers
+        {
+            auto generate_motion_kernel = GetKernel("WaveletGenerateMotionBuffer_main");
+
+            int argc = 0;
+
+            // Set kernel parameters
+            generate_motion_kernel.SetArg(argc++, m_positions[m_current_buffer_index]->data());
+            generate_motion_kernel.SetArg(argc++, color->width());
+            generate_motion_kernel.SetArg(argc++, color->height());
+            generate_motion_kernel.SetArg(argc++, m_view_proj_buffer);
+            generate_motion_kernel.SetArg(argc++, m_prev_view_proj_buffer);
+            generate_motion_kernel.SetArg(argc++, m_motion_buffer->data());
+
+            // Run shading kernel
+            {
+                size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                size_t ls[] = { 8, 8 };
+
+                GetContext().Launch2D(0, gs, ls, generate_motion_kernel);
+            }
+        }
+
+        // Temporal accumulation of color and moments
+        {
+            auto accumulation_kernel = GetKernel("TemporalAccumulation_main");
+
+            int argc = 0;
+
+            // Set kernel parameters
+            accumulation_kernel.SetArg(argc++, m_colors[prev_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_positions[prev_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_normals[prev_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_positions[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_normals[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_motion_buffer->data());
+            accumulation_kernel.SetArg(argc++, m_moments[prev_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_buffers_width);
+            accumulation_kernel.SetArg(argc++, m_buffers_height);
+
+            // Run shading kernel
+            {
+                size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                size_t ls[] = { 8, 8 };
+
+                GetContext().Launch2D(0, gs, ls, accumulation_kernel);
+            }
+        }
+
+        {
+            auto copy_buffer_kernel = GetKernel("CopyBuffer_main");
+
+            int argc = 0;
+
+            // Set kernel parameters
+            copy_buffer_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
+            copy_buffer_kernel.SetArg(argc++, m_tmp_buffers[0]->data());
+            copy_buffer_kernel.SetArg(argc++, m_buffers_width);
+            copy_buffer_kernel.SetArg(argc++, m_buffers_height);
+
+            // Run shading kernel
+            {
+                size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                size_t ls[] = { 8, 8 };
+
+                GetContext().Launch2D(0, gs, ls, copy_buffer_kernel);
+            }
+        }
+
+        {
+            auto filter_kernel = GetKernel("WaveletFilter_main");
+            auto update_variance_kernel = GetKernel("UpdateVariance_main");
+
+            for (uint32_t pass_index = 0; pass_index < m_max_wavelet_passes; pass_index++)
+            {
+                Baikal::ClwOutput* current_input = nullptr;
+                Baikal::ClwOutput* current_output = nullptr;
+                
+                if (pass_index == 0)
+                {
+                    // Result of wavelet first pass goes to color buffer for next frame
+                    current_input = m_tmp_buffers[pass_index % m_num_tmp_buffers];
+                    current_output = m_colors[m_current_buffer_index];
+                }
+                else
+                {
+                    // Last pass goes to output buffer
+                    current_input = pass_index == 1 ? m_colors[m_current_buffer_index] : m_tmp_buffers[pass_index % m_num_tmp_buffers];
+                    current_output = pass_index < m_max_wavelet_passes - 1 ? m_tmp_buffers[(pass_index + 1) % m_num_tmp_buffers] : out_color;
+                }
+                
+
+                const int step_width = 1 << pass_index;
+
+                int argc = 0;
+
+                // Set kernel parameters
+                filter_kernel.SetArg(argc++, current_input->data());
+                filter_kernel.SetArg(argc++, normal->data());
+                filter_kernel.SetArg(argc++, position->data());
+                filter_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+                filter_kernel.SetArg(argc++, color->width());
+                filter_kernel.SetArg(argc++, color->height());
+                filter_kernel.SetArg(argc++, step_width);
+                filter_kernel.SetArg(argc++, sigma_color);
+                filter_kernel.SetArg(argc++, sigma_normal);
+                filter_kernel.SetArg(argc++, sigma_position);
+                filter_kernel.SetArg(argc++, current_output->data());
+
+                // Run kernel
+                {
+                    size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                    size_t ls[] = { 8, 8 };
+
+                    GetContext().Launch2D(0, gs, ls, filter_kernel);
+                }
+                argc = 0;
+
+                update_variance_kernel.SetArg(argc++, current_output->data());
+                update_variance_kernel.SetArg(argc++, position->data());
+                update_variance_kernel.SetArg(argc++, normal ->data());
+                update_variance_kernel.SetArg(argc++, color->width());
+                update_variance_kernel.SetArg(argc++, color->height());
+                update_variance_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+
+                // Run kernel
+                {
+                    size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                    size_t ls[] = { 8, 8 };
+
+                    GetContext().Launch2D(0, gs, ls, update_variance_kernel);
+                }
             }
         }
     }
 
+    inline void WaveletDenoiser::Update(PerspectiveCamera* camera)
+    {
+        m_prev_view_proj = m_view_proj;
+
+        const float focal_length = camera->GetFocalLength();
+        const float2 sensor_size = camera->GetSensorSize();
+        const float2 z_range  = camera->GetDepthRange();
+        
+        const float fovy = 2 * atan(sensor_size.y / (2.0f * focal_length));
+
+        const float3 up = camera->GetUpVector();
+        const float3 right = -camera->GetRightVector();
+        const float3 forward = camera->GetForwardVector();
+        const float3 pos = camera->GetPosition();
+
+        const matrix proj = perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
+        const float3 ip = float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
+
+        const matrix view = matrix
+            (   right.x, right.y, right.z, ip.x,
+                up.x, up.y, up.z, ip.y,
+                forward.x, forward.y, forward.z, ip.z,
+                0.0f, 0.0f, 0.0f, 1.0f);
+      
+        m_view_proj = proj * view;
+
+        GetContext().WriteBuffer(0, m_view_proj_buffer, &m_view_proj.m[0][0], 16).Wait();
+        GetContext().WriteBuffer(0, m_prev_view_proj_buffer, &m_prev_view_proj.m[0][0], 16).Wait();
+    }
 }

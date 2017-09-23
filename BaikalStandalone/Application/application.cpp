@@ -219,7 +219,7 @@ namespace Baikal
         }
 
         if (update)
-        {        
+        {
             //if (g_num_samples > -1)
             {
                 m_settings.samplecount = 0;
@@ -371,7 +371,8 @@ namespace Baikal
                     Update(update);
                     m_gl->Render(m_window);
                     update = UpdateGui();
-                    
+                    update = true;
+
                     glfwSwapBuffers(m_window);
                     glfwPollEvents();
                 }
@@ -576,7 +577,7 @@ namespace Baikal
             static float sigmaColor = m_cl->GetDenoiserFloatParam("color_sensitivity").x;
 
             ImGui::Text("Denoiser settings");
-            ImGui::SliderFloat("Position sigma", &sigmaPosition, 0.f, 5.f);
+            ImGui::SliderFloat("Position sigma", &sigmaPosition, 0.f, 0.3f);
             ImGui::SliderFloat("Normal sigma", &sigmaNormal, 0.f, 5.f);
             ImGui::SliderFloat("Color sigma", &sigmaColor, 0.f, 5.f);       
 
