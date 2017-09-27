@@ -33,7 +33,6 @@ namespace Baikal
     kernel on each pass.
     Parameters:
     * color_sensitivity - Higher the sensitivity the more it smoothes out depending on color difference.
-    * normal_sensitivity - Higher the sensitivity the more it smoothes out depending on normal difference.
     * position_sensitivity - Higher the sensitivity the more it smoothes out depending on position difference.
     Required AOVs in input set:
     * kColor
@@ -62,6 +61,7 @@ namespace Baikal
         uint32_t            m_current_buffer_index;
 
         ClwOutput*          m_motion_buffer;
+
         ClwOutput*          m_colors[m_num_tmp_buffers];
         ClwOutput*          m_positions[m_num_tmp_buffers];
         ClwOutput*          m_normals[m_num_tmp_buffers];
@@ -134,11 +134,11 @@ namespace Baikal
 
         auto sigma_color = GetParameter("color_sensitivity").x;
         auto sigma_position = GetParameter("position_sensitivity").x;
-        auto sigma_normal = GetParameter("normal_sensitivity").x;
 
         auto color = FindOutput(input_set, Renderer::OutputType::kColor);
         auto normal = FindOutput(input_set, Renderer::OutputType::kWorldShadingNormal);
         auto position = FindOutput(input_set, Renderer::OutputType::kWorldPosition);
+        auto albedo = FindOutput(input_set, Renderer::OutputType::kAlbedo);
         auto out_color = static_cast<ClwOutput*>(&output);
 
         auto color_width = color->width();
@@ -156,11 +156,11 @@ namespace Baikal
                 m_moments[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
             }
 
-            m_motion_buffer     = new ClwOutput(GetContext(), color_width, color_height);
+            m_motion_buffer             = new ClwOutput(GetContext(), color_width, color_height);
 
-            m_buffers_width        = color_width;
-            m_buffers_height       = color_height;
-            m_buffers_initialized  = true;
+            m_buffers_width             = color_width;
+            m_buffers_height            = color_height;
+            m_buffers_initialized       = true;
         }
         
         // Resize AOV if main buffer size has changed
@@ -216,7 +216,7 @@ namespace Baikal
             }
         }
 
-        // Generate screen space motion blur and depth buffers
+        // Generate screen space motion blur buffer
         {
             auto generate_motion_kernel = GetKernel("WaveletGenerateMotionBuffer_main");
 
@@ -288,7 +288,7 @@ namespace Baikal
         }
 
         {
-            auto filter_kernel = GetKernel("WaveletFilter_main");
+            auto filter_kernel          = GetKernel("WaveletFilter_main");
             auto update_variance_kernel = GetKernel("UpdateVariance_main");
 
             for (uint32_t pass_index = 0; pass_index < m_max_wavelet_passes; pass_index++)
@@ -298,7 +298,7 @@ namespace Baikal
                 
                 if (pass_index == 0)
                 {
-                    // Result of wavelet first pass goes to color buffer for next frame
+                    // Result of first wavelet pass goes to color buffer for next frame
                     current_input = m_tmp_buffers[pass_index % m_num_tmp_buffers];
                     current_output = m_colors[m_current_buffer_index];
                 }
@@ -319,21 +319,23 @@ namespace Baikal
                 filter_kernel.SetArg(argc++, normal->data());
                 filter_kernel.SetArg(argc++, position->data());
                 filter_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+                filter_kernel.SetArg(argc++, albedo->data());
+
                 filter_kernel.SetArg(argc++, color->width());
                 filter_kernel.SetArg(argc++, color->height());
                 filter_kernel.SetArg(argc++, step_width);
                 filter_kernel.SetArg(argc++, sigma_color);
-                filter_kernel.SetArg(argc++, sigma_normal);
                 filter_kernel.SetArg(argc++, sigma_position);
                 filter_kernel.SetArg(argc++, current_output->data());
 
-                // Run kernel
+                // Run wavelet filter kernel
                 {
                     size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
                     size_t ls[] = { 8, 8 };
 
                     GetContext().Launch2D(0, gs, ls, filter_kernel);
                 }
+
                 argc = 0;
 
                 update_variance_kernel.SetArg(argc++, current_output->data());
@@ -343,7 +345,7 @@ namespace Baikal
                 update_variance_kernel.SetArg(argc++, color->height());
                 update_variance_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
 
-                // Run kernel
+                // Run update variance kernel
                 {
                     size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
                     size_t ls[] = { 8, 8 };
