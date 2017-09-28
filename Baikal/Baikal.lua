@@ -75,6 +75,12 @@ project "Baikal"
         defines{"ENABLE_DENOISER"}
     end
 
+    if _OPTIONS["enable_raymask"] then
+       	configuration {}
+	defines {"ENABLE_RAYMASK"}
+    end
+
+
     configuration {"x32", "Debug"}
         targetdir "../Bin/Debug/x86"
     configuration {"x64", "Debug"}
