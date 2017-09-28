@@ -178,7 +178,7 @@ namespace Baikal
         , camera_at(0.f, 1.f, 0.f)
         , camera_up(0.f, 1.f, 0.f)
         , camera_sensor_size(0.036f, 0.024f)  // default full frame sensor 36x24 mm
-        , camera_zcap(0.00001f, 100000.f)
+        , camera_zcap(0.0f, 100000.f)
         , camera_aperture(0.f)
         , camera_focus_distance(1.f)
         , camera_focal_length(0.035f) // 35mm lens

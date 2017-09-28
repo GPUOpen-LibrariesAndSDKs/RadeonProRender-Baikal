@@ -219,7 +219,7 @@ namespace Baikal
         }
 
         if (update)
-        {
+        {        
             //if (g_num_samples > -1)
             {
                 m_settings.samplecount = 0;
@@ -371,8 +371,7 @@ namespace Baikal
                     Update(update);
                     m_gl->Render(m_window);
                     update = UpdateGui();
-                    update = true;
-
+                    
                     glfwSwapBuffers(m_window);
                     glfwPollEvents();
                 }
@@ -569,28 +568,8 @@ namespace Baikal
                 ImGui::Text("Shadow rays: %f Mrays/s", stats.shadow_throughput * 1e-6f);
             }
 
-#ifdef ENABLE_DENOISER
-            ImGui::Separator();
-
-            static float sigmaPosition = m_cl->GetDenoiserFloatParam("position_sensitivity").x;
-            static float sigmaNormal = m_cl->GetDenoiserFloatParam("normal_sensitivity").x;
-            static float sigmaColor = m_cl->GetDenoiserFloatParam("color_sensitivity").x;
-
-            ImGui::Text("Denoiser settings");
-            ImGui::SliderFloat("Position sigma", &sigmaPosition, 0.f, 0.3f);
-            ImGui::SliderFloat("Normal sigma", &sigmaNormal, 0.f, 5.f);
-            ImGui::SliderFloat("Color sigma", &sigmaColor, 0.f, 5.f);       
-
-            if (m_cl->GetDenoiserFloatParam("position_sensitivity").x != sigmaPosition ||
-                m_cl->GetDenoiserFloatParam("normal_sensitivity").x != sigmaNormal ||
-                m_cl->GetDenoiserFloatParam("color_sensitivity").x != sigmaColor)
-            {
-                m_cl->SetDenoiserFloatParam("position_sensitivity", sigmaPosition);
-                m_cl->SetDenoiserFloatParam("normal_sensitivity", sigmaNormal);
-                m_cl->SetDenoiserFloatParam("color_sensitivity", sigmaColor);
-            }
-#endif
             ImGui::End();
+
             ImGui::Render();
         }
 

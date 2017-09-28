@@ -114,7 +114,7 @@ public:
             RadeonRays::float3(0.f, 1.f, 0.f));
 
         m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
-        m_camera->SetDepthRange(RadeonRays::float2(0.000001f, 100000.f));
+        m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
         m_camera->SetFocalLength(0.035f);
         m_camera->SetFocusDistance(1.f);
         m_camera->SetAperture(0.f);
