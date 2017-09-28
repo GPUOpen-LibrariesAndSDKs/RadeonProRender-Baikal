@@ -36,7 +36,7 @@ namespace Baikal
         auto builder_type = "sah";
         LogInfo("Configuring acceleration structure: ", acc_type, " with ", builder_type, " builder\n");
         m_api->SetOption("acc.type", acc_type);
-        //m_api->SetOption("bvh.force2level", 1.f);
+        m_api->SetOption("bvh.force2level", 1.f);
         m_api->SetOption("bvh.builder", builder_type);
         m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
@@ -198,6 +198,11 @@ namespace Baikal
             auto transform = mesh->GetTransform();
             shape->SetTransform(transform, inverse(transform));
             shape->SetId(id++);
+            shape->SetMask(iter->GetVisibilityMask());
+            
+            //if(id == 2)
+                //shape->SetMask(0);
+            
             out.isect_shapes.push_back(shape);
             out.visible_shapes.push_back(shape);
             rr_shapes[mesh] = shape;

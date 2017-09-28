@@ -4,6 +4,11 @@ function fileExists(name)
 end
 
 newoption {
+    trigger = "enable_raymask",
+    description = "Enable visibility flags for shapes (slows down an intersector)"
+}
+
+newoption {
     trigger = "denoiser",
     description = "Use denoising on output"
 }

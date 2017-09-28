@@ -49,6 +49,17 @@ INLINE void Ray_SetExtra(GLOBAL ray* r, float2 extra)
     r->padding = extra;
 }
 
+// Set mask
+INLINE void Ray_SetMask(GLOBAL ray* r, int mask)
+{
+    r->extra.x = mask;
+}
+
+INLINE int Ray_GetMask(GLOBAL ray* r)
+{
+    return r->extra.x;
+}
+
 // Get extra data for ray
 INLINE float2 Ray_GetExtra(GLOBAL ray const* r)
 {

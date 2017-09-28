@@ -50,6 +50,24 @@ namespace Baikal
     class Shape : public SceneObject
     {
     public:
+        
+        struct Visibility
+        {
+            enum VisibilityFlags
+            {
+                kPrimary = 0x1,
+                kShadow = (0x1 << 15)
+            };
+            
+            static VisibilityFlags VisibleForAll() { return (VisibilityFlags)0xffffffffu; }
+            static VisibilityFlags InvisibleForAll() { return (VisibilityFlags)0x0u; }
+            static VisibilityFlags VisibleForPrimary() { return kPrimary; }
+            static VisibilityFlags VisibleForPrimaryShadow() { return kShadow; }
+            static VisibilityFlags VisibleForBounce(int i) { return (VisibilityFlags)(kPrimary << i); }
+            static VisibilityFlags VisibleForBounceShadow(int i) { return (VisibilityFlags)(kShadow << i); }
+        };
+        
+        
         // Constructor
         Shape();
         // Destructor
@@ -66,6 +84,10 @@ namespace Baikal
         // Set whether a shape casts shadow or not
         void SetShadow(bool shadow);
         bool GetShadow() const;
+        
+        // Set visibility properties for a shape
+        void SetVisibilityMask(std::uint32_t mask);
+        std::uint32_t GetVisibilityMask() const;
 
         // Local AABB
         virtual RadeonRays::bbox GetLocalAABB() const = 0;
@@ -75,11 +97,12 @@ namespace Baikal
         Shape(Shape const&) = delete;
         Shape& operator = (Shape const&) = delete;
     private:
+        // Material for the shape
         Material const* m_material;
-
+        // Transform
         RadeonRays::matrix m_transform;
-
-        bool m_shadow;
+        // Visibility mask
+        std::uint32_t m_visibility_mask;
     };
     
     /**
@@ -148,7 +171,7 @@ namespace Baikal
     
     inline Shape::Shape() 
         : m_material(nullptr)
-        , m_shadow(true)
+        , m_visibility_mask(0xffffffffu)
     {
     }
     
@@ -174,15 +197,15 @@ namespace Baikal
         return m_transform;
     }
 
-    inline void Shape::SetShadow(bool shadow)
+    inline void Shape::SetVisibilityMask(std::uint32_t mask)
     {
-        m_shadow = shadow;
+        m_visibility_mask = mask;
         SetDirty(true);
     }
-
-    inline bool Shape::GetShadow() const
+    
+    inline std::uint32_t Shape::GetVisibilityMask() const
     {
-        return m_shadow;
+        return m_visibility_mask;
     }
 
     /**
