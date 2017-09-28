@@ -5,7 +5,6 @@
 #include "Renderers/adaptive_renderer.h"
 #include "Estimators/path_tracing_estimator.h"
 #include "PostEffects/bilateral_denoiser.h"
-#include "PostEffects/wavelet_denoiser.h"
 
 #include <memory>
 
@@ -56,9 +55,6 @@ namespace Baikal
             case PostEffectType::kBilateralDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new BilateralDenoiser(m_context));
-            case PostEffectType::kWaveletDenoiser:
-                return std::unique_ptr<PostEffect>(
-                                            new WaveletDenoiser(m_context));
             default:
                 throw std::runtime_error("PostEffect not supported");
         }

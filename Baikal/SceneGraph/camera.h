@@ -171,8 +171,6 @@ namespace Baikal
     inline void PerspectiveCamera::SetSensorSize(RadeonRays::float2 const& size)
     {
         m_dim = size;
-        m_aspect = m_dim.x / m_dim.y;
-
         SetDirty(true);
     }
     
