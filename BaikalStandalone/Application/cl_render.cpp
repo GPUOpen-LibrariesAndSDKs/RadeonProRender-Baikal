@@ -41,6 +41,7 @@ THE SOFTWARE.
 
 
 #include "PostEffects/wavelet_denoiser.h"
+#include "Utils/clw_class.h"
 
 namespace Baikal
 {
@@ -324,6 +325,8 @@ namespace Baikal
             settings.benchmark = false;
             settings.rt_benchmarked = true;
         }
+
+        ClwClass::Update();
     }
 
     void AppClRender::Render(int sample_cnt)

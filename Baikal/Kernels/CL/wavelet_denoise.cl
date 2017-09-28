@@ -233,7 +233,7 @@ void WaveletGenerateMotionBuffer_main(
     GLOBAL matrix4x4* restrict view_projection,
     // View-projection matrix of previous frame
     GLOBAL matrix4x4* restrict prev_view_projection,
-    // Resulting motion and clip space depth buffer
+    // Resulting motion
     GLOBAL float4* restrict out_motion
 )
 {
