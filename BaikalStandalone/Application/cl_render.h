@@ -92,6 +92,11 @@ namespace Baikal
 
         void SetNumBounces(int num_bounces);
         void SetOutputType(Renderer::OutputType type);
+#ifdef ENABLE_DENOISER        
+        // Denoiser
+        void SetDenoiserFloatParam(const std::string& name, const float4& value);
+        float4 GetDenoiserFloatParam(const std::string& name);
+#endif
     private:
         void InitCl(AppSettings& settings, GLuint tex);
         void LoadScene(AppSettings& settings);

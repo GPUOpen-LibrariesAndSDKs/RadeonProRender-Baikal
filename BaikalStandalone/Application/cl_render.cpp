@@ -39,6 +39,10 @@ THE SOFTWARE.
 #include <thread>
 #include <chrono>
 
+
+#include "PostEffects/wavelet_denoiser.h"
+#include "Utils/clw_class.h"
+
 namespace Baikal
 {
     AppClRender::AppClRender(AppSettings& settings, GLuint tex) : m_tex(tex), m_output_type(Renderer::OutputType::kColor)
@@ -119,10 +123,10 @@ namespace Baikal
             m_outputs[i].output_denoised = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);
             m_outputs[i].output_normal = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);
             m_outputs[i].output_position = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);
-            m_outputs[i].output_albedo = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);
-            m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory::PostEffectType::kBilateralDenoiser);
+            m_outputs[i].output_albedo = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);	
+            //m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory<Baikal::ClwScene>::PostEffectType::kBilateralDenoiser);
+            m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory<Baikal::ClwScene>::PostEffectType::kWaveletDenoiser);
 #endif
-
             m_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_outputs[i].output.get());
 
 #ifdef ENABLE_DENOISER
@@ -321,10 +325,20 @@ namespace Baikal
             settings.benchmark = false;
             settings.rt_benchmarked = true;
         }
+
+        ClwClass::Update();
     }
 
     void AppClRender::Render(int sample_cnt)
     {
+#ifdef ENABLE_DENOISER
+        WaveletDenoiser* wavelet_denoiser = dynamic_cast<WaveletDenoiser*>(m_outputs[m_primary].denoiser.get());
+
+        if (wavelet_denoiser != nullptr)
+        {
+            wavelet_denoiser->Update(m_camera.get());
+        }
+#endif
         auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene.get());
         m_cfgs[m_primary].renderer->Render(scene);
 
@@ -334,16 +348,23 @@ namespace Baikal
         input_set[Baikal::Renderer::OutputType::kWorldShadingNormal] = m_outputs[m_primary].output_normal.get();
         input_set[Baikal::Renderer::OutputType::kWorldPosition] = m_outputs[m_primary].output_position.get();
         input_set[Baikal::Renderer::OutputType::kAlbedo] = m_outputs[m_primary].output_albedo.get();
-        auto radius = 10U - RadeonRays::clamp((sample_cnt / 16), 1U, 9U);
-        auto position_sensitivity = 5.f + 10.f * (radius / 10.f);
-        auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
-        auto color_sensitivity = (radius / 10.f) * 2.f;
-        auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
-        m_outputs[m_primary].denoiser->SetParameter("radius", radius);
-        m_outputs[m_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
-        m_outputs[m_primary].denoiser->SetParameter("normal_sensitivity", normal_sensitivity);
-        m_outputs[m_primary].denoiser->SetParameter("position_sensitivity", position_sensitivity);
-        m_outputs[m_primary].denoiser->SetParameter("albedo_sensitivity", albedo_sensitivity);
+
+        const bool is_bilateral_denoiser = dynamic_cast<BilateralDenoiser*>(m_outputs[m_primary].denoiser.get()) != nullptr;
+
+        if (is_bilateral_denoiser)
+        {
+            auto radius = 10U - RadeonRays::clamp((sample_cnt / 16), 1U, 9U);
+            auto position_sensitivity = 5.f + 10.f * (radius / 10.f);
+            auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
+            auto color_sensitivity = (radius / 10.f) * 2.f;
+            auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
+            m_outputs[m_primary].denoiser->SetParameter("radius", radius);
+            m_outputs[m_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
+            m_outputs[m_primary].denoiser->SetParameter("normal_sensitivity", normal_sensitivity);
+            m_outputs[m_primary].denoiser->SetParameter("position_sensitivity", position_sensitivity);
+            m_outputs[m_primary].denoiser->SetParameter("albedo_sensitivity", albedo_sensitivity);
+        }
+
         m_outputs[m_primary].denoiser->Apply(input_set, *m_outputs[m_primary].output_denoised);
 #endif
     }
@@ -544,4 +565,15 @@ namespace Baikal
         m_output_type = type;
     }
 
+#ifdef ENABLE_DENOISER  
+    void AppClRender::SetDenoiserFloatParam(const std::string& name, const float4& value)
+    {
+        m_outputs[m_primary].denoiser->SetParameter(name, value);
+    }
+
+    float4 AppClRender::GetDenoiserFloatParam(const std::string& name)
+    {
+        return m_outputs[m_primary].denoiser->GetParameter(name);
+    }
+#endif
 } // Baikal
