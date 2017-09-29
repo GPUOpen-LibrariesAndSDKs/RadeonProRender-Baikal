@@ -72,9 +72,10 @@ namespace Baikal
 
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
-        RadeonRays::IntersectionApi* api
+        RadeonRays::IntersectionApi* api,
+        std::string const& cache_path
     ) : 
-        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl")
+        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
         , Estimator(api)
         , m_sample_counter(0)
         , m_render_data(new RenderData)
@@ -83,9 +84,18 @@ namespace Baikal
         m_render_data->pp = CLWParallelPrimitives(context, GetBuildOpts().c_str());
         m_render_data->sobolmat = context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
     }
-    
-    // For std::unique_ptr to work;
-    PathTracingEstimator::~PathTracingEstimator() = default;
+
+    PathTracingEstimator::~PathTracingEstimator()
+    {
+        // Recreate FR buffers
+        GetIntersector()->DeleteBuffer(m_render_data->fr_rays[0]);
+        GetIntersector()->DeleteBuffer(m_render_data->fr_rays[1]);
+        GetIntersector()->DeleteBuffer(m_render_data->fr_shadowrays);
+        GetIntersector()->DeleteBuffer(m_render_data->fr_hits);
+        GetIntersector()->DeleteBuffer(m_render_data->fr_shadowhits);
+        GetIntersector()->DeleteBuffer(m_render_data->fr_intersections);
+        GetIntersector()->DeleteBuffer(m_render_data->fr_hitcount);
+    }
 
     std::size_t PathTracingEstimator::GetWorkBufferSize() const
     {

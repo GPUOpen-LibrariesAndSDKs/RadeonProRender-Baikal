@@ -63,14 +63,49 @@ public:
         char* refpath_option = GetCmdOption(g_argv, g_argv + g_argc, "-ref");
         char* outpath_option = GetCmdOption(g_argv, g_argv + g_argc, "-out");
 
-        auto platform_index = platform_index_option ? (int)atoi(platform_index_option) : 0;
-        auto device_index = device_index_option ? (int)atoi(device_index_option) : 0;
+        auto platform_index = platform_index_option ? (int)atoi(platform_index_option) : -1;
+        auto device_index = device_index_option ? (int)atoi(device_index_option) : -1;
         m_generate = generate_option ? true : false;
         m_tolerance = tolerance_option ? (int)atoi(tolerance_option) : 20;
         m_reference_path = refpath_option ? refpath_option : "ReferenceImages";
         m_output_path = outpath_option ? outpath_option : "OutputImages";
         m_reference_path.append("/");
         m_output_path.append("/");
+
+
+
+        // Prefer GPU devices if nothing has been specified
+        if (platform_index == -1)
+        {
+            platform_index = 0;
+
+            for (auto j = 0; j < platforms.size(); ++j)
+            {
+                for (auto i = 0; i < platforms[j].GetDeviceCount(); ++i)
+                {
+                    if (platforms[j].GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
+                    {
+                        platform_index = j;
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        if (device_index == -1)
+        {
+            device_index = 0;
+
+            for (auto i = 0; i < platforms[platform_index].GetDeviceCount(); ++i)
+            {
+                if (platforms[platform_index].GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
+                {
+                    device_index = i;
+                    break;
+                }
+            }
+        }
 
         ASSERT_LT(platform_index, platforms.size());
         ASSERT_LT((std::uint32_t)device_index, platforms[platform_index].GetDeviceCount());
@@ -79,7 +114,7 @@ public:
         auto device = platform.GetDevice(device_index);
         auto context = CLWContext::Create(device);
 
-        ASSERT_NO_THROW(m_factory = std::make_unique<Baikal::ClwRenderFactory>(context));
+        ASSERT_NO_THROW(m_factory = std::make_unique<Baikal::ClwRenderFactory>(context, "cache"));
         ASSERT_NO_THROW(m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer));
         ASSERT_NO_THROW(m_controller = m_factory->CreateSceneController());
         ASSERT_NO_THROW(m_output = m_factory->CreateOutput(kOutputWidth, kOutputHeight));
@@ -93,6 +128,9 @@ public:
 
     virtual void TearDown()
     {
+        m_renderer.reset();
+        m_controller.reset();
+        m_factory.reset();
     }
 
     virtual void ClearOutput() const

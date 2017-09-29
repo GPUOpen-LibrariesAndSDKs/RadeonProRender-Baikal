@@ -88,8 +88,8 @@ TEST_F(LightTest, Light_PointLight)
     }
 
     auto iter = m_scene->CreateLightIterator();
+    m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const>());
     m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
-    m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const> ());
 
     ClearOutput();
 
@@ -211,8 +211,8 @@ TEST_F(LightTest, Light_DirectionalLight)
     }
 
     auto iter = m_scene->CreateLightIterator();
-    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
     m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const>());
+    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
 
     ClearOutput();
 
@@ -288,8 +288,9 @@ TEST_F(LightTest, Light_SpotLight)
     }
 
     auto iter = m_scene->CreateLightIterator();
-    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
     m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const>());
+    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
+
 
     ClearOutput();
 
