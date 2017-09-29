@@ -60,6 +60,18 @@ public:
         std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> factory;
         CLWContext context;
         bool caninterop;
+
+        Config() = default;
+
+        Config(Config&& cfg) = default;
+
+        ~Config()
+        {
+            //TODO: fix this order dependence
+            renderer.reset();
+            controller.reset();
+            factory.reset();
+        }
     };
 
     static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);
