@@ -48,9 +48,10 @@ namespace Baikal
     // Constructor
     MonteCarloRenderer::MonteCarloRenderer(
         CLWContext context,
-        std::unique_ptr<Estimator> estimator
+        std::unique_ptr<Estimator> estimator,
+        std::string const& cache_path
     )
-        : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl")
+        : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl", "", cache_path)
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
     {

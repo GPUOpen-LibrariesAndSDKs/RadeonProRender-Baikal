@@ -46,7 +46,8 @@ namespace Baikal
 
         MonteCarloRenderer(
             CLWContext context,
-            std::unique_ptr<Estimator> estimator
+            std::unique_ptr<Estimator> estimator,
+            std::string const& cache_path=""
         );
 
         ~MonteCarloRenderer() = default;

@@ -10,7 +10,7 @@
 
 namespace Baikal
 {
-    ClwRenderFactory::ClwRenderFactory(CLWContext context)
+    ClwRenderFactory::ClwRenderFactory(CLWContext context, std::string const& cache_path)
     : m_context(context)
     , m_intersector(
         CreateFromOpenClContext(
@@ -20,6 +20,7 @@ namespace Baikal
         )
         , RadeonRays::IntersectionApi::Delete
     )
+    , m_cache_path(cache_path)
     {
     }
 
@@ -33,7 +34,8 @@ namespace Baikal
                 return std::unique_ptr<Renderer>(
                     new MonteCarloRenderer(
                         m_context, 
-                        std::make_unique<PathTracingEstimator>(m_context, m_intersector.get())
+                        std::make_unique<PathTracingEstimator>(m_context, m_intersector.get(), m_cache_path),
+                        m_cache_path
                         ));
             default:
                 throw std::runtime_error("Renderer not supported");

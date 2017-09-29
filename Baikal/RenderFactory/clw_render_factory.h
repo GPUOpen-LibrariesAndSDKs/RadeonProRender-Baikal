@@ -29,6 +29,7 @@
 #include "SceneGraph/clwscene.h"
 
 #include <memory>
+#include <string>
 
 
 namespace Baikal
@@ -43,7 +44,7 @@ namespace Baikal
     class ClwRenderFactory : public RenderFactory<ClwScene>
     {
     public:
-        ClwRenderFactory(CLWContext context);
+        ClwRenderFactory(CLWContext context, std::string const& cache_path="");
 
         // Create a renderer of specified type
         std::unique_ptr<Renderer> 
@@ -60,6 +61,7 @@ namespace Baikal
 
     private:
         CLWContext m_context;
+        std::string m_cache_path;
 
         using RadeonRaysInstanceDelete = decltype(RadeonRays::IntersectionApi::Delete);
 
