@@ -33,7 +33,7 @@ using namespace RadeonRays;
 
 class LightTest: public BasicTest
 {
-    void LoadSphereTestScene() override
+    void LoadTestScene() override
     {
         auto io = Baikal::SceneIo::CreateSceneIoTest();
         m_scene = io->LoadScene("sphere+plane", "");

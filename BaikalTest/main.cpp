@@ -28,6 +28,8 @@ THE SOFTWARE.
 #include "camera.h"
 #include "light.h"
 #include "material.h"
+#include "aov.h"
+#include "test_scenes.h"
 
 int g_argc;
 char** g_argv;
