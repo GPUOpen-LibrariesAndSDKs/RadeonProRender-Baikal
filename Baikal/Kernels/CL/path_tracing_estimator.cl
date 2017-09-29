@@ -463,7 +463,7 @@ KERNEL void ShadeSurface(
             float3 temp = diffgeo.p + wo - shadow_ray_o;
             float3 shadow_ray_dir = normalize(temp);
             float shadow_ray_length = length(temp);
-            int shadow_ray_mask = 0x0000FFFF;
+            int shadow_ray_mask = VISIBILITY_MASK_BOUNCE_SHADOW(bounce);
 
             Ray_Init(shadow_rays + global_id, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
 
@@ -519,8 +519,9 @@ KERNEL void ShadeSurface(
             // Generate ray
             float3 indirect_ray_dir = bxdfwo;
             float3 indirect_ray_o = diffgeo.p + CRAZY_LOW_DISTANCE * s * diffgeo.ng;
+            int indirect_ray_mask = VISIBILITY_MASK_BOUNCE(bounce + 1);
 
-            Ray_Init(indirect_rays + global_id, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+            Ray_Init(indirect_rays + global_id, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, indirect_ray_mask);
             Ray_SetExtra(indirect_rays + global_id, make_float2(bxdf_pdf, 0.f));
         }
         else

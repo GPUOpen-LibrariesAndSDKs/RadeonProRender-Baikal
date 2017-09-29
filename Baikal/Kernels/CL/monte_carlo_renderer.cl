@@ -119,6 +119,7 @@ void PerspectiveCamera_GeneratePaths(
         my_ray->extra.x = 0xFFFFFFFF;
         my_ray->extra.y = 0xFFFFFFFF;
         Ray_SetExtra(my_ray, 1.f);
+        Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
     }
 }
 
@@ -210,6 +211,7 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
         my_ray->extra.x = 0xFFFFFFFF;
         my_ray->extra.y = 0xFFFFFFFF;
         Ray_SetExtra(my_ray, 1.f);
+        Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
     }
 }
 

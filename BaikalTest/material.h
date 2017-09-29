@@ -34,7 +34,7 @@ using namespace RadeonRays;
 
 class MaterialTest : public BasicTest
 {
-    void LoadSphereTestScene() override
+    void LoadTestScene() override
     {
         auto io = Baikal::SceneIo::CreateSceneIoTest();
         m_scene = io->LoadScene("sphere+plane+ibl", "");
@@ -243,7 +243,7 @@ TEST_F(MaterialTest, Material_Reflect)
 
             {
                 std::ostringstream oss;
-                oss << test_name() << "_" << t << ".png";
+                oss << test_name() << "_" << ior << "_" << t << ".png";
                 SaveOutput(oss.str());
                 ASSERT_TRUE(CompareToReference(oss.str()));
             }
@@ -364,7 +364,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r <<  "_" << t << ".png";
+                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -486,7 +486,7 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r << "_" << t << ".png";
+                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -584,7 +584,7 @@ TEST_F(MaterialTest, Material_Refract)
 
             {
                 std::ostringstream oss;
-                oss << test_name() << "_" << t << ".png";
+                oss << test_name()  <<  "_" << ior << "_" << t << ".png";
                 SaveOutput(oss.str());
                 ASSERT_TRUE(CompareToReference(oss.str()));
             }
@@ -697,7 +697,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r << "_" << t << ".png";
+                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -811,7 +811,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r << "_" << t << ".png";
+                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }

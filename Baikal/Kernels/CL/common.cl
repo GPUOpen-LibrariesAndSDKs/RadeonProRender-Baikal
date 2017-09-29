@@ -47,7 +47,7 @@ THE SOFTWARE.
 #define SOBOL 2
 #define CMJ 3
 
-#define SAMPLER CMJ
+#define SAMPLER RANDOM
 
 #define CMJ_DIM 16
 
@@ -60,5 +60,12 @@ THE SOFTWARE.
 #define ADD_FLOAT3(x,y) add_float3((x),(y))
 #define ADD_FLOAT4(x,y) add_float4((x),(y))
 #endif
+
+#define VISIBILITY_MASK_PRIMARY (0x1)
+#define VISIBILITY_MASK_SHADOW (0x1 << 15)
+#define VISIBILITY_MASK_ALL (0xffffffffu)
+#define VISIBILITY_MASK_NONE (0x0u)
+#define VISIBILITY_MASK_BOUNCE(i) (VISIBILITY_MASK_PRIMARY << i)
+#define VISIBILITY_MASK_BOUNCE_SHADOW(i) (VISIBILITY_MASK_SHADOW << i)
 
 #endif // COMMON_CL

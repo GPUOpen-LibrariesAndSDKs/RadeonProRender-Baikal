@@ -85,7 +85,7 @@ public:
         ASSERT_NO_THROW(m_output = m_factory->CreateOutput(kOutputWidth, kOutputHeight));
         ASSERT_NO_THROW(m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get()));
 
-        ASSERT_NO_THROW(LoadSphereTestScene());
+        ASSERT_NO_THROW(LoadTestScene());
         ASSERT_NO_THROW(SetupCamera());
 
         ASSERT_NO_THROW(m_renderer->SetRandomSeed(0));
@@ -100,7 +100,7 @@ public:
         ASSERT_NO_THROW(m_renderer->Clear(RadeonRays::float3(), *m_output));
     }
 
-    virtual void LoadSphereTestScene()
+    virtual void LoadTestScene()
     {
         auto io = Baikal::SceneIo::CreateSceneIoTest();
         m_scene = io->LoadScene("sphere+ibl", "");
