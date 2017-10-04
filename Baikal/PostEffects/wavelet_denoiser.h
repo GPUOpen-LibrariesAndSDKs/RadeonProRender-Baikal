@@ -22,6 +22,8 @@ THE SOFTWARE.
 #pragma once
 #include "clw_post_effect.h"
 
+#include <limits>
+
 namespace Baikal
 {
     /**
@@ -375,7 +377,7 @@ namespace Baikal
         float2 z_range  = camera->GetDepthRange();
         
         // Nan-avoidance in perspective matrix
-        z_range.x = std::max(z_range.x, FLT_EPSILON);
+        z_range.x = std::max(z_range.x, std::numeric_limits<float>::epsilon());
 
         const float fovy = 2 * atan(sensor_size.y / (2.0f * focal_length));
 
