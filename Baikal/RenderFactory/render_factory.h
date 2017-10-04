@@ -50,7 +50,8 @@ namespace Baikal
         
         enum class PostEffectType
         {
-            kBilateralDenoiser
+            kBilateralDenoiser,
+            kWaveletDenoiser
         };
 
         RenderFactory() = default;
