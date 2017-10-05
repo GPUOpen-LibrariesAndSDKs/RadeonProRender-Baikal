@@ -114,7 +114,7 @@ namespace Baikal
         m_render_data->paths = GetContext().CreateBuffer<PathState>(size, CL_MEM_READ_WRITE);
 
         std::vector<std::uint32_t> random_buffer(size);
-        std::generate(random_buffer.begin(), random_buffer.end(), std::rand);
+        std::generate(random_buffer.begin(), random_buffer.end(), [](){return std::rand() + 3;});
 
         m_render_data->random = GetContext().CreateBuffer<std::uint32_t>(size, CL_MEM_READ_WRITE, &random_buffer[0]);
 
