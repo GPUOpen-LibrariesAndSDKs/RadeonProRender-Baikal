@@ -676,7 +676,12 @@ KERNEL void FillAOVs(
     // Gloss enabled flag
     int gloss_enabled,
     // Specularity map
-    GLOBAL float4* restrict aov_gloss
+    GLOBAL float4* restrict aov_gloss,
+    // NOTE: following are fake parameters, handled outside
+    // Gloss enabled flag
+    int visibility_enabled,
+    // Specularity map
+    GLOBAL float4* restrict aov_visibilityt
 )
 {
     int global_id = get_global_id(0);

@@ -633,6 +633,46 @@ KERNEL void GatherLightSamples(
     }
 }
 
+///< Handle light samples and visibility info and add contribution to final buffer
+KERNEL void GatherVisibility(
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
+    // Number of rays
+    GLOBAL int* restrict num_rays,
+    // Shadow rays hits
+    GLOBAL int const* restrict shadow_hits,
+    // Radiance sample buffer
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+
+    if (global_id < *num_rays)
+    {
+        // Get pixel id for this sample set
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+
+        // Prepare accumulator variable
+        float4 visibility = make_float4(0.f, 0.f, 0.f, 1.f);
+
+        // Start collecting samples
+        {
+            // If shadow ray didn't hit anything and reached skydome
+            if (shadow_hits[global_id] == -1)
+            {
+                // Add its contribution to radiance accumulator
+                visibility.xyz += 1.f;
+            }
+        }
+
+        // Divide by number of light samples (samples already have built-in throughput)
+        ADD_FLOAT4(&output[output_index], visibility);
+    }
+}
+
 ///< Restore pixel indices after compaction
 KERNEL void RestorePixelIndices(
     // Compacted indices
