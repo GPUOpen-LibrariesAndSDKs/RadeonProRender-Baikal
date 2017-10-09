@@ -73,9 +73,10 @@ namespace Baikal
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
         RadeonRays::IntersectionApi* api,
+        std::string const& opts,
         std::string const& cache_path
     ) : 
-        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
+        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", opts, cache_path)
         , Estimator(api)
         , m_sample_counter(0)
         , m_render_data(new RenderData)
