@@ -66,13 +66,13 @@ float4 GaussFilter3x3(
 int ConvertToLinearAddress(int address_x, int address_y, int2 buffer_size)
 {
     int max_buffer_size = buffer_size.x * buffer_size.y;
-    return clamp(address_y * buffer_size.x + address_x, 0, max_buffer_size);
+    return clamp(address_y * buffer_size.x + address_x, 0, max_buffer_size - 1);
 }
 
 int ConvertToLinearAddressInt2(int2 address, int2 buffer_size)
 {
     int max_buffer_size = buffer_size.x * buffer_size.y;
-    return clamp(address.y * buffer_size.x + address.x, 0, max_buffer_size);
+    return clamp(address.y * buffer_size.x + address.x, 0, max_buffer_size - 1);
 }
 
 // Bilinear sampler
