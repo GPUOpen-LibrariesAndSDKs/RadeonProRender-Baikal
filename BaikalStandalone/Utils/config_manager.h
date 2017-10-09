@@ -67,10 +67,6 @@ public:
 
         ~Config()
         {
-            //TODO: fix this order dependence
-            renderer.reset();
-            controller.reset();
-            factory.reset();
         }
     };
 

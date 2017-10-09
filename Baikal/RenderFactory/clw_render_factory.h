@@ -65,7 +65,6 @@ namespace Baikal
 
         using RadeonRaysInstanceDelete = decltype(RadeonRays::IntersectionApi::Delete);
 
-        std::unique_ptr<RadeonRays::IntersectionApi,
-            void(*)(RadeonRays::IntersectionApi*)> m_intersector;
+        std::shared_ptr<RadeonRays::IntersectionApi> m_intersector;
     };
 }

@@ -128,9 +128,6 @@ public:
 
     virtual void TearDown()
     {
-        m_renderer.reset();
-        m_controller.reset();
-        m_factory.reset();
     }
 
     virtual void ClearOutput() const

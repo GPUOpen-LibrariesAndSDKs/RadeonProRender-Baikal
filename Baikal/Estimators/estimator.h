@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "CLW.h"
 
 #include <array>
+#include <memory>
 
 namespace Baikal
 {
@@ -68,7 +69,7 @@ namespace Baikal
             float shadow_throughput;
         };
 
-        Estimator(RadeonRays::IntersectionApi* api)
+        Estimator(std::shared_ptr<RadeonRays::IntersectionApi> api)
             : m_intersector(api)
             , m_max_bounces(5u)
         {
@@ -245,7 +246,7 @@ namespace Baikal
 
         Estimators rely on intersection API for geometric queries. 
         */
-        RadeonRays::IntersectionApi* GetIntersector() const {
+        std::shared_ptr<RadeonRays::IntersectionApi> GetIntersector() const {
             return m_intersector;
         }
 
@@ -269,7 +270,7 @@ namespace Baikal
         Estimator& operator = (Estimator const&) = delete;
 
     private:
-        RadeonRays::IntersectionApi* m_intersector;
+        std::shared_ptr<RadeonRays::IntersectionApi> m_intersector;
         std::uint32_t m_max_bounces;
         std::array<CLWBuffer<float3>, 
             static_cast<size_t>(IntermediateValue::kMax)> m_intermediate_value;
