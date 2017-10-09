@@ -677,11 +677,13 @@ KERNEL void FillAOVs(
     int gloss_enabled,
     // Specularity map
     GLOBAL float4* restrict aov_gloss,
+    // Depth enabled flag
+    int depth_enabled,
+    // Depth map
+    GLOBAL float4* restrict aov_depth,
     // NOTE: following are fake parameters, handled outside
-    // Gloss enabled flag
     int visibility_enabled,
-    // Specularity map
-    GLOBAL float4* restrict aov_visibilityt
+    GLOBAL float4* restrict aov_visibility
 )
 {
     int global_id = get_global_id(0);
@@ -873,6 +875,20 @@ KERNEL void FillAOVs(
 
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
+            }
+
+            if (depth_enabled)
+            {
+                aov_depth[idx].xyz += isect.uvwt.w;
+                aov_depth[idx].w += 1.f;
+            }
+        }
+        else
+        {
+            if (depth_enabled)
+            {
+                aov_depth[idx].xyz += CRAZY_HIGH_DISTANCE;
+                aov_depth[idx].w += 1.f;
             }
         }
     }

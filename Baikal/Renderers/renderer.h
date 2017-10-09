@@ -61,6 +61,7 @@ namespace Baikal
             kWorldTangent,
             kWorldBitangent,
             kGloss,
+            kDepth,
             kVisibility,
             kMax
         };
