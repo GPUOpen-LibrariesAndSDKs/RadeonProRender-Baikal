@@ -223,10 +223,10 @@ TEST_F(AovTest, Aov_Uv)
     auto output_ws = m_factory->CreateOutput(
       m_output->width(), m_output->height()
     );
-    
+
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kUv,
                           output_ws.get());
-    
+
     ClearOutput();
     ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
     
