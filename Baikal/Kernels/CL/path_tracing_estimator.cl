@@ -560,6 +560,12 @@ KERNEL void ShadeBackgroundEnvMap(
 
     if (global_id < num_rays)
     {
+        //don't modify output for inactive rays
+        if (!Ray_IsActive(rays + global_id))
+        {
+            return;
+        }
+
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];
 
