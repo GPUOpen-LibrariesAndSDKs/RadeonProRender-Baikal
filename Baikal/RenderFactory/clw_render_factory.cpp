@@ -5,6 +5,7 @@
 #include "Renderers/adaptive_renderer.h"
 #include "Estimators/path_tracing_estimator.h"
 #include "PostEffects/bilateral_denoiser.h"
+#include "PostEffects/wavelet_denoiser.h"
 
 #include <memory>
 
@@ -34,7 +35,7 @@ namespace Baikal
                 return std::unique_ptr<Renderer>(
                     new MonteCarloRenderer(
                         m_context, 
-                        std::make_unique<PathTracingEstimator>(m_context, m_intersector.get(), m_cache_path),
+                        std::make_unique<PathTracingEstimator>(m_context, m_intersector.get(), "", m_cache_path),
                         m_cache_path
                         ));
             default:
@@ -57,6 +58,9 @@ namespace Baikal
             case PostEffectType::kBilateralDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new BilateralDenoiser(m_context));
+            case PostEffectType::kWaveletDenoiser:
+                return std::unique_ptr<PostEffect>(
+                                            new WaveletDenoiser(m_context));
             default:
                 throw std::runtime_error("PostEffect not supported");
         }

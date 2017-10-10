@@ -47,7 +47,7 @@ THE SOFTWARE.
 #define SOBOL 2
 #define CMJ 3
 
-#define SAMPLER RANDOM
+#define SAMPLER CMJ
 
 #define CMJ_DIM 16
 

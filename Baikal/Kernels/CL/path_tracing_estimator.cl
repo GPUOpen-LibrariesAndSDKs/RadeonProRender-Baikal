@@ -381,7 +381,7 @@ KERNEL void ShadeSurface(
                     float denom = fabs(dot(diffgeo.n, wi)) * diffgeo.area;
                     // TODO: num_lights should be num_emissies instead, presence of analytical lights breaks this code
                     float bxdf_light_pdf = denom > 0.f ? (ld * ld / denom / num_lights) : 0.f;
-                    weight = BalanceHeuristic(1, extra.x, 1, bxdf_light_pdf);
+                    weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, bxdf_light_pdf) : 1.f;
                 }
 
                 // In this case we hit after an application of MIS process at previous step.
@@ -522,7 +522,7 @@ KERNEL void ShadeSurface(
             int indirect_ray_mask = VISIBILITY_MASK_BOUNCE(bounce + 1);
 
             Ray_Init(indirect_rays + global_id, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, indirect_ray_mask);
-            Ray_SetExtra(indirect_rays + global_id, make_float2(bxdf_pdf, 0.f));
+            Ray_SetExtra(indirect_rays + global_id, make_float2(Bxdf_IsSingular(&diffgeo) ? 0.f : bxdf_pdf, 0.f));
         }
         else
         {
@@ -560,6 +560,12 @@ KERNEL void ShadeBackgroundEnvMap(
 
     if (global_id < num_rays)
     {
+        //don't modify output for inactive rays
+        if (!Ray_IsActive(rays + global_id))
+        {
+            return;
+        }
+
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];
 
@@ -742,7 +748,7 @@ KERNEL void ShadeMiss(
             float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
             float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, rays[global_id].d.xyz, TEXTURE_ARGS);
             float2 extra = Ray_GetExtra(&rays[global_id]);
-            float weight = BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf);
+            float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
 
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;

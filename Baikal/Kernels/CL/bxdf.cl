@@ -999,7 +999,7 @@ float3 Passthrough_Sample(
     *pdf = 1.f;
 
     //
-    return coswo > 0.0001f ? (1.f / coswo) : 0.f;
+    return coswo > 1e-5f ? (1.f / coswo) : 0.f;
 }
 
 /*
@@ -1039,6 +1039,8 @@ float3 Bxdf_Evaluate(
         return MicrofacetRefractionGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
     case kMicrofacetRefractionBeckmann:
         return MicrofacetRefractionBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+    case kPassthrough:
+        return 0.f;
 #ifdef ENABLE_DISNEY
     case kDisney:
         return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);

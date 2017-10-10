@@ -73,9 +73,11 @@ namespace Baikal
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
         RadeonRays::IntersectionApi* api,
+        std::string const& baikal_path,
+        std::string const& opts,
         std::string const& cache_path
     ) : 
-        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
+        ClwClass(context, baikal_path + "../Baikal/Kernels/CL/path_tracing_estimator.cl", opts + "-I " + baikal_path, cache_path)
         , Estimator(api)
         , m_sample_counter(0)
         , m_render_data(new RenderData)
@@ -114,7 +116,7 @@ namespace Baikal
         m_render_data->paths = GetContext().CreateBuffer<PathState>(size, CL_MEM_READ_WRITE);
 
         std::vector<std::uint32_t> random_buffer(size);
-        std::generate(random_buffer.begin(), random_buffer.end(), std::rand);
+        std::generate(random_buffer.begin(), random_buffer.end(), [](){return std::rand() + 3;});
 
         m_render_data->random = GetContext().CreateBuffer<std::uint32_t>(size, CL_MEM_READ_WRITE, &random_buffer[0]);
 

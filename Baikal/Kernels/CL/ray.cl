@@ -37,6 +37,14 @@ typedef struct
     float2 padding;
 } ray;
 
+
+// Check ray activity flag
+INLINE bool Ray_IsActive(GLOBAL ray* r)
+{
+    return r->extra.y != 0;
+}
+
+
 // Set ray activity flag
 INLINE void Ray_SetInactive(GLOBAL ray* r)
 {
