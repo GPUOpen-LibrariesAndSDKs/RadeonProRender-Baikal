@@ -41,7 +41,8 @@ namespace Baikal
         PathTracingEstimator(
             CLWContext context,
             RadeonRays::IntersectionApi* api,
-            std::string const& opts,
+            std::string const& baikal_path="",
+            std::string const& opts="",
             std::string const& cache_path=""
         );
         
