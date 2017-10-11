@@ -32,6 +32,8 @@
 #include <set>
 #include <functional>
 
+#include "scene_object.h"
+
 
 namespace Baikal
 {
@@ -58,9 +60,9 @@ namespace Baikal
     class Collector
     {
     public:
-        using ExpandFunc = std::function<std::set<void const*>(void const*)>;
-        using ChangedFunc = std::function<bool(void const*)>;
-        using FinalizeFunc = std::function<void(void const*)>;
+        using ExpandFunc = std::function<std::set<SceneObject::Ptr>(SceneObject::Ptr)>;
+        using ChangedFunc = std::function<bool(SceneObject::Ptr)>;
+        using FinalizeFunc = std::function<void(SceneObject::Ptr)>;
         
         // Constructor
         Collector();
@@ -82,7 +84,7 @@ namespace Baikal
         // Create serialised bundle (randomly accessible dump of objects)
         Bundle* CreateBundle() const;
         // Get item index within a collection
-        std::uint32_t GetItemIndex(void const* item) const;
+        std::uint32_t GetItemIndex(SceneObject::Ptr item) const;
         // Finalization function
         void Finalize(FinalizeFunc finalize_func);
     

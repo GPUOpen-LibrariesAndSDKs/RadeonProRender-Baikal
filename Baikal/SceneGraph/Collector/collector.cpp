@@ -6,8 +6,8 @@
 
 namespace Baikal
 {
-    using ItemMap = std::map<void const*, int>;
-    using ItemSet = std::set<void const*>;
+    using ItemMap = std::map<SceneObject::Ptr, int>;
+    using ItemSet = std::set<SceneObject::Ptr>;
     
     class BundleImpl : public Bundle
     {
@@ -125,7 +125,7 @@ namespace Baikal
         return new BundleImpl { m_impl->m_map, m_impl->m_set };
     }
     
-    std::uint32_t Collector::GetItemIndex(void const* item) const
+    std::uint32_t Collector::GetItemIndex(SceneObject::Ptr item) const
     {
         auto iter = m_impl->m_map.find(item);
         

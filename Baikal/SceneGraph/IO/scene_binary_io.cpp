@@ -18,9 +18,9 @@ namespace Baikal
         return std::unique_ptr<SceneIo>(new SceneBinaryIo());
     }
 
-    std::unique_ptr<Scene1> SceneBinaryIo::LoadScene(std::string const& filename, std::string const& basepath) const
+    Scene1::Ptr SceneBinaryIo::LoadScene(std::string const& filename, std::string const& basepath) const
     {
-        Scene1* scene = new Scene1;
+        auto scene = Scene1::Create();
         auto image_io(ImageIo::CreateImageIo());
 
         std::map<std::string, Material*> mats;
@@ -32,7 +32,7 @@ namespace Baikal
             }
         };
 
-        std::map<RadeonRays::float3, Material*, less> c2mats;
+        std::map<RadeonRays::float3, Material::Ptr, less> c2mats;
 
         std::string full_path = filename;
 
@@ -50,7 +50,7 @@ namespace Baikal
 
         for (auto i = 0U; i < num_meshes; ++i)
         {
-            auto mesh = new Mesh();
+            auto mesh = Mesh::Create();
 
             std::uint32_t num_indices = 0;
             in.read((char*)&num_indices, sizeof(std::uint32_t));
@@ -151,35 +151,30 @@ namespace Baikal
             }
 
             scene->AttachShape(mesh);
-            scene->AttachAutoreleaseObject(mesh);
         }
 
 
 
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
-        scene->AttachAutoreleaseObject(ibl_texture);
+        auto  ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
 
-        ImageBasedLight* ibl = new ImageBasedLight();
+        auto ibl = ImageBasedLight::Create();
         ibl->SetTexture(ibl_texture);
         ibl->SetMultiplier(1.f);
-        scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
-        DirectionalLight* light = new DirectionalLight();
+        auto light = DirectionalLight::Create();
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.4f)));
         light->SetEmittedRadiance(7.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
-        scene->AttachAutoreleaseObject(light);
 
-        DirectionalLight* light1 = new DirectionalLight();
+        auto light1 = DirectionalLight::Create();
         light1->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
-        scene->AttachAutoreleaseObject(light1);
 
         scene->AttachLight(light);
         //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 
-        return std::unique_ptr<Scene1>(scene);
+        return scene;
     }
 
     void SceneBinaryIo::SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const
@@ -193,7 +188,7 @@ namespace Baikal
             throw std::runtime_error("Cannot open file for writing");
         }
 
-        auto default_material = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+        auto default_material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
 
         auto num_shapes = (std::uint32_t)scene.GetNumShapes();
         out.write((char*)&num_shapes, sizeof(std::uint32_t));
@@ -202,7 +197,7 @@ namespace Baikal
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
-            auto mesh = shape_iter->ItemAs<Mesh const>();
+            auto mesh = shape_iter->ItemAs<Mesh>();
             auto num_indices = (std::uint32_t)mesh->GetNumIndices();
             out.write((char*)&num_indices, sizeof(std::uint32_t));
 
@@ -227,11 +222,11 @@ namespace Baikal
                 material = default_material;
             }
 
-            auto diffuse = dynamic_cast<SingleBxdf const*>(material);
+            auto diffuse = std::dynamic_pointer_cast<SingleBxdf>(material);
 
             if (!diffuse)
             {
-                diffuse = dynamic_cast<SingleBxdf const*>(material->GetInputValue("base_material").mat_value);
+                diffuse = std::dynamic_pointer_cast<SingleBxdf>(material->GetInputValue("base_material").mat_value);
             }
 
             if (!diffuse)

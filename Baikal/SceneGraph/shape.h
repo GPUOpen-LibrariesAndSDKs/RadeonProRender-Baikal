@@ -37,6 +37,7 @@
 #include <vector>
 
 #include "scene_object.h"
+#include "material.h"
 
 namespace Baikal
 {
@@ -50,6 +51,7 @@ namespace Baikal
     class Shape : public SceneObject
     {
     public:
+        using Ptr = std::shared_ptr<Shape>;
         
         struct Visibility
         {
@@ -67,15 +69,12 @@ namespace Baikal
             static VisibilityFlags VisibleForBounceShadow(int i) { return (VisibilityFlags)(kShadow << i); }
         };
         
-        
-        // Constructor
-        Shape();
         // Destructor
         virtual ~Shape() = 0;
 
         // Get and set material
-        void SetMaterial(Material const* material);
-        Material const* GetMaterial() const;
+        void SetMaterial(Material::Ptr material);
+        Material::Ptr GetMaterial() const;
 
         // Get and set transform
         void SetTransform(RadeonRays::matrix const& t);
@@ -96,9 +95,14 @@ namespace Baikal
         // Forbidden stuff
         Shape(Shape const&) = delete;
         Shape& operator = (Shape const&) = delete;
+        
+    protected:
+        // Constructor
+        Shape();
+        
     private:
         // Material for the shape
-        Material const* m_material;
+        Material::Ptr m_material;
         // Transform
         RadeonRays::matrix m_transform;
         // Visibility mask
@@ -113,7 +117,8 @@ namespace Baikal
     class Mesh : public Shape
     {
     public:
-        Mesh();
+        using Ptr = std::shared_ptr<Mesh>;
+        static Ptr Create();
 
         // Set and get index array
         void SetIndices(std::uint32_t const* indices, std::size_t num_indices);
@@ -155,6 +160,9 @@ namespace Baikal
         Mesh(Mesh const&) = delete;
         Mesh& operator = (Mesh const&) = delete;
         
+    protected:
+        Mesh();
+        
     private:
         std::vector<RadeonRays::float3> m_vertices;
         std::vector<RadeonRays::float3> m_normals;
@@ -175,13 +183,13 @@ namespace Baikal
     {
     }
     
-    inline void Shape::SetMaterial(Material const* material)
+    inline void Shape::SetMaterial(Material::Ptr material)
     {
         m_material = material;
         SetDirty(true);
     }
     
-    inline Material const* Shape::GetMaterial() const
+    inline Material::Ptr Shape::GetMaterial() const
     {
         return m_material;
     }
@@ -216,11 +224,12 @@ namespace Baikal
     class Instance : public Shape
     {
     public:
-        Instance(Shape const* base_shape = nullptr);
+        using Ptr = std::shared_ptr<Instance>;
+        static Ptr Create(Shape::Ptr base_shape);
 
         // Get and set base shape
-        void SetBaseShape(Shape const* base_shape);
-        Shape const* GetBaseShape() const;
+        void SetBaseShape(Shape::Ptr base_shape);
+        Shape::Ptr GetBaseShape() const;
 
         // Local space AABB
         RadeonRays::bbox GetLocalAABB() const override;
@@ -229,22 +238,25 @@ namespace Baikal
         Instance(Instance const&) = delete;
         Instance& operator = (Instance const&) = delete;
 
+    protected:
+        Instance(Shape::Ptr base_shape = nullptr);
+        
     private:
-        Shape const* m_base_shape;
+        Shape::Ptr m_base_shape;
     };
 
-    inline Instance::Instance(Shape const* base_shape)
+    inline Instance::Instance(Shape::Ptr base_shape)
         : m_base_shape(base_shape)
     {
     }
 
-    inline void Instance::SetBaseShape(Shape const* base_shape)
+    inline void Instance::SetBaseShape(Shape::Ptr base_shape)
     {
         m_base_shape = base_shape;
         SetDirty(true);
     }
 
-    inline Shape const* Instance::GetBaseShape() const
+    inline Shape::Ptr Instance::GetBaseShape() const
     {
         return m_base_shape;
     }

@@ -2,54 +2,10 @@
 #include "iterator.h"
 
 #include <cassert>
+#include <memory>
 
 namespace Baikal
 {
-    class Material::InputIterator : public Iterator
-    {
-    public:
-        
-        InputIterator(InputMap::const_iterator begin,
-                      InputMap::const_iterator end)
-        : m_begin(begin)
-        , m_end(end)
-        {
-            Reset();
-        }
-        
-        // Check if we reached end
-        bool IsValid() const override
-        {
-            return m_cur != m_end;
-        }
-        
-        // Advance by 1
-        void Next() override
-        {
-            ++m_cur;
-        }
-        
-        // Set to starting iterator
-        void Reset() override
-        {
-            m_cur = m_begin;
-        }
-        
-        // Get underlying item
-        void const* Item() const override
-        {
-            return &m_cur->second;
-        }
-        
-    private:
-        InputMap::const_iterator m_begin;
-        InputMap::const_iterator m_end;
-        InputMap::const_iterator m_cur;
-    };
-    
-   
-    
-    
     Material::Material()
     : m_thin(false)
     {
@@ -59,7 +15,7 @@ namespace Baikal
                                  std::string const& desc,
                                  std::set<InputType>&& supported_types)
     {
-        Input input = {{name, desc, std::move(supported_types)}};
+        Input input {{name, desc, std::move(supported_types)}, InputValue()};
         
         assert(input.info.supported_types.size() > 0);
         
@@ -92,7 +48,7 @@ namespace Baikal
     // Iterator of dependent materials (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
-        std::set<Material const*> materials;
+        std::set<Material::Ptr> materials;
         
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&materials](std::pair<std::string, Input> const& map_entry)
@@ -105,14 +61,13 @@ namespace Baikal
                       }
                       );
         
-        return std::unique_ptr<Iterator>(
-            new ContainerIterator<std::set<Material const*>>(std::move(materials)));
+        return std::make_unique<ContainerIterator<std::set<Material::Ptr>>>(std::move(materials));
     }
     
     // Iterator of textures (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateTextureIterator() const
     {
-        std::set<Texture const*> textures;
+        std::set<Texture::Ptr> textures;
         
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&textures](std::pair<std::string, Input> const& map_entry)
@@ -125,14 +80,7 @@ namespace Baikal
                       }
                       );
         
-        return std::unique_ptr<Iterator>(
-            new ContainerIterator<std::set<Texture const*>>(std::move(textures)));
-    }
-    
-    // Iterator of inputs
-    std::unique_ptr<Iterator> Material::CreateInputIterator() const
-    {
-        return std::unique_ptr<Iterator>(new InputIterator(m_inputs.cbegin(), m_inputs.cend()));
+        return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(textures));
     }
     
     // Set input value
@@ -162,7 +110,7 @@ namespace Baikal
         }
     }
     
-    void Material::SetInputValue(std::string const& name, Texture const* texture)
+    void Material::SetInputValue(std::string const& name, Texture::Ptr texture)
     {
         auto input_iter = m_inputs.find(name);
         
@@ -187,7 +135,7 @@ namespace Baikal
         }
     }
     
-    void Material::SetInputValue(std::string const& name, Material const* material)
+    void Material::SetInputValue(std::string const& name, Material::Ptr material)
     {
         auto input_iter = m_inputs.find(name);
         
@@ -250,8 +198,8 @@ namespace Baikal
         RegisterInput("roughness", "Roughness", {InputType::kFloat4, InputType::kTexture});
         
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
-        SetInputValue("normal", static_cast<Texture const*>(nullptr));
-        SetInputValue("bump", static_cast<Texture const*>(nullptr));
+        SetInputValue("normal", static_cast<Texture::Ptr>(nullptr));
+        SetInputValue("bump", static_cast<Texture::Ptr>(nullptr));
     }
     
     SingleBxdf::BxdfType SingleBxdf::GetBxdfType() const
@@ -292,8 +240,8 @@ namespace Baikal
 
     bool MultiBxdf::HasEmission() const
     {
-        InputValue base = GetInputValue("base_material");
-        InputValue top = GetInputValue("base_material");
+        auto base = GetInputValue("base_material");
+        auto top = GetInputValue("base_material");
 
         if (base.mat_value && base.mat_value->HasEmission())
             return true;
@@ -322,13 +270,40 @@ namespace Baikal
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
         SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
         SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
-        SetInputValue("normal", static_cast<Texture const*>(nullptr));
-        SetInputValue("bump", static_cast<Texture const*>(nullptr));
+        SetInputValue("normal", Texture::Ptr{nullptr});
+        SetInputValue("bump", Texture::Ptr{nullptr});
     }
     
     // Check if material has emissive components
     bool DisneyBxdf::HasEmission() const
     {
         return false;
+    }
+    
+    namespace {
+        struct SingleBxdfConcrete: public SingleBxdf {
+            SingleBxdfConcrete(BxdfType type) :
+            SingleBxdf(type) {}
+        };
+        
+        struct MultiBxdfConcrete: public MultiBxdf {
+            MultiBxdfConcrete(Type type) :
+            Baikal::MultiBxdf(type) {}
+        };
+        
+        struct DisneyBxdfConcrete: public DisneyBxdf {
+        };
+    }
+    
+    SingleBxdf::Ptr SingleBxdf::Create(BxdfType type) {
+        return std::make_shared<SingleBxdfConcrete>(type);
+    }
+    
+    MultiBxdf::Ptr MultiBxdf::Create(Type type) {
+        return std::make_shared<MultiBxdfConcrete>(type);
+    }
+    
+    DisneyBxdf::Ptr DisneyBxdf::Create() {
+        return std::make_shared<DisneyBxdfConcrete>();
     }
 }

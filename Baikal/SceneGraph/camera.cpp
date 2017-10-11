@@ -203,4 +203,18 @@ namespace Baikal
         m_p = c - dir;
         SetDirty(true);
     }
+    
+    namespace {
+        struct PerspectiveCameraConcrete : public PerspectiveCamera {
+            PerspectiveCameraConcrete(float3 const& eye, float3 const& at, float3 const& up) :
+            PerspectiveCamera(eye, at, up) {}
+        };
+    }
+    
+    PerspectiveCamera::Ptr Create(RadeonRays::float3 const& eye,
+               RadeonRays::float3 const& at,
+               RadeonRays::float3 const& up) {
+        return std::make_shared<PerspectiveCameraConcrete>(eye, at, up);
+        
+    }
 }

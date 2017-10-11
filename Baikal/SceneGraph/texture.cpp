@@ -72,4 +72,20 @@ namespace Baikal
 
         return avg;
     }
+    
+    namespace {
+        struct TextureConcrete: public Texture {
+            TextureConcrete() = default;
+            TextureConcrete(char* data, RadeonRays::int2 size, Format format) :
+            Texture(data, size, format){}
+        };
+    }
+    
+    Texture::Ptr Texture::Create() {
+        return std::make_shared<TextureConcrete>();
+    }
+    
+    Texture::Ptr Texture::Create(char* data, RadeonRays::int2 size, Format format) {
+        return std::make_shared<TextureConcrete>(data, size, format);
+    }
 }

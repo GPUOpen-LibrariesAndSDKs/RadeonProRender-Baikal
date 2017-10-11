@@ -29,13 +29,14 @@
 #pragma once
 
 #include <set>
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <memory>
 
 #include "math/float3.h"
 
 #include "scene_object.h"
+#include "texture.h"
 
 namespace Baikal
 {
@@ -50,6 +51,8 @@ namespace Baikal
     class Material : public SceneObject
     {
     public:
+        using Ptr = std::shared_ptr<Material>;
+        
         // Material input type
         enum class InputType
         {
@@ -70,18 +73,56 @@ namespace Baikal
         };
 
         // Input value description
-        struct InputValue
-        {
+        struct InputValue {
             // Current type
             InputType type;
             
             // Possible values (use based on type)
-            union
-            {
+            union {
                 RadeonRays::float4 float_value;
-                Texture const* tex_value;
-                Material const* mat_value;
+                Texture::Ptr tex_value;
+                Material::Ptr mat_value;
             };
+            
+            InputValue() {
+                type = InputType::kMaterial;
+                mat_value = nullptr;
+            }
+            
+            ~InputValue() {
+                switch(type) {
+                    case InputType::kFloat4:
+                        break;
+                    case InputType::kTexture:
+                        tex_value.~shared_ptr();
+                        break;
+                    case InputType::kMaterial:
+                        mat_value.~shared_ptr();
+                        break;
+                }
+            }
+            
+            template <typename T> void CopyFrom(T&& rhs) {
+                
+            }
+            
+            InputValue(InputValue const& rhs) {
+                CopyFrom(rhs);
+            }
+            
+            InputValue(InputValue&& rhs) {
+                CopyFrom(std::move(rhs));
+            }
+            
+            InputValue& operator = (InputValue const& rhs) {
+                CopyFrom(rhs);
+                return *this;
+            }
+            
+            InputValue& operator = (InputValue&& rhs) {
+                CopyFrom(rhs);
+                return *this;
+            }
         };
 
         // Full input state
@@ -91,8 +132,6 @@ namespace Baikal
             InputValue value;
         };
 
-        // Constructor
-        Material();
         // Destructor
         virtual ~Material() = 0;
 
@@ -100,8 +139,6 @@ namespace Baikal
         virtual std::unique_ptr<Iterator> CreateMaterialIterator() const;
         // Iterator of textures (plugged as inputs)
         virtual std::unique_ptr<Iterator> CreateTextureIterator() const;
-        // Iterator of inputs
-        virtual std::unique_ptr<Iterator> CreateInputIterator() const;
         // Check if material has emissive components
         virtual bool HasEmission() const;
 
@@ -109,8 +146,8 @@ namespace Baikal
         // If specific data type is not supported throws std::runtime_error
         void SetInputValue(std::string const& name,
                            RadeonRays::float4 const& value);
-        void SetInputValue(std::string const& name, Texture const* texture);
-        void SetInputValue(std::string const& name, Material const* material);
+        void SetInputValue(std::string const& name, Texture::Ptr texture);
+        void SetInputValue(std::string const& name, Material::Ptr material);
 
         InputValue GetInputValue(std::string const& name) const;
 
@@ -124,20 +161,23 @@ namespace Baikal
         Material& operator = (Material const&) = delete;
 
     protected:
+        Material();
+    
         // Register specific input
         void RegisterInput(std::string const& name, std::string const& desc,
                            std::set<InputType>&& supported_types);
+        
         // Wipe out all the inputs
         void ClearInputs();
 
     private:
         class InputIterator;
 
-        using InputMap = std::map<std::string, Input>;
+        using InputMap = std::unordered_map<std::string, Input>;
         // Input map
         InputMap m_inputs;
         // Thin material
-        bool m_thin;;
+        bool m_thin;
     };
 
     inline Material::~Material()
@@ -166,14 +206,18 @@ namespace Baikal
             kMicrofacetRefractionGGX,
             kMicrofacetRefractionBeckmann
         };
-
-        SingleBxdf(BxdfType type);
+        
+        using Ptr = std::shared_ptr<SingleBxdf>;
+        static Ptr Create(BxdfType type);
 
         BxdfType GetBxdfType() const;
         void SetBxdfType(BxdfType type);
 
         // Check if material has emissive components
         bool HasEmission() const override;
+        
+    protected:
+        SingleBxdf(BxdfType type);
 
     private:
         BxdfType m_type;
@@ -188,15 +232,19 @@ namespace Baikal
             kFresnelBlend,
             kMix
         };
-
-        MultiBxdf(Type type);
+        
+        using Ptr = std::shared_ptr<MultiBxdf>;
+        static Ptr Create(Type type);
 
         Type GetType() const;
         void SetType(Type type);
 
         // Check if material has emissive components
         bool HasEmission() const override;
-    
+        
+    protected:
+        MultiBxdf(Type type);
+        
     private:
         Type m_type;
     };
@@ -204,9 +252,13 @@ namespace Baikal
     class DisneyBxdf : public Material
     {
     public:
-        DisneyBxdf();
+        using Ptr = std::shared_ptr<DisneyBxdf>;
+        static Ptr Create();
         
         // Check if material has emissive components
         bool HasEmission() const override;
+        
+    protected:
+        DisneyBxdf();
     };
 }
