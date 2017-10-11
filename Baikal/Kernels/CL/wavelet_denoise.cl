@@ -173,8 +173,8 @@ void WaveletFilter_main(
         const float variance = step_width == 1 ? sqrt(GaussFilter3x3(variances, buffer_size, global_id).z) : sqrt(variances[idx].z);
         const float step_width_2 = (float)(step_width * step_width);
         
-        float3 color_sum = color; // make_float3(0.0f, 0.0f, 0.0f);
-        float weight_sum = 1.f;
+        float3 color_sum = make_float3(0.0f, 0.0f, 0.0f);
+        float weight_sum = 0.f;
 
         const float3 luminance = make_float3(0.2126f, 0.7152f, 0.0722f);
         const float lum_color = dot(color, luminance);
@@ -283,13 +283,15 @@ void CopyBuffers_main(
     GLOBAL float4 const* restrict colors,
     GLOBAL float4 const* restrict positions,
     GLOBAL float4 const* restrict normals,
+    GLOBAL float4 const* restrict mesh_ids,
     // Image resolution
     int width,
     int height,
     // Output buffers
     GLOBAL float4* restrict out_colors,
     GLOBAL float4* restrict out_positions,
-    GLOBAL float4* restrict out_normals
+    GLOBAL float4* restrict out_normals,
+    GLOBAL float4* restrict out_mesh_ids
 )
 {
     int2 global_id;
@@ -304,6 +306,7 @@ void CopyBuffers_main(
         out_colors[idx] = (float4)(colors[idx].xyz / max(colors[idx].w,  1.f), 1.f);
         out_positions[idx] = (float4)(positions[idx].xyz / max(positions[idx].w,  1.f), 1.f);
         out_normals[idx] = (float4)(normals[idx].xyz / max(normals[idx].w,  1.f), 1.f);
+        out_mesh_ids[idx] = mesh_ids[idx];
     }
 }
 
@@ -362,10 +365,13 @@ float4 SampleWithGeometryTest(GLOBAL float4 const* restrict buffer,
     float4 current_color,
     float3 current_positions,
     float3 current_normal,
+    int current_mesh_id,
     GLOBAL float4 const* restrict positions,
     GLOBAL float4 const* restrict normals,
+    GLOBAL float4 const* restrict mesh_ids,
     GLOBAL float4 const* restrict prev_positions,
     GLOBAL float4 const* restrict prev_normals,
+    GLOBAL float4 const* restrict prev_mesh_ids,
     int2 buffer_size,
     float2 uv,
     float2 uv_prev)
@@ -398,10 +404,24 @@ float4 SampleWithGeometryTest(GLOBAL float4 const* restrict buffer,
         IsNormalConsistent(current_normal, normal_samples[2]),
         IsNormalConsistent(current_normal, normal_samples[3])
     };
+    
+    const int mesh_id_samples[4] = {
+        (int)prev_mesh_ids[ConvertToLinearAddressInt2(offsets[0], buffer_size)].x,
+        (int)prev_mesh_ids[ConvertToLinearAddressInt2(offsets[1], buffer_size)].x,
+        (int)prev_mesh_ids[ConvertToLinearAddressInt2(offsets[2], buffer_size)].x,
+        (int)prev_mesh_ids[ConvertToLinearAddressInt2(offsets[3], buffer_size)].x
+    };
+
+    const bool is_mesh_id_consistent[4] = {
+        current_mesh_id == mesh_id_samples[0],
+        current_mesh_id == mesh_id_samples[1],
+        current_mesh_id == mesh_id_samples[2],
+        current_mesh_id == mesh_id_samples[3]
+    };
 
     int num_consistent_samples = 0;
-    
-    for (int i = 0; i < 4; i++) num_consistent_samples += is_normal_consistent[i]  ? 1 : 0;
+
+    for (int i = 0; i < 4; i++) num_consistent_samples += is_normal_consistent[i] && is_mesh_id_consistent[i] ? 1 : 0;
 
     // Bilinear resample if all samples are consistent
     if (num_consistent_samples == 4)
@@ -409,6 +429,7 @@ float4 SampleWithGeometryTest(GLOBAL float4 const* restrict buffer,
         return Sampler2DBilinear(buffer, buffer_size, uv_prev);
     }
 
+    // Box filter otherwise
     const float4 buffer_samples[4] = {
         buffer[ConvertToLinearAddressInt2(offsets[0], buffer_size)],
         buffer[ConvertToLinearAddressInt2(offsets[1], buffer_size)],
@@ -416,20 +437,19 @@ float4 SampleWithGeometryTest(GLOBAL float4 const* restrict buffer,
         buffer[ConvertToLinearAddressInt2(offsets[3], buffer_size)]
     };
 
-    // Box filter otherwise
     float weight = 1;
     float4 sample = current_color;
 
     for (int i = 0; i < 4; i++)
     {
-        if (is_normal_consistent[i])
+        if (is_normal_consistent[i] && is_mesh_id_consistent[i])
         {
             sample += buffer_samples[i];
             weight += 1.f;
         }
     }
-
-    return sample / weight;
+    
+    return sample / max(weight, 1.f);
 }
 
 // Similarity function
@@ -510,6 +530,8 @@ void TemporalAccumulation_main(
     GLOBAL float4 const* restrict motions,
     GLOBAL float4 const* restrict prev_moments_and_variance,
     GLOBAL float4* restrict moments_and_variance,
+    GLOBAL float4* restrict mesh_ids,
+    GLOBAL float4* restrict prev_mesh_ids,
     // Image resolution
     int width,
     int height
@@ -528,6 +550,8 @@ void TemporalAccumulation_main(
         
         moments_and_variance[idx] = make_float4(0.f, 0.f, 0.f, 0.f);
 
+        const int mesh_id = (int)mesh_ids[idx].x;
+
         const float3 position_xyz = positions[idx].xyz;
         const float3 normal = normals[idx].xyz;
         const float3 color = in_out_colors[idx].xyz;
@@ -540,15 +564,16 @@ void TemporalAccumulation_main(
             const float2 uv = make_float2(global_id.x + 0.5f, global_id.y + 0.5f) / make_float2(width, height);
             const float2 prev_uv = clamp(uv + motion, make_float2(0.f, 0.f), make_float2(1.f, 1.f));
             
+            const float sample_prev_mesh_id = (float)Sampler2DBilinear(prev_mesh_ids, buffer_size, prev_uv).x;
+            const int prev_mesh_id = (sample_prev_mesh_id - floor(sample_prev_mesh_id)) > 0.f ? -1 : (int)sample_prev_mesh_id;
+
             const float3 prev_position_xyz  = Sampler2DBilinear(prev_positions, buffer_size, prev_uv).xyz;
-            const float3 prev_normal        = Sampler2DBilinear(prev_normals, buffer_size, prev_uv).xyz;
+            const float3 prev_normal        = normalize(Sampler2DBilinear(prev_normals, buffer_size, prev_uv).xyz);
 
             // Test for geometry consistency
-            if (length(prev_position_xyz) > 0 && IsDepthConsistentPos(positions, prev_positions, uv, motion, buffer_size) && IsNormalConsistent(prev_normal, normal))
+            if (length(prev_position_xyz) > 0 &&  mesh_id == prev_mesh_id && IsNormalConsistent(prev_normal, normal) && IsDepthConsistentPos(positions, prev_positions, uv, motion, buffer_size))
             {
                 // Temporal accumulation of moments
-                const int prev_idx = global_id.y * width + global_id.x;
-
                 float4 prev_moments_and_variance_sample  = Sampler2DBilinear(prev_moments_and_variance, buffer_size, prev_uv);
 
                 const bool prev_moments_is_nan = any(isnan(prev_moments_and_variance_sample));
@@ -588,8 +613,8 @@ void TemporalAccumulation_main(
                 moments_and_variance[idx].z     = mean_2 - mean * mean;
 
                 // Temporal accumulation of color
-                float3 prev_color = SampleWithGeometryTest(prev_colors, (float4)(color, 1.f), position_xyz, normal, positions, normals, prev_positions, prev_normals, buffer_size, uv, prev_uv).xyz;
-
+                float3 prev_color = SampleWithGeometryTest(prev_colors, (float4)(color, 1.f), position_xyz, normal, mesh_id, positions, normals, mesh_ids, prev_positions, prev_normals, prev_mesh_ids, buffer_size, uv, prev_uv).xyz;
+                
                 in_out_colors[idx].xyz = mix(prev_color, color, FRAME_BLEND_ALPHA);
                 in_out_colors[idx].w = 1.0f;
             }

@@ -50,6 +50,7 @@ namespace Baikal
             std::unique_ptr<Baikal::Output> output_position;
             std::unique_ptr<Baikal::Output> output_normal;
             std::unique_ptr<Baikal::Output> output_albedo;
+            std::unique_ptr<Baikal::Output> output_mesh_id;
             std::unique_ptr<Baikal::Output> output_denoised;
             std::unique_ptr<Baikal::PostEffect> denoiser;
 #endif

@@ -31,7 +31,7 @@ namespace Baikal
 
     \details SVGF implements wavelet filter with edge-stopping function. Edge-stopping function is tuned
     by spatio-temporal variance. Temporal component is presented by sample reconstruction from history frames.
-    Filter performs multiple passes, inserting pow(2, pass_index - 1) holes in 
+    Filter performs multiple passes, inserting pow(2, pass_index - 1) holes in
     kernel on each pass.
     Parameters:
     * color_sensitivity - Higher the sensitivity the more it smoothes out depending on color difference.
@@ -52,7 +52,7 @@ namespace Baikal
         void Apply(InputSet const& input_set, Output& output) override;
         void Update(PerspectiveCamera* camera);
 
-    private: 
+    private:
         // Find required output
         ClwOutput* FindOutput(InputSet const& input_set, Renderer::OutputType type);
 
@@ -68,13 +68,14 @@ namespace Baikal
         ClwOutput*          m_colors[m_num_tmp_buffers];
         ClwOutput*          m_positions[m_num_tmp_buffers];
         ClwOutput*          m_normals[m_num_tmp_buffers];
+        ClwOutput*          m_mesh_ids[m_num_tmp_buffers];
         ClwOutput*          m_tmp_buffers[m_num_tmp_buffers];
         ClwOutput*          m_moments[m_num_tmp_buffers];
-		ClwOutput*			m_depth[m_num_tmp_buffers];
+        ClwOutput*			m_depth[m_num_tmp_buffers];
 
         // Number of wavelet passes
         uint32_t            m_max_wavelet_passes;
-        
+
         matrix              m_view_proj;
         matrix              m_prev_view_proj;
 
@@ -143,31 +144,34 @@ namespace Baikal
         auto normal = FindOutput(input_set, Renderer::OutputType::kWorldShadingNormal);
         auto position = FindOutput(input_set, Renderer::OutputType::kWorldPosition);
         auto albedo = FindOutput(input_set, Renderer::OutputType::kAlbedo);
+        auto mesh_id = FindOutput(input_set, Renderer::OutputType::kMeshID);
+
         auto out_color = static_cast<ClwOutput*>(&output);
 
         auto color_width = color->width();
         auto color_height = color->height();
-        
+
         // Create ping pong buffers if they still need to be initialized
         if (!m_buffers_initialized)
         {
             for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
             {
                 m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
-                m_colors[buffer_index]      = new ClwOutput(GetContext(), color_width, color_height);
-                m_positions[buffer_index]   = new ClwOutput(GetContext(), color_width, color_height);
-                m_normals[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
-                m_moments[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
-				m_depth[buffer_index]		= new ClwOutput(GetContext(), color_width, color_height);
+                m_colors[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_positions[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_normals[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_depth[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_mesh_ids[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
             }
 
-            m_motion_buffer             = new ClwOutput(GetContext(), color_width, color_height);
+            m_motion_buffer = new ClwOutput(GetContext(), color_width, color_height);
 
-            m_buffers_width             = color_width;
-            m_buffers_height            = color_height;
-            m_buffers_initialized       = true;
+            m_buffers_width = color_width;
+            m_buffers_height = color_height;
+            m_buffers_initialized = true;
         }
-        
+
         // Resize AOV if main buffer size has changed
         if (color_width != m_buffers_width || color_height != m_buffers_height)
         {
@@ -188,8 +192,11 @@ namespace Baikal
                 delete m_moments[buffer_index];
                 m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
 
-				delete m_depth[buffer_index];
-				m_depth[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                delete m_depth[buffer_index];
+                m_depth[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
+                delete m_mesh_ids[buffer_index];
+                m_mesh_ids[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
             }
 
             delete m_motion_buffer;
@@ -209,11 +216,13 @@ namespace Baikal
             copy_buffers_kernel.SetArg(argc++, color->data());
             copy_buffers_kernel.SetArg(argc++, position->data());
             copy_buffers_kernel.SetArg(argc++, normal->data());
+            copy_buffers_kernel.SetArg(argc++, mesh_id->data());
             copy_buffers_kernel.SetArg(argc++, color->width());
             copy_buffers_kernel.SetArg(argc++, color->height());
             copy_buffers_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
             copy_buffers_kernel.SetArg(argc++, m_positions[m_current_buffer_index]->data());
             copy_buffers_kernel.SetArg(argc++, m_normals[m_current_buffer_index]->data());
+            copy_buffers_kernel.SetArg(argc++, m_mesh_ids[m_current_buffer_index]->data());
 
             // Run shading kernel
             {
@@ -237,7 +246,7 @@ namespace Baikal
             generate_motion_kernel.SetArg(argc++, m_view_proj_buffer);
             generate_motion_kernel.SetArg(argc++, m_prev_view_proj_buffer);
             generate_motion_kernel.SetArg(argc++, m_motion_buffer->data());
-			generate_motion_kernel.SetArg(argc++, m_depth[m_current_buffer_index]->data());
+            generate_motion_kernel.SetArg(argc++, m_depth[m_current_buffer_index]->data());
 
             // Run shading kernel
             {
@@ -264,6 +273,8 @@ namespace Baikal
             accumulation_kernel.SetArg(argc++, m_motion_buffer->data());
             accumulation_kernel.SetArg(argc++, m_moments[prev_buffer_index]->data());
             accumulation_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_mesh_ids[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_mesh_ids[prev_buffer_index]->data());
             accumulation_kernel.SetArg(argc++, m_buffers_width);
             accumulation_kernel.SetArg(argc++, m_buffers_height);
 
@@ -284,9 +295,6 @@ namespace Baikal
             // Set kernel parameters
             copy_buffer_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
             copy_buffer_kernel.SetArg(argc++, m_tmp_buffers[0]->data());
-            //copy_buffer_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
-            //copy_buffer_kernel.SetArg(argc++, out_color->data());
-
             copy_buffer_kernel.SetArg(argc++, m_buffers_width);
             copy_buffer_kernel.SetArg(argc++, m_buffers_height);
 
@@ -300,14 +308,14 @@ namespace Baikal
         }
 
         {
-            auto filter_kernel          = GetKernel("WaveletFilter_main");
+            auto filter_kernel = GetKernel("WaveletFilter_main");
             auto update_variance_kernel = GetKernel("UpdateVariance_main");
 
             for (uint32_t pass_index = 0; pass_index < m_max_wavelet_passes; pass_index++)
             {
                 Baikal::ClwOutput* current_input = nullptr;
                 Baikal::ClwOutput* current_output = nullptr;
-                
+
                 if (pass_index == 0)
                 {
                     // Result of first wavelet pass goes to color buffer for next frame
@@ -373,9 +381,9 @@ namespace Baikal
 
         const float focal_length = camera->GetFocalLength();
         const float2 sensor_size = camera->GetSensorSize();
-        
-        float2 z_range  = camera->GetDepthRange();
-        
+
+        float2 z_range = camera->GetDepthRange();
+
         // Nan-avoidance in perspective matrix
         z_range.x = std::max(z_range.x, std::numeric_limits<float>::epsilon());
 
@@ -389,12 +397,11 @@ namespace Baikal
         const matrix proj = perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
         const float3 ip = float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
 
-        const matrix view = matrix
-            (   right.x, right.y, right.z, ip.x,
-                up.x, up.y, up.z, ip.y,
-                forward.x, forward.y, forward.z, ip.z,
-                0.0f, 0.0f, 0.0f, 1.0f);
-      
+        const matrix view = matrix( right.x, right.y, right.z, ip.x,
+                                    up.x, up.y, up.z, ip.y,
+                                    forward.x, forward.y, forward.z, ip.z,
+                                    0.0f, 0.0f, 0.0f, 1.0f);
+
         m_view_proj = proj * view;
 
         GetContext().WriteBuffer(0, m_view_proj_buffer, &m_view_proj.m[0][0], 16).Wait();
