@@ -279,7 +279,7 @@ namespace Baikal
         // Fetch kernel
         std::string kernel_name = (scene.camera_type == CameraType::kDefault) ? "PerspectiveCamera_GeneratePaths" : "PerspectiveCameraDof_GeneratePaths";
 
-        auto genkernel = GetKernel(kernel_name, generate_at_pixel_center ? " -D BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER " : "");
+        auto genkernel = GetKernel(kernel_name, generate_at_pixel_center ? "-D BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER " : "");
 
         // Set kernel parameters
         int argc = 0;
