@@ -95,7 +95,11 @@ void PerspectiveCamera_GeneratePaths(
 #endif
 
         // Generate sample
+#ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
         float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+#else
+        float2 sample0 = make_float2(0.5f, 0.5f);
+#endif
 
         // Calculate [0..1] image plane sample
         float2 img_sample;
@@ -179,7 +183,11 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
 #endif
 
         // Generate pixel and lens samples
+#ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
         float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+#else
+        float2 sample0 = make_float2(0.5f, 0.5f);
+#endif
         float2 sample1 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
 
         // Calculate [0..1] image plane sample
@@ -879,16 +887,17 @@ KERNEL void FillAOVs(
 
             if (depth_enabled)
             {
-                aov_depth[idx].xyz += isect.uvwt.w;
-                aov_depth[idx].w += 1.f;
-            }
-        }
-        else
-        {
-            if (depth_enabled)
-            {
-                aov_depth[idx].xyz += CRAZY_HIGH_DISTANCE;
-                aov_depth[idx].w += 1.f;
+                float w = aov_depth[idx].w;
+                if (w == 0.f)
+                {
+                    aov_depth[idx].xyz = isect.uvwt.w;
+                    aov_depth[idx].w = 1.f;
+                }
+                else
+                {
+                    aov_depth[idx].xyz += isect.uvwt.w;
+                    aov_depth[idx].w += 1.f;
+                }
             }
         }
     }

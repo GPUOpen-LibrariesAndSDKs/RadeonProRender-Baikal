@@ -42,7 +42,6 @@ namespace Baikal
                 hg.setBits(g);
                 hb.setBits(b);
 
-
                 avg += RadeonRays::float3(hr, hg, hb);
             }
 
@@ -72,7 +71,7 @@ namespace Baikal
 
         return avg;
     }
-    
+
     namespace {
         struct TextureConcrete: public Texture {
             TextureConcrete() = default;

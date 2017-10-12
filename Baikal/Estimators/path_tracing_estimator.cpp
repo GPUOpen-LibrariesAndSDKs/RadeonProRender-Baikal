@@ -81,7 +81,7 @@ namespace Baikal
         , m_render_data(new RenderData)
     {
         // Create parallel primitives
-        m_render_data->pp = CLWParallelPrimitives(context, GetBuildOpts().c_str());
+        m_render_data->pp = CLWParallelPrimitives(context, GetFullBuildOpts().c_str());
         m_render_data->sobolmat = context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
     }
 
@@ -173,7 +173,7 @@ namespace Baikal
     {
         if (atomic_update)
         {
-            Rebuild(" -D BAIKAL_ATOMIC_RESOLVE ");
+            SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
         }
 
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
