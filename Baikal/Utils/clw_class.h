@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "CLW.h"
+#include "version.h"
 
 namespace Baikal
 {
@@ -199,6 +200,7 @@ namespace Baikal
 
         name.append("_");
         name.append(oss.str());
+        name.append(BAIKAL_VERSION);
 
         return name;
     }
