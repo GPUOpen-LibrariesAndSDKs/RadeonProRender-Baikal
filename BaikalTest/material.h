@@ -43,22 +43,19 @@ class MaterialTest : public BasicTest
 protected:
     void ApplyMaterialToObject(
         std::string const& name,
-        Baikal::Material* material
+        Baikal::Material::Ptr material
     )
     {
         for (auto iter = m_scene->CreateShapeIterator();
             iter->IsValid();
             iter->Next())
         {
-            // TODO: fix this nasty cast
-            auto mesh = const_cast<Baikal::Mesh*>(iter->ItemAs<Baikal::Mesh const>());
+            auto mesh = iter->ItemAs<Baikal::Mesh>();
             if (mesh->GetName() == name)
             {
                 mesh->SetMaterial(material);
             }
         }
-
-        m_scene->AttachAutoreleaseObject(material);
     }
 };
 
@@ -89,14 +86,14 @@ TEST_F(MaterialTest, Material_Diffuse)
     {
         ClearOutput();
 
-        auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kLambert);
+        auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kLambert);
         material->SetInputValue("albedo", c);
 
         ApplyMaterialToObject("sphere", material);
 
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
@@ -119,15 +116,14 @@ TEST_F(MaterialTest, Material_Diffuse)
 
         auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-        auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kLambert);
+        auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kLambert);
         material->SetInputValue("albedo", texture);
-        m_scene->AttachAutoreleaseObject(texture);
 
         ApplyMaterialToObject("sphere", material);
 
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
@@ -177,7 +173,7 @@ TEST_F(MaterialTest, Material_Reflect)
         {
             ClearOutput();
 
-            auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kIdealReflect);
+            auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealReflect);
             material->SetInputValue("albedo", c);
 
             if (ior > 0.f)
@@ -189,9 +185,9 @@ TEST_F(MaterialTest, Material_Reflect)
 
             ApplyMaterialToObject("sphere", material);
 
-            ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+            ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-            auto& scene = m_controller->GetCachedScene(*m_scene);
+            auto& scene = m_controller->GetCachedScene(m_scene);
 
             for (auto i = 0u; i < kNumIterations; ++i)
             {
@@ -219,9 +215,8 @@ TEST_F(MaterialTest, Material_Reflect)
 
             auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-            auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kIdealReflect);
+            auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealReflect);
             material->SetInputValue("albedo", texture);
-            m_scene->AttachAutoreleaseObject(texture);
 
             if (ior > 0.f)
             {
@@ -232,9 +227,8 @@ TEST_F(MaterialTest, Material_Reflect)
 
             ApplyMaterialToObject("sphere", material);
 
-            ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
-
-            auto& scene = m_controller->GetCachedScene(*m_scene);
+            ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+            auto& scene = m_controller->GetCachedScene(m_scene);
 
             for (auto i = 0u; i < kNumIterations; ++i)
             {
@@ -292,7 +286,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
             {
                 ClearOutput();
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
                 material->SetInputValue("albedo", c);
 
                 if (ior > 0.f)
@@ -305,9 +299,9 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -338,9 +332,8 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
 
                 auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
                 material->SetInputValue("albedo", texture);
-                m_scene->AttachAutoreleaseObject(texture);
 
                 if (ior > 0.f)
                 {
@@ -353,9 +346,9 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -414,7 +407,7 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
             {
                 ClearOutput();
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann);
                 material->SetInputValue("albedo", c);
 
                 if (ior > 0.f)
@@ -427,9 +420,9 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -460,9 +453,8 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
 
                 auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann);
                 material->SetInputValue("albedo", texture);
-                m_scene->AttachAutoreleaseObject(texture);
 
                 if (ior > 0.f)
                 {
@@ -475,9 +467,9 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -529,16 +521,16 @@ TEST_F(MaterialTest, Material_Refract)
         {
             ClearOutput();
 
-            auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kIdealRefract);
+            auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealRefract);
             material->SetInputValue("albedo", c);
             material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
 
             ApplyMaterialToObject("sphere", material);
 
-            ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+            ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-            auto& scene = m_controller->GetCachedScene(*m_scene);
+            auto& scene = m_controller->GetCachedScene(m_scene);
 
             for (auto i = 0u; i < kNumIterations; ++i)
             {
@@ -566,16 +558,14 @@ TEST_F(MaterialTest, Material_Refract)
 
             auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-            auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kIdealRefract);
+            auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealRefract);
             material->SetInputValue("albedo", texture);
-            m_scene->AttachAutoreleaseObject(texture);
             material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
             ApplyMaterialToObject("sphere", material);
 
-            ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
-
-            auto& scene = m_controller->GetCachedScene(*m_scene);
+            ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+            auto& scene = m_controller->GetCachedScene(m_scene);
 
             for (auto i = 0u; i < kNumIterations; ++i)
             {
@@ -633,7 +623,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
             {
                 ClearOutput();
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
                 material->SetInputValue("albedo", c);
 
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
@@ -642,9 +632,9 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -675,9 +665,8 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
 
                 auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
                 material->SetInputValue("albedo", texture);
-                m_scene->AttachAutoreleaseObject(texture);
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
 
@@ -686,9 +675,9 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -747,7 +736,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
             {
                 ClearOutput();
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann);
                 material->SetInputValue("albedo", c);
 
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
@@ -756,9 +745,9 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -789,9 +778,8 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
 
                 auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-                auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann);
+                auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann);
                 material->SetInputValue("albedo", texture);
-                m_scene->AttachAutoreleaseObject(texture);
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
 
@@ -800,9 +788,9 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
 
                 ApplyMaterialToObject("sphere", material);
 
-                ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+                ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-                auto& scene = m_controller->GetCachedScene(*m_scene);
+                auto& scene = m_controller->GetCachedScene(m_scene);
 
                 for (auto i = 0u; i < kNumIterations; ++i)
                 {
@@ -847,14 +835,14 @@ TEST_F(MaterialTest, Material_Translucent)
     {
         ClearOutput();
 
-        auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kTranslucent);
+        auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kTranslucent);
         material->SetInputValue("albedo", c);
 
         ApplyMaterialToObject("sphere", material);
 
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
@@ -877,15 +865,14 @@ TEST_F(MaterialTest, Material_Translucent)
 
         auto texture = image_io->LoadImage(resource_dir + t + ext);
 
-        auto material = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kTranslucent);
+        auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kTranslucent);
         material->SetInputValue("albedo", texture);
-        m_scene->AttachAutoreleaseObject(texture);
 
         ApplyMaterialToObject("sphere", material);
 
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {

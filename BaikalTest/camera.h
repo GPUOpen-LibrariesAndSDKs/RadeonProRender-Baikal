@@ -36,9 +36,9 @@ TEST_F(CameraTest, Camera_FocalLength)
     {
         ClearOutput();
         m_camera->SetFocalLength(v);
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
@@ -66,9 +66,9 @@ TEST_F(CameraTest, Camera_SensorSize)
         ClearOutput();
         m_camera->SetSensorSize(RadeonRays::float2(v.first, v.second));
         
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
@@ -93,9 +93,9 @@ TEST_F(CameraTest, Camera_Aperture)
         ClearOutput();
         m_camera->SetAperture(v);
 
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {
@@ -120,9 +120,9 @@ TEST_F(CameraTest, Camera_FocusDistance)
         ClearOutput();
         m_camera->SetFocusDistance(v);
 
-        ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-        auto& scene = m_controller->GetCachedScene(*m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; ++i)
         {

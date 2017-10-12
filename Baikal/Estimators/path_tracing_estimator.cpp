@@ -72,7 +72,7 @@ namespace Baikal
 
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
-        RadeonRays::IntersectionApi* api,
+        std::shared_ptr<RadeonRays::IntersectionApi> api,
         std::string const& cache_path
     ) : 
         ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
@@ -81,7 +81,7 @@ namespace Baikal
         , m_render_data(new RenderData)
     {
         // Create parallel primitives
-        m_render_data->pp = CLWParallelPrimitives(context, GetBuildOpts().c_str());
+        m_render_data->pp = CLWParallelPrimitives(context, GetFullBuildOpts().c_str());
         m_render_data->sobolmat = context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
     }
 
@@ -137,13 +137,14 @@ namespace Baikal
         GetIntersector()->DeleteBuffer(m_render_data->fr_intersections);
         GetIntersector()->DeleteBuffer(m_render_data->fr_hitcount);
 
-        m_render_data->fr_rays[0] = CreateFromOpenClBuffer(GetIntersector(), m_render_data->rays[0]);
-        m_render_data->fr_rays[1] = CreateFromOpenClBuffer(GetIntersector(), m_render_data->rays[1]);
-        m_render_data->fr_shadowrays = CreateFromOpenClBuffer(GetIntersector(), m_render_data->shadowrays);
-        m_render_data->fr_hits = CreateFromOpenClBuffer(GetIntersector(), m_render_data->hits);
-        m_render_data->fr_shadowhits = CreateFromOpenClBuffer(GetIntersector(), m_render_data->shadowhits);
-        m_render_data->fr_intersections = CreateFromOpenClBuffer(GetIntersector(), m_render_data->intersections);
-        m_render_data->fr_hitcount = CreateFromOpenClBuffer(GetIntersector(), m_render_data->hitcount);
+        auto intersector = GetIntersector().get();
+        m_render_data->fr_rays[0] = CreateFromOpenClBuffer(intersector, m_render_data->rays[0]);
+        m_render_data->fr_rays[1] = CreateFromOpenClBuffer(intersector, m_render_data->rays[1]);
+        m_render_data->fr_shadowrays = CreateFromOpenClBuffer(intersector, m_render_data->shadowrays);
+        m_render_data->fr_hits = CreateFromOpenClBuffer(intersector, m_render_data->hits);
+        m_render_data->fr_shadowhits = CreateFromOpenClBuffer(intersector, m_render_data->shadowhits);
+        m_render_data->fr_intersections = CreateFromOpenClBuffer(intersector, m_render_data->intersections);
+        m_render_data->fr_hitcount = CreateFromOpenClBuffer(intersector, m_render_data->hitcount);
     }
 
     CLWBuffer<ray> PathTracingEstimator::GetRayBuffer() const
@@ -172,7 +173,7 @@ namespace Baikal
     {
         if (atomic_update)
         {
-            Rebuild(" -D BAIKAL_ATOMIC_RESOLVE ");
+            SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
         }
 
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);

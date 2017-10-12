@@ -229,4 +229,22 @@ namespace Baikal
     {
         return m_base_shape->GetLocalAABB();
     }
+    
+    namespace {
+        struct InstanceConcrete : public Instance {
+            InstanceConcrete(Shape::Ptr base_shape) :
+            Instance(base_shape) {}
+        };
+        
+        struct MeshConcrete : public Mesh {
+        };
+    }
+    
+    Mesh::Ptr Mesh::Create() {
+        return std::make_shared<MeshConcrete>();
+    }
+    
+    Instance::Ptr Instance::Create(Shape::Ptr base_shape) {
+        return std::make_shared<InstanceConcrete>(base_shape);
+    }
 }

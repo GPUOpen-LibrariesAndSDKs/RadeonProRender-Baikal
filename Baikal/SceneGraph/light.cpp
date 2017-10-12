@@ -4,7 +4,7 @@
 
 namespace Baikal
 {
-    AreaLight::AreaLight(Shape const* shape, std::size_t idx)
+    AreaLight::AreaLight(Shape::Ptr shape, std::size_t idx)
         : m_shape(shape)
         , m_prim_idx(idx)
     {
@@ -32,9 +32,9 @@ namespace Baikal
         SetDirty(true);
     }
 
-    Iterator* Light::CreateTextureIterator() const
+    std::unique_ptr<Iterator> Light::CreateTextureIterator() const
     {
-        return new EmptyIterator();
+        return std::make_unique<EmptyIterator>();
     }
 
     RadeonRays::float3 Light::GetEmittedRadiance() const
@@ -59,13 +59,13 @@ namespace Baikal
         return m_angles;
     }
 
-    void ImageBasedLight::SetTexture(Texture const* texture)
+    void ImageBasedLight::SetTexture(Texture::Ptr texture)
     {
         m_texture = texture;
         SetDirty(true);
     }
 
-    Texture const* ImageBasedLight::GetTexture() const
+    Texture::Ptr ImageBasedLight::GetTexture() const
     {
         return m_texture;
     }
@@ -75,7 +75,7 @@ namespace Baikal
         return m_prim_idx;
     }
 
-    Shape const* AreaLight::GetShape() const
+    Shape::Ptr AreaLight::GetShape() const
     {
         return m_shape;
     }
@@ -97,16 +97,16 @@ namespace Baikal
         SetDirty(true);
     }
 
-    Iterator* ImageBasedLight::CreateTextureIterator() const
+    std::unique_ptr<Iterator> ImageBasedLight::CreateTextureIterator() const
     {
-        std::set<Texture const*> result;
+        std::set<Texture::Ptr> result;
 
         if (m_texture)
         {
             result.insert(m_texture);
         }
 
-        return new ContainerIterator<std::set<Texture const*>>(std::move(result));
+        return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(result));
     }
 
 
@@ -136,7 +136,7 @@ namespace Baikal
 
     RadeonRays::float3 AreaLight::GetPower(Scene1 const& scene) const
     {
-        auto mesh = static_cast<Mesh const*>(m_shape);
+        auto mesh = std::static_pointer_cast<Mesh>(m_shape);
         auto indices = mesh->GetIndices();
         auto vertices = mesh->GetVertices();
 
@@ -150,5 +150,40 @@ namespace Baikal
 
         float area = 0.5f * std::sqrt(cross(v2 - v0, v1 - v0).sqnorm());
         return PI * GetEmittedRadiance() * area;
+    }
+    
+    namespace {
+        struct PointLightConcrete : public PointLight {
+        };
+        struct DirectionalLightConcrete : public DirectionalLight {
+        };
+        struct SpotLightConcrete : public SpotLight {
+        };
+        struct ImageBasedLightConcrete: public ImageBasedLight {
+        };
+        struct AreaLightConcrete: public AreaLight {
+            AreaLightConcrete(Shape::Ptr shape, std::size_t idx) :
+            AreaLight(shape, idx) {}
+        };
+    }
+    
+    PointLight::Ptr PointLight::Create() {
+        return std::make_shared<PointLightConcrete>();
+    }
+    
+    DirectionalLight::Ptr DirectionalLight::Create() {
+        return std::make_shared<DirectionalLightConcrete>();
+    }
+    
+    SpotLight::Ptr SpotLight::Create() {
+        return std::make_shared<SpotLightConcrete>();
+    }
+    
+    ImageBasedLight::Ptr ImageBasedLight::Create() {
+        return std::make_shared<ImageBasedLightConcrete>();
+    }
+    
+    AreaLight::Ptr AreaLight::Create(Shape::Ptr shape, std::size_t idx) {
+        return std::make_shared<AreaLightConcrete>(shape, idx);
     }
 }

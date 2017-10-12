@@ -40,7 +40,7 @@ namespace Baikal
     public:
         PathTracingEstimator(
             CLWContext context,
-            RadeonRays::IntersectionApi* api,
+            std::shared_ptr<RadeonRays::IntersectionApi> api,
             std::string const& cache_path=""
         );
         

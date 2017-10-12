@@ -29,14 +29,15 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 namespace Baikal
 {
     class SceneObject
     {
     public:
-        // Constructor
-        SceneObject();
+        using Ptr = std::shared_ptr<SceneObject>;
+        
         // Destructor
         virtual ~SceneObject() = 0;
 
@@ -51,6 +52,10 @@ namespace Baikal
         
         SceneObject(SceneObject const&) = delete;
         SceneObject& operator = (SceneObject const&) = delete;
+        
+    protected:
+        // Constructor
+        SceneObject();
         
     private:
         mutable bool m_dirty;

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <unordered_map>
 
 #include "CLW.h"
 
@@ -20,26 +21,57 @@ namespace Baikal
 
         virtual ~ClwClass() = default;
 
-        void Rebuild(std::string const& opts);
+
     protected:
         CLWContext GetContext() const { return m_context; }
-        CLWKernel GetKernel(std::string const& name);
-        std::string GetBuildOpts() const { return m_buildopts; }
-        void CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
+        CLWKernel GetKernel(std::string const& name, std::string const& opts = "");
+        void SetDefaultBuildOptions(std::string const& opts);
+        std::string GetDefaultBuildOpts() const { return m_default_opts; }
+        std::string GetFullBuildOpts() const;
+        CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
         std::string GetFilenameHash(std::string const& filename, std::string const& opts, CLWContext context) const;
 
         bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
         void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
 
     private:
+        void AddCommonOptions(std::string& opts) const;
+
+        // Context to build programs for
         CLWContext m_context;
-        CLWProgram m_program;
-        std::string m_buildopts;
+        // Mapping of build options to programs
+        std::unordered_map<std::string, CLWProgram> m_programs;
+        // Default build options
+        std::string m_default_opts;
+        // Name of program CL file
         std::string m_cl_file;
-        std::string m_opts;
+        // Binary cache path
         std::string m_cache_path;
     };
-    
+
+    inline void ClwClass::AddCommonOptions(std::string& opts) const {
+        opts.append(" -cl-mad-enable -cl-fast-relaxed-math "
+            "-cl-std=CL1.2 -I . ");
+
+        opts.append(
+#if defined(__APPLE__)
+            "-D APPLE "
+#elif defined(_WIN32) || defined (WIN32)
+            "-D WIN32 "
+#elif defined(__linux__)
+            "-D __linux__ "
+#else
+            ""
+#endif
+        );
+    }
+
+    inline std::string ClwClass::GetFullBuildOpts() const {
+        auto options = m_default_opts;
+        AddCommonOptions(options);
+        return options;
+    }
+
     inline ClwClass::ClwClass(
         CLWContext context,
         std::string const& cl_file,
@@ -47,28 +79,15 @@ namespace Baikal
         std::string const& cache_path)
     : m_context(context)
     , m_cl_file(cl_file)
-    , m_opts(opts)
+    , m_default_opts(opts)
     , m_cache_path(cache_path)
     {
-        m_buildopts.append(" -cl-mad-enable -cl-fast-relaxed-math "
-                         "-cl-std=CL1.2 -I . ");
+        auto program = CreateProgram(cl_file, m_default_opts, m_context);
+        m_programs.emplace(std::make_pair(m_default_opts, program));
+    }
 
-        m_buildopts.append(
-#if defined(__APPLE__)
-                         "-D APPLE "
-#elif defined(_WIN32) || defined (WIN32)
-                         "-D WIN32 "
-#elif defined(__linux__)
-                         "-D __linux__ "
-#else
-                         ""
-#endif
-                         );
-
-        auto cmdopts = m_buildopts;
-        cmdopts.append(opts);
-
-        CreateProgram(cl_file, cmdopts, m_context);
+    inline void ClwClass::SetDefaultBuildOptions(std::string const& opts) {
+        m_default_opts = opts;
     }
 
     inline uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
@@ -86,12 +105,17 @@ namespace Baikal
         return hash;
     }
 
-    inline void ClwClass::CreateProgram(std::string const& filename, std::string const& opts, CLWContext context)
+    inline CLWProgram ClwClass::CreateProgram(std::string const& filename, std::string const& opts, CLWContext context)
     {
+        CLWProgram result;
+
+        auto options = opts;
+        AddCommonOptions(options);
+
         // Try from cache first
         if (!m_cache_path.empty())
         {
-            auto hash = GetFilenameHash(filename, opts, context);
+            auto hash = GetFilenameHash(filename, options, context);
 
             auto cached_program_path = m_cache_path;
             cached_program_path.append("/");
@@ -104,36 +128,37 @@ namespace Baikal
                 // Create from binary
                 std::size_t size = binary.size();
                 auto binaries = &binary[0];
-                m_program = CLWProgram::CreateFromBinary(&binaries, &size, context);
+                result = CLWProgram::CreateFromBinary(&binaries, &size, context);
             }
             else
             {
-                m_program = CLWProgram::CreateFromFile(filename.c_str(), opts.c_str(), context);
+                result = CLWProgram::CreateFromFile(filename.c_str(), options.c_str(), context);
                 // Save binaries
-                m_program.GetBinaries(0, binary);
+                result.GetBinaries(0, binary);
                 SaveBinaries(cached_program_path, binary);
             }
         }
         else
         {
-            m_program = CLWProgram::CreateFromFile(filename.c_str(), opts.c_str(), context);
+            result = CLWProgram::CreateFromFile(filename.c_str(), options.c_str(), context);
         }
+
+        return result;
     }
 
-    inline void ClwClass::Rebuild(std::string const& opts)
+    inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
     {
-        if (m_opts != opts)
-        {
-            auto cmdopts = m_buildopts;
-            cmdopts.append(opts);
-            m_opts = opts;
-            CreateProgram(m_cl_file, cmdopts, m_context);
-        }
-    }
+        std::string options = opts.empty() ? m_default_opts : opts;
 
-    inline CLWKernel ClwClass::GetKernel(std::string const& name)
-    {
-        return m_program.GetKernel(name);
+        auto iter = m_programs.find(options);
+
+        if (iter != m_programs.cend()) {
+            return iter->second.GetKernel(name);
+        } else {
+            auto program = CreateProgram(m_cl_file, options, m_context);
+            m_programs.emplace(std::make_pair(options, program));
+            return program.GetKernel(name);
+        }
     }
 
     inline std::string ClwClass::GetFilenameHash(std::string const& filename, std::string const& opts, CLWContext context) const

@@ -28,7 +28,7 @@ namespace Baikal
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api)
-    : m_default_material(new SingleBxdf(SingleBxdf::BxdfType::kLambert))
+    : m_default_material(SingleBxdf::Create(SingleBxdf::BxdfType::kLambert))
     , m_context(context)
     , m_api(api)
     {
@@ -45,16 +45,16 @@ namespace Baikal
         m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
 
-    Material const* ClwSceneController::GetDefaultMaterial() const
+    Material::Ptr ClwSceneController::GetDefaultMaterial() const
     {
-        return m_default_material.get();
+        return m_default_material;
     }
 
     ClwSceneController::~ClwSceneController()
     {
     }
 
-    static void SplitMeshesAndInstances(Iterator* shape_iter, std::set<Mesh const*>& meshes, std::set<Instance const*>& instances, std::set<Mesh const*>& excluded_meshes)
+    static void SplitMeshesAndInstances(Iterator& shape_iter, std::set<Mesh::Ptr>& meshes, std::set<Instance::Ptr>& instances, std::set<Mesh::Ptr>& excluded_meshes)
     {
         // Clear all sets
         meshes.clear();
@@ -62,9 +62,9 @@ namespace Baikal
         excluded_meshes.clear();
         
         // Prepare instance check lambda
-        auto is_instance = [](Shape const* shape)
+        auto is_instance = [](Shape::Ptr shape)
         {
-            if (dynamic_cast<Instance const*>(shape))
+            if (std::dynamic_pointer_cast<Instance>(shape))
             {
                 return true;
             }
@@ -74,23 +74,23 @@ namespace Baikal
             }
         };
 
-        for (; shape_iter->IsValid(); shape_iter->Next())
+        for (; shape_iter.IsValid(); shape_iter.Next())
         {
-            auto shape = shape_iter->ItemAs<Shape const>();
+            auto shape = shape_iter.ItemAs<Shape>();
             
             if (!is_instance(shape))
             {
-                meshes.emplace(static_cast<Mesh const*>(shape));
+                meshes.emplace(std::static_pointer_cast<Mesh>(shape));
             }
             else
             {
-                instances.emplace(static_cast<Instance const*>(shape));
+                instances.emplace(std::static_pointer_cast<Instance>(shape));
             }
         }
         
         for (auto& i : instances)
         {
-            auto base_mesh = static_cast<Mesh const*>(i->GetBaseShape());
+            auto base_mesh = std::static_pointer_cast<Mesh>(i->GetBaseShape());
             if (meshes.find(base_mesh) == meshes.cend())
             {
                 excluded_meshes.emplace(base_mesh);
@@ -98,11 +98,11 @@ namespace Baikal
         }
     }
 
-    static std::size_t GetShapeIdx(Iterator* shape_iter, Shape const* shape)
+    static std::size_t GetShapeIdx(Iterator& shape_iter, Shape::Ptr shape)
     {
-        std::set<Mesh const*> meshes;
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
+        std::set<Mesh::Ptr> meshes;
+        std::set<Mesh::Ptr> excluded_meshes;
+        std::set<Instance::Ptr> instances;
         SplitMeshesAndInstances(shape_iter, meshes, instances, excluded_meshes);
         
         std::size_t idx = 0;
@@ -156,7 +156,7 @@ namespace Baikal
         out.visible_shapes.clear();
 
         // Create new shapes
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+        auto shape_iter = scene.CreateShapeIterator();
         
         if (!shape_iter->IsValid())
         {
@@ -164,16 +164,16 @@ namespace Baikal
         }
         
         // Split all shapes into meshes and instances sets.
-        std::set<Mesh const*> meshes;
+        std::set<Mesh::Ptr> meshes;
         // Excluded shapes are shapes which are not in the scene,
         // but references by at least one instance.
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
-        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+        std::set<Mesh::Ptr> excluded_meshes;
+        std::set<Instance::Ptr> instances;
+        SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
         
         // Keep shape->rr shape association for
         // instance base shape lookup.
-        std::map<Shape const*, RadeonRays::Shape*> rr_shapes;
+        std::map<Shape::Ptr, RadeonRays::Shape*> rr_shapes;
         
         // Start from ID 1
         // Handle meshes
@@ -256,7 +256,7 @@ namespace Baikal
     void ClwSceneController::UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const
     {
         // Create new shapes
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+        auto shape_iter = scene.CreateShapeIterator();
 
         if (!shape_iter->IsValid())
         {
@@ -264,12 +264,12 @@ namespace Baikal
         }
 
         // Split all shapes into meshes and instances sets.
-        std::set<Mesh const*> meshes;
+        std::set<Mesh::Ptr> meshes;
         // Excluded shapes are shapes which are not in the scene,
         // but references by at least one instance.
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
-        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+        std::set<Mesh::Ptr> excluded_meshes;
+        std::set<Instance::Ptr> instances;
+        SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
 
         auto rr_iter = out.isect_shapes.begin();
 
@@ -307,7 +307,7 @@ namespace Baikal
     void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         // TODO: support different camera types here
-        auto camera = static_cast<PerspectiveCamera const*>(scene.GetCamera());
+        auto camera = std::static_pointer_cast<PerspectiveCamera>(scene.GetCamera());
         
         // Create light buffer if needed
         if (out.camera.GetElementCount() == 0)
@@ -361,12 +361,12 @@ namespace Baikal
         auto shape_iter = scene.CreateShapeIterator();
         
         // Sort shapes into meshes and instances sets.
-        std::set<Mesh const*> meshes;
+        std::set<Mesh::Ptr> meshes;
         // Excluded meshes are meshes which are not in the scene,
         // but are references by at least one instance.
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
-        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+        std::set<Mesh::Ptr> excluded_meshes;
+        std::set<Instance::Ptr> instances;
+        SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
         
         // Calculate GPU array sizes. Do that only for meshes,
         // since instances do not occupy space in vertex buffers.
@@ -398,10 +398,9 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto mesh = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
             num_material_ids += mesh->GetNumIndices() / 3;
         }
-
 
         LogInfo("Creating vertex buffer...\n");
         // Create CL arrays
@@ -440,7 +439,7 @@ namespace Baikal
         // Keep associated shapes data for instance look up.
         // We retrieve data from here while serializing instances,
         // using base shape lookup.
-        std::map<Mesh const*, ClwScene::Shape> shape_data;
+        std::map<Mesh::Ptr, ClwScene::Shape> shape_data;
         // Handle meshes
         for (auto& iter : meshes)
         {
@@ -495,7 +494,7 @@ namespace Baikal
             auto material = mesh->GetMaterial();
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
             
             auto matidx = mat_collector.GetItemIndex(material);
@@ -571,7 +570,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto base_shape = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
             auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
             auto mesh_num_indices = base_shape->GetNumIndices();
@@ -597,7 +596,7 @@ namespace Baikal
             // If instance do not have a material, use default one.
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
             
             auto mat_idx = mat_collector.GetItemIndex(material);
@@ -630,12 +629,12 @@ namespace Baikal
         auto shape_iter = scene.CreateShapeIterator();
 
         // Sort shapes into meshes and instances sets.
-        std::set<Mesh const*> meshes;
+        std::set<Mesh::Ptr> meshes;
         // Excluded meshes are meshes which are not in the scene,
         // but are references by at least one instance.
-        std::set<Mesh const*> excluded_meshes;
-        std::set<Instance const*> instances;
-        SplitMeshesAndInstances(shape_iter.get(), meshes, instances, excluded_meshes);
+        std::set<Mesh::Ptr> excluded_meshes;
+        std::set<Instance::Ptr> instances;
+        SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
 
         // Calculate GPU array sizes. Do that only for meshes,
         // since instances do not occupy space in vertex buffers.
@@ -657,7 +656,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto mesh = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto mesh = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
             num_material_ids += mesh->GetNumIndices() / 3;
         }
 
@@ -685,7 +684,7 @@ namespace Baikal
             auto material = mesh->GetMaterial();
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
 
             auto matidx = mat_collector.GetItemIndex(material);
@@ -716,7 +715,7 @@ namespace Baikal
             auto material = mesh->GetMaterial();
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
 
             auto matidx = mat_collector.GetItemIndex(material);
@@ -733,7 +732,7 @@ namespace Baikal
         for (auto& iter : instances)
         {
             auto instance = iter;
-            auto base_shape = static_cast<Mesh const*>(instance->GetBaseShape());
+            auto base_shape = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
             auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
             auto mesh_num_indices = base_shape->GetNumIndices();
@@ -746,7 +745,7 @@ namespace Baikal
             // Check if mesh has a material and use default if not
             if (!material)
             {
-                material = m_default_material.get();
+                material = m_default_material;
             }
 
             auto matidx = mat_collector.GetItemIndex(material);
@@ -794,12 +793,12 @@ namespace Baikal
             out.material_bundle.reset(mat_collector.CreateBundle());
             
             // Create material iterator
-            std::unique_ptr<Iterator> mat_iter(mat_collector.CreateIterator());
+            auto mat_iter = mat_collector.CreateIterator();
             
             // Iterate and serialize
             for (; mat_iter->IsValid(); mat_iter->Next())
             {
-                WriteMaterial(mat_iter->ItemAs<Material const>(), mat_collector, tex_collector, materials + num_materials_written);
+                WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, materials + num_materials_written);
                 ++num_materials_written;
             }
         }
@@ -855,9 +854,9 @@ namespace Baikal
         // Iterate and serialize
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
-            auto tex = tex_iter->ItemAs<Texture const>();
+            auto tex = tex_iter->ItemAs<Texture>();
 
-            WriteTexture(tex, tex_data_buffer_size, textures + num_textures_written);
+            WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written);
 
             ++num_textures_written;
 
@@ -885,9 +884,9 @@ namespace Baikal
         // Write texture data for all textures
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
-            auto tex = tex_iter->ItemAs<Texture const>();
+            auto tex = tex_iter->ItemAs<Texture>();
 
-            WriteTextureData(tex, data + num_bytes_written);
+            WriteTextureData(*tex, data + num_bytes_written);
 
             num_bytes_written += align16(tex->GetSizeInBytes());
         }
@@ -897,10 +896,10 @@ namespace Baikal
     }
     
     // Convert Material:: types to ClwScene:: types
-    static ClwScene::Bxdf GetMaterialType(Material const* material)
+    static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
         // Distinguish between single bxdf materials and compound ones
-        if (auto bxdf = dynamic_cast<SingleBxdf const*>(material))
+        if (auto bxdf = dynamic_cast<SingleBxdf const*>(&material))
         {
             switch (bxdf->GetBxdfType())
             {
@@ -917,7 +916,7 @@ namespace Baikal
                 case SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann: return ClwScene::Bxdf::kMicrofacetRefractionBeckmann;
             }
         }
-        else if (auto mat = dynamic_cast<MultiBxdf const*>(material))
+        else if (auto mat = dynamic_cast<MultiBxdf const*>(&material))
         {
             switch (mat->GetType())
             {
@@ -926,7 +925,7 @@ namespace Baikal
                 case MultiBxdf::Type::kFresnelBlend: return ClwScene::Bxdf::kFresnelBlend;
             }
         }
-        else if (auto mat = dynamic_cast<DisneyBxdf const*>(material))
+        else if (auto mat = dynamic_cast<DisneyBxdf const*>(&material))
         {
             return ClwScene::Bxdf::kDisney;
         }
@@ -934,7 +933,7 @@ namespace Baikal
         return ClwScene::Bxdf::kZero;
     }
     
-    void ClwSceneController::WriteMaterial(Material const* material, Collector& mat_collector, Collector& tex_collector, void* data) const
+    void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, void* data) const
     {
         auto clw_material = reinterpret_cast<ClwScene::Material*>(data);
         
@@ -942,7 +941,7 @@ namespace Baikal
         auto type = GetMaterialType(material);
         
         clw_material->type = type;
-        clw_material->thin = material->IsThin() ? 1 : 0;
+        clw_material->thin = material.IsThin() ? 1 : 0;
         
         switch (type)
         {
@@ -956,7 +955,7 @@ namespace Baikal
             case ClwScene::Bxdf::kMicrofacetRefractionGGX:
             case ClwScene::Bxdf::kMicrofacetRefractionBeckmann:
             {
-                Material::InputValue value = material->GetInputValue("roughness");
+                auto value = material.GetInputValue("roughness");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
@@ -984,7 +983,7 @@ namespace Baikal
             case ClwScene::Bxdf::kIdealRefract:
             case ClwScene::Bxdf::kIdealReflect:
             {
-                Material::InputValue value = material->GetInputValue("albedo");
+                auto value = material.GetInputValue("albedo");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
@@ -1001,7 +1000,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("normal");
+                value = material.GetInputValue("normal");
                 
                 if (value.type == Material::InputType::kTexture && value.tex_value)
                 {
@@ -1010,7 +1009,7 @@ namespace Baikal
                 }
                 else
                 {
-                    value = material->GetInputValue("bump");
+                    value = material.GetInputValue("bump");
                     
                     if (value.type == Material::InputType::kTexture && value.tex_value)
                     {
@@ -1024,7 +1023,7 @@ namespace Baikal
                     }
                 }
                 
-                value = material->GetInputValue("fresnel");
+                value = material.GetInputValue("fresnel");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
@@ -1035,7 +1034,7 @@ namespace Baikal
                     clw_material->simple.fresnel = 0.f;
                 }
                 
-                value = material->GetInputValue("ior");
+                value = material.GetInputValue("ior");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
@@ -1046,7 +1045,7 @@ namespace Baikal
                     clw_material->simple.ni = 1.f;
                 }
                 
-                value = material->GetInputValue("roughness");
+                value = material.GetInputValue("roughness");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
@@ -1065,8 +1064,8 @@ namespace Baikal
             case ClwScene::Bxdf::kMix:
             case ClwScene::Bxdf::kFresnelBlend:
             {
-                Material::InputValue value0 = material->GetInputValue("base_material");
-                Material::InputValue value1 = material->GetInputValue("top_material");
+                auto value0 = material.GetInputValue("base_material");
+                auto value1 = material.GetInputValue("top_material");
                 
                 if (value0.type == Material::InputType::kMaterial &&
                     value1.type == Material::InputType::kMaterial)
@@ -1084,7 +1083,7 @@ namespace Baikal
                 {
                     clw_material->simple.fresnel = 0.f;
                     
-                    Material::InputValue value = material->GetInputValue("weight");
+                    auto value = material.GetInputValue("weight");
                     
                     if (value.type == Material::InputType::kTexture)
                     {
@@ -1100,7 +1099,7 @@ namespace Baikal
                 {
                     clw_material->simple.fresnel = 1.f;
                     
-                    Material::InputValue value = material->GetInputValue("ior");
+                    auto value = material.GetInputValue("ior");
                     
                     if (value.type == Material::InputType::kFloat4)
                     {
@@ -1118,7 +1117,7 @@ namespace Baikal
             
             case ClwScene::Bxdf::kDisney:
             {
-                Material::InputValue value = material->GetInputValue("albedo");
+                auto value = material.GetInputValue("albedo");
                 
                 if (value.type == Material::InputType::kFloat4)
                 {
@@ -1135,7 +1134,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("metallic");
+                value = material.GetInputValue("metallic");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.metallic = value.float_value.x;
@@ -1151,7 +1150,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("subsurface");
+                value = material.GetInputValue("subsurface");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.subsurface = value.float_value.x;
@@ -1162,7 +1161,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("specular");
+                value = material.GetInputValue("specular");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.specular = value.float_value.x;
@@ -1178,7 +1177,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("specular_tint");
+                value = material.GetInputValue("specular_tint");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.specular_tint = value.float_value.x;
@@ -1194,7 +1193,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("anisotropy");
+                value = material.GetInputValue("anisotropy");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.anisotropy = value.float_value.x;
@@ -1210,7 +1209,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("sheen");
+                value = material.GetInputValue("sheen");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.sheen = value.float_value.x;
@@ -1226,7 +1225,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("sheen_tint");
+                value = material.GetInputValue("sheen_tint");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.sheen_tint = value.float_value.x;
@@ -1242,7 +1241,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("clearcoat");
+                value = material.GetInputValue("clearcoat");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.clearcoat = value.float_value.x;
@@ -1258,7 +1257,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("clearcoat_gloss");
+                value = material.GetInputValue("clearcoat_gloss");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.clearcoat_gloss = value.float_value.x;
@@ -1274,7 +1273,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("roughness");
+                value = material.GetInputValue("roughness");
                 if (value.type == Material::InputType::kFloat4)
                 {
                     clw_material->disney.roughness = value.float_value.x;
@@ -1290,7 +1289,7 @@ namespace Baikal
                     assert(false);
                 }
                 
-                value = material->GetInputValue("normal");
+                value = material.GetInputValue("normal");
                 
                 if (value.type == Material::InputType::kTexture && value.tex_value)
                 {
@@ -1299,7 +1298,7 @@ namespace Baikal
                 }
                 else
                 {
-                    value = material->GetInputValue("bump");
+                    value = material.GetInputValue("bump");
                     
                     if (value.type == Material::InputType::kTexture && value.tex_value)
                     {
@@ -1322,26 +1321,26 @@ namespace Baikal
             break;
         }
         
-        material->SetDirty(false);
+        material.SetDirty(false);
     }
     
     // Convert Light:: types to ClwScene:: types
-    static int GetLightType(Light const* light)
+    static int GetLightType(Light const& light)
     {
         
-        if (dynamic_cast<PointLight const*>(light))
+        if (dynamic_cast<PointLight const*>(&light))
         {
             return ClwScene::kPoint;
         }
-        else if (dynamic_cast<DirectionalLight const*>(light))
+        else if (dynamic_cast<DirectionalLight const*>(&light))
         {
             return ClwScene::kDirectional;
         }
-        else if (dynamic_cast<SpotLight const*>(light))
+        else if (dynamic_cast<SpotLight const*>(&light))
         {
             return ClwScene::kSpot;
         }
-        else if (dynamic_cast<ImageBasedLight const*>(light))
+        else if (dynamic_cast<ImageBasedLight const*>(&light))
         {
             return ClwScene::kIbl;
         }
@@ -1351,7 +1350,7 @@ namespace Baikal
         }
     }
     
-    void ClwSceneController::WriteLight(Scene1 const& scene, Light const* light, Collector& tex_collector, void* data) const
+    void ClwSceneController::WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const
     {
         auto clw_light = reinterpret_cast<ClwScene::Light*>(data);
         
@@ -1363,25 +1362,25 @@ namespace Baikal
         {
             case ClwScene::kPoint:
             {
-                clw_light->p = light->GetPosition();
-                clw_light->intensity = light->GetEmittedRadiance();
+                clw_light->p = light.GetPosition();
+                clw_light->intensity = light.GetEmittedRadiance();
                 break;
             }
             
             case ClwScene::kDirectional:
             {
-                clw_light->d = light->GetDirection();
-                clw_light->intensity = light->GetEmittedRadiance();
+                clw_light->d = light.GetDirection();
+                clw_light->intensity = light.GetEmittedRadiance();
                 break;
             }
             
             case ClwScene::kSpot:
             {
-                clw_light->p = light->GetPosition();
-                clw_light->d = light->GetDirection();
-                clw_light->intensity = light->GetEmittedRadiance();
+                clw_light->p = light.GetPosition();
+                clw_light->d = light.GetDirection();
+                clw_light->intensity = light.GetEmittedRadiance();
                 
-                auto cone_shape = static_cast<SpotLight const*>(light)->GetConeShape();
+                auto cone_shape = static_cast<SpotLight const&>(light).GetConeShape();
                 clw_light->ia = cone_shape.x;
                 clw_light->oa = cone_shape.y;
                 break;
@@ -1390,8 +1389,8 @@ namespace Baikal
             case ClwScene::kIbl:
             {
                 // TODO: support this
-                clw_light->multiplier = static_cast<ImageBasedLight const*>(light)->GetMultiplier();
-                auto tex = static_cast<ImageBasedLight const*>(light)->GetTexture();
+                clw_light->multiplier = static_cast<ImageBasedLight const&>(light).GetMultiplier();
+                auto tex = static_cast<ImageBasedLight const&>(light).GetTexture();
                 clw_light->tex = tex_collector.GetItemIndex(tex);
                 clw_light->texdiffuse = clw_light->tex;
                 break;
@@ -1400,14 +1399,14 @@ namespace Baikal
             case ClwScene::kArea:
             {
                 // TODO: optimize this linear search
-                auto shape = static_cast<AreaLight const*>(light)->GetShape();
+                auto shape = static_cast<AreaLight const&>(light).GetShape();
                 
-                std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
+                auto shape_iter = scene.CreateShapeIterator();
                 
-                auto idx = GetShapeIdx(shape_iter.get(), shape);
+                auto idx = GetShapeIdx(*shape_iter, shape);
                 
                 clw_light->shapeidx = static_cast<int>(idx);
-                clw_light->primidx = static_cast<int>(static_cast<AreaLight const*>(light)->GetPrimitiveIdx());
+                clw_light->primidx = static_cast<int>(static_cast<AreaLight const&>(light).GetPrimitiveIdx());
                 break;
             }
             
@@ -1448,12 +1447,12 @@ namespace Baikal
         {
             for (; light_iter->IsValid(); light_iter->Next())
             {
-                auto light = light_iter->ItemAs<Light const>();
-                WriteLight(scene, light, tex_collector, lights + num_lights_written);
+                auto light = light_iter->ItemAs<Light>();
+                WriteLight(scene, *light, tex_collector, lights + num_lights_written);
 
                 
                 // Find and update IBL idx
-                auto ibl = dynamic_cast<ImageBasedLight const*>(light_iter->ItemAs<Light const>());
+                auto ibl = std::dynamic_pointer_cast<ImageBasedLight>(light_iter->ItemAs<Light>());
                 if (ibl)
                 {
                     out.envmapidx = static_cast<int>(num_lights_written);
@@ -1504,9 +1503,9 @@ namespace Baikal
     
     
     // Convert texture format into ClwScene:: types
-    static ClwScene::TextureFormat GetTextureFormat(Texture const* texture)
+    static ClwScene::TextureFormat GetTextureFormat(Texture const& texture)
     {
-        switch (texture->GetFormat())
+        switch (texture.GetFormat())
         {
             case Texture::Format::kRgba8: return ClwScene::TextureFormat::RGBA8;
             case Texture::Format::kRgba16: return ClwScene::TextureFormat::RGBA16;
@@ -1515,11 +1514,11 @@ namespace Baikal
         }
     }
     
-    void ClwSceneController::WriteTexture(Texture const* texture, std::size_t data_offset, void* data) const
+    void ClwSceneController::WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const
     {
         auto clw_texture = reinterpret_cast<ClwScene::Texture*>(data);
         
-        auto dim = texture->GetSize();
+        auto dim = texture.GetSize();
         
         clw_texture->w = dim.x;
         clw_texture->h = dim.y;
@@ -1527,10 +1526,10 @@ namespace Baikal
         clw_texture->dataoffset = static_cast<int>(data_offset);
     }
     
-    void ClwSceneController::WriteTextureData(Texture const* texture, void* data) const
+    void ClwSceneController::WriteTextureData(Texture const& texture, void* data) const
     {
-        auto begin = texture->GetData();
-        auto end = begin + texture->GetSizeInBytes();
+        auto begin = texture.GetData();
+        auto end = begin + texture.GetSizeInBytes();
         std::copy(begin, end, static_cast<char*>(data));
     }
 }

@@ -35,7 +35,7 @@ namespace Baikal
                 return std::unique_ptr<Renderer>(
                     new MonteCarloRenderer(
                         m_context, 
-                        std::make_unique<PathTracingEstimator>(m_context, m_intersector.get(), m_cache_path),
+                        std::make_unique<PathTracingEstimator>(m_context, m_intersector, m_cache_path),
                         m_cache_path
                         ));
             default:

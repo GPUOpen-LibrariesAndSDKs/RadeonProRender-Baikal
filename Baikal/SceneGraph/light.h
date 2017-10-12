@@ -39,10 +39,10 @@
 
 #include "scene_object.h"
 #include "shape.h"
+#include "texture.h"
 
 namespace Baikal
 {
-    class Texture;
     class Scene1;
 
     /**
@@ -53,8 +53,8 @@ namespace Baikal
     class Light : public SceneObject
     {
     public:
-        // Constructor
-        Light();
+        using Ptr = std::shared_ptr<Light>;
+        
         // Destructor
         virtual ~Light() = 0;
 
@@ -74,9 +74,14 @@ namespace Baikal
         void SetEmittedRadiance(RadeonRays::float3 const& e);
 
         // Iterator for all the textures used by the light
-        virtual Iterator* CreateTextureIterator() const;
+        virtual std::unique_ptr<Iterator> CreateTextureIterator() const;
 
         virtual RadeonRays::float3 GetPower(Scene1 const& scene) const = 0;
+        
+    protected:
+        // Constructor
+        Light();
+        
     private:
         // Position
         RadeonRays::float3 m_p;
@@ -104,7 +109,14 @@ namespace Baikal
     class PointLight: public Light
     {
     public:
+        using Ptr = std::shared_ptr<PointLight>;
+        static Ptr Create();
+        
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
+
+    protected:
+        PointLight(){}
+
     };
     
     /**
@@ -115,7 +127,13 @@ namespace Baikal
     class DirectionalLight: public Light
     {
     public:
+        using Ptr = std::shared_ptr<DirectionalLight>;
+        static Ptr Create();
+        
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
+        
+    protected:
+        DirectionalLight(){}
     };
     
     /**
@@ -126,13 +144,19 @@ namespace Baikal
     class SpotLight: public Light
     {
     public:
-        SpotLight();
+        using Ptr = std::shared_ptr<SpotLight>;
+        static Ptr Create();
+        
         // Get and set inner and outer falloff angles: they are set as cosines of angles between light direction
         // and cone opening.
         void SetConeShape(RadeonRays::float2 angles);
         RadeonRays::float2 GetConeShape() const;
 
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
+        
+    protected:
+        SpotLight();
+        
     private:
         // Opening angles (x - inner, y - outer)
         RadeonRays::float2 m_angles;
@@ -151,10 +175,12 @@ namespace Baikal
     class ImageBasedLight: public Light
     {
     public:
-        ImageBasedLight();
+        using Ptr = std::shared_ptr<ImageBasedLight>;
+        static Ptr Create();
+        
         // Get and set illuminant texture
-        void SetTexture(Texture const* texture);
-        Texture const* GetTexture() const;
+        void SetTexture(Texture::Ptr texture);
+        Texture::Ptr GetTexture() const;
         
         // Get and set multiplier.
         // Multiplier is used to adjust emissive power.
@@ -162,12 +188,16 @@ namespace Baikal
         void SetMultiplier(float m);
         
         // Iterator for all the textures used by the light
-        Iterator* CreateTextureIterator() const override;
+        std::unique_ptr<Iterator> CreateTextureIterator() const override;
         
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
+        
+    protected:
+        ImageBasedLight();
+        
     private:
         // Illuminant texture
-        Texture const* m_texture;
+        Texture::Ptr m_texture;
         // Emissive multiplier
         float m_multiplier;
     };
@@ -176,16 +206,22 @@ namespace Baikal
     class AreaLight: public Light
     {
     public:
-        AreaLight(Shape const* shape, std::size_t idx);
+        using Ptr = std::shared_ptr<AreaLight>;
+        static Ptr Create(Shape::Ptr shape, std::size_t idx);
+        
         // Get parent shape
-        Shape const* GetShape() const;
+        Shape::Ptr GetShape() const;
         // Get parent prim idx
         std::size_t GetPrimitiveIdx() const;
 
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
+
+    protected:
+        AreaLight(Shape::Ptr shape, std::size_t idx);
+
     private:
         // Parent shape
-        Shape const* m_shape;
+        Shape::Ptr m_shape;
         // Parent primitive index
         std::size_t m_prim_idx;
     };
