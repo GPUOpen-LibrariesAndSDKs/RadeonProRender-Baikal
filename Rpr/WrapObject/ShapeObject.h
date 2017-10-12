@@ -26,9 +26,7 @@ THE SOFTWARE.
 #include "WrapObject/WrapObject.h"
 #include "WrapObject/MaterialObject.h"
 
-namespace Baikal {
-    class Shape;
-}
+#include "SceneGraph/shape.h"
 
 //this class represent rpr_scene
 class ShapeObject
@@ -36,7 +34,7 @@ class ShapeObject
 {
 private:
 
-    ShapeObject(Baikal::Shape* shape, ShapeObject* base_shape_obj = nullptr);
+    ShapeObject(Baikal::Shape::Ptr shape, ShapeObject* base_shape_obj = nullptr);
     virtual ~ShapeObject();
 
 public:
@@ -72,9 +70,9 @@ public:
     uint64_t GetIndicesCount() const;
 
     ShapeObject* GetBaseShape() { return m_base_obj; }
-    Baikal::Shape* GetShape() { return m_shape; }
+    Baikal::Shape::Ptr GetShape() { return m_shape; }
 private:
-    Baikal::Shape* m_shape;
+    Baikal::Shape::Ptr m_shape;
     MaterialObject* m_current_mat;
     ShapeObject* m_base_obj;
 };

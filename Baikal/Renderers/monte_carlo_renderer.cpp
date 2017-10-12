@@ -110,7 +110,6 @@ namespace Baikal
     {
         // Number of rays to generate
         auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
-        auto visibility = GetOutput(OutputType::kVisibility);
 
         if (output)
         {

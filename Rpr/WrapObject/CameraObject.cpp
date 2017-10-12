@@ -36,7 +36,7 @@ CameraObject::CameraObject()
     RadeonRays::float3 const eye = { 0.f, 0.f, 0.f };
     RadeonRays::float3 const at = { 0.f , 0.f , -1.f };
     RadeonRays::float3 const up = { 0.f , 1.f , 0.f };
-    PerspectiveCamera* camera = new PerspectiveCamera(eye, at, up);
+    auto camera = PerspectiveCamera::Create(eye, at, up);
 
     float2 camera_sensor_size = float2(0.036f, 0.024f);  // default full frame sensor 36x24 mm
     float2 camera_zcap = float2(0.0f, 100000.f);
@@ -54,8 +54,6 @@ CameraObject::CameraObject()
 
 CameraObject::~CameraObject()
 {
-    delete m_cam;
-    m_cam = nullptr;
 }
 
 void CameraObject::SetTransform(const RadeonRays::matrix& m)
