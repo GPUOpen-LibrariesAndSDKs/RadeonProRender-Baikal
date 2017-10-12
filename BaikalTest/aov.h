@@ -267,5 +267,3 @@ TEST_F(AovTest, Aov_Visibility)
     SaveAOV(output_ws.get(), oss.str());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
-
-

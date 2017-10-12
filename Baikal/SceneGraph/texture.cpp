@@ -15,7 +15,7 @@ namespace Baikal
             auto num_elements = m_size.x * m_size.y;
 
 
-            for (auto i = 0u; i < num_elements; ++i)
+            for (auto i = 0; i < num_elements; ++i)
             {
                 float r = data[4 * i] / 255.f;
                 float g = data[4 * i + 1] / 255.f;
@@ -31,7 +31,7 @@ namespace Baikal
             auto data = reinterpret_cast<std::uint16_t*>(m_data.get());
             auto num_elements = m_size.x * m_size.y;
 
-            for (auto i = 0u; i < num_elements; ++i)
+            for (auto i = 0; i < num_elements; ++i)
             {
                 auto r = data[4 * i];
                 auto g = data[4 * i + 1];
@@ -54,7 +54,7 @@ namespace Baikal
             auto data = reinterpret_cast<float*>(m_data.get());
             auto num_elements = m_size.x * m_size.y;
 
-            for (auto i = 0u; i < num_elements; ++i)
+            for (auto i = 0; i < num_elements; ++i)
             {
                 auto r = data[4 * i];
                 auto g = data[4 * i + 1];

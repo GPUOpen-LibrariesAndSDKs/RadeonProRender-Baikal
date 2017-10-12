@@ -71,7 +71,7 @@ namespace Baikal
         CreateProgram(cl_file, cmdopts, m_context);
     }
 
-    inline uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
+    static uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
     {
         uint32_t hash, i;
         for (hash = i = 0; i < len; ++i)
