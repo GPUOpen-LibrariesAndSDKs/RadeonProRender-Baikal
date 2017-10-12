@@ -143,7 +143,7 @@ public:
 
     virtual  void SetupCamera()
     {
-        m_camera = std::make_unique<Baikal::PerspectiveCamera>(
+        m_camera = Baikal::PerspectiveCamera::Create(
             RadeonRays::float3(0.f, 0.f, -6.f),
             RadeonRays::float3(0.f, 0.f, 0.f),
             RadeonRays::float3(0.f, 1.f, 0.f));
@@ -154,7 +154,7 @@ public:
         m_camera->SetFocusDistance(1.f);
         m_camera->SetAperture(0.f);
 
-        m_scene->SetCamera(m_camera.get());
+        m_scene->SetCamera(m_camera);
     }
 
     void SaveOutput(std::string const& file_name) const
@@ -274,8 +274,8 @@ public:
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> m_factory;
     std::unique_ptr<Baikal::Output> m_output;
-    std::unique_ptr<Baikal::Scene1> m_scene;
-    std::unique_ptr<Baikal::PerspectiveCamera> m_camera;
+    Baikal::Scene1::Ptr m_scene;
+    Baikal::PerspectiveCamera::Ptr m_camera;
 
     std::string m_reference_path;
     std::string m_output_path;
@@ -295,9 +295,9 @@ TEST_F(BasicTest, RenderTestScene)
 {
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {

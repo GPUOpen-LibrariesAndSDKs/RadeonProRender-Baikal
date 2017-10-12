@@ -29,8 +29,8 @@
 #pragma once
 
 #include "SceneGraph/Collector/collector.h"
-#include "material.h"
-#include "scene1.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/scene1.h"
 
 #include <memory>
 #include <map>

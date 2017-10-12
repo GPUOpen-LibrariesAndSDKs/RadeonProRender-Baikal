@@ -281,7 +281,7 @@ namespace Baikal
 
         auto ibl = ImageBasedLight::Create();
         ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(3.f);
+        ibl->SetMultiplier(1.f);
 
         // TODO: temporary code to add directional light
         auto light = DirectionalLight::Create();
@@ -292,7 +292,7 @@ namespace Baikal
         light1->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
 
-        scene->AttachLight(light);
+        //scene->AttachLight(light);
         //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 

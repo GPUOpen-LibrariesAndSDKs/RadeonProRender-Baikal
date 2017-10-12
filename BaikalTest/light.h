@@ -62,18 +62,17 @@ TEST_F(LightTest, Light_PointLight)
 
     for (auto i = 0u; i < 3; ++i)
     {
-        auto light = new Baikal::PointLight();
+        auto light = Baikal::PointLight::Create();
         light->SetPosition(positions[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -88,14 +87,13 @@ TEST_F(LightTest, Light_PointLight)
     }
 
     auto iter = m_scene->CreateLightIterator();
-    m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const>());
-    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
+    m_scene->DetachLight(iter->ItemAs<Baikal::Light>());
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene1 = m_controller->GetCachedScene(*m_scene);
+    auto& scene1 = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -137,18 +135,17 @@ TEST_F(LightTest, Light_PointLightMany)
 
     for (auto i = 0u; i < num_lights; ++i)
     {
-        auto light = new Baikal::PointLight();
+        auto light = Baikal::PointLight::Create();
         light->SetPosition(positions[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < num_lights * kNumIterations; ++i)
     {
@@ -185,18 +182,17 @@ TEST_F(LightTest, Light_DirectionalLight)
 
     for (auto i = 0u; i < 3; ++i)
     {
-        auto light = new Baikal::DirectionalLight();
+        auto light = Baikal::DirectionalLight::Create();
         light->SetDirection(direction[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -211,14 +207,13 @@ TEST_F(LightTest, Light_DirectionalLight)
     }
 
     auto iter = m_scene->CreateLightIterator();
-    m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const>());
-    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
+    m_scene->DetachLight(iter->ItemAs <Baikal::Light>());
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene1 = m_controller->GetCachedScene(*m_scene);
+    auto& scene1 = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -261,19 +256,18 @@ TEST_F(LightTest, Light_SpotLight)
 
     for (auto i = 0u; i < 3; ++i)
     {
-        auto light = new Baikal::SpotLight();
+        auto light = Baikal::SpotLight::Create();
         light->SetPosition(positions[i]);
         light->SetDirection(direction[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -288,15 +282,14 @@ TEST_F(LightTest, Light_SpotLight)
     }
 
     auto iter = m_scene->CreateLightIterator();
-    m_scene->DetachAutoreleaseObject(iter->ItemAs<Baikal::Light const>());
-    m_scene->DetachLight(iter->ItemAs <Baikal::Light const>());
+    m_scene->DetachLight(iter->ItemAs<Baikal::Light>());
 
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene1 = m_controller->GetCachedScene(*m_scene);
+    auto& scene1 = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -320,13 +313,13 @@ TEST_F(LightTest, Light_AreaLight)
 
     auto io = Baikal::SceneIo::CreateSceneIoTest();
     m_scene = io->LoadScene("sphere+plane+area", "");
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -351,7 +344,7 @@ TEST_F(LightTest, Light_DirectionalAndAreaLight)
 
     auto io = Baikal::SceneIo::CreateSceneIoTest();
     m_scene = io->LoadScene("sphere+plane+area", "");
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
 
     std::vector<float3> direction{
         float3(-1.f, -1.f, -1.f),
@@ -367,18 +360,17 @@ TEST_F(LightTest, Light_DirectionalAndAreaLight)
 
     for (auto i = 0u; i < 3; ++i)
     {
-        auto light = new Baikal::DirectionalLight();
+        auto light = Baikal::DirectionalLight::Create();
         light->SetDirection(direction[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -402,7 +394,7 @@ TEST_F(LightTest, Light_PointAndAreaLight)
 
     auto io = Baikal::SceneIo::CreateSceneIoTest();
     m_scene = io->LoadScene("sphere+plane+area", "");
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
 
     std::vector<float3> positions{
         float3(3.f, 6.f, 0.f),
@@ -418,18 +410,17 @@ TEST_F(LightTest, Light_PointAndAreaLight)
 
     for (auto i = 0u; i < 3; ++i)
     {
-        auto light = new Baikal::PointLight();
+        auto light = Baikal::PointLight::Create();
         light->SetPosition(positions[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -453,7 +444,7 @@ TEST_F(LightTest, Light_SpotAndAreaLight)
 
     auto io = Baikal::SceneIo::CreateSceneIoTest();
     m_scene = io->LoadScene("sphere+plane+area", "");
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
 
     std::vector<float3> direction{
         float3(-1.f, -1.f, -1.f),
@@ -475,19 +466,18 @@ TEST_F(LightTest, Light_SpotAndAreaLight)
 
     for (auto i = 0u; i < 3; ++i)
     {
-        auto light = new Baikal::SpotLight();
+        auto light = Baikal::SpotLight::Create();
         light->SetPosition(positions[i]);
         light->SetDirection(direction[i]);
         light->SetEmittedRadiance(colors[i]);
         m_scene->AttachLight(light);
-        m_scene->AttachAutoreleaseObject(light);
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -513,33 +503,31 @@ TEST_F(LightTest, Light_EmissiveSphere)
 
     auto io = Baikal::SceneIo::CreateSceneIoTest();
     m_scene = io->LoadScene("sphere+plane", "");
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
 
-    auto emission = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kEmissive);
+    auto emission = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kEmissive);
     emission->SetInputValue("albedo", float3(2.f, 2.f, 2.f));
-    m_scene->AttachAutoreleaseObject(emission);
 
     auto iter = m_scene->CreateShapeIterator();
 
     for (; iter->IsValid(); iter->Next())
     {
-        auto mesh = iter->ItemAs<Baikal::Mesh const>();
+        auto mesh = iter->ItemAs<Baikal::Mesh>();
         if (mesh->GetName() == "sphere")
         {
-            const_cast<Baikal::Mesh*>(mesh)->SetMaterial(emission);
+            mesh->SetMaterial(emission);
 
             for (auto i = 0u; i < mesh->GetNumIndices() / 3; ++i)
             {
-                auto light = new Baikal::AreaLight(mesh, i);
+                auto light = Baikal::AreaLight::Create(mesh, i);
                 m_scene->AttachLight(light);
-                m_scene->AttachAutoreleaseObject(light);
             }
         }
     }
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -563,41 +551,38 @@ TEST_F(LightTest, Light_DirectionalAndEmissiveSphere)
 
     auto io = Baikal::SceneIo::CreateSceneIoTest();
     m_scene = io->LoadScene("sphere+plane", "");
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
 
-    auto light = new Baikal::DirectionalLight();
+    auto light = Baikal::DirectionalLight::Create();
     light->SetDirection(float3(-0.5, -1.f, -0.5f));
     light->SetEmittedRadiance(5.f * float3(1.f, 0.f, 0.f));
     m_scene->AttachLight(light);
-    m_scene->AttachAutoreleaseObject(light);
 
-    auto emission = new Baikal::SingleBxdf(Baikal::SingleBxdf::BxdfType::kEmissive);
+    auto emission = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kEmissive);
     emission->SetInputValue("albedo", float3(2.f, 2.f, 2.f));
-    m_scene->AttachAutoreleaseObject(emission);
 
     auto iter = m_scene->CreateShapeIterator();
 
     for (; iter->IsValid(); iter->Next())
     {
-        auto mesh = iter->ItemAs<Baikal::Mesh const>();
+        auto mesh = iter->ItemAs<Baikal::Mesh>();
         if (mesh->GetName() == "sphere")
         {
-            const_cast<Baikal::Mesh*>(mesh)->SetMaterial(emission);
+            mesh->SetMaterial(emission);
 
             for (auto i = 0u; i < mesh->GetNumIndices() / 3; ++i)
             {
-                auto light = new Baikal::AreaLight(mesh, i);
+                auto light = Baikal::AreaLight::Create(mesh, i);
                 m_scene->AttachLight(light);
-                m_scene->AttachAutoreleaseObject(light);
             }
         }
     }
 
     ClearOutput();
 
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (auto i = 0u; i < kNumIterations; ++i)
     {

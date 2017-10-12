@@ -78,50 +78,16 @@ namespace Baikal
             InputType type;
             
             // Possible values (use based on type)
-            union {
-                RadeonRays::float4 float_value;
-                Texture::Ptr tex_value;
-                Material::Ptr mat_value;
-            };
+            RadeonRays::float4 float_value;
+            Texture::Ptr tex_value;
+            Material::Ptr mat_value;
             
-            InputValue() {
-                type = InputType::kMaterial;
-                mat_value = nullptr;
-            }
-            
-            ~InputValue() {
-                switch(type) {
-                    case InputType::kFloat4:
-                        break;
-                    case InputType::kTexture:
-                        tex_value.~shared_ptr();
-                        break;
-                    case InputType::kMaterial:
-                        mat_value.~shared_ptr();
-                        break;
-                }
-            }
-            
-            template <typename T> void CopyFrom(T&& rhs) {
-                
-            }
-            
-            InputValue(InputValue const& rhs) {
-                CopyFrom(rhs);
-            }
-            
-            InputValue(InputValue&& rhs) {
-                CopyFrom(std::move(rhs));
-            }
-            
-            InputValue& operator = (InputValue const& rhs) {
-                CopyFrom(rhs);
-                return *this;
-            }
-            
-            InputValue& operator = (InputValue&& rhs) {
-                CopyFrom(rhs);
-                return *this;
+            InputValue()
+            : type(InputType::kMaterial)
+            , mat_value(nullptr)
+            , tex_value(nullptr)
+            , float_value()
+            {
             }
         };
 

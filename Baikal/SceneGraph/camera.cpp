@@ -211,7 +211,7 @@ namespace Baikal
         };
     }
     
-    PerspectiveCamera::Ptr Create(RadeonRays::float3 const& eye,
+    PerspectiveCamera::Ptr PerspectiveCamera::Create(RadeonRays::float3 const& eye,
                RadeonRays::float3 const& at,
                RadeonRays::float3 const& up) {
         return std::make_shared<PerspectiveCameraConcrete>(eye, at, up);

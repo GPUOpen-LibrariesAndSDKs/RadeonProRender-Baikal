@@ -183,7 +183,7 @@ namespace Baikal
         return std::make_shared<ImageBasedLightConcrete>();
     }
     
-    AreaLight::Ptr Create(Shape::Ptr shape, std::size_t idx) {
+    AreaLight::Ptr AreaLight::Create(Shape::Ptr shape, std::size_t idx) {
         return std::make_shared<AreaLightConcrete>(shape, idx);
     }
 }

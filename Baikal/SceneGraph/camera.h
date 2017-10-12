@@ -47,7 +47,7 @@ namespace Baikal
     class PerspectiveCamera : public Camera
     {
     public:
-        using Ptr = std::shared_ptr<Camera>;
+        using Ptr = std::shared_ptr<PerspectiveCamera>;
         static Ptr Create(RadeonRays::float3 const& eye,
                           RadeonRays::float3 const& at,
                           RadeonRays::float3 const& up);

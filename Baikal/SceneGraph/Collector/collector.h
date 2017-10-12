@@ -32,7 +32,7 @@
 #include <set>
 #include <functional>
 
-#include "scene_object.h"
+#include "../scene_object.h"
 
 
 namespace Baikal

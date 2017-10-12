@@ -603,12 +603,12 @@ namespace Baikal
         m_num_instances = 0U;
         {
             auto scene = m_cl->GetScene();
-            std::unique_ptr<Baikal::Iterator> shape_iter(scene->CreateShapeIterator());
+            auto shape_iter = scene->CreateShapeIterator();
 
             for (; shape_iter->IsValid(); shape_iter->Next())
             {
-                auto shape = shape_iter->ItemAs<Baikal::Shape const>();
-                auto mesh = dynamic_cast<Baikal::Mesh const*>(shape);
+                auto shape = shape_iter->ItemAs<Baikal::Shape>();
+                auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(shape);
 
                 if (mesh)
                 {

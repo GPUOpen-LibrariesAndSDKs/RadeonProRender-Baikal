@@ -31,8 +31,8 @@
 #include <string>
 #include <memory>
 #include <map>
-#include "texture.h"
-#include "scene1.h"
+#include "SceneGraph/texture.h"
+#include "SceneGraph/scene1.h"
 
 namespace Baikal
 {

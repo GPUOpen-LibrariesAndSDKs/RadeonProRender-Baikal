@@ -163,18 +163,18 @@ namespace Baikal
         m_texture_collector.Commit();
         
         // Try to find scene in cache first
-        auto iter = m_scene_cache.find(&scene);
+        auto iter = m_scene_cache.find(scene);
         
         if (iter == m_scene_cache.cend())
         {
             // If not found create scene entry in cache
-            auto res = m_scene_cache.emplace(std::make_pair(&scene, CompiledScene()));
+            auto res = m_scene_cache.emplace(std::make_pair(scene, CompiledScene()));
             
             // Recompile all the stuff into cached scene
-            RecompileFull(scene, m_material_collector, m_texture_collector, res.first->second);
+            RecompileFull(*scene, m_material_collector, m_texture_collector, res.first->second);
             
             // Set scene as current
-            m_current_scene = &scene;
+            m_current_scene = scene;
             
             // Drop all dirty flags for the scene
             scene->ClearDirtyFlags();
@@ -285,7 +285,7 @@ namespace Baikal
                 // Update shapes if needed
                 if (dirty & Scene1::kShapes)
                 {
-                    UpdateShapes(scene, m_material_collector, m_texture_collector, out);
+                    UpdateShapes(*scene, m_material_collector, m_texture_collector, out);
                 }
                 else if (shapes_changed)
                 {
