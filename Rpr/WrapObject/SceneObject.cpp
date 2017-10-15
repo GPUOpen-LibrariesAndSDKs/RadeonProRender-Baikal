@@ -35,12 +35,10 @@ THE SOFTWARE.
 SceneObject::SceneObject()
     : m_scene(nullptr)
 {
-    m_scene = new Baikal::Scene1();
+    m_scene = Baikal::Scene1::Create();
 }
 SceneObject::~SceneObject()
 {
-    delete m_scene;
-    m_scene = nullptr;
 }
 
 void SceneObject::Clear()
@@ -51,14 +49,14 @@ void SceneObject::Clear()
     //remove lights
     for (std::unique_ptr<Baikal::Iterator> it_light(m_scene->CreateLightIterator()); it_light->IsValid();)
     {
-        m_scene->DetachLight(it_light->ItemAs<const Baikal::Light>());
+        m_scene->DetachLight(it_light->ItemAs<Baikal::Light>());
         it_light = m_scene->CreateLightIterator();
     }
 
     //remove shapes
     for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid();)
     {
-        m_scene->DetachShape(it_shape->ItemAs<const Baikal::Mesh>());
+        m_scene->DetachShape(it_shape->ItemAs<Baikal::Mesh>());
         it_shape = m_scene->CreateShapeIterator();
     }
 }
@@ -116,7 +114,7 @@ void SceneObject::DetachLight(LightObject* light)
 void SceneObject::SetCamera(CameraObject* cam)
 {
     m_current_camera = cam;
-    Baikal::Camera* baikal_cam = cam ? cam->GetCamera() : nullptr;
+    auto baikal_cam = cam ? cam->GetCamera() : nullptr;
     m_scene->SetCamera(baikal_cam);
 }
 
@@ -144,18 +142,18 @@ void SceneObject::AddEmissive()
 	//handle emissive materials
 	for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid(); it_shape->Next())
 	{
-		const Baikal::Shape* shape = it_shape->ItemAs<const Baikal::Shape>();
-		const Baikal::Mesh* mesh = dynamic_cast<const Baikal::Mesh*>(shape);
+		auto shape = it_shape->ItemAs<Baikal::Shape>();
+        auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(shape);
 		//instance case
 		if (!mesh)
 		{
-			const Baikal::Instance* inst = dynamic_cast<const Baikal::Instance*>(shape);
+            auto inst = std::dynamic_pointer_cast<Baikal::Instance>(shape);
 			assert(inst);
-			mesh = dynamic_cast<const Baikal::Mesh*>(inst->GetBaseShape());
+            mesh = std::dynamic_pointer_cast<Baikal::Mesh>(inst->GetBaseShape());
 		}
 		assert(mesh);
 
-		const Baikal::Material* mat = mesh->GetMaterial();
+		auto mat = mesh->GetMaterial();
 		if (!mat)
 		{
 			continue;
@@ -166,9 +164,8 @@ void SceneObject::AddEmissive()
 			// Add area light for each polygon of emissive mesh
 			for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
 			{
-				Baikal::AreaLight* light = new Baikal::AreaLight(mesh, l);
-				m_scene->AttachLight(light);
-				m_scene->AttachAutoreleaseObject(light);
+                auto light = Baikal::AreaLight::Create(mesh, l);
+                m_scene->AttachLight(light);
 				m_emmisive_lights.push_back(light);
 			}
 		}
@@ -180,10 +177,8 @@ void SceneObject::RemoveEmissive()
 	for (auto light : m_emmisive_lights)
 	{
 		m_scene->DetachLight(light);
-		m_scene->DetachAutoreleaseObject(light);
-
-		delete light;
 	}
+    
 	m_emmisive_lights.clear();
 }
 

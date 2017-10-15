@@ -381,7 +381,7 @@ KERNEL void ShadeSurface(
                     float denom = fabs(dot(diffgeo.n, wi)) * diffgeo.area;
                     // TODO: num_lights should be num_emissies instead, presence of analytical lights breaks this code
                     float bxdf_light_pdf = denom > 0.f ? (ld * ld / denom / num_lights) : 0.f;
-                    weight = BalanceHeuristic(1, extra.x, 1, bxdf_light_pdf);
+                    weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, bxdf_light_pdf) : 1.f;
                 }
 
                 // In this case we hit after an application of MIS process at previous step.
@@ -522,7 +522,7 @@ KERNEL void ShadeSurface(
             int indirect_ray_mask = VISIBILITY_MASK_BOUNCE(bounce + 1);
 
             Ray_Init(indirect_rays + global_id, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, indirect_ray_mask);
-            Ray_SetExtra(indirect_rays + global_id, make_float2(bxdf_pdf, 0.f));
+            Ray_SetExtra(indirect_rays + global_id, make_float2(Bxdf_IsSingular(&diffgeo) ? 0.f : bxdf_pdf, 0.f));
         }
         else
         {
@@ -630,6 +630,46 @@ KERNEL void GatherLightSamples(
 
         // Divide by number of light samples (samples already have built-in throughput)
         ADD_FLOAT4(&output[output_index], radiance); 
+    }
+}
+
+///< Handle light samples and visibility info and add contribution to final buffer
+KERNEL void GatherVisibility(
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
+    // Number of rays
+    GLOBAL int* restrict num_rays,
+    // Shadow rays hits
+    GLOBAL int const* restrict shadow_hits,
+    // Radiance sample buffer
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+
+    if (global_id < *num_rays)
+    {
+        // Get pixel id for this sample set
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+
+        // Prepare accumulator variable
+        float4 visibility = make_float4(0.f, 0.f, 0.f, 1.f);
+
+        // Start collecting samples
+        {
+            // If shadow ray didn't hit anything and reached skydome
+            if (shadow_hits[global_id] == -1)
+            {
+                // Add its contribution to radiance accumulator
+                visibility.xyz += 1.f;
+            }
+        }
+
+        // Divide by number of light samples (samples already have built-in throughput)
+        ADD_FLOAT4(&output[output_index], visibility);
     }
 }
 
@@ -742,7 +782,7 @@ KERNEL void ShadeMiss(
             float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
             float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, rays[global_id].d.xyz, TEXTURE_ARGS);
             float2 extra = Ray_GetExtra(&rays[global_id]);
-            float weight = BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf);
+            float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
 
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;

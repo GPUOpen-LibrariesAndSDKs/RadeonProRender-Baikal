@@ -83,7 +83,8 @@ namespace Baikal
         void GeneratePrimaryRays(
             ClwScene const& scene,
             Output const& output,
-            int2 const& tile_size
+            int2 const& tile_size,
+            bool generate_at_pixel_center = false
         );
 
         void FillAOVs(

@@ -38,6 +38,8 @@ namespace Baikal
     class Camera : public SceneObject
     {
     public:
+        using Ptr = std::shared_ptr<Camera>;
+        
         Camera() = default;
         virtual ~Camera() = default;
     };
@@ -45,9 +47,8 @@ namespace Baikal
     class PerspectiveCamera : public Camera
     {
     public:
-        // Pass camera position, camera aim, camera up vector, depth limits, vertical field of view
-        // and image plane aspect ratio
-        PerspectiveCamera(RadeonRays::float3 const& eye,
+        using Ptr = std::shared_ptr<PerspectiveCamera>;
+        static Ptr Create(RadeonRays::float3 const& eye,
                           RadeonRays::float3 const& at,
                           RadeonRays::float3 const& up);
         
@@ -104,6 +105,13 @@ namespace Baikal
         void ArcballRotateHorizontally(RadeonRays::float3 c, float angle);
         //
         void ArcballRotateVertically(RadeonRays::float3 c, float angle);
+        
+    protected:
+        // Pass camera position, camera aim, camera up vector, depth limits, vertical field of view
+        // and image plane aspect ratio
+        PerspectiveCamera(RadeonRays::float3 const& eye,
+                          RadeonRays::float3 const& at,
+                          RadeonRays::float3 const& up);
         
         
     private:

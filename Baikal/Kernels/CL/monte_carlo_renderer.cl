@@ -95,7 +95,11 @@ void PerspectiveCamera_GeneratePaths(
 #endif
 
         // Generate sample
+#ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
         float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+#else
+        float2 sample0 = make_float2(0.5f, 0.5f);
+#endif
 
         // Calculate [0..1] image plane sample
         float2 img_sample;
@@ -179,7 +183,11 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
 #endif
 
         // Generate pixel and lens samples
+#ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
         float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+#else
+        float2 sample0 = make_float2(0.5f, 0.5f);
+#endif
         float2 sample1 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
 
         // Calculate [0..1] image plane sample
@@ -680,7 +688,14 @@ KERNEL void FillAOVs(
 	// Mesh_id enabled flag
     int mesh_id_enabled,
 	// Mesh_id AOV
-    GLOBAL float4* restrict mesh_id
+    GLOBAL float4* restrict mesh_id,
+    // Depth enabled flag
+    int depth_enabled,
+    // Depth map
+    GLOBAL float4* restrict aov_depth,
+    // NOTE: following are fake parameters, handled outside
+    int visibility_enabled,
+    GLOBAL float4* restrict aov_visibility
 )
 {
     int global_id = get_global_id(0);
@@ -873,10 +888,25 @@ KERNEL void FillAOVs(
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
             }
-
+            
             if (mesh_id_enabled)
             {
                 mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
+            }
+            
+            if (depth_enabled)
+            {
+                float w = aov_depth[idx].w;
+                if (w == 0.f)
+                {
+                    aov_depth[idx].xyz = isect.uvwt.w;
+                    aov_depth[idx].w = 1.f;
+                }
+                else
+                {
+                    aov_depth[idx].xyz += isect.uvwt.w;
+                    aov_depth[idx].w += 1.f;
+                }
             }
         }
     }

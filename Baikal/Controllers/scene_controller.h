@@ -29,6 +29,8 @@
 #pragma once
 
 #include "SceneGraph/Collector/collector.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/scene1.h"
 
 #include <memory>
 #include <map>
@@ -56,9 +58,9 @@ namespace Baikal
         virtual ~SceneController() = default;
         
         // Given a scene this method produces (or loads from cache) corresponding GPU representation.
-        CompiledScene& CompileScene(Scene1 const& scene) const;
+        CompiledScene& CompileScene(Scene1::Ptr scene) const;
 
-        CompiledScene& GetCachedScene(Scene1 const& scene) const;
+        CompiledScene& GetCachedScene(Scene1::Ptr scene) const;
     protected:
         // Recompile the scene from scratch, i.e. not loading from cache.
         // All the buffers are recreated and reloaded.
@@ -78,14 +80,14 @@ namespace Baikal
         // Update texture data only.
         virtual void UpdateTextures(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Default material
-        virtual Material const* GetDefaultMaterial() const = 0;
+        virtual Material::Ptr GetDefaultMaterial() const = 0;
         // If m_current_scene changes
         virtual void UpdateCurrentScene(Scene1 const& scene, CompiledScene& out) const = 0;
         
     private:
-        mutable Scene1 const* m_current_scene;
+        mutable Scene1::Ptr m_current_scene;
         // Scene cache map (CPU scene -> GPU scene mapping)
-        mutable std::map<Scene1 const*, CompiledScene> m_scene_cache;
+        mutable std::map<Scene1::Ptr, CompiledScene> m_scene_cache;
 
         mutable Collector m_material_collector;
         mutable Collector m_texture_collector;

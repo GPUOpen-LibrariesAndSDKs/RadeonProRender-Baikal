@@ -54,11 +54,11 @@ namespace Baikal
             kRgba16,
             kRgba32
         };
-
-        // Constructor
-        Texture();
-        // Note, that texture takes ownership of its data array
-        Texture(char* data, RadeonRays::int2 size, Format format);
+        
+        using Ptr = std::shared_ptr<Texture>;
+        static Ptr Create(char* data, RadeonRays::int2 size, Format format);
+        static Ptr Create();
+        
         // Destructor (the data is destroyed as well)
         virtual ~Texture() = default;
 
@@ -80,6 +80,12 @@ namespace Baikal
         // Disallow copying
         Texture(Texture const&) = delete;
         Texture& operator = (Texture const&) = delete;
+        
+    protected:
+        // Constructor
+        Texture();
+        // Note, that texture takes ownership of its data array
+        Texture(char* data, RadeonRays::int2 size, Format format);
 
     private:
         // Image data

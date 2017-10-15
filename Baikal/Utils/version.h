@@ -19,61 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#ifndef CONFIG_MANAGER_H
-#define CONFIG_MANAGER_H
+#pragma once
 
-#include "CLW.h"
-#include "RenderFactory/clw_render_factory.h"
-#include "Renderers/renderer.h"
-#include <vector>
-#include <memory>
-
-namespace Baikal
-{
-    class Renderer;
-}
-
-class ConfigManager
-{
-public:
-
-    enum DeviceType
-    {
-        kPrimary,
-        kSecondary
-    };
-
-    enum Mode
-    {
-        kUseAll,
-        kUseGpus,
-        kUseSingleGpu,
-        kUseSingleCpu,
-        kUseCpus
-    };
-
-    struct Config
-    {
-        DeviceType type;
-        std::unique_ptr<Baikal::Renderer> renderer;
-        std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> controller;
-        std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> factory;
-        CLWContext context;
-        bool caninterop;
-
-        Config() = default;
-
-        Config(Config&& cfg) = default;
-
-        ~Config()
-        {
-        }
-    };
-
-    static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);
-
-private:
-
-};
-
-#endif // CONFIG_MANAGER_H
+#define BAIKAL_VERSION "0_5_0"

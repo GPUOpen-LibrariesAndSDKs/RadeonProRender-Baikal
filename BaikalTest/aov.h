@@ -78,9 +78,9 @@ TEST_F(AovTest, Aov_WorldPosition)
                          output_ws.get());
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
         
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
         
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -103,9 +103,9 @@ TEST_F(AovTest, Aov_WorldNormal)
                           output_ws.get());
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -128,9 +128,9 @@ TEST_F(AovTest, Aov_ShadingNormal)
                           output_ws.get());
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
-    
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -153,9 +153,9 @@ TEST_F(AovTest, Aov_Tangent)
                           output_ws.get());
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -178,9 +178,9 @@ TEST_F(AovTest, Aov_Bitangent)
                           output_ws.get());
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -203,9 +203,9 @@ TEST_F(AovTest, Aov_Albedo)
                           output_ws.get());
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {
@@ -223,20 +223,45 @@ TEST_F(AovTest, Aov_Uv)
     auto output_ws = m_factory->CreateOutput(
       m_output->width(), m_output->height()
     );
-    
+
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kUv,
                           output_ws.get());
-    
+
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {
         ASSERT_NO_THROW(m_renderer->Render(scene));
     }
     
+    std::ostringstream oss;
+    oss << test_name() << ".png";
+    SaveAOV(output_ws.get(), oss.str());
+    ASSERT_TRUE(CompareToReference(oss.str()));
+}
+
+TEST_F(AovTest, Aov_Visibility)
+{
+    auto output_ws = m_factory->CreateOutput(
+        m_output->width(), m_output->height()
+    );
+
+    m_renderer->SetOutput(Baikal::Renderer::OutputType::kVisibility,
+        output_ws.get());
+
+    ClearOutput();
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (auto i = 0u; i < kNumIterations; ++i)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
     std::ostringstream oss;
     oss << test_name() << ".png";
     SaveAOV(output_ws.get(), oss.str());

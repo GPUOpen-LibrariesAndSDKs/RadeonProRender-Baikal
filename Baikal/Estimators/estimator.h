@@ -27,6 +27,9 @@ THE SOFTWARE.
 
 #include "CLW.h"
 
+#include <array>
+#include <memory>
+
 namespace Baikal
 {
     /**
@@ -38,12 +41,19 @@ namespace Baikal
     class Estimator
     {
     public:
-
         enum class QualityLevel
         {
             kRough,
             kStandard,
             kPrecise
+        };
+
+        enum class IntermediateValue
+        {
+            kDirectRadiance,
+            kIndirectRadiance,
+            kVisibility,
+            kMax
         };
 
         enum class RandomBufferType
@@ -59,7 +69,7 @@ namespace Baikal
             float shadow_throughput;
         };
 
-        Estimator(RadeonRays::IntersectionApi* api)
+        Estimator(std::shared_ptr<RadeonRays::IntersectionApi> api)
             : m_intersector(api)
             , m_max_bounces(5u)
         {
@@ -150,6 +160,38 @@ namespace Baikal
         }
 
         /**
+        \brief Check if an estimator supports intermediate value.
+
+        Estimators can support output of various intermidate quantities.
+        */
+        virtual bool SupportsIntermediateValue(IntermediateValue value) const { return false; }
+
+        /**
+        \brief Set intermediate value buffer.
+
+        Estimators can support output of various intermidate quantities. The size of the buffer
+        should be >= working buffer size.
+        */
+        void SetIntermediateValueBuffer(IntermediateValue value, CLWBuffer<float3> buffer) { m_intermediate_value[static_cast<size_t>(value)] = buffer; }
+
+        /**
+        \brief Get intermediate value buffer.
+
+        Estimators can support output of various intermidate quantities. The size of the buffer
+        should be >= working buffer size.
+        */
+        CLWBuffer<float3> GetIntermediateValueBuffer(IntermediateValue value) const { return m_intermediate_value[static_cast<size_t>(value)]; }
+
+        /**
+        \brief Check whether intermediate buffer is set.
+
+        Estimators can support output of various intermidate quantities. The size of the buffer
+        should be >= working buffer size.
+        */
+        bool HasIntermediateValueBuffer(IntermediateValue value) const { return m_intermediate_value[static_cast<size_t>(value)].GetElementCount() > 0; }
+
+
+        /**
         \brief Evaluate single sample radiance estimate for a given direction.
 
         Estimators usually utilize some internal structures where the size depends on input ray
@@ -204,7 +246,7 @@ namespace Baikal
 
         Estimators rely on intersection API for geometric queries. 
         */
-        RadeonRays::IntersectionApi* GetIntersector() const {
+        std::shared_ptr<RadeonRays::IntersectionApi> GetIntersector() const {
             return m_intersector;
         }
 
@@ -228,7 +270,9 @@ namespace Baikal
         Estimator& operator = (Estimator const&) = delete;
 
     private:
-        RadeonRays::IntersectionApi* m_intersector;
+        std::shared_ptr<RadeonRays::IntersectionApi> m_intersector;
         std::uint32_t m_max_bounces;
+        std::array<CLWBuffer<float3>, 
+            static_cast<size_t>(IntermediateValue::kMax)> m_intermediate_value;
     };
 }

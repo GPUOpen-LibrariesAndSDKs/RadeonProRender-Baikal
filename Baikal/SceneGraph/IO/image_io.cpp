@@ -8,8 +8,8 @@ namespace Baikal
     class Oiio : public ImageIo
     {
     public:
-        Texture* LoadImage(std::string const& filename) const override;
-        void SaveImage(std::string const& filename, Texture const* texture) const override;
+        Texture::Ptr LoadImage(std::string const& filename) const override;
+        void SaveImage(std::string const& filename, Texture::Ptr texture) const override;
     };
     
     static Texture::Format GetTextureForemat(OIIO_NAMESPACE::ImageSpec const& spec)
@@ -36,11 +36,11 @@ namespace Baikal
             return TypeDesc::FLOAT;
     }
     
-    Texture* Oiio::LoadImage(const std::string &filename) const
+    Texture::Ptr Oiio::LoadImage(const std::string &filename) const
     {
         OIIO_NAMESPACE_USING
         
-        ImageInput* input = ImageInput::open(filename);
+        std::unique_ptr<ImageInput> input{ImageInput::open(filename)};
         
         if (!input)
         {
@@ -91,21 +91,15 @@ namespace Baikal
             input->close();
         }
 
-        // Return new texture
-        auto tex =  new Texture(texturedata, RadeonRays::int2(spec.width, spec.height), fmt);
-
-        // Cleanup
-        delete input;
-
         //
-        return tex;
+        return Texture::Create(texturedata, RadeonRays::int2(spec.width, spec.height), fmt);;
     }
 
-    void Oiio::SaveImage(std::string const& filename, Texture const* texture) const
+    void Oiio::SaveImage(std::string const& filename, Texture::Ptr texture) const
     {
         OIIO_NAMESPACE_USING;
 
-        ImageOutput* out = ImageOutput::create(filename);
+        std::unique_ptr<ImageOutput> out{ImageOutput::create(filename)};
         
         if (!out)
         {
@@ -126,6 +120,6 @@ namespace Baikal
 
     std::unique_ptr<ImageIo> ImageIo::CreateImageIo()
     {
-        return std::unique_ptr<ImageIo>(new Oiio());
+        return std::make_unique<Oiio>();
     }
 }

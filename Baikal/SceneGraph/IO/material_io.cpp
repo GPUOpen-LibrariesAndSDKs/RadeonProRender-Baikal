@@ -32,23 +32,23 @@ namespace Baikal
 
     private:
         // Write single material
-        void WriteMaterial(ImageIo& io, XMLPrinter& printer, Material const* material);
+        void WriteMaterial(ImageIo& io, XMLPrinter& printer, Material::Ptr material);
         // Write single material input
         void WriteInput(ImageIo& io, XMLPrinter& printer, std::string const& name, Material::InputValue value);
         // Load single material
-        Material* LoadMaterial(ImageIo& io, XMLElement& element);
+        Material::Ptr LoadMaterial(ImageIo& io, XMLElement& element);
         // Load single input
-        void LoadInput(ImageIo& io, Material* material, XMLElement& element);
+        void LoadInput(ImageIo& io, Material::Ptr material, XMLElement& element);
 
         // Texture to name map
-        std::map<Texture const*, std::string> m_tex2name;
+        std::map<Texture::Ptr, std::string> m_tex2name;
 
-        std::map<std::string, Texture const*> m_name2tex;
-        std::map<std::uint64_t, Material const*> m_id2mat;
+        std::map<std::string, Texture::Ptr> m_name2tex;
+        std::map<std::uint64_t, Material::Ptr> m_id2mat;
 
         struct ResolveRequest
         {
-            Material* material;
+            Material::Ptr material;
             std::string input;
             std::uint64_t id;
 
@@ -64,7 +64,7 @@ namespace Baikal
 
     std::unique_ptr<MaterialIo> MaterialIo::CreateMaterialIoXML()
     {
-        return std::unique_ptr<MaterialIo>(new MaterialIoXML());
+        return std::make_unique<MaterialIoXML>();
     }
 
     static std::string Float4ToString(RadeonRays::float3 const& v)
@@ -156,7 +156,7 @@ namespace Baikal
             else
             {
                 std::ostringstream oss;
-                oss << (std::uint64_t)value.tex_value << ".jpg";
+                oss << (std::uint64_t)value.tex_value.get() << ".jpg";
 
                 io.SaveImage(m_base_path + oss.str(), value.tex_value);
 
@@ -169,23 +169,23 @@ namespace Baikal
         {
             printer.PushAttribute("type", "material");
 
-            printer.PushAttribute("value", (int)(reinterpret_cast<std::uint64_t>(value.mat_value)));
+            printer.PushAttribute("value", (int)(reinterpret_cast<std::uint64_t>(value.mat_value.get())));
         }
 
         printer.CloseElement();
     }
 
-    void MaterialIoXML::WriteMaterial(ImageIo& io, XMLPrinter& printer, Material const* material)
+    void MaterialIoXML::WriteMaterial(ImageIo& io, XMLPrinter& printer, Material::Ptr material)
     {
         printer.OpenElement("Material");
 
         printer.PushAttribute("name", material->GetName().c_str());
 
-        printer.PushAttribute("id", (int)(reinterpret_cast<std::uint64_t>(material)));
+        printer.PushAttribute("id", (int)(reinterpret_cast<std::uint64_t>(material.get())));
 
         printer.PushAttribute("thin", material->IsThin());
 
-        SingleBxdf const* bxdf = dynamic_cast<SingleBxdf const*>(material);
+        auto bxdf = std::dynamic_pointer_cast<SingleBxdf>(material);
 
         if (bxdf)
         {
@@ -234,7 +234,7 @@ namespace Baikal
         }
         else
         {
-            MultiBxdf const* blend = dynamic_cast<MultiBxdf const*>(material);
+            auto blend = std::dynamic_pointer_cast<MultiBxdf>(material);
 
             printer.PushAttribute("type", "blend");
 
@@ -281,11 +281,11 @@ namespace Baikal
 
         m_tex2name.clear();
 
-        std::unique_ptr<ImageIo> image_io(ImageIo::CreateImageIo());
+        auto image_io = ImageIo::CreateImageIo();
 
         for (mat_iter.Reset();mat_iter.IsValid(); mat_iter.Next())
         {
-            auto material = mat_iter.ItemAs<Material const>();
+            auto material = mat_iter.ItemAs<Material>();
 
             if (material)
             {
@@ -298,7 +298,7 @@ namespace Baikal
         doc.SaveFile(filename.c_str());
     }
 
-    void MaterialIoXML::LoadInput(ImageIo& io, Material* material, XMLElement& element)
+    void MaterialIoXML::LoadInput(ImageIo& io, Material::Ptr material, XMLElement& element)
     {
         std::string type(element.Attribute("type"));
         std::string name(element.Attribute("name"));
@@ -352,7 +352,7 @@ namespace Baikal
         }
     }
 
-    Material* MaterialIoXML::LoadMaterial(ImageIo& io, XMLElement& element)
+    Material::Ptr MaterialIoXML::LoadMaterial(ImageIo& io, XMLElement& element)
     {
         std::string name(element.Attribute("name"));
         std::string type(element.Attribute("type"));
@@ -361,11 +361,11 @@ namespace Baikal
         std::string thin(attribute_thin ? attribute_thin : "");
         auto id = static_cast<std::uint64_t>(std::atoi(element.Attribute("id")));
 
-        Material* material = nullptr;
+        Material::Ptr material = nullptr;
 
         if (type == "simple")
         {
-            auto bxdf = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
+            auto bxdf = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
 
             auto bxdf_type = StringToBxdf(element.Attribute("bxdf"));
 
@@ -375,7 +375,7 @@ namespace Baikal
         }
         else if (type == "blend")
         {
-            auto blend = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+            auto blend = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
 
             auto blend_type = static_cast<MultiBxdf::Type>(std::atoi(element.Attribute("blend_type")));
 
@@ -420,10 +420,10 @@ namespace Baikal
 
         auto image_io = ImageIo::CreateImageIo();
 
-        std::set<Material*> materials;
+        std::set<Material::Ptr> materials;
         for (auto element = doc.FirstChildElement(); element; element = element->NextSiblingElement())
         {
-            Material* material = LoadMaterial(*image_io, *element);
+            auto material = LoadMaterial(*image_io, *element);
             materials.insert(material);
         }
 
@@ -433,7 +433,7 @@ namespace Baikal
             i.material->SetInputValue(i.input, m_id2mat[i.id]);
         }
 
-        return std::unique_ptr<Iterator>(new ContainerIterator<std::set<Material*>>(std::move(materials)));
+        return std::make_unique<ContainerIterator<std::set<Material::Ptr>>>(std::move(materials));
     }
 
     void MaterialIo::SaveMaterialsFromScene(std::string const& filename, Scene1 const& scene)
@@ -445,15 +445,15 @@ namespace Baikal
         mat_collector.Collect(*shape_iter,
             // This function adds all materials to resulting map
             // recursively via Material dependency API
-            [](void const* item) -> std::set<void const*>
+        [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
         {
             // Resulting material set
-            std::set<void const*> mats;
+            std::set<SceneObject::Ptr> mats;
             // Material stack
-            std::stack<Material const*> material_stack;
+            std::stack<Material::Ptr> material_stack;
 
             // Get material from current shape
-            auto shape = reinterpret_cast<Shape const*>(item);
+            auto shape = std::static_pointer_cast<Shape>(item);
             auto material = shape->GetMaterial();
 
             if (material)
@@ -466,19 +466,19 @@ namespace Baikal
             while (!material_stack.empty())
             {
                 // Get current material
-                Material const* m = material_stack.top();
+                auto m = material_stack.top();
                 material_stack.pop();
 
                 // Emplace into the set
                 mats.emplace(m);
 
                 // Create dependency iterator
-                std::unique_ptr<Iterator> mat_iter(m->CreateMaterialIterator());
+                std::unique_ptr<Iterator> mat_iter = m->CreateMaterialIterator();
 
                 // Push all dependencies into the stack
                 for (; mat_iter->IsValid(); mat_iter->Next())
                 {
-                    material_stack.push(mat_iter->ItemAs<Material const>());
+                    material_stack.push(mat_iter->ItemAs<Material>());
                 }
             }
 
@@ -493,11 +493,11 @@ namespace Baikal
 
     void MaterialIo::ReplaceSceneMaterials(Scene1& scene, Iterator& iterator, MaterialMap const& mapping)
     {
-        std::map<std::string, Material const*> name2mat;
+        std::map<std::string, Material::Ptr> name2mat;
 
         for (iterator.Reset(); iterator.IsValid(); iterator.Next())
         {
-            auto material = iterator.ItemAs<Material const>();
+            auto material = iterator.ItemAs<Material>();
             auto name = material->GetName();
             name2mat[name] = material;
         }
@@ -506,8 +506,7 @@ namespace Baikal
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
-            // TODO: remove this hack
-            auto shape = const_cast<Shape*>(shape_iter->ItemAs<Shape const>());
+            auto shape = shape_iter->ItemAs<Shape>();
             auto material = shape->GetMaterial();
 
             if (!material)
@@ -550,12 +549,12 @@ namespace Baikal
         XMLDocument doc;
         XMLPrinter printer;
 
-        std::unique_ptr<Iterator> shape_iter(scene.CreateShapeIterator());
-        std::set<Material const*> serialized_mats;
+        auto shape_iter = scene.CreateShapeIterator();
+        std::set<Material::Ptr> serialized_mats;
 
         for (; shape_iter->IsValid(); shape_iter->Next())
         {
-            auto material = shape_iter->ItemAs<Shape const>()->GetMaterial();
+            auto material = shape_iter->ItemAs<Shape>()->GetMaterial();
 
             if (material && serialized_mats.find(material) == serialized_mats.cend())
             {

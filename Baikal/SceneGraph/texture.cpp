@@ -15,7 +15,7 @@ namespace Baikal
             auto num_elements = m_size.x * m_size.y;
 
 
-            for (auto i = 0u; i < num_elements; ++i)
+            for (auto i = 0; i < num_elements; ++i)
             {
                 float r = data[4 * i] / 255.f;
                 float g = data[4 * i + 1] / 255.f;
@@ -31,7 +31,7 @@ namespace Baikal
             auto data = reinterpret_cast<std::uint16_t*>(m_data.get());
             auto num_elements = m_size.x * m_size.y;
 
-            for (auto i = 0u; i < num_elements; ++i)
+            for (auto i = 0; i < num_elements; ++i)
             {
                 auto r = data[4 * i];
                 auto g = data[4 * i + 1];
@@ -41,7 +41,6 @@ namespace Baikal
                 hr.setBits(r);
                 hg.setBits(g);
                 hb.setBits(b);
-
 
                 avg += RadeonRays::float3(hr, hg, hb);
             }
@@ -54,7 +53,7 @@ namespace Baikal
             auto data = reinterpret_cast<float*>(m_data.get());
             auto num_elements = m_size.x * m_size.y;
 
-            for (auto i = 0u; i < num_elements; ++i)
+            for (auto i = 0; i < num_elements; ++i)
             {
                 auto r = data[4 * i];
                 auto g = data[4 * i + 1];
@@ -71,5 +70,21 @@ namespace Baikal
         }
 
         return avg;
+    }
+
+    namespace {
+        struct TextureConcrete: public Texture {
+            TextureConcrete() = default;
+            TextureConcrete(char* data, RadeonRays::int2 size, Format format) :
+            Texture(data, size, format){}
+        };
+    }
+    
+    Texture::Ptr Texture::Create() {
+        return std::make_shared<TextureConcrete>();
+    }
+    
+    Texture::Ptr Texture::Create(char* data, RadeonRays::int2 size, Format format) {
+        return std::make_shared<TextureConcrete>(data, size, format);
     }
 }

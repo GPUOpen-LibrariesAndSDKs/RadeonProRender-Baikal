@@ -40,7 +40,7 @@ namespace Baikal
     public:
         PathTracingEstimator(
             CLWContext context,
-            RadeonRays::IntersectionApi* api,
+            std::shared_ptr<RadeonRays::IntersectionApi> api,
             std::string const& cache_path=""
         );
         
@@ -176,7 +176,12 @@ namespace Baikal
         */
         CLWBuffer<std::uint32_t> GetRandomBuffer(RandomBufferType buffer) const override;
 
+        /**
+        \brief Check if an estimator supports intermediate value.
 
+        Estimators can support output of various intermidate quantities.
+        */
+        bool SupportsIntermediateValue(IntermediateValue value) const override;
 
     private:
         void InitPathData(std::size_t size);
@@ -206,6 +211,14 @@ namespace Baikal
         );
 
         void GatherLightSamples(
+            ClwScene const& scene,
+            int pass,
+            std::size_t size,
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
+        );
+
+        void GatherVisibility(
             ClwScene const& scene,
             int pass,
             std::size_t size,

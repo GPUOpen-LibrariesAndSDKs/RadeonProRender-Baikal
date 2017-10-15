@@ -67,6 +67,19 @@ namespace Baikal
     void MonteCarloRenderer::Render(ClwScene const& scene)
     {
         auto output = FindFirstNonZeroOutput();
+
+        if (!output)
+        {
+            if (GetOutput(OutputType::kVisibility))
+            {
+                throw std::runtime_error("Visibility AOV requires color AOV to be set");
+            }
+            else
+            {
+                throw std::runtime_error("No outputs set");
+            }
+        }
+
         auto output_size = int2(output->width(), output->height());
 
         if (output_size.x > kTileSizeX || output_size.y > kTileSizeY)
@@ -161,7 +174,7 @@ namespace Baikal
         auto current_output = include_color ? GetOutput(Renderer::OutputType::kColor) : nullptr;
         if (!current_output)
         {
-            for (auto i = 1U; i < static_cast<std::uint32_t>(Renderer::OutputType::kMax); ++i)
+            for (auto i = 1U; i < static_cast<std::uint32_t>(Renderer::OutputType::kVisibility); ++i)
             {
                 current_output = GetOutput(static_cast<Renderer::OutputType>(i));
 
@@ -177,6 +190,17 @@ namespace Baikal
 
     void MonteCarloRenderer::SetOutput(OutputType type, Output* output)
     {
+        if (type == OutputType::kVisibility)
+        {
+            if (!m_estimator->SupportsIntermediateValue(Estimator::IntermediateValue::kVisibility))
+            {
+                throw std::runtime_error("Visibility AOV not supported by an underlying estimator");
+            }
+
+            auto clw_output = static_cast<ClwOutput*>(output);
+
+            m_estimator->SetIntermediateValueBuffer(Estimator::IntermediateValue::kVisibility, clw_output->data());
+        }
 
         Renderer::SetOutput(type, output);
     }
@@ -192,7 +216,7 @@ namespace Baikal
         GenerateTileDomain(output_size, tile_origin, tile_size);
 
         // Generate primary
-        GeneratePrimaryRays(scene, *output, tile_size);
+        GeneratePrimaryRays(scene, *output, tile_size, true);
 
         auto num_rays = tile_size.x * tile_size.y;
 
@@ -248,13 +272,14 @@ namespace Baikal
     void MonteCarloRenderer::GeneratePrimaryRays(
         ClwScene const& scene, 
         Output const& output, 
-        int2 const& tile_size
+        int2 const& tile_size,
+        bool generate_at_pixel_center
     )
     {
         // Fetch kernel
         std::string kernel_name = (scene.camera_type == CameraType::kDefault) ? "PerspectiveCamera_GeneratePaths" : "PerspectiveCameraDof_GeneratePaths";
 
-        auto genkernel = GetKernel(kernel_name);
+        auto genkernel = GetKernel(kernel_name, generate_at_pixel_center ? "-D BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER " : "");
 
         // Set kernel parameters
         int argc = 0;

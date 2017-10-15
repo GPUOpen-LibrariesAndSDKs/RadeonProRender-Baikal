@@ -47,6 +47,13 @@ void Material_Select(
     int type = dg->mat.type;
     int idx = dg->material_index;
 
+    float ndotwi = dot(dg->n, wi);
+
+    if (ndotwi < 0.f && dg->mat.thin)
+    {
+        ndotwi = -ndotwi;
+    }
+
     // If material is regular BxDF we do not have to sample it
     if (type != kFresnelBlend && type != kMix)
     {
@@ -55,7 +62,7 @@ void Material_Select(
         {
             float etai = 1.f;
             float etat = dg->mat.simple.ni;
-            float cosi = dot(dg->n, wi);
+            float cosi = ndotwi;
 
             // Revert normal and eta if needed
             if (cosi < 0.f)
@@ -100,7 +107,7 @@ void Material_Select(
             {
                 float etai = 1.f;
                 float etat = mat.compound.weight;
-                float cosi = dot(dg->n, wi);
+                float cosi = ndotwi;
 
                 // Revert normal and eta if needed
                 if (cosi < 0.f)

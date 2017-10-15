@@ -82,7 +82,7 @@ namespace Baikal
         // Update texture data only.
         void UpdateTextures(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Get default material
-        Material const* GetDefaultMaterial() const override;
+        Material::Ptr GetDefaultMaterial() const override;
         // If m_current_scene changes
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
         
@@ -91,15 +91,15 @@ namespace Baikal
         void UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const;
         // Write out single material at data pointer.
         // Collectors are required to convert texture and material pointers into indices.
-        void WriteMaterial(Material const* material, Collector& mat_collector, Collector& tex_collector, void* data) const;
+        void WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, void* data) const;
         // Write out single light at data pointer.
         // Collector is required to convert texture pointers into indices.
-        void WriteLight(Scene1 const& scene, Light const* light, Collector& tex_collector, void* data) const;
+        void WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const;
         // Write out single texture header at data pointer.
         // Header requires texture data offset, so it is passed in.
-        void WriteTexture(Texture const* texture, std::size_t data_offset, void* data) const;
+        void WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const;
         // Write out texture data at data pointer.
-        void WriteTextureData(Texture const* texture, void* data) const;
+        void WriteTextureData(Texture const& texture, void* data) const;
 
     private:
         // Context
@@ -107,6 +107,6 @@ namespace Baikal
         // Intersection API
         RadeonRays::IntersectionApi* m_api;
         // Default material
-        std::unique_ptr<Material> m_default_material;
+        Material::Ptr m_default_material;
     };
 }

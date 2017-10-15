@@ -31,9 +31,12 @@
 #include <memory>
 #include "math/bbox.h"
 
+#include "light.h"
+#include "shape.h"
+#include "camera.h"
+
 namespace Baikal
 {
-    class Light;
     class Shape;
     class Volume;
     class Camera;
@@ -49,6 +52,8 @@ namespace Baikal
     class Scene1
     {
     public:
+        using Ptr = std::shared_ptr<Scene1>;
+        static Ptr Create();
         
         // Dirty flags are used to perform partial buffer updates to save traffic
         using DirtyFlags = std::uint32_t;
@@ -61,14 +66,12 @@ namespace Baikal
             kCamera
         };
         
-        // Constructor
-        Scene1();
         // Destructor
-        ~Scene1();
+        virtual ~Scene1();
 
         // Add or remove lights
-        void AttachLight(Light const* light);
-        void DetachLight(Light const* light);
+        void AttachLight(Light::Ptr light);
+        void DetachLight(Light::Ptr light);
         
         // Get the number of lights in the scene
         std::size_t GetNumLights() const;
@@ -76,8 +79,8 @@ namespace Baikal
         std::unique_ptr<Iterator> CreateLightIterator() const;
         
         // Add or remove shapes
-        void AttachShape(Shape const* shape);
-        void DetachShape(Shape const* shape);
+        void AttachShape(Shape::Ptr shape);
+        void DetachShape(Shape::Ptr shape);
         
         // Get number of shapes in the scene
         std::size_t GetNumShapes() const;
@@ -85,8 +88,8 @@ namespace Baikal
         std::unique_ptr<Iterator> CreateShapeIterator() const;
 
         // Set and get camera
-        void SetCamera(Camera const* camera);
-        Camera const* GetCamera() const;
+        void SetCamera(Camera::Ptr camera);
+        Camera::Ptr GetCamera() const;
 
         // Get state change since last clear
         DirtyFlags GetDirtyFlags() const;
@@ -103,14 +106,14 @@ namespace Baikal
 
         // World space bounding sphere radius
         float GetRadius() const;
-
-        // Autorelase objects are deleted when scene is destroyed
-        void AttachAutoreleaseObject(SceneObject const* object);
-        void DetachAutoreleaseObject(SceneObject const* object);
         
         // Forbidden stuff
         Scene1(Scene1 const&) = delete;
         Scene1& operator = (Scene1 const&) = delete;
+    
+    protected:
+        // Constructor
+        Scene1();
         
     private:
         struct SceneImpl;

@@ -70,7 +70,7 @@ namespace
     }
 }
 
-ShapeObject::ShapeObject(Baikal::Shape* shape, ShapeObject* base_shape_obj)
+ShapeObject::ShapeObject(Baikal::Shape::Ptr shape, ShapeObject* base_shape_obj)
     : m_shape(shape)
     , m_current_mat(nullptr)
     , m_base_obj(base_shape_obj)
@@ -79,9 +79,6 @@ ShapeObject::ShapeObject(Baikal::Shape* shape, ShapeObject* base_shape_obj)
 
 ShapeObject::~ShapeObject()
 {
-    delete m_shape;
-    m_shape = nullptr;
-    m_base_obj = nullptr;
 }
 
 ShapeObject* ShapeObject::CreateInstance()
@@ -96,8 +93,8 @@ ShapeObject* ShapeObject::CreateInstance()
     {
         base_shape = this;
     }
-    Instance* instance = new Instance(base_shape->m_shape);
-    ShapeObject* result = new ShapeObject(instance, base_shape);
+    auto instance = Instance::Create(base_shape->m_shape);
+    auto result = new ShapeObject(instance, base_shape);
 
     return result;
 }
@@ -149,7 +146,7 @@ ShapeObject* ShapeObject::CreateMesh(rpr_float const * in_vertices, size_t in_nu
     }
 
     //create mesh
-    Baikal::Mesh* mesh = new Baikal::Mesh();
+    auto mesh = Baikal::Mesh::Create();
     mesh->SetVertices(verts.data(), verts.size() / 3);
     mesh->SetNormals(normals.data(), normals.size() / 3);
     mesh->SetUVs(uvs.data(), uvs.size() / 2);
@@ -184,7 +181,7 @@ void ShapeObject::SetMaterial(MaterialObject* mat)
 
 uint64_t ShapeObject::GetVertexCount()
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -194,7 +191,7 @@ uint64_t ShapeObject::GetVertexCount()
 
 void ShapeObject::GetVertexData(float* out) const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -214,16 +211,17 @@ void ShapeObject::GetVertexData(float* out) const
 
 uint64_t ShapeObject::GetNormalCount()
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
     }
+    
     return mesh->GetNumNormals();
 }
 void ShapeObject::GetNormalData(float* out) const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -243,15 +241,18 @@ void ShapeObject::GetNormalData(float* out) const
 
 uint64_t ShapeObject::GetUVCount()
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
     }
     return mesh->GetNumUVs();
-}const RadeonRays::float2* ShapeObject::GetUVData() const
+}
+
+const RadeonRays::float2* ShapeObject::GetUVData() const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
+    
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -261,7 +262,7 @@ uint64_t ShapeObject::GetUVCount()
 
 const uint32_t* ShapeObject::GetIndicesData() const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");
@@ -271,7 +272,7 @@ const uint32_t* ShapeObject::GetIndicesData() const
 
 uint64_t ShapeObject::GetIndicesCount() const
 {
-    Baikal::Mesh* mesh = dynamic_cast<Baikal::Mesh*>(m_shape);
+    auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(m_shape);
     if (!mesh)
     {
         throw Exception(RPR_ERROR_INTERNAL_ERROR, "ShapeObject: mesh is nullptr.");

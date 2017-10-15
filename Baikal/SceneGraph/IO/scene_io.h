@@ -31,6 +31,8 @@
 #include <string>
 #include <memory>
 #include <map>
+#include "SceneGraph/texture.h"
+#include "SceneGraph/scene1.h"
 
 namespace Baikal
 {
@@ -61,19 +63,19 @@ namespace Baikal
         virtual ~SceneIo() = default;
         
         // Load the scene from file using resourse base path
-        virtual std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const = 0;
+        virtual Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath) const = 0;
 
         virtual void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const {};
 
     protected:
-        Texture const* LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
+        Texture::Ptr LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
 
     private:
         // Disallow copying
         SceneIo(SceneIo const&) = delete;
         SceneIo& operator = (SceneIo const&) = delete;
 
-        mutable std::map<std::string, Texture const*> m_texture_cache;
+        mutable std::map<std::string, Texture::Ptr> m_texture_cache;
 
     };
 }

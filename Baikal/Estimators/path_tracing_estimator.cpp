@@ -72,7 +72,7 @@ namespace Baikal
 
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
-        RadeonRays::IntersectionApi* api,
+        std::shared_ptr<RadeonRays::IntersectionApi> api,
         std::string const& cache_path
     ) : 
         ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
@@ -81,7 +81,7 @@ namespace Baikal
         , m_render_data(new RenderData)
     {
         // Create parallel primitives
-        m_render_data->pp = CLWParallelPrimitives(context, GetBuildOpts().c_str());
+        m_render_data->pp = CLWParallelPrimitives(context, GetFullBuildOpts().c_str());
         m_render_data->sobolmat = context.CreateBuffer<unsigned int>(1024 * 52, CL_MEM_READ_ONLY, &g_SobolMatrices[0]);
     }
 
@@ -137,13 +137,14 @@ namespace Baikal
         GetIntersector()->DeleteBuffer(m_render_data->fr_intersections);
         GetIntersector()->DeleteBuffer(m_render_data->fr_hitcount);
 
-        m_render_data->fr_rays[0] = CreateFromOpenClBuffer(GetIntersector(), m_render_data->rays[0]);
-        m_render_data->fr_rays[1] = CreateFromOpenClBuffer(GetIntersector(), m_render_data->rays[1]);
-        m_render_data->fr_shadowrays = CreateFromOpenClBuffer(GetIntersector(), m_render_data->shadowrays);
-        m_render_data->fr_hits = CreateFromOpenClBuffer(GetIntersector(), m_render_data->hits);
-        m_render_data->fr_shadowhits = CreateFromOpenClBuffer(GetIntersector(), m_render_data->shadowhits);
-        m_render_data->fr_intersections = CreateFromOpenClBuffer(GetIntersector(), m_render_data->intersections);
-        m_render_data->fr_hitcount = CreateFromOpenClBuffer(GetIntersector(), m_render_data->hitcount);
+        auto intersector = GetIntersector().get();
+        m_render_data->fr_rays[0] = CreateFromOpenClBuffer(intersector, m_render_data->rays[0]);
+        m_render_data->fr_rays[1] = CreateFromOpenClBuffer(intersector, m_render_data->rays[1]);
+        m_render_data->fr_shadowrays = CreateFromOpenClBuffer(intersector, m_render_data->shadowrays);
+        m_render_data->fr_hits = CreateFromOpenClBuffer(intersector, m_render_data->hits);
+        m_render_data->fr_shadowhits = CreateFromOpenClBuffer(intersector, m_render_data->shadowhits);
+        m_render_data->fr_intersections = CreateFromOpenClBuffer(intersector, m_render_data->intersections);
+        m_render_data->fr_hitcount = CreateFromOpenClBuffer(intersector, m_render_data->hitcount);
     }
 
     CLWBuffer<ray> PathTracingEstimator::GetRayBuffer() const
@@ -172,8 +173,11 @@ namespace Baikal
     {
         if (atomic_update)
         {
-            Rebuild(" -D BAIKAL_ATOMIC_RESOLVE ");
+            SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
         }
+
+        auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
+        auto visibility_buffer = GetIntermediateValueBuffer(IntermediateValue::kVisibility);
 
         InitPathData(num_estimates);
 
@@ -246,6 +250,12 @@ namespace Baikal
 
             // Gather light samples and account for visibility
             GatherLightSamples(scene, pass, num_estimates, output, use_output_indices);
+
+            if (pass == 0 && has_visibility_buffer)
+            {
+                // Run visibility resolve kernel
+                GatherVisibility(scene, pass, num_estimates, visibility_buffer, use_output_indices);
+            }
 
             GetContext().Flush(0);
         }
@@ -463,6 +473,33 @@ namespace Baikal
         gatherkernel.SetArg(argc++, m_render_data->shadowhits);
         gatherkernel.SetArg(argc++, m_render_data->lightsamples);
         gatherkernel.SetArg(argc++, m_render_data->paths);
+        gatherkernel.SetArg(argc++, output);
+
+        // Run shading kernel
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, gatherkernel);
+        }
+    }
+
+    void PathTracingEstimator::GatherVisibility(
+        ClwScene const& scene,
+        int pass,
+        std::size_t size,
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
+    )
+    {
+        // Fetch kernel
+        auto gatherkernel = GetKernel("GatherVisibility");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
+        // Set kernel parameters
+        int argc = 0;
+        gatherkernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
+        gatherkernel.SetArg(argc++, output_indices);
+        gatherkernel.SetArg(argc++, m_render_data->hitcount);
+        gatherkernel.SetArg(argc++, m_render_data->shadowhits);
         gatherkernel.SetArg(argc++, output);
 
         // Run shading kernel
@@ -702,5 +739,17 @@ namespace Baikal
             num_estimates / (((float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
                 / num_passes)
                 / 1000.f);
+    }
+
+    bool PathTracingEstimator::SupportsIntermediateValue(IntermediateValue value) const
+    {
+        if (value == IntermediateValue::kVisibility)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

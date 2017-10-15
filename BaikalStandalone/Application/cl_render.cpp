@@ -169,7 +169,7 @@ namespace Baikal
 
             // Enable this to generate new materal mapping for a model
 #if 0
-            std::unique_ptr<Baikal::MaterialIo> material_io(Baikal::MaterialIo::CreateMaterialIoXML());
+            auto material_io{Baikal::MaterialIo::CreateMaterialIoXML()};
             material_io->SaveMaterialsFromScene(basepath + "materials.xml", *m_scene);
             material_io->SaveIdentityMapping(basepath + "mapping.xml", *m_scene);
 #endif
@@ -191,12 +191,12 @@ namespace Baikal
             }
         }
 
-        m_camera.reset(new Baikal::PerspectiveCamera(
+        m_camera = Baikal::PerspectiveCamera::Create(
             settings.camera_pos
             , settings.camera_at
-            , settings.camera_up));
+            , settings.camera_up);
 
-        m_scene->SetCamera(m_camera.get());
+        m_scene->SetCamera(m_camera);
 
         // Adjust sensor size based on current aspect ratio
         float aspect = (float)settings.width / settings.height;
@@ -222,7 +222,7 @@ namespace Baikal
         {
             if (i == m_primary)
             {
-                m_cfgs[i].controller->CompileScene(*m_scene.get());
+                m_cfgs[i].controller->CompileScene(m_scene);
                 m_cfgs[i].renderer->Clear(float3(0, 0, 0), *m_outputs[i].output);
 
 #ifdef ENABLE_DENOISER
@@ -323,7 +323,7 @@ namespace Baikal
 
         if (settings.benchmark)
         {
-            auto& scene = m_cfgs[m_primary].controller->CompileScene(*m_scene);
+            auto& scene = m_cfgs[m_primary].controller->CompileScene(m_scene);
             static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
 
             settings.benchmark = false;
@@ -343,7 +343,7 @@ namespace Baikal
             wavelet_denoiser->Update(m_camera.get());
         }
 #endif
-        auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene.get());
+        auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
         m_cfgs[m_primary].renderer->Render(scene);
 
 #ifdef ENABLE_DENOISER
@@ -460,11 +460,11 @@ namespace Baikal
             if (std::atomic_compare_exchange_strong(&cd.clear, &result, 0))
             {
                 renderer->Clear(float3(0, 0, 0), *output);
-                controller->CompileScene(*m_scene);
+                controller->CompileScene(m_scene);
                 update = true;
             }
 
-            auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene.get());
+            auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
             renderer->Render(scene);
 
             auto now = std::chrono::high_resolution_clock::now();
@@ -550,7 +550,7 @@ namespace Baikal
 
         std::cout << "Running RT benchmark...\n";
 
-        auto& scene = m_cfgs[m_primary].controller->GetCachedScene(*m_scene);
+        auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
         static_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
     }
 

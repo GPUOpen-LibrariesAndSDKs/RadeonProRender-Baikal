@@ -33,10 +33,10 @@ TEST_F(TestScenesTest, TestScenes_CornellBox)
     m_scene = io->LoadScene("../Resources/CornellBox/orig.objm",
                             "../Resources/CornellBox/");
     
-    m_camera = std::make_unique<Baikal::PerspectiveCamera>(
-                                                           RadeonRays::float3(0.f, 1.f, 3.f),
-                                                           RadeonRays::float3(0.f, 1.f, 0.f),
-                                                           RadeonRays::float3(0.f, 1.f, 0.f));
+    m_camera = Baikal::PerspectiveCamera::Create(
+         RadeonRays::float3(0.f, 1.f, 3.f),
+         RadeonRays::float3(0.f, 1.f, 0.f),
+         RadeonRays::float3(0.f, 1.f, 0.f));
     
     m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
     m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
@@ -44,12 +44,12 @@ TEST_F(TestScenesTest, TestScenes_CornellBox)
     m_camera->SetFocusDistance(1.f);
     m_camera->SetAperture(0.f);
     
-    m_scene->SetCamera(m_camera.get());
+    m_scene->SetCamera(m_camera);
     
     ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(*m_scene));
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
-    auto& scene = m_controller->GetCachedScene(*m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
     
     for (auto i = 0u; i < kNumIterations; ++i)
     {

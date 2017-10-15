@@ -230,7 +230,6 @@ namespace Baikal
 
         if (m_settings.num_samples == -1 || m_settings.samplecount <  m_settings.num_samples)
         {
-
             m_cl->Render(m_settings.samplecount);
             ++m_settings.samplecount;
         }
@@ -437,7 +436,8 @@ namespace Baikal
             "Albedo\0"
             "Tangent\0"
             "Bitangent\0"
-            "Gloss\0\0"
+            "Gloss\0"
+            "Depth\0\0"
             ;
 
         static int output = 0;
@@ -603,12 +603,12 @@ namespace Baikal
         m_num_instances = 0U;
         {
             auto scene = m_cl->GetScene();
-            std::unique_ptr<Baikal::Iterator> shape_iter(scene->CreateShapeIterator());
+            auto shape_iter = scene->CreateShapeIterator();
 
             for (; shape_iter->IsValid(); shape_iter->Next())
             {
-                auto shape = shape_iter->ItemAs<Baikal::Shape const>();
-                auto mesh = dynamic_cast<Baikal::Mesh const*>(shape);
+                auto shape = shape_iter->ItemAs<Baikal::Shape>();
+                auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(shape);
 
                 if (mesh)
                 {

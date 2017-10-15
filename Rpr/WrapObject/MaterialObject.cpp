@@ -100,6 +100,7 @@ namespace
 													 RPR_MATERIAL_NODE_VOLUME,
 													 RPR_MATERIAL_NODE_INPUT_LOOKUP, };
 }
+
 MaterialObject::MaterialObject(rpr_material_node_type in_type)
 {
     m_is_tex = false;
@@ -108,72 +109,61 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
     case RPR_MATERIAL_NODE_DIFFUSE:
     case RPR_MATERIAL_NODE_ORENNAYAR:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
         break;
     }
 	case RPR_MATERIAL_NODE_WARD:
     case RPR_MATERIAL_NODE_MICROFACET:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetGGX);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetGGX);
         break;
     }
     case RPR_MATERIAL_NODE_MICROFACET_REFRACTION:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
         break;
     }
     case RPR_MATERIAL_NODE_REFLECTION:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kIdealReflect);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealReflect);
         break;
     }
     case RPR_MATERIAL_NODE_REFRACTION:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kIdealRefract);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealRefract);
         break;
     }
     case RPR_MATERIAL_NODE_STANDARD:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
         break;
     }
     case RPR_MATERIAL_NODE_DIFFUSE_REFRACTION:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kTranslucent);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kTranslucent);
         break;
     }
     case RPR_MATERIAL_NODE_FRESNEL_SCHLICK:
     case RPR_MATERIAL_NODE_FRESNEL:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kTranslucent);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kTranslucent);
         break;
     }
     case RPR_MATERIAL_NODE_EMISSIVE:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kEmissive);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kEmissive);
         break;
     }
     case RPR_MATERIAL_NODE_BLEND:
     {
-        MultiBxdf* mat = new MultiBxdf(MultiBxdf::Type::kMix);
-        mat->SetInputValue("weight", 0.5f);
-        m_mat = mat;
+        m_mat = MultiBxdf::Create(MultiBxdf::Type::kMix);
+        m_mat->SetInputValue("weight", 0.5f);
         break;
     }
     case RPR_MATERIAL_NODE_TRANSPARENT:
     case RPR_MATERIAL_NODE_PASSTHROUGH:
     {
-        SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kPassthrough);
-        m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
         break;
     }
     case RPR_MATERIAL_NODE_ADD:
@@ -187,9 +177,7 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
 		{
 			throw Exception(RPR_ERROR_INTERNAL_ERROR, "MaterialObject: need to update list of unsupported materials.");
 		}
-		SingleBxdf* mat = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-		mat->SetInputValue("albedo", float3(1.f, 0.f, 0.f));
-		m_mat = mat;
+        m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
 		break;
 	}
     case RPR_MATERIAL_NODE_NORMAL_MAP:
@@ -200,7 +188,7 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
     case RPR_MATERIAL_NODE_CHECKER_TEXTURE:
     case RPR_MATERIAL_NODE_CONSTANT_TEXTURE:
     case RPR_MATERIAL_NODE_BUMP_MAP:
-        m_tex = new Texture();
+        m_tex = Texture::Create();
         m_is_tex = true;
         break;
     default:
@@ -278,7 +266,7 @@ MaterialObject::MaterialObject(rpr_image_format const in_format, rpr_image_desc 
 			}
 		}
 	}
-    m_tex = new Texture(data, tex_size, data_format);
+    m_tex = Texture::Create(data, tex_size, data_format);
 }
 
 MaterialObject::MaterialObject(const std::string& in_path)
@@ -291,7 +279,7 @@ MaterialObject::MaterialObject(const std::string& in_path)
 
     //load texture using oiio
     std::unique_ptr<ImageIo> oiio = ImageIo::CreateImageIo();
-    Texture* texture = nullptr;
+    Texture::Ptr texture = nullptr;
     try
     {
         texture = oiio->LoadImage(in_path);
@@ -310,16 +298,8 @@ MaterialObject::~MaterialObject()
 
 void MaterialObject::Clear()
 {
-    if (IsMaterial())
-    {
-        delete m_mat;
-        m_mat = nullptr;
-    }
-    else
-    {
-        delete m_tex;
-        m_tex = nullptr;
-    }
+    m_mat = nullptr;
+    m_tex = nullptr;
 }
 
 std::string MaterialObject::TranslatePropName(const std::string& in, Type type)
@@ -398,7 +378,7 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
                 throw Exception(RPR_ERROR_INVALID_TAG, "MaterialObject: inalid input tag");
             }
             //copy image data
-            Baikal::Texture* tex = input->GetTexture();
+            auto tex = input->GetTexture();
             const char* data = tex->GetData();
             RadeonRays::int2 size = tex->GetSize();
             auto format = tex->GetFormat();
@@ -416,11 +396,9 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
             //handle blend material case
             if (m_type == kBlend && name == "weight")
             {
-                MultiBxdf* blend_mat = dynamic_cast<MultiBxdf*>(m_mat);
+                auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
                 blend_mat->SetType(MultiBxdf::Type::kMix);
             }
-
-
         }
         else
         {
@@ -432,7 +410,7 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
                 {
                     throw Exception(RPR_ERROR_INVALID_PARAMETER, "MaterialObject: expected only fresnel materials as weight of blend material.");
                 }
-                MultiBxdf* blend_mat = dynamic_cast<MultiBxdf*>(m_mat);
+                auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
                 blend_mat->SetType(MultiBxdf::Type::kFresnelBlend);
                 blend_mat->SetInputValue("ior", input->m_mat->GetInputValue("ior").float_value);
             }
@@ -498,19 +476,19 @@ void MaterialObject::SetInputValue(const std::string& input_name, const RadeonRa
     {
         if (val.sqnorm() < 1e-6f)
         {
-            SingleBxdf* bxdf_mat = dynamic_cast<SingleBxdf*>(m_mat);
+            auto bxdf_mat = std::dynamic_pointer_cast<SingleBxdf>(m_mat);
             bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kIdealReflect);
         }
         else
         {
-            SingleBxdf* bxdf_mat = dynamic_cast<SingleBxdf*>(m_mat);
+            auto bxdf_mat = std::dynamic_pointer_cast<SingleBxdf>(m_mat);
             bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
         }
     }
     //handle blend material case
     if (m_type == kBlend && name == "weight")
     {
-        MultiBxdf* blend_mat = dynamic_cast<MultiBxdf*>(m_mat);
+        auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
         blend_mat->SetType(MultiBxdf::Type::kMix);
     }
     SetInput(nullptr, input_name);
@@ -554,7 +532,7 @@ void MaterialObject::Update(MaterialObject* mat)
         //expected only fresnel materials
         if (mat->m_type == Type::kFresnel || mat->m_type == Type::kFresnelShlick)
         {
-            MultiBxdf* blend_mat = dynamic_cast<MultiBxdf*>(m_mat);
+            auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
             blend_mat->SetType(MultiBxdf::Type::kFresnelBlend);
             blend_mat->SetInputValue("ior", mat->m_mat->GetInputValue("ior").float_value);
         }

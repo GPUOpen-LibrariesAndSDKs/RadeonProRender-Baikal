@@ -212,7 +212,7 @@ void ContextObject::Render()
     //render
     for (auto& c : m_cfgs)
     {
-        auto& scene = c.controller->GetCachedScene(*m_current_scene->GetScene());
+        auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->Render(scene);
     }
 
@@ -227,7 +227,7 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
     //render
     for (auto& c : m_cfgs)
     {
-        auto& scene = c.controller->GetCachedScene(*m_current_scene->GetScene());
+        auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->RenderTile(scene, origin, size);
     }
 }
@@ -346,7 +346,7 @@ void ContextObject::PrepareScene()
     {
         for (auto& c : m_cfgs)
         {
-            c.controller->CompileScene(*m_current_scene->GetScene());
+            c.controller->CompileScene(m_current_scene->GetScene());
         }
     }
 }
