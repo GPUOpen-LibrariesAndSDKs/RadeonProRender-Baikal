@@ -1,4 +1,6 @@
 #pragma once
+#ifdef ENABLE_GLTF
+
 #include "SceneGraph/IO/gltf/gltf2.h"
 
 namespace amd
@@ -42,3 +44,5 @@ namespace amd
     bool ExportExtension(const AMD_RPR_Camera& ext, gltf::Extension& extensions);
 
 } // End namespace amd
+
+#endif //ENABLE_GLTF

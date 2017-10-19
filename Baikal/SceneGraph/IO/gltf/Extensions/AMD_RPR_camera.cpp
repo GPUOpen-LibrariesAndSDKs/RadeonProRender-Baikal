@@ -1,3 +1,5 @@
+#ifdef ENABLE_GLTF
+
 #include "AMD_RPR_Camera.h"
 
 namespace amd
@@ -64,3 +66,5 @@ namespace amd
         return true;
     }
 } // End namespace amd
+
+#endif //ENABLE_GLTF

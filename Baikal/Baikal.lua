@@ -17,13 +17,11 @@ project "Baikal"
 
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/freeglut/include",
-        "../3rdparty/oiio/include", "../3rdparty/glfw/include",
-        "../3rdparty/FreeImage/include", "../3rdparty/json/include"}
-        links {"glew", "OpenGL32", "glfw3", "FreeImage"}
+        "../3rdparty/oiio/include", "../3rdparty/glfw/include"}
+        links {"glew", "OpenGL32", "glfw3"}
         libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
                     "../3rdparty/freeglut/lib/%{cfg.platform}",
                     "../3rdparty/embree/lib/%{cfg.platform}",
-                    "../3rdparty/FreeImage/lib/",
                     "../3rdparty/oiio/lib/%{cfg.platform}",
         "../3rdparty/glfw/lib/%{cfg.platform}" }
 
@@ -65,6 +63,15 @@ project "Baikal"
         end
     end
 
+    if _OPTIONS["gltf"] then
+        defines {"ENABLE_GLTF"}
+
+        includedirs{"../3rdparty/FreeImage/include", "../3rdparty/json/include"}
+        libdirs{"../3rdparty/FreeImage/lib/"}
+        links{"FreeImage"}
+        postbuildcommands{'copy "..\\3rdparty\\FreeImage\\bin\\FreeImage.dll" "%{cfg.buildtarget.directory}"'}
+    end
+
     if os.is("linux") then
         buildoptions "-std=c++14"
         includedirs { "../3rdparty/glfw/include"}
@@ -99,7 +106,6 @@ project "Baikal"
           'copy "..\\3rdparty\\glfw\\bin\\%{cfg.platform}\\glfw3.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\embree.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\tbb.dll" "%{cfg.buildtarget.directory}"',
-          'copy "..\\3rdparty\\FreeImage\\bin\\FreeImage.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"'
         }

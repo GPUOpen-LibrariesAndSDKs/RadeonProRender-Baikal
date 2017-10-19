@@ -19,6 +19,11 @@ newoption {
 }
 
 newoption {
+    trigger     = "gltf",
+    description = "Enable glTF import"
+}
+
+newoption {
     trigger     = "rpr",
     description = "Enable RadeonProRender API lib"
 }

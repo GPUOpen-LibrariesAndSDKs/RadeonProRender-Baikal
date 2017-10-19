@@ -1,3 +1,5 @@
+#ifdef ENABLE_GLTF
+
 #include "AMD_RPR_Material.h"
 
 namespace amd
@@ -71,3 +73,5 @@ namespace amd
         return true;
     }
 } // End namespace amd
+
+#endif //ENABLE_GLTF

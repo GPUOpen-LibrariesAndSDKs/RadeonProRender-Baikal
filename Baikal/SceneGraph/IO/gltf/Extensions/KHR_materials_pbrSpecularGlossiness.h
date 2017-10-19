@@ -1,4 +1,6 @@
 #pragma once
+#ifdef ENABLE_GLTF
+
 #include "SceneGraph/IO/gltf/gltf2.h"
 
 namespace khr
@@ -27,3 +29,5 @@ namespace khr
     bool ExportExtension(const KHR_Materials_PbrSpecularGlossiness& ext, gltf::Extension& extensions);
 
 } // End namespace khr
+
+#endif //ENABLE_GLTF

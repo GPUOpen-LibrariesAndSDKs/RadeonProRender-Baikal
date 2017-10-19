@@ -1,4 +1,6 @@
 #pragma once
+#ifdef ENABLE_GLTF
+
 #include <fstream>
 #include "gltf2.h"
 
@@ -671,3 +673,5 @@ namespace gltf
         return true;
     }
 } // End namespace gltf
+
+#endif //ENABLE_GLTF

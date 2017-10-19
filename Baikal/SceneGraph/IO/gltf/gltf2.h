@@ -1,4 +1,6 @@
 #pragma once
+#ifdef ENABLE_GLTF
+
 #include <string>
 #include <array>
 #include <vector>
@@ -442,3 +444,5 @@ namespace gltf
     bool Export(const std::string& filename, const glTF& gltf);
 
 } // End namespace gltf
+
+#endif //ENABLE_GLTF

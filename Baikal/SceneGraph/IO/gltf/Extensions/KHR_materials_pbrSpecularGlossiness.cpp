@@ -1,3 +1,5 @@
+#ifdef ENABLE_GLTF
+
 #include "KHR_Materials_PbrSpecularGlossiness.h"
 
 namespace khr
@@ -62,3 +64,5 @@ namespace khr
         return true;
     }
 } // End namespace khr
+
+#endif //ENABLE_GLTF

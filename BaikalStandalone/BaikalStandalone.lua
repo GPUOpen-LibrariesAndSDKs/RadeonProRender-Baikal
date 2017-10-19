@@ -18,11 +18,10 @@ project "BaikalStandalone"
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/freeglut/include",
         "../3rdparty/oiio/include", "../3rdparty/glfw/include"}
-        links {"glew", "OpenGL32", "glfw3", "FreeImage"}
+        links {"glew", "OpenGL32", "glfw3"}
         libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
                     "../3rdparty/freeglut/lib/%{cfg.platform}",
                     "../3rdparty/embree/lib/%{cfg.platform}",
-                    "../3rdparty/FreeImage/lib/",
                     "../3rdparty/oiio/lib/%{cfg.platform}",
         "../3rdparty/glfw/lib/%{cfg.platform}" }
 
@@ -63,6 +62,12 @@ project "BaikalStandalone"
 
             links {"libfbxsdk-md"}
         end
+    end
+
+    if _OPTIONS["gltf"] then
+        defines {"ENABLE_GLTF"}
+        libdirs{"../3rdparty/FreeImage/lib/"}
+        links{"FreeImage"}
     end
 
     if os.is("linux") then
