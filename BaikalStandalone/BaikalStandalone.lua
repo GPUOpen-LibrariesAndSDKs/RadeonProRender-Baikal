@@ -18,10 +18,11 @@ project "BaikalStandalone"
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/freeglut/include",
         "../3rdparty/oiio/include", "../3rdparty/glfw/include"}
-        links {"glew", "OpenGL32", "glfw3"}
+        links {"glew", "OpenGL32", "glfw3", "FreeImage"}
         libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
                     "../3rdparty/freeglut/lib/%{cfg.platform}",
                     "../3rdparty/embree/lib/%{cfg.platform}",
+                    "../3rdparty/FreeImage/lib/",
                     "../3rdparty/oiio/lib/%{cfg.platform}",
         "../3rdparty/glfw/lib/%{cfg.platform}" }
 

@@ -159,8 +159,13 @@ namespace Baikal
 
         {
             // Load OBJ scene
-            auto fbx = filename.find(".fbx") != std::string::npos;
-            auto scene_io = fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
+            bool is_fbx = filename.find(".fbx") != std::string::npos;
+            bool is_gltf = filename.find(".gltf") != std::string::npos;
+            std::unique_ptr<Baikal::SceneIo> scene_io;
+            if (is_gltf)
+                scene_io = Baikal::SceneIo::CreateSceneIoGltf();
+            else
+                scene_io = is_fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
             auto scene_io1 = Baikal::SceneIo::CreateSceneIoTest();
             m_scene = scene_io->LoadScene(filename, basepath);
 

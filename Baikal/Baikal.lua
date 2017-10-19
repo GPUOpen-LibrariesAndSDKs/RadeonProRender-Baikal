@@ -1,7 +1,7 @@
 project "Baikal"
     kind "StaticLib"
     location "../Baikal"
-    links {"CLW", "Calc"}
+    links {"CLW", "Calc", "FreeImage"}
     files { "../Baikal/**.inl", "../Baikal/**.h", "../Baikal/**.cpp", "../Baikal/**.cl", "../Baikal/**.fsh", "../Baikal/**.vsh" }
 
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "."}
@@ -17,11 +17,13 @@ project "Baikal"
 
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/freeglut/include",
-        "../3rdparty/oiio/include", "../3rdparty/glfw/include"}
-        links {"glew", "OpenGL32", "glfw3"}
+        "../3rdparty/oiio/include", "../3rdparty/glfw/include",
+        "../3rdparty/FreeImage/include", "../3rdparty/json/include"}
+        links {"glew", "OpenGL32", "glfw3", "FreeImage"}
         libdirs {   "../3rdparty/glew/lib/%{cfg.platform}",
                     "../3rdparty/freeglut/lib/%{cfg.platform}",
                     "../3rdparty/embree/lib/%{cfg.platform}",
+                    "../3rdparty/FreeImage/lib/",
                     "../3rdparty/oiio/lib/%{cfg.platform}",
         "../3rdparty/glfw/lib/%{cfg.platform}" }
 
@@ -97,6 +99,7 @@ project "Baikal"
           'copy "..\\3rdparty\\glfw\\bin\\%{cfg.platform}\\glfw3.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\embree.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\tbb.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\FreeImage\\bin\\FreeImage.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"'
         }
