@@ -173,7 +173,7 @@ namespace Baikal
             std::cout << "Warning: several scenes present in glTF file, load only scene with index :" << m_gltf.scene << std::endl;
         }
 
-        int scene_index = m_gltf.scene;
+        int scene_index = m_gltf.scene == -1 ? 0 : m_gltf.scene;
 
         // Import scene parameters.
         ImportSceneParameters(scene, scene_index);
@@ -197,15 +197,25 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
 
             // TODO: temporary code to add directional light
-            auto light = DirectionalLight::Create();
-            light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
-            light->SetEmittedRadiance(30.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
+            auto light = SpotLight::Create();
+            light->SetPosition({ 0.f, 5.f, 3.f });
+
+            light->SetDirection(RadeonRays::normalize(RadeonRays::float3(0.f, -1.f, 0.f)));
+            light->SetEmittedRadiance(300.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
 
             auto light1 = DirectionalLight::Create();
             light1->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
             light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
             
+            auto point_light = PointLight::Create();
+            point_light->SetPosition({ 0.f, 2.f, 3.f });
+            point_light->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
+            point_light->SetEmittedRadiance(RadeonRays::float3(10.f, 10.8f, 10.65f));
+
             scene->AttachLight(ibl);
+            scene->AttachLight(light);
+            scene->AttachLight(light1);
+            //scene->AttachLight(point_light);
         }
         return scene;
     }
@@ -219,7 +229,8 @@ namespace Baikal
         {
             RadeonRays::matrix localTransform;
             memcpy(&localTransform.m[0][0], node.matrix.data(), sizeof(float) * 16);
-            result = localTransform * worldTransform;
+            localTransform = localTransform.transpose();
+            result = worldTransform * localTransform;
         }
         // Else use the translation, scale and rotation vectors.
         else
@@ -526,16 +537,50 @@ namespace Baikal
             // Create a faces array that's required by Radeon ProRender.
             std::vector<int> numFaces(indice_accessor.count / 3, 3);
 
-            //TODO: handle strides properly
-            assert(vertexStride);
-            assert(normalStride);
-            assert(texcoords0Stride);
+            //compact data
+            std::vector<float> data_verts(3 * num_vertices);
+            std::vector<float> data_normals(3 * num_normals);
+            std::vector<float> data_uvs(2 * num_texcoords0);
+
+            int stride = vertexStride / sizeof(float);
+            for (int i = 0; i < num_vertices; ++i)
+            {
+                data_verts[3 * i] = vertices[i * stride];
+                data_verts[3 * i + 1] = vertices[i * stride + 1];
+                data_verts[3 * i + 2] = vertices[i * stride + 2];
+            }
+            
+            stride = normalStride / sizeof(float);
+            for (int i = 0; i < num_normals; ++i)
+            {
+                data_normals[3 * i] = normals[i * stride];
+                data_normals[3 * i + 1] = normals[i * stride + 1];
+                data_normals[3 * i + 2] = normals[i * stride + 2];
+            }
+
+            stride = texcoords0Stride / sizeof(float);
+            for (int i = 0; i < num_texcoords0; ++i)
+            {
+                data_uvs[2 * i] = texcoords0[i * stride];
+                data_uvs[2 * i + 1] = texcoords0[i * stride + 1];
+            }
+
+            //fill missing data with zeros
+            if (data_normals.empty())
+            {
+                data_normals.insert(data_normals.begin(), num_vertices * 3, 0.f);
+            }
+            if (data_uvs.empty())
+            {
+                data_uvs.insert(data_uvs.begin(), num_vertices * 2, 0.f);
+            }
+
 
             // Create the Radeon ProRender shape.
             Mesh::Ptr mesh = Mesh::Create();
-            mesh->SetVertices(vertices, num_vertices);
-            mesh->SetNormals(normals, num_normals);
-            mesh->SetUVs(texcoords0, num_texcoords0);
+            mesh->SetVertices(data_verts.data(), data_verts.size() / 3);
+            mesh->SetNormals(data_normals.data(), data_normals.size() / 3);
+            mesh->SetUVs(data_uvs.data(), data_uvs.size() / 2);
             mesh->SetIndices(reinterpret_cast<std::uint32_t*>(indices), indice_accessor.count);
             // TODO: set lightmap uvs!
  
@@ -1022,7 +1067,7 @@ namespace Baikal
                     }
                 }
 
-                unsigned int mem_size = FreeImage_GetMemorySize(bitmap);
+                unsigned int mem_size = kNumComponents * img_size.x * img_size.y;
                 BYTE* tex_data = new BYTE[mem_size];
                 memcpy(tex_data, FreeImage_GetBits(bitmap), mem_size);
                 Texture::Ptr img = Texture::Create(reinterpret_cast<char*>(tex_data), img_size, format);
@@ -1089,7 +1134,7 @@ namespace Baikal
                         }
                     }
                 }
-                unsigned int mem_size = FreeImage_GetMemorySize(bitmap);
+                unsigned int mem_size = kNumComponents * img_size.x * img_size.y;
                 BYTE* tex_data = new BYTE[mem_size];
                 memcpy(tex_data, FreeImage_GetBits(bitmap), mem_size);
                 Texture::Ptr img = Texture::Create(reinterpret_cast<char*>(tex_data), img_size, format);
