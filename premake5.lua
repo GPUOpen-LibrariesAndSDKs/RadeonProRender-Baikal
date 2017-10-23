@@ -84,6 +84,10 @@ if _OPTIONS["rpr"] then
     if fileExists("./RprSupport/RprSupport.lua") then
         dofile("./RprSupport/RprSupport.lua")
     end
+
+    if fileExists("./ProRenderGLTF/ProRenderGLTF.lua") then
+        dofile("./ProRenderGLTF/ProRenderGLTF.lua")
+    end
 end
 
 if fileExists("./Baikal/Baikal.lua") then
