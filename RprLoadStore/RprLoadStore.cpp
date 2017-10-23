@@ -1,6 +1,6 @@
 #include "RprLoadStore.h"
 
-#include "Rpr/RadeonProRender.h"
+#include <Rpr/RadeonProRender.h>
 
 #include <fstream>
 #include <cstring>
@@ -153,9 +153,12 @@ int rprsImportCustomList(
 
 
 
-int rprsExport(
+
+
+int rprsxExport(
 	const char* frsFileName, 
 	rpr_context context, 
+	void* contextX, 
 	rpr_scene scene,
 	
 	int extraCustomParam_int_number,
@@ -183,7 +186,11 @@ int rprsExport(
 			frsFile.AddExtraCustomParam_int(extraCustomParam_int_names[i],extraCustomParam_int_values[i]);
 		}
 
-		status = frsFile.StoreEverything(context,scene);
+		status = frsFile.StoreEverything(context,scene
+			#ifdef RPRS_RPRSUPPORT_ENABLED
+			,(rprx_context)contextX
+			#endif
+			);
 		ofileStore.close();
 	}
 	else
@@ -194,9 +201,44 @@ int rprsExport(
 	return status;
 }
 
-int rprsImport(	
+
+int rprsExport(
+	const char* frsFileName, 
+	rpr_context context, 
+	rpr_scene scene,
+	
+	int extraCustomParam_int_number,
+	const char** extraCustomParam_int_names,
+	const int* extraCustomParam_int_values,
+
+	int extraCustomParam_float_number,
+	const char** extraCustomParam_float_names,
+	const float* extraCustomParam_float_values
+	)
+{
+	int retCode = rprsxExport(
+		frsFileName, 
+		context, 
+		0, 
+		scene,
+	
+		extraCustomParam_int_number,
+		extraCustomParam_int_names,
+		extraCustomParam_int_values,
+
+		extraCustomParam_float_number,
+		extraCustomParam_float_names,
+		extraCustomParam_float_values);
+
+	return retCode;
+}
+
+
+
+int rprsxImport(	
 	const char* frsFileName,
 	rpr_context context,  
+	void* contextX,  
 	rpr_material_system materialSystem, 
 	rpr_scene* scene,  
 	bool useAlreadyExistingScene)
@@ -240,7 +282,11 @@ int rprsImport(
 		else if ( version == 8 ) // latest version : 8
 		{
 			RPS8 frsFile(&ifileStore, false);
-			status = frsFile.LoadEverything(context,materialSystem,*scene,useAlreadyExistingScene);
+			status = frsFile.LoadEverything(context,
+				#ifdef RPRS_RPRSUPPORT_ENABLED
+				(rprx_context)contextX,
+				#endif
+				materialSystem,*scene,useAlreadyExistingScene);
 			g_extraCustomParam_int.clear();
 			g_extraCustomParam_float.clear();
 			g_listLoadedObjects.clear();
@@ -269,6 +315,24 @@ int rprsImport(
 	return status;
 }
 
+int rprsImport(	
+	const char* frsFileName,
+	rpr_context context,  
+	rpr_material_system materialSystem, 
+	rpr_scene* scene,  
+	bool useAlreadyExistingScene)
+{
+	int retCode = rprsxImport(	
+		frsFileName,
+		context,  
+		0,  
+		materialSystem, 
+		scene,  
+		useAlreadyExistingScene);
+
+	return retCode;
+
+}
 
 int rprsGetExtraCustomParam_int(const char* name, int* value)
 {
@@ -302,6 +366,7 @@ int rprsGetExtraCustomParam_float(const char* name, float* value)
 int rprsGetExtraCustomParamIndex_int(int index, int* value)
 {
 	int nbOfInt = g_extraCustomParam_int.size();
+	int nbOfFloat = g_extraCustomParam_float.size();
 
 	if ( index >= 0 && index < nbOfInt ) 
 	{
@@ -488,6 +553,11 @@ int rprsListImportedMaterialNodes(void** MaterialNodes, int sizeMaterialNodeByte
 	int ret = rprsListImportedObjects(MaterialNodes,sizeMaterialNodeBytes,numberOfMaterialNodes,"fr_material_node","rpr_material_node");
 	return ret;
 }
+int rprsListImportedMaterialX(void** MaterialNodes, int sizeMaterialNodeBytes ,int* numberOfMaterialNodes)
+{
+	int ret = rprsListImportedObjects(MaterialNodes,sizeMaterialNodeBytes,numberOfMaterialNodes,"frx_material","rprx_material");
+	return ret;
+}
 int rprsListImportedLights(void** Lights, int sizeLightBytes ,int* numberOfLights)
 {
 	int ret = rprsListImportedObjects(Lights,sizeLightBytes,numberOfLights,"fr_light","rpr_light");
@@ -502,4 +572,44 @@ int rprsListImportedImages(void** Images, int sizeImageBytes ,int* numberOfImage
 {
 	int ret = rprsListImportedObjects(Images,sizeImageBytes,numberOfImages,"fr_image","rpr_image");
 	return ret;
+}
+
+int rprsExportToXML(char const * rprsFileNameBinary, char const * rprsFileNameAscii)
+{
+	rpr_int status = RPR_SUCCESS;
+
+	std::fstream ifileStore(rprsFileNameBinary, std::ifstream::binary | std::ifstream::in );
+	if (ifileStore.is_open() && !ifileStore.fail() ) 
+	{
+		//first, we check the version of the opened FRS, so we can choose the good importer.
+		
+		int32_t checkCode = 0;
+		ifileStore.read((char*)&checkCode, sizeof(checkCode));
+		int32_t version = 0;
+		ifileStore.read((char*)&version, sizeof(version));
+		ifileStore.seekg(0, ifileStore.beg); // go to start of file
+
+		if ( version == 8 ) // latest version : 8
+		{
+			RPS8 frsFile(&ifileStore, false);
+			status = frsFile.BinaryToAscii(rprsFileNameAscii);
+			g_extraCustomParam_int.clear();
+			g_extraCustomParam_float.clear();
+			g_listLoadedObjects.clear();
+		}
+		else
+		{
+			status = RPR_ERROR_INTERNAL_ERROR;
+		}
+
+
+		ifileStore.close();
+	}
+	else
+	{
+		status = RPR_ERROR_INTERNAL_ERROR;
+	}
+
+
+	return status;
 }

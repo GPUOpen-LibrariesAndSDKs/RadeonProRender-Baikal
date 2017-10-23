@@ -5,7 +5,7 @@
 *
 *  Description    Fire Render Interface header
 *
-*  Copyright 2015 Advanced Micro Devices, Inc.
+*  Copyright 2017 Advanced Micro Devices, Inc.
 *
 *  All rights reserved.  This notice is intended as a precaution against
 *  inadvertent publication and does not imply publication or any waiver
@@ -19,23 +19,7 @@
 #ifndef __RADEONPRORENDER_H
 #define __RADEONPRORENDER_H
 
-#if !RPR_STATIC_LIBRARY
-#ifdef WIN32
-    #ifdef RPR_EXPORT_API
-        #define RPR_API_ENTRY __declspec(dllexport)
-    #else
-        #define RPR_API_ENTRY __declspec(dllimport)
-    #endif
-#elif defined(__GNUC__)
-    #ifdef RPR_EXPORT_API
-        #define RPR_API_ENTRY __attribute__((visibility ("default")))
-    #else
-        #define RPR_API_ENTRY
-    #endif
-#endif
-#else
 #define RPR_API_ENTRY
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +27,7 @@ extern "C" {
 
 #include "cstddef"
 
-#define RPR_API_VERSION 0x010000252 
+#define RPR_API_VERSION 0x010027300 
 
 /* rpr_status */
 #define RPR_SUCCESS 0 
@@ -80,11 +64,6 @@ extern "C" {
 #define RPR_PARAMETER_TYPE_STRING 0x6 
 #define RPR_PARAMETER_TYPE_SHADER 0x7 
 #define RPR_PARAMETER_TYPE_UINT 0x8 
-
-/* rpr_image_type */
-#define RPR_IMAGE_TYPE_1D 0x1 
-#define RPR_IMAGE_TYPE_2D 0x2 
-#define RPR_IMAGE_TYPE_3D 0x3 
 
 /* rpr_context_type */
 #define RPR_CONTEXT_OPENCL (1 << 0) 
@@ -127,6 +106,9 @@ extern "C" {
 
 /* rpr_object_info */
 #define RPR_OBJECT_NAME 0x777777 
+
+/* rpr_context_properties */
+#define RPR_CONTEXT_CREATEPROP_CPU_THREAD_LIMIT 0x600 
 
 /* rpr_context_info */
 #define RPR_CONTEXT_CREATION_FLAGS 0x102 
@@ -177,9 +159,15 @@ extern "C" {
 #define RPR_CONTEXT_GPU7_NAME 0x12F 
 #define RPR_CONTEXT_TONE_MAPPING_EXPONENTIAL_INTENSITY 0x130 
 #define RPR_CONTEXT_FRAMECOUNT 0x131 
+#define RPR_CONTEXT_TEXTURE_COMPRESSION 0x132 
+#define RPR_CONTEXT_AO_RAY_LENGTH 0x133 
+#define RPR_CONTEXT_OOC_TEXTURE_CACHE 0x134 
+#define RPR_CONTEXT_PREVIEW 0x135 
+#define RPR_CONTEXT_CPU_THREAD_LIMIT 0x136 
+#define RPR_CONTEXT_LAST_ERROR_MESSAGE 0x137 
 
 /* last of the RPR_CONTEXT_* */
-#define RPR_CONTEXT_MAX 0x132 
+#define RPR_CONTEXT_MAX 0x138 
 
 /* rpr_camera_info */
 #define RPR_CAMERA_TRANSFORM 0x201 
@@ -199,6 +187,9 @@ extern "C" {
 #define RPR_CAMERA_FOCAL_TILT 0x20F 
 #define RPR_CAMERA_LENS_SHIFT 0x210 
 #define RPR_CAMERA_IPD 0x211 
+#define RPR_CAMERA_TILT_CORRECTION 0x212 
+#define RPR_CAMERA_NEAR_PLANE 0x213 
+#define RPR_CAMERA_FAR_PLANE 0x214 
 
 /* rpr_image_info */
 #define RPR_IMAGE_FORMAT 0x301 
@@ -206,6 +197,14 @@ extern "C" {
 #define RPR_IMAGE_DATA 0x303 
 #define RPR_IMAGE_DATA_SIZEBYTE 0x304 
 #define RPR_IMAGE_WRAP 0x305 
+
+/* rpr_image_option */
+#define RPR_IMAGE_FILTER_NEAREST (1 << 0) 
+#define RPR_IMAGE_FILTER_LINEAR (1 << 1) 
+#define RPR_IMAGE_WRAP_REPEAT (1 << 2) 
+#define RPR_IMAGE_WRAP_MIRRORED_REPEAT (1 << 3) 
+#define RPR_IMAGE_WRAP_CLAMP_TO_EDGE (1 << 4) 
+#define RPR_IMAGE_WRAP_CLAMP_TO_BORDER (1 << 5) 
 
 /* rpr_shape_info */
 #define RPR_SHAPE_TYPE 0x401 
@@ -218,7 +217,6 @@ extern "C" {
 #define RPR_SHAPE_SHADOW_FLAG 0x408 
 #define RPR_SHAPE_SUBDIVISION_FACTOR 0x409 
 #define RPR_SHAPE_DISPLACEMENT_SCALE 0x40A 
-#define RPR_SHAPE_DISPLACEMENT_IMAGE 0X40B 
 #define RPR_SHAPE_VISIBILITY_PRIMARY_ONLY_FLAG 0x40C 
 #define RPR_SHAPE_VISIBILITY_IN_SPECULAR_FLAG 0x40D 
 #define RPR_SHAPE_SHADOW_CATCHER_FLAG 0x40E 
@@ -226,7 +224,8 @@ extern "C" {
 #define RPR_SHAPE_OBJECT_GROUP_ID 0x410 
 #define RPR_SHAPE_SUBDIVISION_CREASEWEIGHT 0x411 
 #define RPR_SHAPE_SUBDIVISION_BOUNDARYINTEROP 0x412 
-#define RPR_SHAPE_MATERIAL_OVERRIDE 0x413 
+#define RPR_SHAPE_DISPLACEMENT_MATERIAL 0x413 
+#define RPR_SHAPE_MATERIALS_PER_FACE 0x415 
 
 /* rpr_mesh_info */
 #define RPR_MESH_POLYGON_COUNT 0x501 
@@ -263,7 +262,7 @@ extern "C" {
 #define RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION 0x70A 
 #define RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY 0x70B 
 #define RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND 0x70C 
-#define RPR_SCENE_AXIS_ALIGNED_BOUNDING_BOX 0x70D
+#define RPR_SCENE_AABB 0x70D 
 
 /* rpr_light_info */
 #define RPR_LIGHT_TYPE 0x801 
@@ -339,6 +338,7 @@ extern "C" {
 #define RPR_RENDER_MODE_NORMAL 0x7 
 #define RPR_RENDER_MODE_TEXCOORD 0x8 
 #define RPR_RENDER_MODE_AMBIENT_OCCLUSION 0x9 
+#define RPR_RENDER_MODE_DIFFUSE 0x0a 
 
 /* rpr_camera_mode */
 #define RPR_CAMERA_MODE_PERSPECTIVE 0x1 
@@ -347,6 +347,7 @@ extern "C" {
 #define RPR_CAMERA_MODE_LATITUDE_LONGITUDE_STEREO 0x4 
 #define RPR_CAMERA_MODE_CUBEMAP 0x5 
 #define RPR_CAMERA_MODE_CUBEMAP_STEREO 0x6 
+#define RPR_CAMERA_MODE_FISHEYE 0x7 
 
 /* rpr_tonemapping_operator */
 #define RPR_TONEMAPPING_OPERATOR_NONE 0x0 
@@ -403,6 +404,10 @@ extern "C" {
 #define RPR_MATERIAL_NODE_DIFFUSE_REFRACTION 0x1B 
 #define RPR_MATERIAL_NODE_BUMP_MAP 0x1C 
 #define RPR_MATERIAL_NODE_VOLUME 0x1D 
+#define RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION 0x1E 
+#define RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION 0x1F 
+#define RPR_MATERIAL_NODE_TWOSIDED 0x20 
+#define RPR_MATERIAL_NODE_UV_PROJECT 0x21 
 
 /* rpr_material_node_input */
 #define RPR_MATERIAL_INPUT_COLOR 0x0 
@@ -430,7 +435,14 @@ extern "C" {
 #define RPR_MATERIAL_INPUT_MULTISCATTER 0x16 
 #define RPR_MATERIAL_INPUT_COLOR2 0x17 
 #define RPR_MATERIAL_INPUT_COLOR3 0x18 
-#define RPR_MATERIAL_INPUT_MAX 0x19 
+#define RPR_MATERIAL_INPUT_ANISOTROPIC 0x19 
+#define RPR_MATERIAL_INPUT_FRONTFACE 0x1a 
+#define RPR_MATERIAL_INPUT_BACKFACE 0x1b 
+#define RPR_MATERIAL_INPUT_ORIGIN 0x1c 
+#define RPR_MATERIAL_INPUT_ZAXIS 0x1d 
+#define RPR_MATERIAL_INPUT_XAXIS 0x1e 
+#define RPR_MATERIAL_INPUT_THRESHOLD 0x1f 
+#define RPR_MATERIAL_INPUT_MAX 0x20 
 
   
 #define RPR_MATERIAL_STANDARD_INPUT_DIFFUSE_COLOR 0x112 
@@ -474,28 +486,28 @@ extern "C" {
 #define RPR_MATERIAL_NODE_OP_SELECT_X 0x07 
 #define RPR_MATERIAL_NODE_OP_SELECT_Y 0x08 
 #define RPR_MATERIAL_NODE_OP_SELECT_Z 0x09 
-#define RPR_MATERIAL_NODE_OP_SELECT_W 0x0A 
-#define RPR_MATERIAL_NODE_OP_COMBINE 0x0B 
-#define RPR_MATERIAL_NODE_OP_DOT3 0x0C 
-#define RPR_MATERIAL_NODE_OP_DOT4 0x0D 
-#define RPR_MATERIAL_NODE_OP_CROSS3 0x0E 
-#define RPR_MATERIAL_NODE_OP_LENGTH3 0x0F 
-#define RPR_MATERIAL_NODE_OP_NORMALIZE3 0x10 
-#define RPR_MATERIAL_NODE_OP_POW 0x11 
-#define RPR_MATERIAL_NODE_OP_ACOS 0x12 
-#define RPR_MATERIAL_NODE_OP_ASIN 0x13 
-#define RPR_MATERIAL_NODE_OP_ATAN 0x14 
-#define RPR_MATERIAL_NODE_OP_AVERAGE_XYZ 0x15 
-#define RPR_MATERIAL_NODE_OP_AVERAGE 0x16 
-#define RPR_MATERIAL_NODE_OP_MIN 0x17 
-#define RPR_MATERIAL_NODE_OP_MAX 0x18 
-#define RPR_MATERIAL_NODE_OP_FLOOR 0x19 
-#define RPR_MATERIAL_NODE_OP_MOD 0x1A 
-#define RPR_MATERIAL_NODE_OP_ABS 0x1B 
-#define RPR_MATERIAL_NODE_OP_SHUFFLE_YZWX 0x1C 
-#define RPR_MATERIAL_NODE_OP_SHUFFLE_ZWXY 0x1D 
-#define RPR_MATERIAL_NODE_OP_SHUFFLE_WXYZ 0x1E 
-#define RPR_MATERIAL_NODE_OP_MAT_MUL 0x1F 
+#define RPR_MATERIAL_NODE_OP_COMBINE 0x0A 
+#define RPR_MATERIAL_NODE_OP_DOT3 0x0B 
+#define RPR_MATERIAL_NODE_OP_CROSS3 0x0C 
+#define RPR_MATERIAL_NODE_OP_LENGTH3 0x0D 
+#define RPR_MATERIAL_NODE_OP_NORMALIZE3 0x0E 
+#define RPR_MATERIAL_NODE_OP_POW 0x0F 
+#define RPR_MATERIAL_NODE_OP_ACOS 0x10 
+#define RPR_MATERIAL_NODE_OP_ASIN 0x11 
+#define RPR_MATERIAL_NODE_OP_ATAN 0x12 
+#define RPR_MATERIAL_NODE_OP_AVERAGE_XYZ 0x13 
+#define RPR_MATERIAL_NODE_OP_AVERAGE 0x14 
+#define RPR_MATERIAL_NODE_OP_MIN 0x15 
+#define RPR_MATERIAL_NODE_OP_MAX 0x16 
+#define RPR_MATERIAL_NODE_OP_FLOOR 0x17 
+#define RPR_MATERIAL_NODE_OP_MOD 0x18 
+#define RPR_MATERIAL_NODE_OP_ABS 0x19 
+#define RPR_MATERIAL_NODE_OP_SHUFFLE_YZWX 0x1a 
+#define RPR_MATERIAL_NODE_OP_SHUFFLE_ZWXY 0x1b 
+#define RPR_MATERIAL_NODE_OP_SHUFFLE_WXYZ 0x1c 
+#define RPR_MATERIAL_NODE_OP_MAT_MUL 0x1d 
+#define RPR_MATERIAL_NODE_OP_SELECT_W 0x1e 
+#define RPR_MATERIAL_NODE_OP_DOT4 0x1f 
 
 /* rpr_material_node_lookup_value */
 #define RPR_MATERIAL_NODE_LOOKUP_UV 0x0 
@@ -507,15 +519,11 @@ extern "C" {
 
 /* rpr_post_effect_info */
 #define RPR_POST_EFFECT_TYPE 0x0 
-#define RPR_POST_EFFECT_PARAMETER_COUNT 0x1 
-
-/* rpr_post_effect_type - white balance */
-#define RPR_POST_EFFECT_WHITE_BALANCE_COLOR_SPACE 0x1 
-#define RPR_POST_EFFECT_WHITE_BALANCE_COLOR_TEMPERATURE 0x2 
-
-/* rpr_post_effect_type - simple tonemap */
-#define RPR_POST_EFFECT_SIMPLE_TONEMAP_EXPOSURE 0x1 
-#define RPR_POST_EFFECT_SIMPLE_TONEMAP_CONTRAST 0x2 
+#define RPR_POST_EFFECT_WHITE_BALANCE_COLOR_SPACE 0x4 
+#define RPR_POST_EFFECT_WHITE_BALANCE_COLOR_TEMPERATURE 0x5 
+#define RPR_POST_EFFECT_SIMPLE_TONEMAP_EXPOSURE 0x6 
+#define RPR_POST_EFFECT_SIMPLE_TONEMAP_CONTRAST 0x7 
+#define RPR_POST_EFFECT_SIMPLE_TONEMAP_ENABLE_TONEMAP 0x8 
 
 /*rpr_aov*/
 #define RPR_AOV_COLOR 0x0 
@@ -528,7 +536,11 @@ extern "C" {
 #define RPR_AOV_DEPTH 0x7 
 #define RPR_AOV_OBJECT_ID 0x8 
 #define RPR_AOV_OBJECT_GROUP_ID 0x9 
-#define RPR_AOV_MAX 0xa 
+#define RPR_AOV_SHADOW_CATCHER 0x0a 
+#define RPR_AOV_BACKGROUND 0x0b 
+#define RPR_AOV_EMISSION 0x0c 
+#define RPR_AOV_VELOCITY 0x0d 
+#define RPR_AOV_MAX 0x0e 
 
 /*rpr_post_effect_type*/
 #define RPR_POST_EFFECT_TONE_MAP 0x0 
@@ -549,16 +561,6 @@ extern "C" {
 #define RPR_MATERIAL_NODE_INPUT_TYPE_NODE 0x3 
 #define RPR_MATERIAL_NODE_INPUT_TYPE_IMAGE 0x4 
 
-/* Additional Raster context properties ("raster.shadows.filter") */
-#define RPR_RASTER_SHADOWS_FILTER_NONE 0x90E
-#define RPR_RASTER_SHADOWS_FILTER_PCF 0x90F
-#define RPR_RASTER_SHADOWS_FILTER_PCSS 0x910
-
-/* Additional Raster context properties ("raster.shadows.sampling") */
-#define RPR_RASTER_SHADOWS_SAMPLING_BILINEAR 0x911
-#define RPR_RASTER_SHADOWS_SAMPLING_HAMMERSLEY 0x912
-#define RPR_RASTER_SHADOWS_SAMPLING_MULTIJITTERED 0x913
-
 /* rpr_subdiv_boundary_interfop_type */
 #define RPR_SUBDIV_BOUNDARY_INTERFOP_TYPE_EDGE_AND_CORNER 0x1 
 #define RPR_SUBDIV_BOUNDARY_INTERFOP_TYPE_EDGE_ONLY 0x2 
@@ -568,10 +570,41 @@ extern "C" {
 #define RPR_IMAGE_WRAP_TYPE_MIRRORED_REPEAT 0x2 
 #define RPR_IMAGE_WRAP_TYPE_CLAMP_TO_EDGE 0x3 
 #define RPR_IMAGE_WRAP_TYPE_CLAMP_TO_BORDER 0x4 
+#define RPR_IMAGE_WRAP_TYPE_CLAMP_ZERO 0x5 
+#define RPR_IMAGE_WRAP_TYPE_CLAMP_ONE 0x6 
 
 /* Constants */
 #define RPR_MAX_AA_SAMPLES 32 
 #define RPR_MAX_AA_GRID_SIZE 16 
+
+/* rpr_composite_info */
+#define RPR_COMPOSITE_TYPE 0x1  
+#define RPR_COMPOSITE_FRAMEBUFFER_INPUT_FB 0x2  
+#define RPR_COMPOSITE_NORMALIZE_INPUT_COLOR 0x3  
+#define RPR_COMPOSITE_NORMALIZE_INPUT_SHADOWCATCHER 0x4  
+#define RPR_COMPOSITE_CONSTANT_INPUT_VALUE 0x5  
+#define RPR_COMPOSITE_LERP_VALUE_INPUT_COLOR0 0x6  
+#define RPR_COMPOSITE_LERP_VALUE_INPUT_COLOR1 0x7  
+#define RPR_COMPOSITE_LERP_VALUE_INPUT_WEIGHT 0x8  
+#define RPR_COMPOSITE_ARITHMETIC_INPUT_COLOR0 0x9  
+#define RPR_COMPOSITE_ARITHMETIC_INPUT_COLOR1 0x0a  
+#define RPR_COMPOSITE_ARITHMETIC_INPUT_OP 0x0b  
+#define RPR_COMPOSITE_GAMMA_CORRECTION_INPUT_COLOR 0x0c  
+
+/*rpr_composite_type*/
+#define RPR_COMPOSITE_ARITHMETIC 0x1  
+#define RPR_COMPOSITE_LERP_VALUE 0x2  
+#define RPR_COMPOSITE_INVERSE 0x3  
+#define RPR_COMPOSITE_NORMALIZE 0x4  
+#define RPR_COMPOSITE_GAMMA_CORRECTION 0x5  
+#define RPR_COMPOSITE_EXPOSURE 0x6  
+#define RPR_COMPOSITE_CONTRAST 0x7  
+#define RPR_COMPOSITE_SIDE_BY_SIDE 0x8  
+#define RPR_COMPOSITE_TONEMAP_ACES 0x9  
+#define RPR_COMPOSITE_TONEMAP_REINHARD 0xa  
+#define RPR_COMPOSITE_TONEMAP_LINEAR 0xb  
+#define RPR_COMPOSITE_FRAMEBUFFER 0xc  
+#define RPR_COMPOSITE_CONSTANT 0xd  
 
 /* rpr_bool */
 #define RPR_FALSE 0 
@@ -603,8 +636,9 @@ typedef void * rpr_material_system;
 typedef void * rpr_material_node;
 typedef void * rpr_post_effect;
 typedef void * rpr_context_properties;
+typedef void * rpr_composite;
 typedef rpr_uint rpr_light_type;
-typedef rpr_uint rpr_image_type;
+typedef rpr_uint rpr_image_option;
 typedef rpr_uint rpr_shape_type;
 typedef rpr_uint rpr_context_type;
 typedef rpr_bitfield rpr_creation_flags;
@@ -636,11 +670,14 @@ typedef rpr_uint rpr_material_node_input_info;
 typedef rpr_uint rpr_aov;
 typedef rpr_uint rpr_post_effect_type;
 typedef rpr_uint rpr_post_effect_info;
+typedef rpr_uint rpr_composite_info;
+typedef rpr_uint rpr_composite_type;
 typedef rpr_uint rpr_color_space;
 typedef rpr_uint rpr_environment_override;
 typedef rpr_uint rpr_subdiv_boundary_interfop_type;
 typedef rpr_uint rpr_material_node_lookup_value;
 typedef rpr_uint rpr_image_wrap_type;
+typedef rpr_uint rpr_material_node_arithmetic_operation;
 
 struct _rpr_image_desc
 {
@@ -666,6 +703,7 @@ struct _rpr_render_statistics
     rpr_longlong gpumem_usage;
     rpr_longlong gpumem_total;
     rpr_longlong gpumem_max_allocation;
+    rpr_longlong sysmem_usage;
 };
 
 typedef _rpr_render_statistics rpr_render_statistics;
@@ -714,8 +752,11 @@ extern RPR_API_ENTRY rpr_int rprRegisterPlugin(rpr_char const * path);
   *  @param api_version     Api version constant
   *	 @param context_type    Determines compute API to use, OPENCL only is supported for now
   *  @param creation_flags  Determines multi-gpu or cpu-gpu configuration
-  *  @param props           Context properties, reserved for future use
+  *  @param props           Context creation properties. Specifies a list of context property names and their corresponding values. 
+  *                         Each property name is immediately followed by the corresponding desired value. 
+  *                         The list is terminated with 0.  
   *  @param cache_path      Full path to kernel cache created by FireRender, NULL means to use current folder
+  *  @param cpu_thread_limit	Limit for the number of threads used for CPU rendering
   *  @param out_context		Pointer to context object
   *  @return                RPR_SUCCESS in case of success, error code otherwise
 */
@@ -996,7 +1037,7 @@ extern RPR_API_ENTRY rpr_int rprContextCreateMesh(rpr_context context, rpr_float
  *
  *  @return                     RPR_SUCCESS in case of success, error code otherwise	
 	*/
-extern RPR_API_ENTRY rpr_int rprContextCreateMeshEx(rpr_context context, rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, rpr_float const * normals, size_t num_normals, rpr_int normal_stride, rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers, rpr_float const ** texcoords, size_t * num_texcoords, rpr_int * texcoord_stride, rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, rpr_int const ** texcoord_indices, rpr_int * tidx_stride, rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh);
+extern RPR_API_ENTRY rpr_int rprContextCreateMeshEx(rpr_context context, rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, rpr_float const * normals, size_t num_normals, rpr_int normal_stride, rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers, rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride, rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, rpr_int const ** texcoord_indices, rpr_int const * tidx_stride, rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh);
 
 /** @brief Create a camera
  *
@@ -1061,6 +1102,19 @@ extern RPR_API_ENTRY rpr_int rprCameraSetFocalLength(rpr_camera camera, rpr_floa
  *  @return         RPR_SUCCESS in case of success, error code otherwise
  */
 extern RPR_API_ENTRY rpr_int rprCameraSetFocusDistance(rpr_camera camera, rpr_float fdist);
+
+/** @brief Sets an image option
+ *
+ *	The default option for each image is FR_IMAGE_FILTER_LINEAR | FR_IMAGE_WRAP_REPEAT
+ *  Possible error codes are:
+ *
+ *      FR_ERROR_INVALID_PARAMETER
+ *
+ *  @param  image				The image to set the option for
+ *  @param  option      The option to set
+ *  @return             RPR_SUCCESS in case of success, error code otherwise
+ */
+extern RPR_API_ENTRY rpr_int rprImageSetOption(rpr_image image, rpr_image_option option);
 
 /** @brief Set world transform for the camera
  *
@@ -1137,6 +1191,7 @@ extern RPR_API_ENTRY rpr_int rprCameraSetExposure(rpr_camera camera, rpr_float e
  *      RPR_CAMERA_MODE_LATITUDE_LONGITUDE_STEREO
  *      RPR_CAMERA_MODE_CUBEMAP
  *      RPR_CAMERA_MODE_CUBEMAP_STEREO
+ *      RPR_CAMERA_MODE_FISHEYE
  *
  *  @param  camera  The camera to set mode for
  *  @param  mode    Camera mode, default is RPR_CAMERA_MODE_PERSPECTIVE
@@ -1154,6 +1209,7 @@ extern RPR_API_ENTRY rpr_int rprCameraSetOrthoWidth(rpr_camera camera, rpr_float
 extern RPR_API_ENTRY rpr_int rprCameraSetFocalTilt(rpr_camera camera, rpr_float tilt);
 extern RPR_API_ENTRY rpr_int rprCameraSetIPD(rpr_camera camera, rpr_float ipd);
 extern RPR_API_ENTRY rpr_int rprCameraSetLensShift(rpr_camera camera, rpr_float shiftx, rpr_float shifty);
+extern RPR_API_ENTRY rpr_int rprCameraSetTiltCorrection(rpr_camera camera, rpr_float tiltX, rpr_float tiltY);
 
 /** @brief Set orthographic view volume height
 *
@@ -1162,6 +1218,22 @@ extern RPR_API_ENTRY rpr_int rprCameraSetLensShift(rpr_camera camera, rpr_float 
 *  @return         RPR_SUCCESS in case of success, error code otherwise
 */
 extern RPR_API_ENTRY rpr_int rprCameraSetOrthoHeight(rpr_camera camera, rpr_float height);
+
+/** @brief Set near plane of a camear
+*
+*  @param  camera  The camera to set near plane for
+*  @param  near   Near plane distance in meters, default is 0.01f
+*  @return         RPR_SUCCESS in case of success, error code otherwise
+*/
+extern RPR_API_ENTRY rpr_int rprCameraSetNearPlane(rpr_camera camera, rpr_float near);
+
+/** @brief Set far plane of a camear
+*
+*  @param  camera  The camera to set far plane for
+*  @param  far   Far plane distance in meters, default is 100000000.f
+*  @return         RPR_SUCCESS in case of success, error code otherwise
+*/
+extern RPR_API_ENTRY rpr_int rprCameraSetFarPlane(rpr_camera camera, rpr_float far);
 
 /* rpr_image*/
 /** @brief Query information about an image
@@ -1248,23 +1320,31 @@ extern RPR_API_ENTRY rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint 
 /** @brief Set displacement texture
 *
 *
-*  @param  shape       The shape to set subdivision for
-*  @param  image 	   Displacement texture (scalar displacement, only x component is used)
-*  @return             RPR_SUCCESS in case of success, error code otherwise
+*  @param  shape         The shape to set subdivision for
+*  @param  materialNode  Displacement texture , as material.
+*  @return               RPR_SUCCESS in case of success, error code otherwise
 */
-extern RPR_API_ENTRY rpr_int rprShapeSetDisplacementImage(rpr_shape shape, rpr_image image);
+extern RPR_API_ENTRY rpr_int rprShapeSetDisplacementMaterial(rpr_shape shape, rpr_material_node materialNode);
 
-/* rpr_shape */
+
 /** @brief Set shape material
 *
 */
 extern RPR_API_ENTRY rpr_int rprShapeSetMaterial(rpr_shape shape, rpr_material_node node);
 
-/** @brief Set shape material override
+/** @brief Set shape materials for specific faces
 *
+*  @param  shape	The shape to set the material for
+*  @param  node 	The material to set
+*  @param  face_indices	
+*  @return		RPR_SUCCESS in case of success, error code otherwise
 */
-extern RPR_API_ENTRY rpr_int rprShapeSetMaterialOverride(rpr_shape shape, rpr_material_node node);
+extern RPR_API_ENTRY rpr_int rprShapeSetMaterialFaces(rpr_shape shape, rpr_material_node node, rpr_int* face_indices, size_t num_faces);
 
+
+
+
+	
 /** @brief Set shape volume material
 *
 */
@@ -1535,7 +1615,7 @@ extern RPR_API_ENTRY rpr_int rprEnvironmentLightSetIntensityScale(rpr_light env_
 *  @param  portal    Portal mesh, might have multiple components
 *  @return           RPR_SUCCESS in case of success, error code otherwise
 */
-extern RPR_API_ENTRY rpr_int rprEnvironmentLightAttachPortal(rpr_light env_light, rpr_shape portal);
+extern RPR_API_ENTRY rpr_int rprEnvironmentLightAttachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal);
 
 /** @brief Remove portal for environment light.
 *
@@ -1546,7 +1626,7 @@ extern RPR_API_ENTRY rpr_int rprEnvironmentLightAttachPortal(rpr_light env_light
 *  @param  portal    Portal mesh, that have been added to light.
 *  @return           RPR_SUCCESS in case of success, error code otherwise
 */
-extern RPR_API_ENTRY rpr_int rprEnvironmentLightDetachPortal(rpr_light env_light, rpr_shape portal);
+extern RPR_API_ENTRY rpr_int rprEnvironmentLightDetachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal);
 
 /* rpr_light - sky */
 /** @brief Create sky light
@@ -1595,7 +1675,7 @@ extern RPR_API_ENTRY rpr_int rprSkyLightSetScale(rpr_light skylight, rpr_float s
 *  @param  portal    Portal mesh, might have multiple components
 *  @return           RPR_SUCCESS in case of success, error code otherwise
 */
-extern RPR_API_ENTRY rpr_int rprSkyLightAttachPortal(rpr_light skylight, rpr_shape portal);
+extern RPR_API_ENTRY rpr_int rprSkyLightAttachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal);
 
 /** @brief Remove portal for Sky light.
 *
@@ -1606,7 +1686,7 @@ extern RPR_API_ENTRY rpr_int rprSkyLightAttachPortal(rpr_light skylight, rpr_sha
 *  @param  portal    Portal mesh, that have been added to light.
 *  @return           RPR_SUCCESS in case of success, error code otherwise
 */
-extern RPR_API_ENTRY rpr_int rprSkyLightDetachPortal(rpr_light skylight, rpr_shape portal);
+extern RPR_API_ENTRY rpr_int rprSkyLightDetachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal);
 
 /** @brief Create IES light
 *
@@ -1869,6 +1949,15 @@ extern RPR_API_ENTRY rpr_int rprContextCreateMaterialSystem(rpr_context in_conte
 *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
 *
 */
+extern RPR_API_ENTRY rpr_int rprMaterialSystemGetSize(rpr_context in_context, rpr_uint * out_size);
+
+/** @brief Returns the number of material nodes for a given material system
+*
+*   Possible error codes:
+*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+*
+*/
 extern RPR_API_ENTRY rpr_int rprMaterialSystemCreateNode(rpr_material_system in_matsys, rpr_material_node_type in_type, rpr_material_node * out_node);
 
 /** @brief Connect nodes
@@ -1908,6 +1997,14 @@ extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputU(rpr_material_node in_node,
 extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char const * in_input, rpr_image image);
 extern RPR_API_ENTRY rpr_int rprMaterialNodeGetInfo(rpr_material_node in_node, rpr_material_node_info in_info, size_t in_size, void * in_data, size_t * out_size);
 extern RPR_API_ENTRY rpr_int rprMaterialNodeGetInputInfo(rpr_material_node in_node, rpr_int in_input_idx, rpr_material_node_input_info in_info, size_t in_size, void * in_data, size_t * out_size);
+extern RPR_API_ENTRY rpr_int rprContextCreateComposite(rpr_context context, rpr_composite_type in_type, rpr_composite * out_composite);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputFb(rpr_composite composite, const char * inputName, rpr_framebuffer input);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputC(rpr_composite composite, const char * inputName, rpr_composite input);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInput4f(rpr_composite composite, const char * inputName, float x, float y, float z, float w);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInput1u(rpr_composite composite, const char * inputName, unsigned int value);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputOp(rpr_composite composite, const char * inputName, rpr_material_node_arithmetic_operation op);
+extern RPR_API_ENTRY rpr_int rprCompositeCompute(rpr_composite composite, rpr_framebuffer fb);
+extern RPR_API_ENTRY rpr_int rprCompositeGetInfo(rpr_composite composite, rpr_composite_info composite_info, size_t size, void *  data, size_t * size_ret);
 
 /** @brief Delete object
 *
@@ -1949,8 +2046,11 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter1u(rpr_post_effect effect,
 extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter1f(rpr_post_effect effect, rpr_char const * name, rpr_float x);
 extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter3f(rpr_post_effect effect, rpr_char const * name, rpr_float x, rpr_float y, rpr_float z);
 extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect, rpr_char const * name, rpr_float x, rpr_float y, rpr_float z, rpr_float w);
+extern RPR_API_ENTRY rpr_int rprContextGetAttachedPostEffectCount(rpr_context context, rpr_uint *  nb);
+extern RPR_API_ENTRY rpr_int rprContextGetAttachedPostEffect(rpr_context context, rpr_uint i, rpr_post_effect * out_effect);
+extern RPR_API_ENTRY rpr_int rprPostEffectGetInfo(rpr_post_effect effect, rpr_post_effect_info info, size_t size,  void *  data, size_t *  size_ret);
 /***************compatibility part***************/
-#define FR_API_VERSION 0x010000252 
+#define FR_API_VERSION 0x010027300 
 #define FR_SUCCESS 0 
 #define FR_ERROR_COMPUTE_API_NOT_SUPPORTED -1 
 #define FR_ERROR_OUT_OF_SYSTEM_MEMORY -2 
@@ -1983,9 +2083,6 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_PARAMETER_TYPE_STRING 0x6 
 #define FR_PARAMETER_TYPE_SHADER 0x7 
 #define FR_PARAMETER_TYPE_UINT 0x8 
-#define FR_IMAGE_TYPE_1D 0x1 
-#define FR_IMAGE_TYPE_2D 0x2 
-#define FR_IMAGE_TYPE_3D 0x3 
 #define FR_CONTEXT_OPENCL (1 << 0) 
 #define FR_CONTEXT_DIRECTCOMPUTE (1 << 1) 
 #define FR_CONTEXT_REFERENCE (1 << 2) 
@@ -2016,6 +2113,7 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_LIGHT_TYPE_SKY 0x5 
 #define FR_LIGHT_TYPE_IES 0x6 
 #define FR_OBJECT_NAME 0x777777 
+#define FR_CONTEXT_CREATEPROP_CPU_THREAD_LIMIT 0x600 
 #define FR_CONTEXT_CREATION_FLAGS 0x102 
 #define FR_CONTEXT_CACHE_PATH 0x103 
 #define FR_CONTEXT_RENDER_STATUS 0x104 
@@ -2064,7 +2162,13 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_CONTEXT_GPU7_NAME 0x12F 
 #define FR_CONTEXT_TONE_MAPPING_EXPONENTIAL_INTENSITY 0x130 
 #define FR_CONTEXT_FRAMECOUNT 0x131 
-#define FR_CONTEXT_MAX 0x132 
+#define FR_CONTEXT_TEXTURE_COMPRESSION 0x132 
+#define FR_CONTEXT_AO_RAY_LENGTH 0x133 
+#define FR_CONTEXT_OOC_TEXTURE_CACHE 0x134 
+#define FR_CONTEXT_PREVIEW 0x135 
+#define FR_CONTEXT_CPU_THREAD_LIMIT 0x136 
+#define FR_CONTEXT_LAST_ERROR_MESSAGE 0x137 
+#define FR_CONTEXT_MAX 0x138 
 #define FR_CAMERA_TRANSFORM 0x201 
 #define FR_CAMERA_FSTOP 0x202 
 #define FR_CAMERA_APERTURE_BLADES 0x203 
@@ -2082,11 +2186,20 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_CAMERA_FOCAL_TILT 0x20F 
 #define FR_CAMERA_LENS_SHIFT 0x210 
 #define FR_CAMERA_IPD 0x211 
+#define FR_CAMERA_TILT_CORRECTION 0x212 
+#define FR_CAMERA_NEAR_PLANE 0x213 
+#define FR_CAMERA_FAR_PLANE 0x214 
 #define FR_IMAGE_FORMAT 0x301 
 #define FR_IMAGE_DESC 0x302 
 #define FR_IMAGE_DATA 0x303 
 #define FR_IMAGE_DATA_SIZEBYTE 0x304 
 #define FR_IMAGE_WRAP 0x305 
+#define FR_IMAGE_FILTER_NEAREST (1 << 0) 
+#define FR_IMAGE_FILTER_LINEAR (1 << 1) 
+#define FR_IMAGE_WRAP_REPEAT (1 << 2) 
+#define FR_IMAGE_WRAP_MIRRORED_REPEAT (1 << 3) 
+#define FR_IMAGE_WRAP_CLAMP_TO_EDGE (1 << 4) 
+#define FR_IMAGE_WRAP_CLAMP_TO_BORDER (1 << 5) 
 #define FR_SHAPE_TYPE 0x401 
 #define FR_SHAPE_VIDMEM_USAGE 0x402 
 #define FR_SHAPE_TRANSFORM 0x403 
@@ -2097,7 +2210,6 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_SHAPE_SHADOW_FLAG 0x408 
 #define FR_SHAPE_SUBDIVISION_FACTOR 0x409 
 #define FR_SHAPE_DISPLACEMENT_SCALE 0x40A 
-#define FR_SHAPE_DISPLACEMENT_IMAGE 0X40B 
 #define FR_SHAPE_VISIBILITY_PRIMARY_ONLY_FLAG 0x40C 
 #define FR_SHAPE_VISIBILITY_IN_SPECULAR_FLAG 0x40D 
 #define FR_SHAPE_SHADOW_CATCHER_FLAG 0x40E 
@@ -2105,7 +2217,8 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_SHAPE_OBJECT_GROUP_ID 0x410 
 #define FR_SHAPE_SUBDIVISION_CREASEWEIGHT 0x411 
 #define FR_SHAPE_SUBDIVISION_BOUNDARYINTEROP 0x412 
-#define FR_SHAPE_MATERIAL_OVERRIDE 0x413 
+#define FR_SHAPE_DISPLACEMENT_MATERIAL 0x413 
+#define FR_SHAPE_MATERIALS_PER_FACE 0x415 
 #define FR_MESH_POLYGON_COUNT 0x501 
 #define FR_MESH_VERTEX_COUNT 0x502 
 #define FR_MESH_NORMAL_COUNT 0x503 
@@ -2138,7 +2251,7 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION 0x70A 
 #define FR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY 0x70B 
 #define FR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND 0x70C 
-#define FR_SCENE_AXIS_ALIGNED_BOUNDING_BOX 0x70D
+#define FR_SCENE_AABB 0x70D 
 #define FR_LIGHT_TYPE 0x801 
 #define FR_LIGHT_TRANSFORM 0x803 
 #define FR_POINT_LIGHT_RADIANT_POWER 0x804 
@@ -2185,12 +2298,14 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_RENDER_MODE_NORMAL 0x7 
 #define FR_RENDER_MODE_TEXCOORD 0x8 
 #define FR_RENDER_MODE_AMBIENT_OCCLUSION 0x9 
+#define FR_RENDER_MODE_DIFFUSE 0x0a 
 #define FR_CAMERA_MODE_PERSPECTIVE 0x1 
 #define FR_CAMERA_MODE_ORTHOGRAPHIC 0x2 
 #define FR_CAMERA_MODE_LATITUDE_LONGITUDE_360 0x3 
 #define FR_CAMERA_MODE_LATITUDE_LONGITUDE_STEREO 0x4 
 #define FR_CAMERA_MODE_CUBEMAP 0x5 
 #define FR_CAMERA_MODE_CUBEMAP_STEREO 0x6 
+#define FR_CAMERA_MODE_FISHEYE 0x7 
 #define FR_TONEMAPPING_OPERATOR_NONE 0x0 
 #define FR_TONEMAPPING_OPERATOR_LINEAR 0x1 
 #define FR_TONEMAPPING_OPERATOR_PHOTOLINEAR 0x2 
@@ -2237,6 +2352,10 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_MATERIAL_NODE_DIFFUSE_REFRACTION 0x1B 
 #define FR_MATERIAL_NODE_BUMP_MAP 0x1C 
 #define FR_MATERIAL_NODE_VOLUME 0x1D 
+#define FR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION 0x1E 
+#define FR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION 0x1F 
+#define FR_MATERIAL_NODE_TWOSIDED 0x20 
+#define FR_MATERIAL_NODE_UV_PROJECT 0x21 
 #define FR_MATERIAL_INPUT_COLOR 0x0 
 #define FR_MATERIAL_INPUT_COLOR0 0x1 
 #define FR_MATERIAL_INPUT_COLOR1 0x2 
@@ -2262,7 +2381,14 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_MATERIAL_INPUT_MULTISCATTER 0x16 
 #define FR_MATERIAL_INPUT_COLOR2 0x17 
 #define FR_MATERIAL_INPUT_COLOR3 0x18 
-#define FR_MATERIAL_INPUT_MAX 0x19 
+#define FR_MATERIAL_INPUT_ANISOTROPIC 0x19 
+#define FR_MATERIAL_INPUT_FRONTFACE 0x1a 
+#define FR_MATERIAL_INPUT_BACKFACE 0x1b 
+#define FR_MATERIAL_INPUT_ORIGIN 0x1c 
+#define FR_MATERIAL_INPUT_ZAXIS 0x1d 
+#define FR_MATERIAL_INPUT_XAXIS 0x1e 
+#define FR_MATERIAL_INPUT_THRESHOLD 0x1f 
+#define FR_MATERIAL_INPUT_MAX 0x20 
 #define FR_MATERIAL_STANDARD_INPUT_DIFFUSE_COLOR 0x112 
 #define FR_MATERIAL_STANDARD_INPUT_DIFFUSE_NORMAL 0x113 
 #define FR_MATERIAL_STANDARD_INPUT_GLOSSY_COLOR 0x114 
@@ -2302,28 +2428,28 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_MATERIAL_NODE_OP_SELECT_X 0x07 
 #define FR_MATERIAL_NODE_OP_SELECT_Y 0x08 
 #define FR_MATERIAL_NODE_OP_SELECT_Z 0x09 
-#define FR_MATERIAL_NODE_OP_SELECT_W 0x0A 
-#define FR_MATERIAL_NODE_OP_COMBINE 0x0B 
-#define FR_MATERIAL_NODE_OP_DOT3 0x0C 
-#define FR_MATERIAL_NODE_OP_DOT4 0x0D 
-#define FR_MATERIAL_NODE_OP_CROSS3 0x0E 
-#define FR_MATERIAL_NODE_OP_LENGTH3 0x0F 
-#define FR_MATERIAL_NODE_OP_NORMALIZE3 0x10 
-#define FR_MATERIAL_NODE_OP_POW 0x11 
-#define FR_MATERIAL_NODE_OP_ACOS 0x12 
-#define FR_MATERIAL_NODE_OP_ASIN 0x13 
-#define FR_MATERIAL_NODE_OP_ATAN 0x14 
-#define FR_MATERIAL_NODE_OP_AVERAGE_XYZ 0x15 
-#define FR_MATERIAL_NODE_OP_AVERAGE 0x16 
-#define FR_MATERIAL_NODE_OP_MIN 0x17 
-#define FR_MATERIAL_NODE_OP_MAX 0x18 
-#define FR_MATERIAL_NODE_OP_FLOOR 0x19 
-#define FR_MATERIAL_NODE_OP_MOD 0x1A 
-#define FR_MATERIAL_NODE_OP_ABS 0x1B 
-#define FR_MATERIAL_NODE_OP_SHUFFLE_YZWX 0x1C 
-#define FR_MATERIAL_NODE_OP_SHUFFLE_ZWXY 0x1D 
-#define FR_MATERIAL_NODE_OP_SHUFFLE_WXYZ 0x1E 
-#define FR_MATERIAL_NODE_OP_MAT_MUL 0x1F 
+#define FR_MATERIAL_NODE_OP_COMBINE 0x0A 
+#define FR_MATERIAL_NODE_OP_DOT3 0x0B 
+#define FR_MATERIAL_NODE_OP_CROSS3 0x0C 
+#define FR_MATERIAL_NODE_OP_LENGTH3 0x0D 
+#define FR_MATERIAL_NODE_OP_NORMALIZE3 0x0E 
+#define FR_MATERIAL_NODE_OP_POW 0x0F 
+#define FR_MATERIAL_NODE_OP_ACOS 0x10 
+#define FR_MATERIAL_NODE_OP_ASIN 0x11 
+#define FR_MATERIAL_NODE_OP_ATAN 0x12 
+#define FR_MATERIAL_NODE_OP_AVERAGE_XYZ 0x13 
+#define FR_MATERIAL_NODE_OP_AVERAGE 0x14 
+#define FR_MATERIAL_NODE_OP_MIN 0x15 
+#define FR_MATERIAL_NODE_OP_MAX 0x16 
+#define FR_MATERIAL_NODE_OP_FLOOR 0x17 
+#define FR_MATERIAL_NODE_OP_MOD 0x18 
+#define FR_MATERIAL_NODE_OP_ABS 0x19 
+#define FR_MATERIAL_NODE_OP_SHUFFLE_YZWX 0x1a 
+#define FR_MATERIAL_NODE_OP_SHUFFLE_ZWXY 0x1b 
+#define FR_MATERIAL_NODE_OP_SHUFFLE_WXYZ 0x1c 
+#define FR_MATERIAL_NODE_OP_MAT_MUL 0x1d 
+#define FR_MATERIAL_NODE_OP_SELECT_W 0x1e 
+#define FR_MATERIAL_NODE_OP_DOT4 0x1f 
 #define FR_MATERIAL_NODE_LOOKUP_UV 0x0 
 #define FR_MATERIAL_NODE_LOOKUP_N 0x1 
 #define FR_MATERIAL_NODE_LOOKUP_P 0x2 
@@ -2331,11 +2457,11 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_MATERIAL_NODE_LOOKUP_OUTVEC 0x4 
 #define FR_MATERIAL_NODE_LOOKUP_UV1 0x5 
 #define FR_POST_EFFECT_TYPE 0x0 
-#define FR_POST_EFFECT_PARAMETER_COUNT 0x1 
-#define FR_POST_EFFECT_WHITE_BALANCE_COLOR_SPACE 0x1 
-#define FR_POST_EFFECT_WHITE_BALANCE_COLOR_TEMPERATURE 0x2 
-#define FR_POST_EFFECT_SIMPLE_TONEMAP_EXPOSURE 0x1 
-#define FR_POST_EFFECT_SIMPLE_TONEMAP_CONTRAST 0x2 
+#define FR_POST_EFFECT_WHITE_BALANCE_COLOR_SPACE 0x4 
+#define FR_POST_EFFECT_WHITE_BALANCE_COLOR_TEMPERATURE 0x5 
+#define FR_POST_EFFECT_SIMPLE_TONEMAP_EXPOSURE 0x6 
+#define FR_POST_EFFECT_SIMPLE_TONEMAP_CONTRAST 0x7 
+#define FR_POST_EFFECT_SIMPLE_TONEMAP_ENABLE_TONEMAP 0x8 
 #define FR_AOV_COLOR 0x0 
 #define FR_AOV_OPACITY 0x1 
 #define FR_AOV_WORLD_COORDINATE 0x2 
@@ -2346,7 +2472,11 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_AOV_DEPTH 0x7 
 #define FR_AOV_OBJECT_ID 0x8 
 #define FR_AOV_OBJECT_GROUP_ID 0x9 
-#define FR_AOV_MAX 0xa 
+#define FR_AOV_SHADOW_CATCHER 0x0a 
+#define FR_AOV_BACKGROUND 0x0b 
+#define FR_AOV_EMISSION 0x0c 
+#define FR_AOV_VELOCITY 0x0d 
+#define FR_AOV_MAX 0x0e 
 #define FR_POST_EFFECT_TONE_MAP 0x0 
 #define FR_POST_EFFECT_WHITE_BALANCE 0x1 
 #define FR_POST_EFFECT_SIMPLE_TONEMAP 0x2 
@@ -2360,20 +2490,41 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 #define FR_MATERIAL_NODE_INPUT_TYPE_UINT 0x2 
 #define FR_MATERIAL_NODE_INPUT_TYPE_NODE 0x3 
 #define FR_MATERIAL_NODE_INPUT_TYPE_IMAGE 0x4 
-#define FR_RASTER_SHADOWS_FILTER_NONE 0x90E
-#define FR_RASTER_SHADOWS_FILTER_PCF 0x90F
-#define FR_RASTER_SHADOWS_FILTER_PCSS 0x910
-#define FR_RASTER_SHADOWS_SAMPLING_BILINEAR 0x911
-#define FR_RASTER_SHADOWS_SAMPLING_HAMMERSLEY 0x912
-#define FR_RASTER_SHADOWS_SAMPLING_MULTIJITTERED 0x913
 #define FR_SUBDIV_BOUNDARY_INTERFOP_TYPE_EDGE_AND_CORNER 0x1 
 #define FR_SUBDIV_BOUNDARY_INTERFOP_TYPE_EDGE_ONLY 0x2 
 #define FR_IMAGE_WRAP_TYPE_REPEAT 0x1 
 #define FR_IMAGE_WRAP_TYPE_MIRRORED_REPEAT 0x2 
 #define FR_IMAGE_WRAP_TYPE_CLAMP_TO_EDGE 0x3 
 #define FR_IMAGE_WRAP_TYPE_CLAMP_TO_BORDER 0x4 
+#define FR_IMAGE_WRAP_TYPE_CLAMP_ZERO 0x5 
+#define FR_IMAGE_WRAP_TYPE_CLAMP_ONE 0x6 
 #define FR_MAX_AA_SAMPLES 32 
 #define FR_MAX_AA_GRID_SIZE 16 
+#define FR_COMPOSITE_TYPE 0x1  
+#define FR_COMPOSITE_FRAMEBUFFER_INPUT_FB 0x2  
+#define FR_COMPOSITE_NORMALIZE_INPUT_COLOR 0x3  
+#define FR_COMPOSITE_NORMALIZE_INPUT_SHADOWCATCHER 0x4  
+#define FR_COMPOSITE_CONSTANT_INPUT_VALUE 0x5  
+#define FR_COMPOSITE_LERP_VALUE_INPUT_COLOR0 0x6  
+#define FR_COMPOSITE_LERP_VALUE_INPUT_COLOR1 0x7  
+#define FR_COMPOSITE_LERP_VALUE_INPUT_WEIGHT 0x8  
+#define FR_COMPOSITE_ARITHMETIC_INPUT_COLOR0 0x9  
+#define FR_COMPOSITE_ARITHMETIC_INPUT_COLOR1 0x0a  
+#define FR_COMPOSITE_ARITHMETIC_INPUT_OP 0x0b  
+#define FR_COMPOSITE_GAMMA_CORRECTION_INPUT_COLOR 0x0c  
+#define FR_COMPOSITE_ARITHMETIC 0x1  
+#define FR_COMPOSITE_LERP_VALUE 0x2  
+#define FR_COMPOSITE_INVERSE 0x3  
+#define FR_COMPOSITE_NORMALIZE 0x4  
+#define FR_COMPOSITE_GAMMA_CORRECTION 0x5  
+#define FR_COMPOSITE_EXPOSURE 0x6  
+#define FR_COMPOSITE_CONTRAST 0x7  
+#define FR_COMPOSITE_SIDE_BY_SIDE 0x8  
+#define FR_COMPOSITE_TONEMAP_ACES 0x9  
+#define FR_COMPOSITE_TONEMAP_REINHARD 0xa  
+#define FR_COMPOSITE_TONEMAP_LINEAR 0xb  
+#define FR_COMPOSITE_FRAMEBUFFER 0xc  
+#define FR_COMPOSITE_CONSTANT 0xd  
 #define FR_FALSE 0 
 #define FR_TRUE 1 
 typedef rpr_char fr_char;
@@ -2400,8 +2551,9 @@ typedef rpr_material_system fr_material_system;
 typedef rpr_material_node fr_material_node;
 typedef rpr_post_effect fr_post_effect;
 typedef rpr_context_properties fr_context_properties;
+typedef rpr_composite fr_composite;
 typedef rpr_light_type fr_light_type;
-typedef rpr_image_type fr_image_type;
+typedef rpr_image_option fr_image_option;
 typedef rpr_shape_type fr_shape_type;
 typedef rpr_context_type fr_context_type;
 typedef rpr_creation_flags fr_creation_flags;
@@ -2433,11 +2585,14 @@ typedef rpr_material_node_input_info fr_material_node_input_info;
 typedef rpr_aov fr_aov;
 typedef rpr_post_effect_type fr_post_effect_type;
 typedef rpr_post_effect_info fr_post_effect_info;
+typedef rpr_composite_info fr_composite_info;
+typedef rpr_composite_type fr_composite_type;
 typedef rpr_color_space fr_color_space;
 typedef rpr_environment_override fr_environment_override;
 typedef rpr_subdiv_boundary_interfop_type fr_subdiv_boundary_interfop_type;
 typedef rpr_material_node_lookup_value fr_material_node_lookup_value;
 typedef rpr_image_wrap_type fr_image_wrap_type;
+typedef rpr_material_node_arithmetic_operation fr_material_node_arithmetic_operation;
 typedef _rpr_image_desc _fr_image_desc;
 typedef rpr_image_desc fr_image_desc;
 typedef _rpr_framebuffer_desc _fr_framebuffer_desc;
@@ -2471,12 +2626,13 @@ extern RPR_API_ENTRY fr_int frContextCreateImageFromFile(fr_context context, fr_
 extern RPR_API_ENTRY fr_int frContextCreateScene(fr_context context, fr_scene * out_scene);
 extern RPR_API_ENTRY fr_int frContextCreateInstance(fr_context context, fr_shape shape, fr_shape * out_instance);
 extern RPR_API_ENTRY fr_int frContextCreateMesh(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_float const * texcoords, size_t num_texcoords, fr_int texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const * texcoord_indices, fr_int tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_shape * out_mesh);
-extern RPR_API_ENTRY fr_int frContextCreateMeshEx(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t * num_texcoords, fr_int * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_shape * out_mesh);
+extern RPR_API_ENTRY fr_int frContextCreateMeshEx(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t const * num_texcoords, fr_int const * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int const * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_shape * out_mesh);
 extern RPR_API_ENTRY fr_int frContextCreateCamera(fr_context context, fr_camera * out_camera);
 extern RPR_API_ENTRY fr_int frContextCreateFrameBuffer(fr_context context, fr_framebuffer_format const format, fr_framebuffer_desc const * fb_desc, fr_framebuffer * out_fb);
 extern RPR_API_ENTRY fr_int frCameraGetInfo(fr_camera camera, fr_camera_info camera_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frCameraSetFocalLength(fr_camera camera, fr_float flength);
 extern RPR_API_ENTRY fr_int frCameraSetFocusDistance(fr_camera camera, fr_float fdist);
+extern RPR_API_ENTRY fr_int frImageSetOption(fr_image image, fr_image_option option);
 extern RPR_API_ENTRY fr_int frCameraSetTransform(fr_camera camera, fr_bool transpose, fr_float * transform);
 extern RPR_API_ENTRY fr_int frCameraSetSensorSize(fr_camera camera, fr_float width, fr_float height);
 extern RPR_API_ENTRY fr_int frCameraLookAt(fr_camera camera, fr_float posx, fr_float posy, fr_float posz, fr_float atx, fr_float aty, fr_float atz, fr_float upx, fr_float upy, fr_float upz);
@@ -2488,7 +2644,10 @@ extern RPR_API_ENTRY fr_int frCameraSetOrthoWidth(fr_camera camera, fr_float wid
 extern RPR_API_ENTRY fr_int frCameraSetFocalTilt(fr_camera camera, fr_float tilt);
 extern RPR_API_ENTRY fr_int frCameraSetIPD(fr_camera camera, fr_float ipd);
 extern RPR_API_ENTRY fr_int frCameraSetLensShift(fr_camera camera, fr_float shiftx, fr_float shifty);
+extern RPR_API_ENTRY fr_int frCameraSetTiltCorrection(fr_camera camera, fr_float tiltX, fr_float tiltY);
 extern RPR_API_ENTRY fr_int frCameraSetOrthoHeight(fr_camera camera, fr_float height);
+extern RPR_API_ENTRY fr_int frCameraSetNearPlane(fr_camera camera, fr_float near);
+extern RPR_API_ENTRY fr_int frCameraSetFarPlane(fr_camera camera, fr_float far);
 extern RPR_API_ENTRY fr_int frImageGetInfo(fr_image image, fr_image_info image_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frImageSetWrap(fr_image image, fr_image_wrap_type type);
 extern RPR_API_ENTRY fr_int frShapeSetTransform(fr_shape shape, fr_bool transpose, fr_float const * transform);
@@ -2497,9 +2656,9 @@ extern RPR_API_ENTRY fr_int frShapeSetSubdivisionCreaseWeight(fr_shape shape, fr
 extern RPR_API_ENTRY fr_int frShapeSetSubdivisionBoundaryInterop(fr_shape shape, fr_subdiv_boundary_interfop_type type);
 extern RPR_API_ENTRY fr_int frShapeSetDisplacementScale(fr_shape shape, fr_float minscale, fr_float maxscale);
 extern RPR_API_ENTRY fr_int frShapeSetObjectGroupID(fr_shape shape, fr_uint objectGroupID);
-extern RPR_API_ENTRY fr_int frShapeSetDisplacementImage(fr_shape shape, fr_image image);
+extern RPR_API_ENTRY fr_int frShapeSetDisplacementMaterial(fr_shape shape, fr_material_node materialNode);
 extern RPR_API_ENTRY fr_int frShapeSetMaterial(fr_shape shape, fr_material_node node);
-extern RPR_API_ENTRY fr_int frShapeSetMaterialOverride(fr_shape shape, fr_material_node node);
+extern RPR_API_ENTRY fr_int frShapeSetMaterialFaces(fr_shape shape, fr_material_node node, fr_int* face_indices, size_t num_faces);
 extern RPR_API_ENTRY fr_int frShapeSetVolumeMaterial(fr_shape shape, fr_material_node node);
 extern RPR_API_ENTRY fr_int frShapeSetLinearMotion(fr_shape shape, fr_float x, fr_float y, fr_float z);
 extern RPR_API_ENTRY fr_int frShapeSetAngularMotion(fr_shape shape, fr_float x, fr_float y, fr_float z, fr_float w);
@@ -2524,14 +2683,14 @@ extern RPR_API_ENTRY fr_int frDirectionalLightSetShadowSoftness(fr_light light, 
 extern RPR_API_ENTRY fr_int frContextCreateEnvironmentLight(fr_context context, fr_light * out_light);
 extern RPR_API_ENTRY fr_int frEnvironmentLightSetImage(fr_light env_light, fr_image image);
 extern RPR_API_ENTRY fr_int frEnvironmentLightSetIntensityScale(fr_light env_light, fr_float intensity_scale);
-extern RPR_API_ENTRY fr_int frEnvironmentLightAttachPortal(fr_light env_light, fr_shape portal);
-extern RPR_API_ENTRY fr_int frEnvironmentLightDetachPortal(fr_light env_light, fr_shape portal);
+extern RPR_API_ENTRY fr_int frEnvironmentLightAttachPortal(fr_scene scene, fr_light env_light, fr_shape portal);
+extern RPR_API_ENTRY fr_int frEnvironmentLightDetachPortal(fr_scene scene, fr_light env_light, fr_shape portal);
 extern RPR_API_ENTRY fr_int frContextCreateSkyLight(fr_context context, fr_light * out_light);
 extern RPR_API_ENTRY fr_int frSkyLightSetTurbidity(fr_light skylight, fr_float turbidity);
 extern RPR_API_ENTRY fr_int frSkyLightSetAlbedo(fr_light skylight, fr_float albedo);
 extern RPR_API_ENTRY fr_int frSkyLightSetScale(fr_light skylight, fr_float scale);
-extern RPR_API_ENTRY fr_int frSkyLightAttachPortal(fr_light skylight, fr_shape portal);
-extern RPR_API_ENTRY fr_int frSkyLightDetachPortal(fr_light skylight, fr_shape portal);
+extern RPR_API_ENTRY fr_int frSkyLightAttachPortal(fr_scene scene, fr_light skylight, fr_shape portal);
+extern RPR_API_ENTRY fr_int frSkyLightDetachPortal(fr_scene scene, fr_light skylight, fr_shape portal);
 extern RPR_API_ENTRY fr_int frContextCreateIESLight(fr_context context, fr_light * light);
 extern RPR_API_ENTRY fr_int frIESLightSetRadiantPower3f(fr_light light, fr_float r, fr_float g, fr_float b);
 extern RPR_API_ENTRY fr_int frIESLightSetImageFromFile(fr_light env_light, fr_char const * imagePath, fr_int nx, fr_int ny);
@@ -2554,6 +2713,7 @@ extern RPR_API_ENTRY fr_int frFrameBufferClear(fr_framebuffer frame_buffer);
 extern RPR_API_ENTRY fr_int frFrameBufferSaveToFile(fr_framebuffer frame_buffer, fr_char const * file_path);
 extern RPR_API_ENTRY fr_int frContextResolveFrameBuffer(fr_context context, fr_framebuffer src_frame_buffer, fr_framebuffer dst_frame_buffer, fr_bool normalizeOnly = false);
 extern RPR_API_ENTRY fr_int frContextCreateMaterialSystem(fr_context in_context, fr_material_system_type type, fr_material_system * out_matsys);
+extern RPR_API_ENTRY fr_int frMaterialSystemGetSize(fr_context in_context, fr_uint * out_size);
 extern RPR_API_ENTRY fr_int frMaterialSystemCreateNode(fr_material_system in_matsys, fr_material_node_type in_type, fr_material_node * out_node);
 extern RPR_API_ENTRY fr_int frMaterialNodeSetInputN(fr_material_node in_node, fr_char const * in_input, fr_material_node in_input_node);
 extern RPR_API_ENTRY fr_int frMaterialNodeSetInputF(fr_material_node in_node, fr_char const * in_input, fr_float in_value_x, fr_float in_value_y, fr_float in_value_z, fr_float in_value_w);
@@ -2561,6 +2721,14 @@ extern RPR_API_ENTRY fr_int frMaterialNodeSetInputU(fr_material_node in_node, fr
 extern RPR_API_ENTRY fr_int frMaterialNodeSetInputImageData(fr_material_node in_node, fr_char const * in_input, fr_image image);
 extern RPR_API_ENTRY fr_int frMaterialNodeGetInfo(fr_material_node in_node, fr_material_node_info in_info, size_t in_size, void * in_data, size_t * out_size);
 extern RPR_API_ENTRY fr_int frMaterialNodeGetInputInfo(fr_material_node in_node, fr_int in_input_idx, fr_material_node_input_info in_info, size_t in_size, void * in_data, size_t * out_size);
+extern RPR_API_ENTRY fr_int frContextCreateComposite(fr_context context, fr_composite_type in_type, fr_composite * out_composite);
+extern RPR_API_ENTRY fr_int frCompositeSetInputFb(fr_composite composite, const char * inputName, fr_framebuffer input);
+extern RPR_API_ENTRY fr_int frCompositeSetInputC(fr_composite composite, const char * inputName, fr_composite input);
+extern RPR_API_ENTRY fr_int frCompositeSetInput4f(fr_composite composite, const char * inputName, float x, float y, float z, float w);
+extern RPR_API_ENTRY fr_int frCompositeSetInput1u(fr_composite composite, const char * inputName, unsigned int value);
+extern RPR_API_ENTRY fr_int frCompositeSetInputOp(fr_composite composite, const char * inputName, fr_material_node_arithmetic_operation op);
+extern RPR_API_ENTRY fr_int frCompositeCompute(fr_composite composite, fr_framebuffer fb);
+extern RPR_API_ENTRY fr_int frCompositeGetInfo(fr_composite composite, fr_composite_info composite_info, size_t size, void *  data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frObjectDelete(void * obj);
 extern RPR_API_ENTRY fr_int frObjectSetName(void * node, fr_char const * name);
 extern RPR_API_ENTRY fr_int frContextCreatePostEffect(fr_context context, fr_post_effect_type type, fr_post_effect * out_effect);
@@ -2570,6 +2738,9 @@ extern RPR_API_ENTRY fr_int frPostEffectSetParameter1u(fr_post_effect effect, fr
 extern RPR_API_ENTRY fr_int frPostEffectSetParameter1f(fr_post_effect effect, fr_char const * name, fr_float x);
 extern RPR_API_ENTRY fr_int frPostEffectSetParameter3f(fr_post_effect effect, fr_char const * name, fr_float x, fr_float y, fr_float z);
 extern RPR_API_ENTRY fr_int frPostEffectSetParameter4f(fr_post_effect effect, fr_char const * name, fr_float x, fr_float y, fr_float z, fr_float w);
+extern RPR_API_ENTRY fr_int frContextGetAttachedPostEffectCount(fr_context context, fr_uint *  nb);
+extern RPR_API_ENTRY fr_int frContextGetAttachedPostEffect(fr_context context, fr_uint i, fr_post_effect * out_effect);
+extern RPR_API_ENTRY fr_int frPostEffectGetInfo(fr_post_effect effect, fr_post_effect_info info, size_t size,  void *  data, size_t *  size_ret);
 
 #ifdef __cplusplus
 }

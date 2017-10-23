@@ -1,7 +1,14 @@
 #ifndef frLoadStore_RPS8_H_
 #define frLoadStore_RPS8_H_
 
-#include "Rpr/RadeonProRender.h"
+#define RPRS_RPRSUPPORT_ENABLED
+
+
+#ifdef RPRS_RPRSUPPORT_ENABLED
+#include <RprSupport/RprSupport.h>
+#else
+#include <Rpr/RadeonProRender.h>
+#endif
 
 #include "common.h"
 
@@ -14,6 +21,8 @@
 /*
 
 Architecture of RPS file :
+
+( note: if you want to have a visual architecture, use the export to XML :  rprsExportToXML )
 
 we store ELEMENTS.
 
@@ -63,11 +72,17 @@ public:
 	rpr_int StoreEverything(
 		rpr_context context, 
 		rpr_scene scene
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		,void* contextX
+		#endif
 		);
 
 	// return RPR_SUCCESS is success
 	rpr_int LoadEverything(
 		rpr_context context, 
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		void* contextX,
+		#endif
 		rpr_material_system materialSystem,
 		rpr_scene& scene,
 		bool useAlreadyExistingScene
@@ -96,6 +111,7 @@ public:
 
 	const std::vector<RPS_OBJECT_DECLARED>& GetListObjectDeclared() { return m_listObjectDeclared; }
 	
+	rpr_int BinaryToAscii( const std::string&  rprsFileNameAscii);
 
 private:
 
@@ -131,6 +147,8 @@ private:
 		RPSPT_INT64_2    = 19, 
 		RPSPT_INT64_3    = 20, 
 		RPSPT_INT64_4    = 21, 
+
+		RPSPT_STRING    = 22,
 
 		RPSPT_FORCE_DWORD    = 0xffffffff
 	};
@@ -172,21 +190,58 @@ private:
 	bool Store_ReferenceToObject(const std::string& objName, const std::string& type, int32_t id);
 
 	rpr_int Store_Context(rpr_context context);// return RPR_SUCCESS is success
-	rpr_int Store_Scene(rpr_scene scene);// return RPR_SUCCESS is success
-	rpr_int Store_Shape(rpr_shape shape, const std::string& name); // return RPR_SUCCESS is success
+	
+	rpr_int Store_Scene(rpr_scene scene
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		,rprx_context contextX
+		#endif
+		);// return RPR_SUCCESS is success
+
+	rpr_int Store_Shape(rpr_shape shape, const std::string& name
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		,rprx_context contextX=0
+		#endif	
+		); // return RPR_SUCCESS is success
 	rpr_int Store_Light(rpr_light light, const std::string& name);// return RPR_SUCCESS is success
 	rpr_int Store_Camera(rpr_camera camera, const std::string& name_);// return RPR_SUCCESS is success
+	rpr_int Store_Framebuffer(rpr_framebuffer camera, const std::string& name_);// return RPR_SUCCESS is success
 	rpr_int Store_MaterialNode(rpr_material_node shader, const std::string& name);// return RPR_SUCCESS is success
+	#ifdef RPRS_RPRSUPPORT_ENABLED
+	rpr_int Store_MaterialNodeX(rprx_material shader, const std::string& name,rprx_context contextX);// return RPR_SUCCESS is success
+	#endif	
 	rpr_int Store_Image(rpr_image image, const std::string& name);// return RPR_SUCCESS is success
-
+	rpr_int Store_Posteffect(rpr_post_effect posteffect, const std::string& name);// return RPR_SUCCESS is success
+	rpr_int Store_Composite(rpr_composite composite, const std::string& name);// return RPR_SUCCESS is success
 
 	rpr_int Read_Context(rpr_context context);// return RPR_SUCCESS is success
-	rpr_scene Read_Scene(rpr_context context, rpr_material_system materialSystem, rpr_scene sceneExisting);//return NULL if error.   If sceneExisting not NULL, the we use this scene. Else we create a new scene.
-	rpr_light Read_Light(rpr_context context, rpr_scene scene, rpr_material_system materialSystem);//return NULL if error
+	rpr_scene Read_Scene(rpr_context context,
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		rprx_context contextX, 
+		#endif
+		rpr_material_system materialSystem, rpr_scene sceneExisting);//return NULL if error.   If sceneExisting not NULL, the we use this scene. Else we create a new scene.
+	rpr_light Read_Light(rpr_context context,
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		rprx_context contextX, 
+		#endif
+		rpr_scene scene, rpr_material_system materialSystem);//return NULL if error
 	rpr_image Read_Image(rpr_context context);//return NULL if error
-	rpr_shape Read_Shape(rpr_context context, rpr_material_system materialSystem);//return NULL if error
+	rpr_shape Read_Shape(rpr_context context, rpr_material_system materialSystem
+		#ifdef RPRS_RPRSUPPORT_ENABLED
+		,rprx_context contextX
+		#endif	
+		);//return NULL if error
 	rpr_material_node Read_MaterialNode(rpr_material_system materialSystem, rpr_context context);//return NULL if error
+	
+	#ifdef RPRS_RPRSUPPORT_ENABLED
+	rprx_material Read_MaterialNodeX( rpr_material_system materialSystem, rpr_context context
+		, rprx_context contextX
+		);//return NULL if error
+	#endif	
+
 	rpr_camera Read_Camera(rpr_context context);//return NULL if error
+	rpr_framebuffer Read_Framebuffer(rpr_context context);//return NULL if error
+	rpr_post_effect Read_Posteffect(rpr_context context);//return NULL if error
+	rpr_composite Read_Composite(rpr_context context);//return NULL if error
 
 	// [out] name       : name of the next element
 	// [out] objBegType : only filled if next element is RPSRT_OBJECT_BEG or RPSRT_REFERENCE
@@ -231,6 +286,22 @@ private:
 	std::map<std::string, float> m_extraCustomParam_float;
 
 	const bool m_allowWrite; // = true if allow write the m_frsFile fstream  -   = false if Read Only
+
+
+	#ifdef RPRS_RPRSUPPORT_ENABLED
+	struct RPRX_DEFINE_PARAM_MATERIAL
+	{
+		RPRX_DEFINE_PARAM_MATERIAL(rprx_parameter param_ , const std::string& name_)
+		{
+			param = param_;
+			name = name_;
+		}
+		rprx_parameter param;
+		std::string name;
+	};
+	std::vector<RPRX_DEFINE_PARAM_MATERIAL> m_rprxParamList;
+	#endif
+
 
 };
 

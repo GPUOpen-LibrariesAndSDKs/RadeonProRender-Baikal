@@ -472,15 +472,13 @@ rpr_int rprContextCreateMesh(rpr_context in_context,
 }
 
 rpr_int rprContextCreateMeshEx(rpr_context context, 
-                                rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, 
-                                rpr_float const * normals, size_t num_normals, rpr_int normal_stride, 
-                                rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, 
-                                rpr_int numberOfTexCoordLayers, 
-                                rpr_float const ** texcoords, size_t * num_texcoords, rpr_int * texcoord_stride, 
-                                rpr_int const * vertex_indices, rpr_int vidx_stride, 
-                                rpr_int const * normal_indices, rpr_int nidx_stride, 
-                                rpr_int const ** texcoord_indices, rpr_int * tidx_stride, 
-                                rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh)
+                                                    rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, 
+                                                    rpr_float const * normals, size_t num_normals, rpr_int normal_stride, 
+                                                    rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers, 
+                                                    rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride, 
+                                                    rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, 
+                                                    rpr_int const ** texcoord_indices, rpr_int const * tidx_stride, 
+                                                    rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh)
 {
     if (num_perVertexFlags == 0 && numberOfTexCoordLayers == 1)
     {
@@ -812,6 +810,22 @@ rpr_int rprCameraSetLensShift(rpr_camera camera, rpr_float shiftx, rpr_float shi
     UNSUPPORTED_FUNCTION
 }
 
+rpr_int rprCameraSetTiltCorrection(rpr_camera camera, rpr_float tiltX, rpr_float tiltY)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprCameraSetFarPlane(rpr_camera camera, rpr_float far)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+
+rpr_int rprCameraSetNearPlane(rpr_camera camera, rpr_float near)
+{
+    UNSUPPORTED_FUNCTION
+}
+
 rpr_int rprCameraSetOrthoHeight(rpr_camera camera, rpr_float height)
 {
     UNSUPPORTED_FUNCTION
@@ -887,6 +901,12 @@ rpr_int rprImageSetWrap(rpr_image image, rpr_image_wrap_type type)
     UNSUPPORTED_FUNCTION
 }
 
+rpr_int rprImageSetOption(rpr_image image, rpr_image_option option)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+
 rpr_int rprShapeSetTransform(rpr_shape in_shape, rpr_bool transpose, rpr_float const * transform)
 {
     //cast data
@@ -933,6 +953,17 @@ rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint objectGroupID)
 {
     UNSUPPORTED_FUNCTION
 }
+
+rpr_int rprShapeSetDisplacementMaterial(rpr_shape shape, rpr_material_node materialNode)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprShapeSetMaterialFaces(rpr_shape shape, rpr_material_node node, rpr_int* face_indices, size_t num_faces)
+{
+    UNSUPPORTED_FUNCTION
+}
+
 
 rpr_int rprShapeSetDisplacementImage(rpr_shape shape, rpr_image image)
 {
@@ -1082,7 +1113,12 @@ rpr_int rprShapeGetInfo(rpr_shape in_shape, rpr_shape_info in_info, size_t in_si
     case RPR_SHAPE_SUBDIVISION_BOUNDARYINTEROP:
     case RPR_SHAPE_DISPLACEMENT_SCALE:
     case RPR_SHAPE_OBJECT_GROUP_ID:
-    case RPR_SHAPE_DISPLACEMENT_IMAGE:
+    case RPR_SHAPE_VIDMEM_USAGE:
+    case RPR_SHAPE_VISIBILITY_PRIMARY_ONLY_FLAG:
+    case RPR_SHAPE_VISIBILITY_IN_SPECULAR_FLAG:
+    case RPR_SHAPE_VOLUME_MATERIAL:
+    case RPR_SHAPE_DISPLACEMENT_MATERIAL:
+    case RPR_SHAPE_MATERIALS_PER_FACE:
         UNSUPPORTED_FUNCTION
     default:
         UNIMLEMENTED_FUNCTION
@@ -1417,6 +1453,16 @@ rpr_int rprEnvironmentLightSetIntensityScale(rpr_light in_env_light, rpr_float i
     return RPR_SUCCESS;
 }
 
+rpr_int rprEnvironmentLightAttachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprEnvironmentLightDetachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 rpr_int rprEnvironmentLightAttachPortal(rpr_light env_light, rpr_shape portal)
 {
     UNIMLEMENTED_FUNCTION
@@ -1446,6 +1492,17 @@ rpr_int rprSkyLightSetScale(rpr_light skylight, rpr_float scale)
 {
     UNIMLEMENTED_FUNCTION
 }
+
+rpr_int rprSkyLightAttachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprSkyLightDetachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprSkyLightAttachPortal(rpr_light skylight, rpr_shape portal)
 {
@@ -1720,7 +1777,7 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND:
-    case RPR_SCENE_AXIS_ALIGNED_BOUNDING_BOX:
+    case RPR_SCENE_AABB:
         UNSUPPORTED_FUNCTION
     default:
         UNIMLEMENTED_FUNCTION
@@ -1871,6 +1928,12 @@ rpr_int rprContextCreateMaterialSystem(rpr_context in_context, rpr_material_syst
 
     return RPR_SUCCESS;
 }
+
+rpr_int rprMaterialSystemGetSize(rpr_context in_context, rpr_uint * out_size)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprMaterialSystemCreateNode(rpr_material_system in_matsys, rpr_material_node_type in_type, rpr_material_node * out_node)
 {
@@ -2065,6 +2128,45 @@ rpr_int rprMaterialNodeGetInputInfo(rpr_material_node in_node, rpr_int in_input_
     return RPR_SUCCESS;
 }
 
+rpr_int rprContextCreateComposite(rpr_context context, rpr_composite_type in_type, rpr_composite * out_composite)
+{
+    UNIMLEMENTED_FUNCTION
+}
+rpr_int rprCompositeSetInputFb(rpr_composite composite, const char * inputName, rpr_framebuffer input)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInputC(rpr_composite composite, const char * inputName, rpr_composite input)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInput4f(rpr_composite composite, const char * inputName, float x, float y, float z, float w)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInput1u(rpr_composite composite, const char * inputName, unsigned int value)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInputOp(rpr_composite composite, const char * inputName, rpr_material_node_arithmetic_operation op)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeCompute(rpr_composite composite, rpr_framebuffer fb)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeGetInfo(rpr_composite composite, rpr_composite_info composite_info, size_t size, void *  data, size_t * size_ret)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 rpr_int rprObjectDelete(void * in_obj)
 {
     WrapObject* obj = static_cast<WrapObject*>(in_obj);
@@ -2124,6 +2226,21 @@ rpr_int rprPostEffectSetParameter3f(rpr_post_effect effect, rpr_char const * nam
 }
 
 rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect, rpr_char const * name, rpr_float x, rpr_float y, rpr_float z, rpr_float w)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextGetAttachedPostEffectCount(rpr_context context, rpr_uint *  nb)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextGetAttachedPostEffect(rpr_context context, rpr_uint i, rpr_post_effect * out_effect)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprPostEffectGetInfo(rpr_post_effect effect, rpr_post_effect_info info, size_t size, void *  data, size_t *  size_ret)
 {
     UNIMLEMENTED_FUNCTION
 }

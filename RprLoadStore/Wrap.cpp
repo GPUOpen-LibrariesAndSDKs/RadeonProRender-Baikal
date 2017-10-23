@@ -10,6 +10,16 @@ int frsImport(char const * rprsFileName, void * context, void * materialSystem, 
     return rprsImport(rprsFileName, context, materialSystem, scene, useAlreadyExistingScene);
 }
 
+int frsxExport(char const * rprsFileName, void * context, void * contextX, void * scene, int extraCustomParam_int_number, char const * * extraCustomParam_int_names, int const * extraCustomParam_int_values, int extraCustomParam_float_number, char const * * extraCustomParam_float_names, float const * extraCustomParam_float_values)
+{
+    return rprsxExport(rprsFileName, context, contextX, scene, extraCustomParam_int_number, extraCustomParam_int_names, extraCustomParam_int_values, extraCustomParam_float_number, extraCustomParam_float_names, extraCustomParam_float_values);
+}
+
+int frsxImport(char const * rprsFileName, void * context, void * contextX, void * materialSystem, void * * scene, bool useAlreadyExistingScene)
+{
+    return rprsxImport(rprsFileName, context, contextX, materialSystem, scene, useAlreadyExistingScene);
+}
+
 int frsGetExtraCustomParam_int(char const * name, int * value)
 {
     return rprsGetExtraCustomParam_int(name, value);
@@ -55,6 +65,11 @@ int frsListImportedCameras(void * * Cameras, int sizeCameraBytes, int * numberOf
     return rprsListImportedCameras(Cameras, sizeCameraBytes, numberOfCameras);
 }
 
+int frsListImportedMaterialX(void * * MaterialNodes, int sizeMaterialNodeBytes, int * numberOfMaterialNodes)
+{
+    return rprsListImportedMaterialX(MaterialNodes, sizeMaterialNodeBytes, numberOfMaterialNodes);
+}
+
 int frsListImportedMaterialNodes(void * * MaterialNodes, int sizeMaterialNodeBytes, int * numberOfMaterialNodes)
 {
     return rprsListImportedMaterialNodes(MaterialNodes, sizeMaterialNodeBytes, numberOfMaterialNodes);
@@ -83,5 +98,10 @@ int frsExportCustomList(char const * rprsFileName, int materialNode_number, void
 int frsImportCustomList(char const * rprsFileName, void * context, void * materialSystem, int*  materialNode_number, void** materialNode_list, int*  camera_number, void** camera_list, int*  light_number, void** light_list, int*  shape_number, void** shape_list, int*  image_number, void** image_list)
 {
     return rprsImportCustomList(rprsFileName, context, materialSystem, materialNode_number, materialNode_list, camera_number, camera_list, light_number, light_list, shape_number, shape_list, image_number, image_list);
+}
+
+int frsExportToXML(char const * rprsFileNameBinary, char const * rprsFileNameAscii)
+{
+    return rprsExportToXML(rprsFileNameBinary, rprsFileNameAscii);
 }
 

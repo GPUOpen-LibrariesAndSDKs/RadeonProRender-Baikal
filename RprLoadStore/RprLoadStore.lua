@@ -1,7 +1,7 @@
 project "RprLoadStore"
     kind "SharedLib"
     location "../RprLoadStore"
-    links {"RadeonRays", "CLW", "Calc", "Rpr",}
+    links {"RadeonRays", "CLW", "Calc", "Rpr", "RprSupport"}
     files { "../RprLoadStore/**.h", "../RprLoadStore/**.cpp", "../RprLoadStore/**.hpp" , "../RprLoadStore/**.cl" ,"../RprLoadStore/**.def"}
     configuration "x32"
 --        libdirs { os.getenv("AMDAPPSDKROOT").."lib/x86"} 

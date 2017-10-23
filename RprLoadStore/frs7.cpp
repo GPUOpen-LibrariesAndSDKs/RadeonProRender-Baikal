@@ -779,14 +779,14 @@ fr_int FRS7::Store_Shape(fr_shape shape, const std::string& name)
 		CHECK_STATUS_RETURNERROR;
 		if ( !Store_ObjectParameter("FR_SHAPE_DISPLACEMENT_SCALE",FRSPT_FLOAT2,sizeof(data_displacementscale), &data_displacementscale) ) { FRS_MACRO_ERROR(); return FR_ERROR_INTERNAL_ERROR; }
 
-		fr_image displacementimage = NULL;
-		status = frShapeGetInfo(shape, FR_SHAPE_DISPLACEMENT_IMAGE, sizeof(fr_image), &displacementimage, NULL);
-		CHECK_STATUS_RETURNERROR;
-		if ( displacementimage )
-		{
-			status = Store_Image(displacementimage,"FR_SHAPE_DISPLACEMENT_IMAGE");
-			CHECK_STATUS_RETURNERROR;
-		}
+		//fr_image displacementimage = NULL;
+		//status = frShapeGetInfo(shape, FR_SHAPE_DISPLACEMENT_IMAGE, sizeof(fr_image), &displacementimage, NULL);
+		//CHECK_STATUS_RETURNERROR;
+		//if ( displacementimage )
+		//{
+		//	status = Store_Image(displacementimage,"FR_SHAPE_DISPLACEMENT_IMAGE");
+		//	CHECK_STATUS_RETURNERROR;
+		//}
 
 
 		//save FR_OBJECT_NAME of object.
@@ -1056,9 +1056,9 @@ fr_int FRS7::Store_Context(fr_context context)
 			//first, we store the parameters that will set several default parameters.
 			//so we are sure that all custom parameters will be set during the load of context
 			if (
-				(iPass == 0 && ( paramID == FR_CONTEXT_IMAGE_FILTER_TYPE || paramID == FR_CONTEXT_TONE_MAPPING_TYPE ))
+				iPass == 0 && ( paramID == FR_CONTEXT_IMAGE_FILTER_TYPE || paramID == FR_CONTEXT_TONE_MAPPING_TYPE )
 				||
-				(iPass == 1 && paramID != FR_CONTEXT_IMAGE_FILTER_TYPE && paramID != FR_CONTEXT_TONE_MAPPING_TYPE)
+				iPass == 1 && paramID != FR_CONTEXT_IMAGE_FILTER_TYPE && paramID != FR_CONTEXT_TONE_MAPPING_TYPE
 				)
 			{
 
@@ -1569,15 +1569,16 @@ fr_int FRS7::Read_Context(fr_context context)
 
 
 				// read only parameter. don't set it.
-				else if (  (paramType == FRSPT_UNDEF && paramName == "gpu0name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu1name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu2name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu3name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu4name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu5name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu6name")
-						|| (paramType == FRSPT_UNDEF && paramName == "gpu7name")
-						|| (paramType == FRSPT_UNDEF && paramName == "cpuname")
+				else if (  paramType == FRSPT_UNDEF && paramName == "gpu0name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu1name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu2name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu3name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu4name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu5name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu6name"
+						|| paramType == FRSPT_UNDEF && paramName == "gpu7name"
+						|| paramType == FRSPT_UNDEF && paramName == "cpuname"
+						|| paramType == FRSPT_UNDEF && paramName == "lasterror"
 					)
 				{
 					char* data_data = new char[paramDataSize];
@@ -2034,30 +2035,30 @@ fr_light FRS7::Read_Light(fr_context context, fr_scene scene, fr_material_system
 			}
 
 		}
-		else if ( (nextElem == FRSRT_OBJECT_BEG && elementName == "FR_ENVIRONMENT_LIGHT_IMAGE" && objBegType == "fr_image")
-			||    (nextElem == FRSRT_REFERENCE && elementName == "FR_ENVIRONMENT_LIGHT_IMAGE")
+		else if ( nextElem == FRSRT_OBJECT_BEG && elementName == "FR_ENVIRONMENT_LIGHT_IMAGE" && objBegType == "fr_image"
+			||    nextElem == FRSRT_REFERENCE && elementName == "FR_ENVIRONMENT_LIGHT_IMAGE" 
 			)
 		{
 			fr_image img = Read_Image(context);
 			status = frEnvironmentLightSetImage(light, img);
 			CHECK_STATUS_RETURNNULL;
 		}
-		else if ( (nextElem == FRSRT_OBJECT_BEG && elementName == STR__SHAPE_FOR_SKY_LIGHT_PORTAL_ID && objBegType == "fr_shape")
-			||    (nextElem == FRSRT_REFERENCE && elementName == STR__SHAPE_FOR_SKY_LIGHT_PORTAL_ID)
+		else if ( nextElem == FRSRT_OBJECT_BEG && elementName == STR__SHAPE_FOR_SKY_LIGHT_PORTAL_ID && objBegType == "fr_shape"
+			||    nextElem == FRSRT_REFERENCE && elementName == STR__SHAPE_FOR_SKY_LIGHT_PORTAL_ID 
 			)
 		{
 			fr_shape shape = Read_Shape(context,materialSystem);
 			if ( shape == NULL ) { FRS_MACRO_ERROR(); return NULL; }
-			status = frSkyLightAttachPortal(light, shape);
+			status = frSkyLightAttachPortal(scene, light, shape);
 			CHECK_STATUS_RETURNNULL;
 		}
-		else if ( (nextElem == FRSRT_OBJECT_BEG && elementName == STR__SHAPE_FOR_ENVIRONMENT_LIGHT_PORTAL_ID && objBegType == "fr_shape")
-			||    (nextElem == FRSRT_REFERENCE && elementName == STR__SHAPE_FOR_ENVIRONMENT_LIGHT_PORTAL_ID)
+		else if ( nextElem == FRSRT_OBJECT_BEG && elementName == STR__SHAPE_FOR_ENVIRONMENT_LIGHT_PORTAL_ID && objBegType == "fr_shape"
+			||    nextElem == FRSRT_REFERENCE && elementName == STR__SHAPE_FOR_ENVIRONMENT_LIGHT_PORTAL_ID 
 			)
 		{
 			fr_shape shape = Read_Shape(context,materialSystem);
 			if ( shape == NULL ) { FRS_MACRO_ERROR(); return NULL; }
-			status = frEnvironmentLightAttachPortal(light, shape);
+			status = frEnvironmentLightAttachPortal(scene, light, shape);
 			CHECK_STATUS_RETURNNULL;
 		}
 		else if ( nextElem == FRSRT_OBJECT_END )
@@ -2188,7 +2189,7 @@ fr_image FRS7::Read_Image(fr_context context)
 			return NULL;
 		}
 		status = frContextCreateImage(context, imgFormat, &imgDesc, imgData, &image);
-		if ( imgData ) { delete[] static_cast<char*>(imgData); imgData=NULL; }
+		if ( imgData ) { delete[] imgData; imgData=NULL; }
 		CHECK_STATUS_RETURNNULL;
 
 		if ( objectName )
@@ -2314,8 +2315,8 @@ fr_material_node FRS7::Read_MaterialNode(fr_material_system materialSystem, fr_c
 				}
 
 			}
-			else if ( (nextElem == FRSRT_OBJECT_BEG && objBegType == "fr_material_node") 
-				||    (nextElem == FRSRT_REFERENCE && objBegType == "fr_material_node")
+			else if ( nextElem == FRSRT_OBJECT_BEG && objBegType == "fr_material_node" 
+				||    nextElem == FRSRT_REFERENCE && objBegType == "fr_material_node" 
 				)
 			{
 			
@@ -2329,8 +2330,8 @@ fr_material_node FRS7::Read_MaterialNode(fr_material_system materialSystem, fr_c
 				CHECK_STATUS_RETURNNULL;
 
 			}
-			else if ( (nextElem == FRSRT_OBJECT_BEG && objBegType == "fr_image")
-				||    (nextElem == FRSRT_REFERENCE && objBegType == "fr_image")
+			else if ( nextElem == FRSRT_OBJECT_BEG && objBegType == "fr_image" 
+				||    nextElem == FRSRT_REFERENCE && objBegType == "fr_image" 
 				)
 			{
 			
@@ -2340,8 +2341,33 @@ fr_material_node FRS7::Read_MaterialNode(fr_material_system materialSystem, fr_c
 					FRS_MACRO_ERROR();
 					return NULL;
 				}
-				status = frMaterialNodeSetInputImageData(material,elementName.c_str(),image);
+
+				//this is a special case in order to keep retrocompatibility with model saved before 1.260
+				//before 1.260 : we link a  "data" to a RPR_MATERIAL_NODE_NORMAL_MAP
+				//from 1.260 : we link a "color" to a RPR_MATERIAL_NODE_NORMAL_MAP
+				rpr_material_node_type nodeType = 0;
+				status = rprMaterialNodeGetInfo(material,RPR_MATERIAL_NODE_TYPE, sizeof(nodeType),&nodeType,NULL);
 				CHECK_STATUS_RETURNNULL;
+				if ( elementName == "data" &&  nodeType == RPR_MATERIAL_NODE_NORMAL_MAP )
+				{
+					//warning : because using an old mechanism
+					WarningDetected();
+
+					rpr_material_node matNodeTextureNormalMap = NULL; status = rprMaterialSystemCreateNode(materialSystem, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &matNodeTextureNormalMap);
+					CHECK_STATUS_RETURNNULL;
+					status = rprMaterialNodeSetInputImageData(matNodeTextureNormalMap, "data",  image );
+					CHECK_STATUS_RETURNNULL;
+					status = rprMaterialNodeSetInputN(material, "color", matNodeTextureNormalMap );
+					CHECK_STATUS_RETURNNULL;
+				}
+
+
+				//classic case :
+				else
+				{
+					status = frMaterialNodeSetInputImageData(material,elementName.c_str(),image);
+					CHECK_STATUS_RETURNNULL;
+				}
 
 			}
 			else if ( nextElem == FRSRT_OBJECT_END )
@@ -2611,15 +2637,15 @@ fr_shape FRS7::Read_Shape(fr_context context, fr_material_system materialSystem 
 				}
 
 			}
-			else if ( (nextElem == FRSRT_OBJECT_BEG && elementName == "FR_SHAPE_DISPLACEMENT_IMAGE" && objBegType == "fr_image")
-				||    (nextElem == FRSRT_REFERENCE && elementName == "FR_SHAPE_DISPLACEMENT_IMAGE") 
+			else if ( nextElem == FRSRT_OBJECT_BEG && elementName == "FR_SHAPE_DISPLACEMENT_IMAGE" && objBegType == "fr_image"
+				||    nextElem == FRSRT_REFERENCE && elementName == "FR_SHAPE_DISPLACEMENT_IMAGE" 
 				)
 			{
 				param__FR_SHAPE_DISPLACEMENT_IMAGE__data = Read_Image(context);
 				param__FR_SHAPE_DISPLACEMENT_IMAGE__defined = true;
 			}
-			else if ( (nextElem == FRSRT_OBJECT_BEG && objBegType == "fr_material_node")
-				||    (nextElem == FRSRT_REFERENCE  && objBegType == "fr_material_node")
+			else if ( nextElem == FRSRT_OBJECT_BEG && objBegType == "fr_material_node"
+				||    nextElem == FRSRT_REFERENCE  && objBegType == "fr_material_node"
 				)
 			{
 				shapeMaterial = Read_MaterialNode(materialSystem,context);
@@ -2751,8 +2777,19 @@ fr_shape FRS7::Read_Shape(fr_context context, fr_material_system materialSystem 
 		}
 		if ( param__FR_SHAPE_DISPLACEMENT_IMAGE__defined )
 		{
-			status = frShapeSetDisplacementImage(shape,param__FR_SHAPE_DISPLACEMENT_IMAGE__data);
+			//warning : because using an old flag not supposed to be used anymore
+			WarningDetected();
+
+			//old mechanism :
+			//status = frShapeSetDisplacementImage(shape,param__FR_SHAPE_DISPLACEMENT_IMAGE__data);
+
+			// RPR_SHAPE_DISPLACEMENT_IMAGE is an old flag not used anymore, but with this extra code, it should work
+			rpr_material_node matNodeTextureDisplacementMap = NULL; status = rprMaterialSystemCreateNode(materialSystem, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &matNodeTextureDisplacementMap); 
+			status = rprMaterialNodeSetInputImageData(matNodeTextureDisplacementMap, "data",  param__FR_SHAPE_DISPLACEMENT_IMAGE__data    ); 
+
+			status = rprShapeSetDisplacementMaterial(shape,matNodeTextureDisplacementMap);
 			CHECK_STATUS_RETURNNULL;
+
 		}
 		if ( param__FR_SHAPE_DISPLACEMENT_SCALE__defined )
 		{
