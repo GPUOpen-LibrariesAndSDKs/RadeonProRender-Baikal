@@ -66,9 +66,16 @@ project "Baikal"
     if _OPTIONS["gltf"] then
         defines {"ENABLE_GLTF"}
 
-        includedirs{"../3rdparty/FreeImage/include", "../3rdparty/json/include"}
+        includedirs{"../3rdparty/FreeImage/include",
+                    "../3rdparty/json/include",
+                    "../Rpr",
+                    "../RprSupport",
+                    "../ProRenderGLTF"}
         libdirs{"../3rdparty/FreeImage/lib/"}
-        links{"FreeImage"}
+        links{"FreeImage",
+              "Rpr",
+              "RprSupport",
+              "ProRenderGLTF"}
         postbuildcommands{'copy "..\\3rdparty\\FreeImage\\bin\\FreeImage.dll" "%{cfg.buildtarget.directory}"'}
     end
 

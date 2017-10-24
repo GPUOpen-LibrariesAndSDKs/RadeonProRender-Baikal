@@ -1,5 +1,7 @@
 EXPORTS
 
+ExportFromRpr
+
 rprRegisterPlugin
 rprCreateContext
 rprContextSetActivePlugin

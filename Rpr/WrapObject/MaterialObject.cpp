@@ -93,12 +93,17 @@ namespace
 
     };
 
-	//these materials are unsupported now:
-	const std::set<int> kUnsupportedMaterials = { RPR_MATERIAL_NODE_ADD,
-													 RPR_MATERIAL_NODE_ARITHMETIC,
-													 RPR_MATERIAL_NODE_BLEND_VALUE,
-													 RPR_MATERIAL_NODE_VOLUME,
-													 RPR_MATERIAL_NODE_INPUT_LOOKUP, };
+    //these material inputs are ignored
+    const std::set<std::string> kUnsupportedInputs = { "anisotropic" };
+    
+    //these materials are unsupported now:
+    const std::set<int> kUnsupportedMaterials = {   RPR_MATERIAL_NODE_ADD,
+                                                    RPR_MATERIAL_NODE_ARITHMETIC,
+                                                    RPR_MATERIAL_NODE_BLEND_VALUE,
+                                                    RPR_MATERIAL_NODE_VOLUME,
+                                                    RPR_MATERIAL_NODE_INPUT_LOOKUP,
+                                                    RPR_MATERIAL_NODE_TWOSIDED,
+                                                    RPR_MATERIAL_NODE_UV_PROJECT,};
 }
 
 MaterialObject::MaterialObject(rpr_material_node_type in_type)
@@ -119,11 +124,13 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
         break;
     }
     case RPR_MATERIAL_NODE_MICROFACET_REFRACTION:
+    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION:
     {
         m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
         break;
     }
     case RPR_MATERIAL_NODE_REFLECTION:
+    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION:
     {
         m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealReflect);
         break;
@@ -171,6 +178,8 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
     case RPR_MATERIAL_NODE_BLEND_VALUE:
     case RPR_MATERIAL_NODE_VOLUME:
     case RPR_MATERIAL_NODE_INPUT_LOOKUP:
+    case RPR_MATERIAL_NODE_TWOSIDED:
+    case RPR_MATERIAL_NODE_UV_PROJECT:
 	{
 		//these materials are unsupported
 		if (kUnsupportedMaterials.find(in_type) == kUnsupportedMaterials.end())
@@ -369,14 +378,16 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
 
 
     //convert input name
-    if (input->m_type == Type::kImage)
+    if (IsTexture())
     {
-        if (IsTexture())
+        if (!input->IsTexture())
         {
-            if (name != "data")
-            {
-                throw Exception(RPR_ERROR_INVALID_TAG, "MaterialObject: inalid input tag");
-            }
+            throw Exception(RPR_ERROR_INVALID_TAG, "MaterialObject: can't set Material as input of Texture.");
+
+        }
+        if (name == "data" ||
+            name == "albedo" && IsMap())
+        {
             //copy image data
             auto tex = input->GetTexture();
             const char* data = tex->GetData();
@@ -386,6 +397,10 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
             memcpy(tex_data, data, tex->GetSizeInBytes());
 
             m_tex->SetData(tex_data, size, format);
+        }
+        else
+        {
+            throw Exception(RPR_ERROR_INVALID_TAG, "MaterialObject: invalid tag for texture.");
         }
     }
     else
@@ -427,12 +442,17 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
 
 void MaterialObject::SetInputValue(const std::string& input_name, const RadeonRays::float4& val)
 {
-	//TODO:
-	if (kUnsupportedMaterials.find(m_type) != kUnsupportedMaterials.end())
-	{
-		//this is unsupported material, so don't update anything
-		return;
-	}
+    //TODO:
+    if (kUnsupportedMaterials.find(m_type) != kUnsupportedMaterials.end())
+    {
+        //this is unsupported material, so don't update anything
+        return;
+    }
+    if (kUnsupportedInputs.find(input_name) != kUnsupportedInputs.end())
+    {
+        //ignore input
+        return;
+    }
 
     std::string name;
 
@@ -497,6 +517,13 @@ void MaterialObject::SetInputValue(const std::string& input_name, const RadeonRa
 
 void MaterialObject::SetInput(MaterialObject* input_mat, const std::string& input_name)
 {
+    //remove link with previous input
+    MaterialObject* old_input = m_inputs[input_name];
+    if (old_input)
+    {
+        old_input->RemoveOutput(this);
+    }
+
     m_inputs[input_name] = input_mat;
 }
 

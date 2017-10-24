@@ -79,7 +79,11 @@ public:
 
     virtual ~MaterialObject();
 
-    bool IsImg() { return m_type == Type::kImage; }
+    bool IsImg() { return m_type == Type::kImage;}
+    bool IsMap() { return   m_type == Type::kBumpMap || 
+                            m_type == Type::kNormalMap || 
+                            m_type == Type::kDotTexture; }
+
     bool IsTexture() { return m_is_tex; }
     bool IsMaterial() { return !m_is_tex; }
 

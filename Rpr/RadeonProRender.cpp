@@ -206,7 +206,7 @@ rpr_int rprContextSetParameter1u(rpr_context in_context, rpr_char const * name, 
     }
 
     //TODO: handle context parameters
-	return RPR_SUCCESS;
+    return RPR_SUCCESS;
 
     if (!strcmp(name, "rendermode"))
     {
@@ -690,24 +690,24 @@ rpr_int rprCameraSetFocusDistance(rpr_camera in_camera, rpr_float fdist)
 
 rpr_int rprCameraSetTransform(rpr_camera in_camera, rpr_bool transpose, rpr_float * transform)
 {
-	//cast data
-	CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
-	if (!camera)
-	{
-		return RPR_ERROR_INVALID_PARAMETER;
-	}
+    //cast data
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
 
-	RadeonRays::matrix m;
-	//fill matrix
-	memcpy(m.m, transform, 16 * sizeof(rpr_float));
+    RadeonRays::matrix m;
+    //fill matrix
+    memcpy(m.m, transform, 16 * sizeof(rpr_float));
 
-	if (!transpose)
-	{
-		m = m.transpose();
-	}
+    if (!transpose)
+    {
+        m = m.transpose();
+    }
 
-	camera->SetTransform(m);
-	return RPR_SUCCESS;
+    camera->SetTransform(m);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprCameraSetSensorSize(rpr_camera in_camera, rpr_float in_width, rpr_float in_height)
@@ -1713,13 +1713,13 @@ rpr_int rprSceneDetachLight(rpr_scene in_scene, rpr_light in_light)
 
 rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_size, void * out_data, size_t * out_size_ret)
 {
-	//cast
-	SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
-	if (!scene)
-	{
-		return RPR_ERROR_INVALID_PARAMETER;
-	}
-	
+    //cast
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+    
     std::vector<char> data;
     size_t size_ret = 0;
     switch (in_info)
@@ -2002,7 +2002,7 @@ rpr_int rprMaterialNodeSetInputF(rpr_material_node in_node, rpr_char const * in_
 
 rpr_int rprMaterialNodeSetInputU(rpr_material_node in_node, rpr_char const * in_input, rpr_uint in_value)
 {
-	UNIMLEMENTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char const * in_input, rpr_image in_image)
