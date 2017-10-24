@@ -37,19 +37,19 @@ namespace
         rpr_int const * in_num_face_vertices, size_t in_num_faces)
     {
         std::vector<T> result;
-		if (!in_data || !in_data_indices)
-		{
-			std::cout << "Warning: missing mesh data, fill it with NULL.\n";
-			int count = 0;
-			for (int i = 0; i < in_num_faces; ++i)
-			{
-				count +=in_num_face_vertices[i];
-			}
-			result.resize(count * size);
-			std::fill(result.begin(), result.end(), 0.f);
+        if (!in_data || !in_data_indices)
+        {
+            std::cout << "Warning: missing mesh data, fill it with NULL.\n";
+            int count = 0;
+            for (int i = 0; i < in_num_faces; ++i)
+            {
+                count +=in_num_face_vertices[i];
+            }
+            result.resize(count * size);
+            std::fill(result.begin(), result.end(), 0.f);
 
-			return result;
-		}
+            return result;
+        }
 
         int indent = 0;
         for (int i = 0; i < in_num_faces; ++i)

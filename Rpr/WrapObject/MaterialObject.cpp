@@ -102,6 +102,8 @@ namespace
                                                     RPR_MATERIAL_NODE_BLEND_VALUE,
                                                     RPR_MATERIAL_NODE_VOLUME,
                                                     RPR_MATERIAL_NODE_INPUT_LOOKUP,
+                                                    RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION,
+                                                    RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION,
                                                     RPR_MATERIAL_NODE_TWOSIDED,
                                                     RPR_MATERIAL_NODE_UV_PROJECT,};
 }
@@ -124,13 +126,11 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
         break;
     }
     case RPR_MATERIAL_NODE_MICROFACET_REFRACTION:
-    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION:
     {
         m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
         break;
     }
     case RPR_MATERIAL_NODE_REFLECTION:
-    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION:
     {
         m_mat = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealReflect);
         break;
@@ -165,6 +165,7 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
     {
         m_mat = MultiBxdf::Create(MultiBxdf::Type::kMix);
         m_mat->SetInputValue("weight", 0.5f);
+        m_mat->SetThin(false);
         break;
     }
     case RPR_MATERIAL_NODE_TRANSPARENT:
@@ -178,8 +179,11 @@ MaterialObject::MaterialObject(rpr_material_node_type in_type)
     case RPR_MATERIAL_NODE_BLEND_VALUE:
     case RPR_MATERIAL_NODE_VOLUME:
     case RPR_MATERIAL_NODE_INPUT_LOOKUP:
+    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION:
+    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION:
     case RPR_MATERIAL_NODE_TWOSIDED:
     case RPR_MATERIAL_NODE_UV_PROJECT:
+
 	{
 		//these materials are unsupported
 		if (kUnsupportedMaterials.find(in_type) == kUnsupportedMaterials.end())
@@ -341,8 +345,8 @@ std::string MaterialObject::TranslatePropName(const std::string& in, Type type)
 void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObject* input)
 {
     //TODO: fix
-    if (kUnsupportedMaterials.find(m_type) != kUnsupportedMaterials.end() ||
-        kUnsupportedMaterials.find(input->GetType()) != kUnsupportedMaterials.end())
+    if (kUnsupportedMaterials.find(m_type) != kUnsupportedMaterials.end() /*||
+        kUnsupportedMaterials.find(input->GetType()) != kUnsupportedMaterials.end()*/)
     {
         //this is unsupported material, so don't update anything
         return;
@@ -423,8 +427,11 @@ void MaterialObject::SetInputMaterial(const std::string& input_name, MaterialObj
                 //expected only fresnel materials
                 if (input->m_type != Type::kFresnel && input->m_type != Type::kFresnelShlick)
                 {
-                    throw Exception(RPR_ERROR_INVALID_PARAMETER, "MaterialObject: expected only fresnel materials as weight of blend material.");
+                    //only fresnel materials can be handled as weight of blend material.
+                    //throw Exception(RPR_ERROR_INVALID_PARAMETER, "MaterialObject: expected only fresnel materials as weight of blend material.");
+                    return;
                 }
+
                 auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
                 blend_mat->SetType(MultiBxdf::Type::kFresnelBlend);
                 blend_mat->SetInputValue("ior", input->m_mat->GetInputValue("ior").float_value);
