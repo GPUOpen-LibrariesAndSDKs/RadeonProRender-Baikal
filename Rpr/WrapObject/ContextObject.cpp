@@ -342,7 +342,7 @@ void ContextObject::PrepareScene()
 {
     m_current_scene->AddEmissive();
 
-    if (m_current_scene->IsDirty())
+    //if (m_current_scene->IsDirty())
     {
         for (auto& c : m_cfgs)
         {
