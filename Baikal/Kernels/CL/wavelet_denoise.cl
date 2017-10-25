@@ -29,6 +29,7 @@ THE SOFTWARE.
 #define GAUSS_KERNEL_SIZE 9
 #define DENOM_EPS 1e-8f
 #define FRAME_BLEND_ALPHA 0.2f
+#define MLAA_MAX_SEARCH_STEPS 15
 
 // Gauss filter 3x3 for variance prefiltering on first wavelet pass
 float4 GaussFilter3x3(
@@ -71,8 +72,7 @@ int ConvertToLinearAddress(int address_x, int address_y, int2 buffer_size)
 
 int ConvertToLinearAddressInt2(int2 address, int2 buffer_size)
 {
-    int max_buffer_size = buffer_size.x * buffer_size.y;
-    return clamp(address.y * buffer_size.x + address.x, 0, max_buffer_size - 1);
+    return ConvertToLinearAddress(address.x, address.y, buffer_size);
 }
 
 // Bilinear sampler
@@ -156,10 +156,7 @@ void WaveletFilter_main(
     
     const int2 buffer_size  = make_int2(width, height);
     const float2 uv = make_float2(global_id.x + 0.5f, global_id.y + 0.5f) / make_float2(width, height);
-
-    // From SVGF paper
-    const float sigma_variance = 4.0f;
-
+ 
     // Check borders
     if (global_id.x < width && global_id.y < height)
     {
@@ -179,6 +176,11 @@ void WaveletFilter_main(
         const float3 luminance = make_float3(0.2126f, 0.7152f, 0.0722f);
         const float lum_color = dot(color, luminance);
 
+        const float max_sigma_variance = 8.0f;
+        const float min_sigma_variance = 1.0f;
+        const float sigma_adaptation_samples = 100.0f;
+        const float sigma_variance = max(max_sigma_variance * exp(-albedo[idx].w / sigma_adaptation_samples), min_sigma_variance);
+
         if (length(position) > 0.f && !any(isnan(color)))
         {
             for (int i = 0; i < WAVELET_KERNEL_SIZE; i++)
@@ -195,21 +197,17 @@ void WaveletFilter_main(
                 const float3 delta_position     = position - sample_position;
                 const float3 delta_color        = calbedo - sample_albedo;
 
-                const float position_dist2      = dot(delta_position, delta_position) ;
+                const float position_dist2      = dot(delta_position, delta_position);
                 const float color_dist2         = dot(delta_color, delta_color);
 
                 const float position_value     = exp(-position_dist2 / (sigma_position * 20.f));
-                const float normal_value       = exp(-dot(sample_normal, normal) / 5.0f);
                 const float color_value        = exp(-color_dist2 / sigma_color);
 
                 const float position_weight     = isnan(position_value) ? 1.f : position_value;
-                const float normal_weight       = isnan(normal_value) ? 1.f : normal_value;
                 const float color_weight        = isnan(color_value) ? 1.f : color_value;
+                const float normal_weight       = pow(max(0.f, dot(sample_normal, normal)), 128.f);
 
-                // Gives more sharp image then exp, but produces dark sillhoutes if color buffer contains more than 1 spp
-                //const float normal_weight       = pow(max(0.f, dot(sample_normal, normal)), 128.f);
-
-                const float lum_value           = step_width * exp(-fabs(lum_color - dot(luminance, sample_color)) / (sigma_variance * variance + DENOM_EPS));
+                const float lum_value           = exp(-fabs((lum_color - dot(luminance, sample_color))) / (sigma_variance * variance + DENOM_EPS));
                 const float luminance_weight    = isnan(lum_value) ? 1.f : lum_value;
 
                 const float final_weight = color_weight * luminance_weight * normal_weight * position_weight * kernel_weights[i];
@@ -240,8 +238,7 @@ void WaveletGenerateMotionBuffer_main(
     // View-projection matrix of previous frame
     GLOBAL matrix4x4* restrict prev_view_projection,
     // Resulting motion and depth
-    GLOBAL float4* restrict out_motion,
-    GLOBAL float4* restrict out_depth
+    GLOBAL float4* restrict out_motion
 )
 {
     int2 global_id;
@@ -267,8 +264,7 @@ void WaveletGenerateMotionBuffer_main(
             float2 prev_position_cs = prev_position_ps.xy / prev_position_ps.w;
             float2 prev_position_ss = prev_position_cs * make_float2(0.5f, -0.5f) + make_float2(0.5f, 0.5f);
 
-            out_motion[idx] = (float4)(prev_position_ss - position_ss, 0.0f, 1.0f) * 2.0f;
-            out_depth[idx] = make_float4(0.0f, 0.0f, position_ps.w, 1.0f);
+            out_motion[idx] = (float4)(prev_position_ss - position_ss, 0.0f, 1.0f);
         }
         else
         {
@@ -339,7 +335,7 @@ bool IsNormalConsistent(float3 nq, float3 np)
 }
 
 // Geometry consistency term - position consistency
-bool IsDepthConsistentPos(
+bool IsPositionConsistent(
     GLOBAL float4 const* restrict buffer, 
     GLOBAL float4 const* restrict prev_buffer, 
     float2 uv, 
@@ -356,8 +352,6 @@ bool IsDepthConsistentPos(
 
     return length(p1 - p0) < length(ddx) + length(ddy);
 }
-
-
 
 // Bilinear filtering with geometry test on each tap (resampling of previous color buffer)
 // TODO: Add depth test consistency
@@ -494,10 +488,10 @@ float4 BilateralVariance(
             float3 c = colors[ci].xyz / colors[ci].w;
             float3 n = normals[ci].xyz / normals[ci].w;
             float3 p = positions[ci].xyz / positions[ci].w;
-            
+
             float sigma_position = 0.1f;
             float sigma_normal = 0.1f;
-
+            
             if (length(p) > 0.f && !any(isnan(c)))
             {
                 const float weight = C(p, position, sigma_position) * C(n, normal, sigma_normal);
@@ -509,7 +503,7 @@ float4 BilateralVariance(
             }
         }
     }
-    
+
     local_mean      = local_mean / max(DENOM_EPS, sum_weight);
     local_mean_2    = local_mean_2 / max(DENOM_EPS, sum_weight);;
 
@@ -571,7 +565,7 @@ void TemporalAccumulation_main(
             const float3 prev_normal        = normalize(Sampler2DBilinear(prev_normals, buffer_size, prev_uv).xyz);
 
             // Test for geometry consistency
-            if (length(prev_position_xyz) > 0 &&  mesh_id == prev_mesh_id && IsNormalConsistent(prev_normal, normal) && IsDepthConsistentPos(positions, prev_positions, uv, motion, buffer_size))
+            if (length(prev_position_xyz) > 0 &&  mesh_id == prev_mesh_id && IsNormalConsistent(prev_normal, normal) && IsPositionConsistent(positions, prev_positions, uv, motion, buffer_size))
             {
                 // Temporal accumulation of moments
                 float4 prev_moments_and_variance_sample  = Sampler2DBilinear(prev_moments_and_variance, buffer_size, prev_uv);
@@ -583,8 +577,8 @@ void TemporalAccumulation_main(
                 if (prev_moments_and_variance_sample.w < 4 || prev_moments_is_nan)
                 {
                     // Not enought accumulated samples - get bilateral estimate
-                    current_moments_and_variance_sample = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size);
-                    prev_moments_and_variance_sample = prev_moments_is_nan ? current_moments_and_variance_sample : prev_moments_and_variance_sample;
+                    current_moments_and_variance_sample.xyz = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size).xyz;
+                    current_moments_and_variance_sample.w = prev_moments_and_variance_sample.w + 1.f;
                 }
                 else
                 {
@@ -593,8 +587,9 @@ void TemporalAccumulation_main(
                     
                     const float first_moment = dot(in_out_colors[idx].xyz, luminance_weight);
                     const float second_moment = first_moment * first_moment;
-                    
-                    current_moments_and_variance_sample = make_float4(first_moment, second_moment, 0.f, 1.f);
+
+                    current_moments_and_variance_sample.xyz = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size).xyz;
+                    current_moments_and_variance_sample.w = prev_moments_and_variance_sample.w + 1.f;
                 }
                 
                 // Nan avoidance
@@ -605,7 +600,7 @@ void TemporalAccumulation_main(
 
                 // Accumulate current and previous moments
                 moments_and_variance[idx].xy    = mix(prev_moments_and_variance_sample.xy, current_moments_and_variance_sample.xy, FRAME_BLEND_ALPHA);
-                moments_and_variance[idx].w     = 1;
+                moments_and_variance[idx].w     = current_moments_and_variance_sample.w;
 
                 const float mean          = moments_and_variance[idx].x;
                 const float mean_2        = moments_and_variance[idx].y;
@@ -615,13 +610,12 @@ void TemporalAccumulation_main(
                 // Temporal accumulation of color
                 float3 prev_color = SampleWithGeometryTest(prev_colors, (float4)(color, 1.f), position_xyz, normal, mesh_id, positions, normals, mesh_ids, prev_positions, prev_normals, prev_mesh_ids, buffer_size, uv, prev_uv).xyz;
                 
-                in_out_colors[idx].xyz = mix(prev_color, color, FRAME_BLEND_ALPHA);
+                in_out_colors[idx].xyz = (dot(motion, motion) != 0.f) ? mix(prev_color, color, FRAME_BLEND_ALPHA) : in_out_colors[idx].xyz;
                 in_out_colors[idx].w = 1.0f;
             }
             else
             {
                 // In case of disoclussion - calclulate variance by bilateral filter
-                //in_out_colors[idx].xyz = make_float3(1,0,0);
                 moments_and_variance[idx] = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size);
             }
         }
@@ -654,4 +648,281 @@ void UpdateVariance_main(
         out_variance[idx] = BilateralVariance(colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size);
     } 
 }
+
+// Jimenez MLAA. Implementation was adapted to OpenCL
+
+/**
+ * Copyright (C) 2010 Jorge Jimenez (jorge@iryoku.com)
+ * Copyright (C) 2010 Belen Masia (bmasia@unizar.es) 
+ * Copyright (C) 2010 Jose I. Echevarria (joseignacioechevarria@gmail.com) 
+ * Copyright (C) 2010 Fernando Navarro (fernandn@microsoft.com) 
+ * Copyright (C) 2010 Diego Gutierrez (diegog@unizar.es)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *    1. Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimer.
+ * 
+ *    2. Redistributions in binary form must reproduce the following statement:
+ * 
+ *       "Uses Jimenez's MLAA. Copyright (C) 2010 by Jorge Jimenez, Belen Masia,
+ *        Jose I. Echevarria, Fernando Navarro and Diego Gutierrez."
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS 
+ * IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS OR CONTRIBUTORS 
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * The views and conclusions contained in the software and documentation are 
+ * those of the authors and should not be interpreted as representing official
+ * policies, either expressed or implied, of the copyright holders.
+ */
+
+float4 texture2D(GLOBAL float4 const* restrict buffer, float2 uv, int2 buffer_size)
+{
+    return buffer[ConvertToLinearAddressInt2(make_int2(uv.x * buffer_size.x, uv.y * buffer_size.y), buffer_size)];
+}
+
+float4 texture2DOffset(GLOBAL float4 const* restrict buffer, float2 uv, int2 offset, int2 buffer_size, float2 rcp_buffer)
+{
+    uv = uv + make_float2(offset.x * rcp_buffer.x, offset.y * rcp_buffer.y);
+
+    return buffer[ConvertToLinearAddressInt2(make_int2(uv.x * buffer_size.x, uv.y * buffer_size.y), buffer_size)];
+}
+
+float4 texture2DOffsetInt2(GLOBAL float4 const* restrict buffer, int2 uv, int2 offset, int2 buffer_size)
+{
+    uv = uv + offset;
+
+    return buffer[ConvertToLinearAddressInt2(make_int2(uv.x, uv.y), buffer_size)];
+}
+
+KERNEL
+void EdgeDetectionMLAA(GLOBAL float4 const* restrict mesh_id,
+                            GLOBAL float4 const* restrict normal,
+                            int width,
+                            int height,
+                            GLOBAL float4* restrict out_buffer)
+{
+    int2 global_id;
+    global_id.x = get_global_id(0);
+    global_id.y = get_global_id(1);
+
+    const int max_pixels = width * height;
+    const int idx = clamp(global_id.y * width + global_id.x, 0, max_pixels);
+    const int2 buffer_size = make_int2(width, height);
+
+    const float3 weights = make_float3(0.2126,0.7152, 0.0722);
+    
+    int2 edges = make_int2(0,0);
+    
+    float id        = mesh_id[ConvertToLinearAddressInt2(global_id, buffer_size)].x;
+    float id_left   = texture2DOffsetInt2(mesh_id, global_id, make_int2(-1, 0), buffer_size).x;
+    float id_top    = texture2DOffsetInt2(mesh_id, global_id, make_int2(0, -1), buffer_size).x;
+
+    edges.x = id != id_left ? 1 : 0;
+    edges.y = id != id_top ? 1 : 0;
+
+    float3 N = normalize(normal[ConvertToLinearAddressInt2(global_id, buffer_size)].xyz);
+    
+    if (length(N) > 0)
+    {
+        float3 Nleft = normalize(texture2DOffsetInt2(normal, global_id, make_int2(-1, 0), buffer_size).xyz);
+        float3 Ntop  = normalize(texture2DOffsetInt2(normal, global_id, make_int2(0, -1), buffer_size).xyz);
+
+        const float threshold  = cos(PI / 8.f);
+        float2 delta = make_float2(dot(N, Nleft), dot(N, Ntop));
+        
+        edges.x |= delta.x < threshold ? 1 : 0;
+        edges.y |= delta.y < threshold ? 1 : 0;
+    }
+
+    out_buffer[idx] = make_float4((float)edges.x, (float)edges.y, 0.f, 0.f);
+}
+
+float SearchXLeft(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 buffer_size, float2 rcp_frame) {
+    texcoord -= make_float2(1.5f, 0.0f) * rcp_frame;
+    
+    float e = 0.0f;
+    int i = 0;
+
+    for (i = 0; i < MLAA_MAX_SEARCH_STEPS; i++) {
+        e = Sampler2DBilinear(edgesTex, buffer_size, texcoord).y;
+        if (e < 0.9) break;
+        texcoord -= make_float2(2.0f, 0.0f) * rcp_frame;
+    }
+
+    return max(-2.0f * i - 2.0f * e, -2.0f * MLAA_MAX_SEARCH_STEPS);
+}
+
+float SearchXRight(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 buffer_size, float2 rcp_frame) {
+    texcoord += make_float2(1.5f, 0.0f) * rcp_frame;
+    
+    float e = 0.0f;
+    int i = 0;
+
+    for (i = 0; i < MLAA_MAX_SEARCH_STEPS; i++) {
+        e = Sampler2DBilinear(edgesTex, buffer_size, texcoord).y;
+        if (e < 0.9) break;
+        texcoord += make_float2(2.0f, 0.0f) * rcp_frame;
+    }
+
+    return min(2.0f * i + 2.0f * e, 2.0f * MLAA_MAX_SEARCH_STEPS);
+}
+
+float SearchYUp(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 buffer_size, float2 rcp_frame) {
+    texcoord += make_float2(0.0, -1.5) * rcp_frame;
+    
+    float e = 0.0;
+    int i = 0;
+
+    for (i = 0; i < MLAA_MAX_SEARCH_STEPS; i++) {
+        e = Sampler2DBilinear(edgesTex, buffer_size, texcoord).x;
+        if (e < 0.9) break;
+        texcoord += make_float2(0.0, -2.0) * rcp_frame;
+    }
+    
+    return max(-2.0 * i - 2.0 * e, -2.0 * MLAA_MAX_SEARCH_STEPS);
+}
+
+float SearchYDown(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 buffer_size, float2 rcp_frame) {
+    texcoord -= make_float2(0.0, -1.5) * rcp_frame;
+    
+    float e = 0.0;
+    int i = 0;
+
+    for (i = 0; i < MLAA_MAX_SEARCH_STEPS; i++) {
+        e = Sampler2DBilinear(edgesTex, buffer_size, texcoord).x;
+        if (e < 0.9) break;
+        texcoord -= make_float2(0.0f, -2.0f) * rcp_frame;
+    }
+    return min(2.0 * i + 2.0 * e, 2.0 * MLAA_MAX_SEARCH_STEPS);
+}
+
+#define MAX_DISTANCE 33
+
+float2 Area(GLOBAL float4 const* restrict areaTex, float2 distance, float e1, float e2) {
+    // * By dividing by areaSize - 1.0 below we are implicitely offsetting to
+    //   always fall inside of a pixel
+    // * Rounding prevents bilinear access precision problems
+   float areaSize = MAX_DISTANCE * 5.0f;
+   float2 pixcoord = MAX_DISTANCE * round(4.0f * make_float2(e1, e2)) + distance;
+   float2 texcoord = pixcoord / (areaSize - 1.0f);
+   return texture2D(areaTex, texcoord, make_int2(areaSize, areaSize)).xy;
+}
+
+KERNEL
+void BlendingWeightCalculationMLAA( GLOBAL float4 const* restrict edgesTex,
+                                    GLOBAL float4 const* restrict areaTex,
+                                    int width,
+                                    int height,
+                                    GLOBAL float4* restrict out_buffer)
+{
+    int2 global_id;
+    global_id.x = get_global_id(0);
+    global_id.y = get_global_id(1);
+
+    const float2 rcp_frame = make_float2(1.f / (float)width, 1.f / (float)height);
+    const int max_pixels = width * height;
+    const int idx = clamp(global_id.y * width + global_id.x, 0, max_pixels);
+    const int2 buffer_size = make_int2(width, height);
+    const float2 texcoord = make_float2((float)global_id.x / (float)width, (float)global_id.y / (float)height) + make_float2(0.5f, 0.5f) * rcp_frame;   
+
+    float4 weights = make_float4(0.f, 0.f, 0.f, 0.f);
+
+    float2 e = texture2D(edgesTex, texcoord, buffer_size).xy;
+
+    if (e.y) { // Edge at north
+        // Search distances to the left and to the right:
+        float2 d = make_float2(SearchXLeft(edgesTex, texcoord, buffer_size, rcp_frame), SearchXRight(edgesTex, texcoord, buffer_size, rcp_frame));
+
+        // Now fetch the crossing edges. Instead of sampling between edgels, we
+        // sample at -0.25, to be able to discern what value has each edgel:
+        float4 coords = mad(make_float4(d.x, -0.25f, d.y + 1.0f, -0.25f), rcp_frame.xyxy, texcoord.xyxy);
+        float e1 = Sampler2DBilinear(edgesTex, buffer_size, coords.xy).x;
+        float e2 = Sampler2DBilinear(edgesTex, buffer_size, coords.zw).x;
+
+        // Ok, we know how this pattern looks like, now it is time for getting
+        // the actual area:
+        weights.xy = Area(areaTex, fabs(d), e1, e2);
+    }
+
+    if (e.x) { // Edge at west
+        // Search distances to the top and to the bottom:
+        float2 d = make_float2(SearchYUp(edgesTex, texcoord, buffer_size, rcp_frame), SearchYDown(edgesTex, texcoord, buffer_size, rcp_frame));
+
+        // Now fetch the crossing edges (yet again):
+        float4 coords = mad(make_float4(-0.25f, d.x, -0.25f, (d.y + 1.0f)), rcp_frame.xyxy, texcoord.xyxy);
+        float e1 = Sampler2DBilinear(edgesTex, buffer_size, coords.xy).y;
+        float e2 = Sampler2DBilinear(edgesTex, buffer_size, coords.zw).y;
+
+        // Get the area for this direction:
+        weights.zw = Area(areaTex, fabs(d), e1, e2);
+    }
+
+    out_buffer[idx] = weights;
+}
+
+KERNEL
+void NeighborhoodBlendingMLAA(  GLOBAL float4 const* restrict colorTex,
+                                GLOBAL float4 const* restrict blendTex,
+                                int width,
+                                int height,
+                                GLOBAL float4* restrict out_buffer)
+{
+    int2 global_id;
+    global_id.x = get_global_id(0);
+    global_id.y = get_global_id(1);
+
+    const float2 rcp_frame = make_float2(1.f / (float)width, 1.f / (float)height);
+    const int max_pixels = width * height;
+    const int idx = clamp(global_id.y * width + global_id.x, 0, max_pixels);
+    const int2 buffer_size = make_int2(width, height);
+    const float2 texcoord = make_float2((float)global_id.x / (float)width, (float)global_id.y / (float)height) + make_float2(0.5f, 0.5f) * rcp_frame;
+
+    // Fetch the blending weights for current pixel:
+    float4 topLeft = blendTex[ConvertToLinearAddressInt2(global_id, buffer_size)];
+    float bottom = texture2DOffsetInt2(blendTex, global_id, make_int2(0, 1), buffer_size).y;
+    float right = texture2DOffsetInt2(blendTex, global_id, make_int2(1, 0), buffer_size).w;
+    float4 a = make_float4(topLeft.x, bottom, topLeft.z, right);
+
+    // Up to 4 lines can be crossing a pixel (one in each edge). So, we perform
+    // a weighted average, where the weight of each line is 'a' cubed, which
+    // favors blending and works well in practice.
+    float4 w = a * a * a;
+
+    // There is some blending weight with a value greater than 0.0?
+    float sum = dot(w, 1.0);
+    
+    if (sum < 1e-5)
+    {
+        out_buffer[idx] = colorTex[idx];
+        return;
+    }
+
+    float4 color = make_float4(0.f, 0.f, 0.f, 0.f);
+
+    // Add the contributions of the possible 4 lines that can cross this
+    // pixel:
+    float4 coords = mad(make_float4( 0.0, -a.x, 0.0,  +a.y), rcp_frame.yyyy, texcoord.xyxy);
+    color = mad(Sampler2DBilinear(colorTex, buffer_size, coords.xy), w.x, color);
+    color = mad(Sampler2DBilinear(colorTex, buffer_size, coords.zw), w.y, color);
+
+    coords = mad(make_float4(-a.z,  0.0, a.w,  0.0), rcp_frame.xxxx, texcoord.xyxy);
+    color = mad(Sampler2DBilinear(colorTex, buffer_size, coords.xy), w.z, color);
+    color = mad(Sampler2DBilinear(colorTex, buffer_size, coords.zw), w.w, color);
+
+    // Normalize the resulting color and we are finished!
+    out_buffer[idx] = color / sum;
+}
+
 #endif
