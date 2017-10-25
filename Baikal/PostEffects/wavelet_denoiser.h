@@ -158,10 +158,18 @@ namespace Baikal
                 m_positions[buffer_index]   = new ClwOutput(GetContext(), color_width, color_height);
                 m_normals[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
                 m_moments[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
-				m_depth[buffer_index]		= new ClwOutput(GetContext(), color_width, color_height);
+                m_depth[buffer_index]       = new ClwOutput(GetContext(), color_width, color_height);
+
+                m_tmp_buffers[buffer_index]->Clear(0.f);
+                m_colors[buffer_index]->Clear(0.f);
+                m_positions[buffer_index]->Clear(0.f);
+                m_normals[buffer_index]->Clear(0.f);
+                m_moments[buffer_index]->Clear(0.f);
+                m_depth[buffer_index]->Clear(0.f);
             }
 
             m_motion_buffer             = new ClwOutput(GetContext(), color_width, color_height);
+            m_motion_buffer->Clear(0.f);
 
             m_buffers_width             = color_width;
             m_buffers_height            = color_height;
@@ -175,25 +183,32 @@ namespace Baikal
             {
                 delete m_tmp_buffers[buffer_index];
                 m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_tmp_buffers[buffer_index]->Clear(0.f);
 
                 delete m_colors[buffer_index];
                 m_colors[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_colors[buffer_index]->Clear(0.f);
 
                 delete m_positions[buffer_index];
                 m_positions[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_positions[buffer_index]->Clear(0.f);
 
                 delete m_normals[buffer_index];
                 m_normals[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_normals[buffer_index]->Clear(0.f);
 
                 delete m_moments[buffer_index];
                 m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_moments[buffer_index]->Clear(0.f);
 
-				delete m_depth[buffer_index];
-				m_depth[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                delete m_depth[buffer_index];
+                m_depth[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_depth[buffer_index]->Clear(0.f);
             }
 
             delete m_motion_buffer;
             m_motion_buffer = new ClwOutput(GetContext(), color_width, color_height);
+            m_motion_buffer->Clear(0.f);
 
             m_buffers_width = color_width;
             m_buffers_height = color_height;
