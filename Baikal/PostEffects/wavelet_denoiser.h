@@ -461,7 +461,7 @@ namespace Baikal
             blending_weight_calclulation_kernel.SetArg(argc++, color->height());
             blending_weight_calclulation_kernel.SetArg(argc++, m_blending_weight_calculation->data());
 
-            // Run edge detection kernel
+            // Run blending weight kernel
             {
                 size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
                 size_t ls[] = { 8, 8 };
@@ -478,7 +478,7 @@ namespace Baikal
             neighborhood_blending_kernel.SetArg(argc++, color->height());
             neighborhood_blending_kernel.SetArg(argc++, out_color->data());
 
-            // Run neighborhood blending edge detection kernel
+            // Run neighborhood blending kernel
             {
                 size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
                 size_t ls[] = { 8, 8 };
