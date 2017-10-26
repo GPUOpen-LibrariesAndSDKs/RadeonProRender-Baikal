@@ -535,20 +535,17 @@ void TemporalAccumulation_main(
     global_id.x = get_global_id(0);
     global_id.y = get_global_id(1);
 
-    const int bilateral_filter_kernel_size = 7;
-
     // Check borders
     if (global_id.x < width && global_id.y < height)
     {
-        const int idx = global_id.y * width + global_id.x;
-        
-        moments_and_variance[idx] = make_float4(0.f, 0.f, 0.f, 0.f);
-
+        const int idx = global_id.y * width + global_id.x;      
         const int mesh_id = (int)mesh_ids[idx].x;
 
         const float3 position_xyz = positions[idx].xyz;
         const float3 normal = normals[idx].xyz;
         const float3 color = in_out_colors[idx].xyz;
+        
+        const int bilateral_filter_kernel_size = 7;
 
         if (length(position_xyz) > 0 && !any(isnan(color)))
         {
@@ -573,39 +570,36 @@ void TemporalAccumulation_main(
                 const bool prev_moments_is_nan = any(isnan(prev_moments_and_variance_sample));
 
                 float4 current_moments_and_variance_sample;
+                
+                current_moments_and_variance_sample.w = prev_moments_and_variance_sample.w + 1.f;
 
                 if (prev_moments_and_variance_sample.w < 4 || prev_moments_is_nan)
                 {
                     // Not enought accumulated samples - get bilateral estimate
                     current_moments_and_variance_sample.xyz = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size).xyz;
-                    current_moments_and_variance_sample.w = prev_moments_and_variance_sample.w + 1.f;
                 }
                 else
                 {
                     // Otherwise calculate moments for current color 
                     const float3 luminance_weight = make_float3(0.2126f, 0.7152f, 0.0722f);
                     
-                    const float first_moment = dot(in_out_colors[idx].xyz, luminance_weight);
+                    const float first_moment = dot(color, luminance_weight);
                     const float second_moment = first_moment * first_moment;
-
-                    current_moments_and_variance_sample.xyz = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size).xyz;
-                    current_moments_and_variance_sample.w = prev_moments_and_variance_sample.w + 1.f;
+                    
+                    current_moments_and_variance_sample.xy += make_float2(first_moment, second_moment);
+                    current_moments_and_variance_sample.z = (second_moment - first_moment * first_moment) / current_moments_and_variance_sample.w;
                 }
-                
+
                 // Nan avoidance
                 if (any(isnan(prev_moments_and_variance_sample)))
                 {
                     prev_moments_and_variance_sample = make_float4(0,0,0,1);
                 }
 
-                // Accumulate current and previous moments
-                moments_and_variance[idx].xy    = mix(prev_moments_and_variance_sample.xy, current_moments_and_variance_sample.xy, FRAME_BLEND_ALPHA);
-                moments_and_variance[idx].w     = current_moments_and_variance_sample.w;
-
-                const float mean          = moments_and_variance[idx].x;
-                const float mean_2        = moments_and_variance[idx].y;
+                float2 moments = mix(prev_moments_and_variance_sample.xy, current_moments_and_variance_sample.xy, FRAME_BLEND_ALPHA);
+                float variance = moments.y - moments.x * moments.x;
                 
-                moments_and_variance[idx].z     = mean_2 - mean * mean;
+                moments_and_variance[idx] = make_float4(moments.x, moments.y, variance, current_moments_and_variance_sample.w);
 
                 // Temporal accumulation of color
                 float3 prev_color = SampleWithGeometryTest(prev_colors, (float4)(color, 1.f), position_xyz, normal, mesh_id, positions, normals, mesh_ids, prev_positions, prev_normals, prev_mesh_ids, buffer_size, uv, prev_uv).xyz;
@@ -615,7 +609,7 @@ void TemporalAccumulation_main(
             }
             else
             {
-                // In case of disoclussion - calclulate variance by bilateral filter
+                // In case of disoclussion - calclulate variance by bilateral estimate
                 moments_and_variance[idx] = BilateralVariance(in_out_colors, positions, normals, global_id, buffer_size, bilateral_filter_kernel_size);
             }
         }
@@ -788,10 +782,10 @@ float SearchYUp(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 bu
     for (i = 0; i < MLAA_MAX_SEARCH_STEPS; i++) {
         e = Sampler2DBilinear(edgesTex, buffer_size, texcoord).x;
         if (e < 0.9) break;
-        texcoord += make_float2(0.0, -2.0) * rcp_frame;
+        texcoord += make_float2(0.0f, -2.0f) * rcp_frame;
     }
     
-    return max(-2.0 * i - 2.0 * e, -2.0 * MLAA_MAX_SEARCH_STEPS);
+    return fmax(-2.0f * i - 2.0f * e, -2.0f * MLAA_MAX_SEARCH_STEPS);
 }
 
 float SearchYDown(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 buffer_size, float2 rcp_frame) {
@@ -805,7 +799,7 @@ float SearchYDown(GLOBAL float4 const* restrict edgesTex, float2 texcoord, int2 
         if (e < 0.9) break;
         texcoord -= make_float2(0.0f, -2.0f) * rcp_frame;
     }
-    return min(2.0 * i + 2.0 * e, 2.0 * MLAA_MAX_SEARCH_STEPS);
+    return fmin(2.0f * i + 2.0f * e, 2.0f * MLAA_MAX_SEARCH_STEPS);
 }
 
 #define MAX_DISTANCE 33
