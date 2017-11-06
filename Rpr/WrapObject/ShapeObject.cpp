@@ -159,11 +159,6 @@ void ShapeObject::SetMaterial(MaterialObject* mat)
 {
     if (mat)
     {
-        if (!mat->IsMaterial())
-        {
-            throw Exception(RPR_ERROR_INVALID_PARAMETER, "ShapeObject: material is a texture.");
-        }
-
         //handle fresnel materials
         if (mat->GetType() == MaterialObject::Type::kFresnel ||
             mat->GetType() == MaterialObject::Type::kFresnelShlick)

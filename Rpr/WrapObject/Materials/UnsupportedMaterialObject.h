@@ -19,11 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+#pragma once
 
-#include "MatSysObject.h"
-#include "WrapObject/Materials/MaterialObject.h"
+#include "SingleBxdfMaterialObject.h"
 
-MaterialObject* MatSysObject::CreateMaterial(rpr_material_node_type in_type)
+//default variant of material
+class UnsupportedMaterialObject
+    : public SingleBxdfMaterialObject
 {
-    return MaterialObject::CreateMaterial(in_type);
-}
+public:
+    UnsupportedMaterialObject(MaterialObject::Type mat_type);
+protected:
+    //this call by SetInputMaterial based on input type
+    void SetInputMaterial(const std::string& input_name, MaterialObject* input) override;
+    void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
+    void SetInputImage(const std::string& input_name, ImageMaterialObject* input) override;
+    void SetInputF(const std::string& input_name, const RadeonRays::float4& val) override;
+private:
+};

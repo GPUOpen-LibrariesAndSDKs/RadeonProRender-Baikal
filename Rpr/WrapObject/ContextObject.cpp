@@ -27,7 +27,7 @@ THE SOFTWARE.
 #include "WrapObject/CameraObject.h"
 #include "WrapObject/LightObject.h"
 #include "WrapObject/FramebufferObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 #include "WrapObject/Exception.h"
 
 #include "SceneGraph/scene1.h"
@@ -109,7 +109,7 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = (creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP);
+    bool interop = creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
     if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
     {
         try
@@ -126,7 +126,7 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
     else
     {
         result = RPR_ERROR_UNIMPLEMENTED;
-    }
+    }    
 
     if (result != RPR_SUCCESS)
     {
@@ -271,15 +271,15 @@ ShapeObject* ContextObject::CreateShapeInstance(ShapeObject* mesh)
     return mesh->CreateInstance();
 }
 
-MaterialObject* ContextObject::CreateTexture(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data)
+MaterialObject* ContextObject::CreateImage(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data)
 {
-    MaterialObject* result = new MaterialObject(in_format, in_image_desc, in_data);
+    MaterialObject* result = MaterialObject::CreateImage(in_format, in_image_desc, in_data);
     return result;
 }
 
-MaterialObject* ContextObject::CreateTextureFromFile(rpr_char const * in_path)
+MaterialObject* ContextObject::CreateImageFromFile(rpr_char const * in_path)
 {
-    MaterialObject* result = new MaterialObject(in_path);
+    MaterialObject* result = MaterialObject::CreateImage(in_path);
     return result;
 }
 

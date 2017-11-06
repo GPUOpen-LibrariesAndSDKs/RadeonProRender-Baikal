@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "WrapObject/CameraObject.h"
 #include "WrapObject/FramebufferObject.h"
 #include "WrapObject/LightObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 #include "WrapObject/MatSysObject.h"
 #include "WrapObject/SceneObject.h"
 #include "WrapObject/ShapeObject.h"
@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include "math/matrix.h"
 #include "math/mathutils.h"
 
-//defines behaviour for unimplemented API part
+//defines behavior for unimplemented API part
 //#define UNIMLEMENTED_FUNCTION return RPR_SUCCESS;
 #define UNIMLEMENTED_FUNCTION return RPR_ERROR_UNIMPLEMENTED;
 
@@ -354,7 +354,7 @@ rpr_int rprContextCreateImage(rpr_context in_context, rpr_image_format const in_
     rpr_int result = RPR_SUCCESS;
     try
     {
-        *out_image = context->CreateTexture(in_format, in_image_desc, in_data);
+        *out_image = context->CreateImage(in_format, in_image_desc, in_data);
     }
     catch (Exception& e)
     {
@@ -375,7 +375,7 @@ rpr_int rprContextCreateImageFromFile(rpr_context in_context, rpr_char const * i
     rpr_int result = RPR_SUCCESS;
     try
     {
-        *out_image = context->CreateTextureFromFile(in_path);
+        *out_image = context->CreateImageFromFile(in_path);
     }
     catch (Exception& e)
     {
@@ -846,7 +846,7 @@ rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t
     case RPR_IMAGE_FORMAT:
     {
         //texture data always stored as 4 component FLOAT32
-        rpr_image_format value = img->GetTextureFormat();
+        rpr_image_format value = img->GetImageFormat();
         size_ret = sizeof(value);
         data.resize(size_ret);
         memcpy(&data[0], &value, size_ret);
@@ -854,7 +854,7 @@ rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t
     }
     case RPR_IMAGE_DESC:
     {
-        rpr_image_desc value = img->GetTextureDesc();
+        rpr_image_desc value = img->GetImageDesc();
         size_ret = sizeof(value);
         data.resize(size_ret);
         memcpy(&data[0], &value, size_ret);
@@ -862,8 +862,8 @@ rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t
     }
     case RPR_IMAGE_DATA:
     {
-        rpr_image_desc desc = img->GetTextureDesc();
-        const char* value = img->GetTextureData();
+        rpr_image_desc desc = img->GetImageDesc();
+        const char* value = img->GetImageData();
         size_ret = desc.image_width * desc.image_height * desc.image_depth;
         data.resize(size_ret);
         memcpy(&data[0], value, size_ret);
@@ -1969,7 +1969,7 @@ rpr_int rprMaterialNodeSetInputN(rpr_material_node in_node, rpr_char const * in_
 
     try
     {
-        mat->SetInputMaterial(in_input, input_node);
+        mat->SetInputValue(in_input, input_node);
     }
     catch (Exception& e)
     {
@@ -2017,7 +2017,7 @@ rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char con
     
     try
     {
-        mat->SetInputMaterial(in_input, img);
+        mat->SetInputValue(in_input, img);
     }
     catch (Exception& e)
     {

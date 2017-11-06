@@ -19,11 +19,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+#pragma once
 
-#include "MatSysObject.h"
-#include "WrapObject/Materials/MaterialObject.h"
+#include "MaterialObject.h"
 
-MaterialObject* MatSysObject::CreateMaterial(rpr_material_node_type in_type)
+//materials represented as Baikal::Texture
+class TextureMaterialObject
+    : public MaterialObject
 {
-    return MaterialObject::CreateMaterial(in_type);
-}
+public:
+    TextureMaterialObject(Type type);
+    Baikal::Texture::Ptr GetTexture() override;
+
+    //rprImageGetInfo:
+    virtual rpr_image_desc GetImageDesc() const override;
+    virtual char const* GetImageData() const override;
+    virtual rpr_image_format GetImageFormat() const override;
+protected:
+
+    virtual void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
+    virtual void SetInputImage(const std::string& input_name, ImageMaterialObject* input) override;
+private:
+
+    void CopyData(MaterialObject* in);
+
+    Baikal::Texture::Ptr m_tex;
+};

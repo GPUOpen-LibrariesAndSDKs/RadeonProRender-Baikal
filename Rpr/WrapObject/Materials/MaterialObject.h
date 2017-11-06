@@ -21,7 +21,7 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
-#include "WrapObject.h"
+#include "WrapObject/WrapObject.h"
 #include "RadeonProRender.h"
 #include "math/float3.h"
 
@@ -31,6 +31,9 @@ THE SOFTWARE.
 
 #include "SceneGraph/texture.h"
 #include "SceneGraph/material.h"
+
+class TextureMaterialObject;
+class ImageMaterialObject;
 
 //represent rpr_material_node
 class MaterialObject
@@ -69,45 +72,54 @@ public:
     };
 
     //initialize methods
-    //represent rpr_image
-    //Note: in_data will be copied. Baikal::Texture inside.
-    MaterialObject(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data);
-    MaterialObject(const std::string& in_path);
+    static MaterialObject* CreateImage(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data);
+    static MaterialObject* CreateImage(const std::string& in_path);  
+    static MaterialObject* CreateMaterial(rpr_material_node_type in_type);
 
-    //Baikal::Material or Baikal::Texture inside
-    MaterialObject(rpr_material_node_type in_type);
-
-    virtual ~MaterialObject();
+    virtual ~MaterialObject() = default;
 
     bool IsImg() { return m_type == Type::kImage;}
     bool IsMap() { return   m_type == Type::kBumpMap || 
                             m_type == Type::kNormalMap || 
                             m_type == Type::kDotTexture; }
 
-    bool IsTexture() { return m_is_tex; }
-    bool IsMaterial() { return !m_is_tex; }
+    bool IsTexture() { return IsImg() || IsMap(); }
 
     //inputs
-    void SetInputMaterial(const std::string& input_name, MaterialObject* input);
+    void SetInputValue(const std::string& input_name, MaterialObject* input);
     void SetInputValue(const std::string& input_name, const RadeonRays::float4& val);
 
+    //Get*
     Type GetType() { return m_type; }
-    Baikal::Texture::Ptr GetTexture() { return m_tex; }
-    Baikal::Material::Ptr GetMaterial() { return m_mat; }
+    virtual Baikal::Texture::Ptr GetTexture();
+    virtual Baikal::Material::Ptr GetMaterial();
+
     //rprMaterialGetInfo:
     uint64_t GetInputCount();
     rpr_uint GetInputType(int i);
     void GetInput(int i, void* out, size_t* out_size);
+    //get input by index.
+    //Note: RPR related input name
     std::string GetInputName(int i);
 
-    //rprImageGetInfo:
-    rpr_image_desc GetTextureDesc() const;
-    char const* GetTextureData() const;
-    rpr_image_format GetTextureFormat() const;
+    //get input name by material
+    std::string GetInputTranslatedName(MaterialObject* mat);
 
+    //rprImageGetInfo:
+    virtual rpr_image_desc GetImageDesc() const;
+    virtual char const* GetImageData() const;
+    virtual rpr_image_format GetImageFormat() const;
+protected:
+    MaterialObject(Type type);
+    //type - is type of input material
+    std::string TranslatePropName(const std::string& in, Type type = Type::kDiffuse);
+
+    //this call by SetInputMaterial based on input type
+    virtual void SetInputMaterial(const std::string& input_name, MaterialObject* input);
+    virtual void SetInputTexture(const std::string& input_name, TextureMaterialObject* input);
+    virtual void SetInputImage(const std::string& input_name, ImageMaterialObject* input);
+    virtual void SetInputF(const std::string& input_name, const RadeonRays::float4& val);
 private:
-    void Clear();
-    bool CheckInputMaterial();
 
     //handle input materials, it need for correct rprMaterialGet* methods.
     //Note: input_name is RPR input name
@@ -117,20 +129,13 @@ private:
     void AddOutput(MaterialObject* mat);
     void RemoveOutput(MaterialObject* mat);
     void Notify();
-    void Update(MaterialObject* mat);
+    virtual void Update(MaterialObject* mat);
 
-    //type - is type of input material
-    std::string TranslatePropName(const std::string& in, Type type = Type::kDiffuse);
+
 
     Type m_type;
-    bool m_is_tex;
-
-    Baikal::Texture::Ptr m_tex;
-    Baikal::Material::Ptr m_mat;
-
     //output materials
     std::set<MaterialObject*> m_out_mats;
-
     //input material + RPR input name. Required for rprMaterialGet* methods.
     std::map<std::string, MaterialObject*> m_inputs;
 };

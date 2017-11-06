@@ -19,11 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+#pragma once
 
-#include "MatSysObject.h"
-#include "WrapObject/Materials/MaterialObject.h"
+#include "MaterialObject.h"
 
-MaterialObject* MatSysObject::CreateMaterial(rpr_material_node_type in_type)
+//materials represented as Baikal::SingleBxdf
+class SingleBxdfMaterialObject
+    : public MaterialObject
 {
-    return MaterialObject::CreateMaterial(in_type);
-}
+public:
+    SingleBxdfMaterialObject(MaterialObject::Type mat_type, Baikal::SingleBxdf::BxdfType type);
+    void SetInputF(const std::string& input_name, const RadeonRays::float4& val) override;
+
+    Baikal::Material::Ptr GetMaterial() override;
+
+protected:
+    void SetInputMaterial(const std::string& input_name, MaterialObject* input) override;
+    void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
+private:
+
+    bool is_base; //to know which one mmat input is active now
+    Baikal::Material::Ptr m_mmat; //multibxdf material
+    Baikal::Material::Ptr m_base_mat; //singlebxdf material 
+    Baikal::Material::Ptr m_top_baterial;
+
+};

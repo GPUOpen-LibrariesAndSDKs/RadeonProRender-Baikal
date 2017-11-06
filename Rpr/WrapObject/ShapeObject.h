@@ -24,7 +24,7 @@ THE SOFTWARE.
 #include "RadeonProRender.h"
 #include "SceneGraph/shape.h"
 #include "WrapObject/WrapObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 
 #include "SceneGraph/shape.h"
 
