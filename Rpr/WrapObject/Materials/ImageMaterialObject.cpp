@@ -92,7 +92,6 @@ ImageMaterialObject::ImageMaterialObject(rpr_image_format const in_format, rpr_i
         }
     }
     m_tex = Texture::Create(data, tex_size, data_format);
-    std::cout << ": " << this->GetTexture() << std::endl;
 }
 
 ImageMaterialObject::ImageMaterialObject(const std::string& in_path)
@@ -110,7 +109,6 @@ ImageMaterialObject::ImageMaterialObject(const std::string& in_path)
     }
 
     m_tex = texture;
-    std::cout << "Texture " << this << ": " << in_path << std::endl;
 }
 
 Baikal::Texture::Ptr ImageMaterialObject::GetTexture()

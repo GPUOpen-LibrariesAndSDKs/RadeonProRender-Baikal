@@ -495,6 +495,27 @@ rpr_int rprContextCreateMeshEx(rpr_context context,
     UNIMLEMENTED_FUNCTION
 }
 
+rpr_int rprContextCreateMeshEx2(rpr_context context,
+    rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride,
+    rpr_float const * normals, size_t num_normals, rpr_int normal_stride,
+    rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers,
+    rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride,
+    rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride,
+    rpr_int const ** texcoord_indices, rpr_int const * tidx_stride,
+    rpr_int const * num_face_vertices, size_t num_faces, 
+    rpr_mesh_info const * mesh_properties, rpr_shape * out_mesh)
+{
+    return rprContextCreateMeshEx(context,
+        vertices, num_vertices, vertex_stride,
+        normals, num_normals, normal_stride,
+        perVertexFlag, num_perVertexFlags, perVertexFlag_stride, numberOfTexCoordLayers,
+        texcoords, num_texcoords, texcoord_stride,
+        vertex_indices, vidx_stride, normal_indices, nidx_stride,
+        texcoord_indices, tidx_stride,
+        num_face_vertices, num_faces,
+        out_mesh);
+}
+
 rpr_int rprContextCreateCamera(rpr_context in_context, rpr_camera * out_camera)
 {
     //cast data

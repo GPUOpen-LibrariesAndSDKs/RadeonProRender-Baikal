@@ -124,8 +124,6 @@ namespace
 MaterialObject* MaterialObject::CreateImage(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data)
 {
     return new ImageMaterialObject(in_format, in_image_desc, in_data);
-    std::string t = "C:\\git\\RadeonProRender-Baikal2\\Resources\\Textures\\test_albedo1.jpg";
-    return new ImageMaterialObject(t);
 }
 
 MaterialObject* MaterialObject::CreateImage(const std::string& in_path)

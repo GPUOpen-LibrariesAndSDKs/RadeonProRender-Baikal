@@ -25,6 +25,7 @@ rprContextCreateScene
 rprContextCreateInstance
 rprContextCreateMesh
 rprContextCreateMeshEx
+rprContextCreateMeshEx2
 rprContextCreateCamera
 rprContextCreateFrameBuffer
 rprCameraGetInfo

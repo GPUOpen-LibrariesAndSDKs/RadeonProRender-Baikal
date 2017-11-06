@@ -62,7 +62,6 @@ void TextureMaterialObject::SetInputTexture(const std::string& input_name, Textu
 
 void TextureMaterialObject::CopyData(MaterialObject* in)
 {
-    std::cout << "CopyData from " << in->GetTexture() << " to " << this->GetTexture() << std::endl;
     //copy image data
     auto tex = in->GetTexture();
     const char* data = tex->GetData();
