@@ -57,6 +57,9 @@ namespace Baikal
         //
         static std::unique_ptr<SceneIo> CreateSceneIoFbx();
 
+		//gltf 
+		static std::unique_ptr<SceneIo> CreateSceneIoGltf();
+
         // Constructor
         SceneIo() = default;
         // Destructor

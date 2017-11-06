@@ -108,12 +108,12 @@ namespace
 }
 
 #define FR_MACRO_CLEAN_SHAPE_RELEASE(mesh1__, scene1__)\
-	status = rprShapeSetMaterial(mesh1__, NULL);\
-	assert(status == RPR_SUCCESS);\
-	status = rprSceneDetachShape(scene1__, mesh1__);\
-	assert(status == RPR_SUCCESS);\
-	status = rprObjectDelete(mesh1__); mesh1__ = NULL;\
-	assert(status == RPR_SUCCESS);
+    status = rprShapeSetMaterial(mesh1__, NULL);\
+    assert(status == RPR_SUCCESS);\
+    status = rprSceneDetachShape(scene1__, mesh1__);\
+    assert(status == RPR_SUCCESS);\
+    status = rprObjectDelete(mesh1__); mesh1__ = NULL;\
+    assert(status == RPR_SUCCESS);
 
 #define FR_MACRO_SAFE_FRDELETE(a)    { status = rprObjectDelete(a); a = NULL;   assert(status == RPR_SUCCESS); }
 
@@ -512,8 +512,6 @@ void ComplexRenderTest()
     status = rprMaterialNodeSetInputF(diffuse, "color", 0.9f, 0.9f, 0.f, 1.0f);
     assert(status == RPR_SUCCESS);
     rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_diffuse.jpg", &img);
-    assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputImageData(diffuse, "color", img);
     assert(status == RPR_SUCCESS);
     rpr_material_node materialNodeTexture = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &materialNodeTexture);
     assert(status == RPR_SUCCESS);
@@ -1427,8 +1425,6 @@ void AOVTest()
     status = rprMaterialNodeSetInputF(diffuse, "color", 0.9f, 0.9f, 0.f, 1.0f);
     assert(status == RPR_SUCCESS);
     rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_diffuse.jpg", &img);
-    assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputImageData(diffuse, "color", img);
     assert(status == RPR_SUCCESS);
     rpr_material_node materialNodeTexture = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &materialNodeTexture);
     assert(status == RPR_SUCCESS);
@@ -2862,90 +2858,90 @@ void test_feature_shaderTypeLayered()
 
 void LoadFrs(const std::string& file)
 {
-	rpr_int status = RPR_SUCCESS;
+    rpr_int status = RPR_SUCCESS;
 
-	//create context and scene
-	rpr_context	context;
-	status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
-	rpr_scene scene = NULL;
-	rpr_material_system matsys = NULL;
-	status = rprContextCreateMaterialSystem(context, 0, &matsys);
-	assert(status == RPR_SUCCESS);
-	
-	//load frs file
-	status = rprsImport(file.c_str(), context, matsys, &scene, false);
-	assert(status == RPR_SUCCESS);
+    //create context and scene
+    rpr_context	context;
+    status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
+    rpr_scene scene = NULL;
+    rpr_material_system matsys = NULL;
+    status = rprContextCreateMaterialSystem(context, 0, &matsys);
+    assert(status == RPR_SUCCESS);
+    
+    //load frs file
+    status = rprsImport(file.c_str(), context, matsys, &scene, false);
+    assert(status == RPR_SUCCESS);
 
-	////add env light
-	//rpr_light light = nullptr;
-	//status = rprContextCreateEnvironmentLight(context, &light);
-	//assert(status == RPR_SUCCESS);
-	//rpr_image image_input = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/Studio015.hdr", &image_input);
-	//assert(status == RPR_SUCCESS);
-	//status = rprEnvironmentLightSetImage(light, image_input);
-	//assert(status == RPR_SUCCESS);
-	//status = rprEnvironmentLightSetIntensityScale(light, 1.f);
-	//assert(status == RPR_SUCCESS);
-	//status = rprSceneAttachLight(scene, light);
-	//assert(status == RPR_SUCCESS);
-
-
-	size_t shapeCount = 0;
-	status = rprSceneGetInfo(scene, RPR_SCENE_SHAPE_COUNT, sizeof(shapeCount), &shapeCount, NULL);
-	assert(status == RPR_SUCCESS);
-
-	std::vector<rpr_shape> shapes(shapeCount);
-	status = rprSceneGetInfo(scene, RPR_SCENE_SHAPE_LIST, shapeCount * sizeof(rpr_shape), shapes.data(), NULL);
-	assert(status == RPR_SUCCESS);
-
-	//rpr_material_node grey = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_DIFFUSE, &grey);
-	//assert(status == RPR_SUCCESS);
-	//status = rprMaterialNodeSetInputF(grey, "color", 0.5f, 0.5f, 0.5f, 1.0f);
-	//assert(status == RPR_SUCCESS);
-	//// Iterate over shapes and replace materials.
-	//for (size_t i = 0; i < shapeCount; i++)
-	//{
-	//	// Retrieve the shape's material node.
-	//	rpr_material_node mat = 0;
-	//	status = rprShapeSetMaterial(shapes[i], grey);
-	//	assert(status == RPR_SUCCESS);
-	//}
-
-	rpr_camera cam;
-	status = rprSceneGetInfo(scene, RPR_SCENE_CAMERA, sizeof(rpr_camera), &cam, NULL);
-	assert(status == RPR_SUCCESS);
-	status = rprCameraSetFStop(cam, 0.f);
-	assert(status == RPR_SUCCESS);
+    ////add env light
+    //rpr_light light = nullptr;
+    //status = rprContextCreateEnvironmentLight(context, &light);
+    //assert(status == RPR_SUCCESS);
+    //rpr_image image_input = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/Studio015.hdr", &image_input);
+    //assert(status == RPR_SUCCESS);
+    //status = rprEnvironmentLightSetImage(light, image_input);
+    //assert(status == RPR_SUCCESS);
+    //status = rprEnvironmentLightSetIntensityScale(light, 1.f);
+    //assert(status == RPR_SUCCESS);
+    //status = rprSceneAttachLight(scene, light);
+    //assert(status == RPR_SUCCESS);
 
 
-	//output
-	rpr_framebuffer_desc desc;
-	desc.fb_width = 800;
-	desc.fb_height = 600;
-	rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
-	rpr_framebuffer frame_buffer = NULL; status = rprContextCreateFrameBuffer(context, fmt, &desc, &frame_buffer);
-	assert(status == RPR_SUCCESS);
-	status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
-	assert(status == RPR_SUCCESS);
-	status = rprFrameBufferClear(frame_buffer);
-	assert(status == RPR_SUCCESS);
+    size_t shapeCount = 0;
+    status = rprSceneGetInfo(scene, RPR_SCENE_SHAPE_COUNT, sizeof(shapeCount), &shapeCount, NULL);
+    assert(status == RPR_SUCCESS);
 
-	//render
-	for (rpr_uint i = 0; i < kRenderIterations; ++i)
-	{
-		status = rprContextRender(context);
-		assert(status == RPR_SUCCESS);
-	}
+    std::vector<rpr_shape> shapes(shapeCount);
+    status = rprSceneGetInfo(scene, RPR_SCENE_SHAPE_LIST, shapeCount * sizeof(rpr_shape), shapes.data(), NULL);
+    assert(status == RPR_SUCCESS);
 
-	rprFrameBufferSaveToFile(frame_buffer, "Output/LoadFrs.png");
+    //rpr_material_node grey = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_DIFFUSE, &grey);
+    //assert(status == RPR_SUCCESS);
+    //status = rprMaterialNodeSetInputF(grey, "color", 0.5f, 0.5f, 0.5f, 1.0f);
+    //assert(status == RPR_SUCCESS);
+    //// Iterate over shapes and replace materials.
+    //for (size_t i = 0; i < shapeCount; i++)
+    //{
+    //	// Retrieve the shape's material node.
+    //	rpr_material_node mat = 0;
+    //	status = rprShapeSetMaterial(shapes[i], grey);
+    //	assert(status == RPR_SUCCESS);
+    //}
 
-	//cleanup
-	status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
- 	assert(status == RPR_SUCCESS);
-	status = rprObjectDelete(scene); scene = NULL;
-	assert(status == RPR_SUCCESS);
-	status = rprObjectDelete(matsys); matsys = NULL;
-	assert(status == RPR_SUCCESS);
+    rpr_camera cam;
+    status = rprSceneGetInfo(scene, RPR_SCENE_CAMERA, sizeof(rpr_camera), &cam, NULL);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraSetFStop(cam, 0.f);
+    assert(status == RPR_SUCCESS);
+
+
+    //output
+    rpr_framebuffer_desc desc;
+    desc.fb_width = 800;
+    desc.fb_height = 600;
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer frame_buffer = NULL; status = rprContextCreateFrameBuffer(context, fmt, &desc, &frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    //render
+    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    rprFrameBufferSaveToFile(frame_buffer, "Output/LoadFrs.png");
+
+    //cleanup
+    status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(scene); scene = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
 
 }
 
@@ -2980,7 +2976,7 @@ void UpdateMaterial()
     assert(status == RPR_SUCCESS);
     rpr_material_node fresnel = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_FRESNEL, &fresnel);
     assert(status == RPR_SUCCESS);
-    auto ior = 0.f;
+    auto ior = 1.1f;
     status = rprMaterialNodeSetInputF(fresnel, "ior", ior, ior, ior, ior);
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputN(layered, "weight", fresnel);
@@ -3043,7 +3039,7 @@ void UpdateMaterial()
     status = rprFrameBufferSaveToFile(frame_buffer, "Output/UpdateMaterial_1.jpg");
 
     //update ior
-    ior = 1.f;
+    ior = 2.f;
     status = rprMaterialNodeSetInputF(fresnel, "ior", ior, ior, ior, ior);
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);
@@ -3078,28 +3074,183 @@ void UpdateMaterial()
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
 }
+
+void ArithmeticMul()
+{
+    //check material properties updated properly
+    //on blend material
+    rpr_int status = RPR_SUCCESS;
+    rpr_context	context;
+    status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
+    assert(status == RPR_SUCCESS);
+    rpr_material_system matsys = NULL;
+    status = rprContextCreateMaterialSystem(context, 0, &matsys);
+    assert(status == RPR_SUCCESS);
+
+    rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
+    assert(status == RPR_SUCCESS);
+
+    //material
+    rpr_material_node col = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_DIFFUSE, &col);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputF(col, "color", 1.f, 0.f, 0.f, 1.f);
+    assert(status == RPR_SUCCESS);
+    rpr_material_node mul = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_ARITHMETIC, &mul);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputU(mul, "op", RPR_MATERIAL_NODE_OP_MUL);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputN(mul, "color0", col);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputF(mul, "color1", 0.5f, 0.5f, 0.5f, 0.5f);
+    assert(status == RPR_SUCCESS);
+
+    //sphere
+    rpr_shape mesh = CreateSphere(context, 64, 32, 1.f, float3());
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachShape(scene, mesh);
+    assert(status == RPR_SUCCESS);
+    status = rprShapeSetMaterial(mesh, mul);
+    assert(status == RPR_SUCCESS);
+
+    //light
+    rpr_light light = NULL; status = rprContextCreateEnvironmentLight(context, &light);
+    assert(status == RPR_SUCCESS);
+    rpr_image imageInput = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/studio015.hdr", &imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light, imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+
+    //camera
+    rpr_camera camera = NULL; status = rprContextCreateCamera(context, &camera);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraLookAt(camera, 0, 0, 3, 0, 0, 0, 0, 1, 0);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraSetFocalLength(camera, 23.f);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraSetFStop(camera, 5.4f);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetCamera(scene, camera);
+    assert(status == RPR_SUCCESS);
+
+    status = rprContextSetScene(context, scene);
+    assert(status == RPR_SUCCESS);
+
+    //light
+
+    //setup out
+    rpr_framebuffer_desc desc;
+    desc.fb_width = 800;
+    desc.fb_height = 600;
+
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer frame_buffer = NULL; status = rprContextCreateFrameBuffer(context, fmt, &desc, &frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    //render
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+    //red
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/ArithmeticMul_1.jpg");
+
+    //update mul value
+    status = rprMaterialNodeSetInputF(mul, "color1", 1.f, 1.f, 1.f, 1.f);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+    //black
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/ArithmeticMul_2.jpg");
+
+    //update mul value
+    status = rprMaterialNodeSetInputF(mul, "color1", 0.f, 0.f, 0.f, 0.f);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+    //black
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/ArithmeticMul_3.jpg");
+
+    //update mul value
+    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_normal.jpg", &img);
+    assert(status == RPR_SUCCESS);
+    rpr_material_node tex = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &tex);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputImageData(tex, "data", img);
+    assert(status == RPR_SUCCESS);
+
+    status = rprMaterialNodeSetInputN(mul, "color1", tex);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+    //black
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/ArithmeticMul_4.jpg");
+    assert(status == RPR_SUCCESS);
+
+
+    //cleanup
+    status = rprSceneDetachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(light); light = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetCamera(scene, NULL);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(scene); scene = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(camera); camera = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+}
+
 int main(int argc, char* argv[])
 {
-	MeshCreationTest();
+    MeshCreationTest();
     SimpleRenderTest();
     ComplexRenderTest();
     EnvLightClearTest();
     MemoryStatistics();
     DefaultMaterialTest();
     NullShaderTest();
-	TiledRender();
+    TiledRender();
     AOVTest();
     test_feature_cameraDOF();
     test_feature_ContextImageFromData();
-//    test_feature_multiUV();
-//    test_apiMecha_Light();
+
     test_feature_LightDirectional();
     InstancingTest();
     BumpmapTest();
     test_feature_shaderBumpmap();
     test_feature_shaderTypeLayered();
     UpdateMaterial();
-	//LoadFrs("../Resources/frs/bath_new.frs");
+    ArithmeticMul();
+
+    //    test_feature_multiUV();
+    //    test_apiMecha_Light();
+    //LoadFrs("../Resources/frs/bath_new.frs");
     
     return 0;
 }

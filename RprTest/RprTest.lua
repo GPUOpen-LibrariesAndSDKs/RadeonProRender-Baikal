@@ -1,10 +1,16 @@
 project "RprTest"
     kind "ConsoleApp"
     location "../RprTest"
-    links {"RadeonRays", "CLW", "Calc", "Rpr", "RprLoadStore"}
+    links { "RadeonRays", 
+            "CLW", 
+            "Calc", 
+            "RadeonProRender", 
+            "RprLoadStore64"}
     files { "../RprTest/**.h", "../RprTest/**.cpp", "../RprTest/**.cl", "../RprTest/**.fsh", "../RprTest/**.vsh" }
 
-    includedirs{ "../Rpr", ".", "../RprLoadStore/" }
+    includedirs{ "../Rpr",
+                 ".", 
+                 "../3rdParty/RprLoadStore/include" }
 
     if os.is("macosx") then
         sysincludedirs {"/usr/local/include"}
@@ -20,7 +26,8 @@ project "RprTest"
         libdirs {   "../3rdparty/glew/lib/%{cfg.platform}", 
                     "../3rdparty/freeglut/lib/%{cfg.platform}", 
                     "../3rdparty/embree/lib/%{cfg.platform}", 
-                    "../3rdparty/oiio/lib/%{cfg.platform}"}
+                    "../3rdparty/oiio/lib/%{cfg.platform}",
+                    "../3rdparty/RprLoadStore/lib/%{cfg.platform}"}
         configuration {"Debug"}
             links {"OpenImageIOD"}
         configuration {"Release"}
@@ -54,5 +61,8 @@ project "RprTest"
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\tbb.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\ProRenderGLTF\\bin\\%{cfg.platform}\\ProRenderGLTF.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\RprLoadStore\\bin\\%{cfg.platform}\\RprLoadStore64.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\RprSupport\\bin\\%{cfg.platform}\\RprSupport64.dll" "%{cfg.buildtarget.directory}"'
         }
     end

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #include "WrapObject/LightObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 #include "WrapObject/Exception.h"
 #include "radeon_rays.h"
 #include "SceneGraph/light.h"

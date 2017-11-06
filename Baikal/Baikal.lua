@@ -1,7 +1,7 @@
 project "Baikal"
     kind "StaticLib"
     location "../Baikal"
-    links {"CLW", "Calc"}
+    links {"CLW", "Calc", "FreeImage"}
     files { "../Baikal/**.inl", "../Baikal/**.h", "../Baikal/**.cpp", "../Baikal/**.cl", "../Baikal/**.fsh", "../Baikal/**.vsh" }
 
     includedirs{ "../RadeonRays/RadeonRays/include", "../RadeonRays/CLW", "."}
@@ -63,6 +63,26 @@ project "Baikal"
         end
     end
 
+    if _OPTIONS["gltf"] then
+        defines {"ENABLE_GLTF"}
+
+        includedirs{"../3rdparty/FreeImage/include",
+                    "../3rdparty/json/include",
+                    "../3rdparty/RprSupport/include",
+                    "../3rdparty/RprLoadStore/include",
+                    "../3rdparty/ProRenderGLTF/include",
+                    "../Rpr"}
+        libdirs{"../3rdparty/FreeImage/lib/",
+                "../3rdparty/RprSupport/lib/%{cfg.platform}",
+                "../3rdparty/RprLoadStore/lib/%{cfg.platform}",
+                "../3rdparty/ProRenderGLTF/lib/%{cfg.platform}"}
+        links{"FreeImage",
+              "RadeonProRender",
+              "RprSupport64",
+              "ProRenderGLTF"}
+        postbuildcommands{'copy "..\\3rdparty\\FreeImage\\bin\\FreeImage.dll" "%{cfg.buildtarget.directory}"'}
+    end
+
     if os.is("linux") then
         buildoptions "-std=c++14"
         includedirs { "../3rdparty/glfw/include"}
@@ -98,6 +118,9 @@ project "Baikal"
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\embree.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\embree\\bin\\%{cfg.platform}\\tbb.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',
-          'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"'
+          'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\ProRenderGLTF\\bin\\%{cfg.platform}\\ProRenderGLTF.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\RprLoadStore\\bin\\%{cfg.platform}\\RprLoadStore64.dll" "%{cfg.buildtarget.directory}"',
+          'copy "..\\3rdparty\\RprSupport\\bin\\%{cfg.platform}\\RprSupport64.dll" "%{cfg.buildtarget.directory}"'
         }
     end

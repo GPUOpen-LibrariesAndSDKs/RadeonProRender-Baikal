@@ -19,6 +19,11 @@ newoption {
 }
 
 newoption {
+    trigger     = "gltf",
+    description = "Enable glTF import"
+}
+
+newoption {
     trigger     = "rpr",
     description = "Enable RadeonProRender API lib"
 }
@@ -39,69 +44,66 @@ defines {"USE_OPENCL"}
 -- perform OS specific initializations
 local targetName;
 if os.is("macosx") then
-	targetName = "osx"
+    targetName = "osx"
 end
 
 if os.is("windows") then
-	targetName = "win"
-	defines{ "WIN32" }
-	buildoptions { "/MP"  } --multiprocessor build
-	defines {"_CRT_SECURE_NO_WARNINGS"}
+    targetName = "win"
+    defines{ "WIN32" }
+    buildoptions { "/MP"  } --multiprocessor build
+    defines {"_CRT_SECURE_NO_WARNINGS"}
 elseif os.is("linux") then
-	buildoptions {"-fvisibility=hidden"}
+    buildoptions {"-fvisibility=hidden"}
 end
 
 --make configuration specific definitions
 configuration "Debug"
-	defines { "_DEBUG" }
-	flags { "Symbols" }
+    defines { "_DEBUG" }
+    flags { "Symbols" }
 configuration "Release"
-	defines { "NDEBUG" }
-	flags { "Optimize" }
+    defines { "NDEBUG" }
+    flags { "Optimize" }
 
 configuration {"x64", "Debug"}
-	targetsuffix "64D"
+    targetsuffix "64D"
 configuration {"x64", "Release"}
-	targetsuffix "64"
+    targetsuffix "64"
 
 configuration {} -- back to all configurations
 
 if _OPTIONS["rpr"] then
-	if fileExists("./Rpr/Rpr.lua") then
-		dofile("./Rpr/Rpr.lua")
-	end
-	if fileExists("./RprTest/RprTest.lua") then
-		dofile("./RprTest/RprTest.lua")
-	end
-	if fileExists("./RprLoadStore/RprLoadStore.lua") then
-		dofile("./RprLoadStore/RprLoadStore.lua")
-	end
+    if fileExists("./Rpr/Rpr.lua") then
+        dofile("./Rpr/Rpr.lua")
+    end
+    if fileExists("./RprTest/RprTest.lua") then
+        dofile("./RprTest/RprTest.lua")
+    end
 end
 
 if fileExists("./Baikal/Baikal.lua") then
-	dofile("./Baikal/Baikal.lua")
+    dofile("./Baikal/Baikal.lua")
 end
 
 if fileExists("./BaikalStandalone/BaikalStandalone.lua") then
-	dofile("./BaikalStandalone/BaikalStandalone.lua")
+    dofile("./BaikalStandalone/BaikalStandalone.lua")
 end
 
 if fileExists("./Gtest/gtest.lua") then
-	dofile("./Gtest/gtest.lua")
+    dofile("./Gtest/gtest.lua")
 end
 
 if fileExists("./BaikalTest/BaikalTest.lua") then
-	dofile("./BaikalTest/BaikalTest.lua")
+    dofile("./BaikalTest/BaikalTest.lua")
 end
 
 if fileExists("./RadeonRaysPremakeAdapter/RadeonRays.lua") then
-	dofile("./RadeonRaysPremakeAdapter/RadeonRays.lua")
+    dofile("./RadeonRaysPremakeAdapter/RadeonRays.lua")
 end
 
 if fileExists("./RadeonRaysPremakeAdapter/CLW.lua") then
-	dofile("./RadeonRaysPremakeAdapter/CLW.lua")
+    dofile("./RadeonRaysPremakeAdapter/CLW.lua")
 end
 
 if fileExists("./RadeonRaysPremakeAdapter/Calc.lua") then
-	dofile("./RadeonRaysPremakeAdapter/Calc.lua")
+    dofile("./RadeonRaysPremakeAdapter/Calc.lua")
 end
