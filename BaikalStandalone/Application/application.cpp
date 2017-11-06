@@ -114,25 +114,26 @@ namespace Baikal
     void Application::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
         switch (key)
         {
         case GLFW_KEY_UP:
-            g_is_fwd_pressed = action == GLFW_PRESS ? true : false;
+            g_is_fwd_pressed = press_or_repeat;
             break;
         case GLFW_KEY_DOWN:
-            g_is_back_pressed = action == GLFW_PRESS ? true : false;
+            g_is_back_pressed = press_or_repeat;
             break;
         case GLFW_KEY_LEFT:
-            g_is_left_pressed = action == GLFW_PRESS ? true : false;
+            g_is_left_pressed = press_or_repeat;
             break;
         case GLFW_KEY_RIGHT:
-            g_is_right_pressed = action == GLFW_PRESS ? true : false;
+            g_is_right_pressed = press_or_repeat;
             break;
         case GLFW_KEY_HOME:
-            g_is_home_pressed = action == GLFW_PRESS ? true : false;
+            g_is_home_pressed = press_or_repeat;
             break;
         case GLFW_KEY_END:
-            g_is_end_pressed = action == GLFW_PRESS ? true : false;
+            g_is_end_pressed = press_or_repeat;
             break;
         case GLFW_KEY_F1:
             app->m_settings.gui_visible = action == GLFW_PRESS ? !app->m_settings.gui_visible : app->m_settings.gui_visible;
