@@ -5,12 +5,16 @@ project "RprTest"
             "CLW", 
             "Calc", 
             "RadeonProRender", 
+            "ProRenderGLTF", 
+            "RprSupport64", 
             "RprLoadStore64"}
     files { "../RprTest/**.h", "../RprTest/**.cpp", "../RprTest/**.cl", "../RprTest/**.fsh", "../RprTest/**.vsh" }
 
     includedirs{ "../Rpr",
                  ".", 
-                 "../3rdParty/RprLoadStore/include" }
+                 "../3rdParty/RprLoadStore/include",
+                 "../3rdParty/RprSupport/include",
+                 "../3rdParty/ProRenderGLTF/include" }
 
     if os.is("macosx") then
         sysincludedirs {"/usr/local/include"}
@@ -27,7 +31,9 @@ project "RprTest"
                     "../3rdparty/freeglut/lib/%{cfg.platform}", 
                     "../3rdparty/embree/lib/%{cfg.platform}", 
                     "../3rdparty/oiio/lib/%{cfg.platform}",
-                    "../3rdparty/RprLoadStore/lib/%{cfg.platform}"}
+                    "../3rdparty/ProRenderGLTF/lib/%{cfg.platform}",
+                    "../3rdparty/RprLoadStore/lib/%{cfg.platform}",
+                    "../3rdparty/RprSupport/lib/%{cfg.platform}" }
         configuration {"Debug"}
             links {"OpenImageIOD"}
         configuration {"Release"}

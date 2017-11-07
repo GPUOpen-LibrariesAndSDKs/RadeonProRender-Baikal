@@ -1,7 +1,8 @@
 #include "../Rpr/RadeonProRender.h"
 #include "../RadeonRays/RadeonRays/include/math/matrix.h"
 #include "../RadeonRays/RadeonRays/include/math/mathutils.h"
-#include "../RprLoadStore/RprLoadStore.h"
+#include "RprLoadStore.h"
+#include "ProRenderGLTF.h"
 
 #include <map>
 #include <cassert>
@@ -163,6 +164,9 @@ void MeshCreationTest()
 
     status = rprObjectDelete(quad_mesh); quad_mesh = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context);
+    assert(status == RPR_SUCCESS);
+
 }
 
 void SimpleRenderTest()
@@ -359,6 +363,8 @@ void SimpleRenderTest()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context);
     assert(status == RPR_SUCCESS);
 }
 
@@ -579,6 +585,8 @@ void ComplexRenderTest()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context);
     assert(status == RPR_SUCCESS);
 }
 
@@ -804,6 +812,8 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context);
+    assert(status == RPR_SUCCESS);
 }
 
 void MemoryStatistics()
@@ -824,6 +834,9 @@ void MemoryStatistics()
     assert(rs.gpumem_usage == 0);
     assert(rs.gpumem_total == 0);
     assert(rs.gpumem_max_allocation == 0);
+
+    status = rprObjectDelete(context);
+    assert(status == RPR_SUCCESS);
 }
 
 void DefaultMaterialTest()
@@ -936,6 +949,8 @@ void DefaultMaterialTest()
     status = rprObjectDelete(camera); camera = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context);
     assert(status == RPR_SUCCESS);
 }
 
@@ -1078,6 +1093,8 @@ void NullShaderTest()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -1272,6 +1289,8 @@ void TiledRender()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -1538,6 +1557,8 @@ void AOVTest()
 
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 void test_feature_cameraDOF()
 {
@@ -1692,7 +1713,8 @@ void test_feature_cameraDOF()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
-
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 void test_feature_ContextImageFromData()
@@ -1859,6 +1881,8 @@ void test_feature_ContextImageFromData()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 //test RPR_MATERIAL_NODE_INPUT_LOOKUP and rprContextCreateMeshEx unsupported
@@ -1930,6 +1954,8 @@ void test_feature_multiUV()
     status = rprObjectDelete(scene); scene = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -2030,6 +2056,8 @@ void test_apiMecha_Light()
     }
 
     status = rprObjectDelete(scene); scene = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -2167,6 +2195,8 @@ void test_feature_LightDirectional()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -2355,6 +2385,8 @@ void InstancingTest()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 void BumpmapTest()
@@ -2510,6 +2542,8 @@ void BumpmapTest()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -2683,6 +2717,8 @@ void test_feature_shaderBumpmap()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 void test_feature_shaderTypeLayered()
@@ -2853,6 +2889,8 @@ void test_feature_shaderTypeLayered()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 
@@ -2942,7 +2980,112 @@ void LoadFrs(const std::string& file)
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
+}
 
+void LoadGLTF(const std::string& file)
+{
+    rpr_int status = RPR_SUCCESS;
+
+    //create context and scene
+    rpr_context	context;
+    status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
+    assert(status == RPR_SUCCESS);
+    rpr_material_system matsys = NULL;
+    status = rprContextCreateMaterialSystem(context, 0, &matsys);
+    assert(status == RPR_SUCCESS);
+    rprx_context xcontext;
+    status = rprxCreateContext(matsys, NULL, &xcontext);
+    assert(status == RPR_SUCCESS);
+
+    rpr_scene scene = NULL;
+
+
+    //load gltf file
+    assert(rprImportFromGLTF(file.c_str(), context, matsys, xcontext, &scene));
+
+    ////add env light
+    //rpr_light light = nullptr;
+    //status = rprContextCreateEnvironmentLight(context, &light);
+    //assert(status == RPR_SUCCESS);
+    //rpr_image image_input = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/Studio015.hdr", &image_input);
+    //assert(status == RPR_SUCCESS);
+    //status = rprEnvironmentLightSetImage(light, image_input);
+    //assert(status == RPR_SUCCESS);
+    //status = rprEnvironmentLightSetIntensityScale(light, 1.f);
+    //assert(status == RPR_SUCCESS);
+    //status = rprSceneAttachLight(scene, light);
+    //assert(status == RPR_SUCCESS);
+
+
+    size_t shapeCount = 0;
+    status = rprSceneGetInfo(scene, RPR_SCENE_SHAPE_COUNT, sizeof(shapeCount), &shapeCount, NULL);
+    assert(status == RPR_SUCCESS);
+
+    std::vector<rpr_shape> shapes(shapeCount);
+    status = rprSceneGetInfo(scene, RPR_SCENE_SHAPE_LIST, shapeCount * sizeof(rpr_shape), shapes.data(), NULL);
+    assert(status == RPR_SUCCESS);
+
+    //rpr_material_node grey = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_DIFFUSE, &grey);
+    //assert(status == RPR_SUCCESS);
+    //status = rprMaterialNodeSetInputF(grey, "color", 0.5f, 0.5f, 0.5f, 1.0f);
+    //assert(status == RPR_SUCCESS);
+    //// Iterate over shapes and replace materials.
+    //for (size_t i = 0; i < shapeCount; i++)
+    //{
+    //	// Retrieve the shape's material node.
+    //	rpr_material_node mat = 0;
+    //	status = rprShapeSetMaterial(shapes[i], grey);
+    //	assert(status == RPR_SUCCESS);
+    //}
+
+    rpr_camera cam;
+    status = rprSceneGetInfo(scene, RPR_SCENE_CAMERA, sizeof(rpr_camera), &cam, NULL);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraSetFStop(cam, 0.f);
+    assert(status == RPR_SUCCESS);
+
+    //light
+    rpr_light light = NULL; status = rprContextCreateEnvironmentLight(context, &light);
+    assert(status == RPR_SUCCESS);
+    rpr_image imageInput = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/studio015.hdr", &imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light, imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+
+    //output
+    rpr_framebuffer_desc desc;
+    desc.fb_width = 800;
+    desc.fb_height = 600;
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer frame_buffer = NULL; status = rprContextCreateFrameBuffer(context, fmt, &desc, &frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    //render
+    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    rprFrameBufferSaveToFile(frame_buffer, "Output/LoadGLTF.png");
+
+    //cleanup
+    status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(scene); scene = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 void UpdateMaterial()
@@ -3072,6 +3215,8 @@ void UpdateMaterial()
     status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
     assert(status == RPR_SUCCESS);
 }
 
@@ -3224,6 +3369,8 @@ void ArithmeticMul()
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(matsys); matsys = NULL;
     assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
 }
 
 int main(int argc, char* argv[])
@@ -3251,6 +3398,7 @@ int main(int argc, char* argv[])
     //    test_feature_multiUV();
     //    test_apiMecha_Light();
     //LoadFrs("../Resources/frs/bath_new.frs");
+    LoadGLTF("C:/git/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
     
     return 0;
 }

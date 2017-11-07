@@ -235,7 +235,9 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
 
 SceneObject* ContextObject::CreateScene()
 {
-    return new SceneObject();
+    auto scene = new SceneObject;
+    scene->SetCamera(new CameraObject());
+    return scene;
 }
 
 MatSysObject* ContextObject::CreateMaterialSystem()
