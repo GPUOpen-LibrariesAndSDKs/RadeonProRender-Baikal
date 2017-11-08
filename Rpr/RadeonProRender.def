@@ -20,6 +20,7 @@ rprContextRender
 rprContextRenderTile
 rprContextClearMemory
 rprContextCreateImage
+rprContextCreateBuffer
 rprContextCreateImageFromFile
 rprContextCreateScene
 rprContextCreateInstance
@@ -61,6 +62,7 @@ rprShapeSetMaterialFaces
 rprShapeSetVolumeMaterial
 rprShapeSetLinearMotion
 rprShapeSetAngularMotion
+rprShapeSetScaleMotion
 rprShapeSetVisibility
 rprShapeSetVisibilityPrimaryOnly
 rprShapeSetVisibilityInSpecular
@@ -98,6 +100,8 @@ rprLightGetInfo
 rprSceneClear
 rprSceneAttachShape
 rprSceneDetachShape
+rprSceneAttachHeteroVolume
+rprSceneDetachHeteroVolume
 rprSceneAttachLight
 rprSceneDetachLight
 rprSceneGetInfo
@@ -118,6 +122,7 @@ rprMaterialNodeSetInputN
 rprMaterialNodeSetInputF
 rprMaterialNodeSetInputU
 rprMaterialNodeSetInputImageData
+rprMaterialNodeSetInputBufferData
 rprMaterialNodeGetInfo
 rprMaterialNodeGetInputInfo
 rprContextCreateComposite
@@ -140,6 +145,10 @@ rprPostEffectSetParameter4f
 rprContextGetAttachedPostEffectCount
 rprContextGetAttachedPostEffect
 rprPostEffectGetInfo
+rprContextCreateHeteroVolume
+rprShapeSetHeteroVolume
+rprHeteroVolumeSetTransform
+rprContextCreateFramebufferFromGLTexture2D
 frRegisterPlugin
 frCreateContext
 frContextSetActivePlugin
@@ -158,11 +167,13 @@ frContextRender
 frContextRenderTile
 frContextClearMemory
 frContextCreateImage
+frContextCreateBuffer
 frContextCreateImageFromFile
 frContextCreateScene
 frContextCreateInstance
 frContextCreateMesh
 frContextCreateMeshEx
+frContextCreateMeshEx2
 frContextCreateCamera
 frContextCreateFrameBuffer
 frCameraGetInfo
@@ -198,6 +209,7 @@ frShapeSetMaterialFaces
 frShapeSetVolumeMaterial
 frShapeSetLinearMotion
 frShapeSetAngularMotion
+frShapeSetScaleMotion
 frShapeSetVisibility
 frShapeSetVisibilityPrimaryOnly
 frShapeSetVisibilityInSpecular
@@ -235,6 +247,8 @@ frLightGetInfo
 frSceneClear
 frSceneAttachShape
 frSceneDetachShape
+frSceneAttachHeteroVolume
+frSceneDetachHeteroVolume
 frSceneAttachLight
 frSceneDetachLight
 frSceneGetInfo
@@ -255,6 +269,7 @@ frMaterialNodeSetInputN
 frMaterialNodeSetInputF
 frMaterialNodeSetInputU
 frMaterialNodeSetInputImageData
+frMaterialNodeSetInputBufferData
 frMaterialNodeGetInfo
 frMaterialNodeGetInputInfo
 frContextCreateComposite
@@ -277,3 +292,7 @@ frPostEffectSetParameter4f
 frContextGetAttachedPostEffectCount
 frContextGetAttachedPostEffect
 frPostEffectGetInfo
+frContextCreateHeteroVolume
+frShapeSetHeteroVolume
+frHeteroVolumeSetTransform
+frContextCreateFramebufferFromGLTexture2D
