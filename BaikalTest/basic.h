@@ -79,9 +79,9 @@ public:
         {
             platform_index = 0;
 
-            for (auto j = 0; j < platforms.size(); ++j)
+            for (auto j = 0u; j < platforms.size(); ++j)
             {
-                for (auto i = 0; i < platforms[j].GetDeviceCount(); ++i)
+                for (auto i = 0u; i < platforms[j].GetDeviceCount(); ++i)
                 {
                     if (platforms[j].GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
                     {
@@ -97,7 +97,7 @@ public:
         {
             device_index = 0;
 
-            for (auto i = 0; i < platforms[platform_index].GetDeviceCount(); ++i)
+            for (auto i = 0u; i < platforms[platform_index].GetDeviceCount(); ++i)
             {
                 if (platforms[platform_index].GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
                 {
