@@ -630,7 +630,7 @@ TEST_F(LightTest, Light_ImageBasedLight)
 
 	{
 		std::ostringstream oss;
-		oss << test_name() << ".png";
+		oss << test_name() << "_0.png";
 		SaveOutput(oss.str());
 		ASSERT_TRUE(CompareToReference(oss.str()));
 	}
@@ -654,8 +654,7 @@ TEST_F(LightTest, Light_ImageBasedLight)
 
 	{
 		std::ostringstream oss;
-		std::string test_image_name = test_name() + "_redrawn";
-		oss << test_image_name << ".png";
+		oss << test_name() << "_1.png";
 		SaveOutput(oss.str());
 		ASSERT_TRUE(CompareToReference(oss.str()));
 	}
@@ -707,7 +706,7 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
 
 	{
 		std::ostringstream oss;
-		oss << test_name() << ".png";
+		oss << test_name() << "_0.png";
 		SaveOutput(oss.str());
 		ASSERT_TRUE(CompareToReference(oss.str()));
 	}
@@ -734,8 +733,7 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
 
 	{
 		std::ostringstream oss;
-		std::string test_image_name = test_name() + "_redrawn";
-		oss << test_image_name << ".png";
+		oss << test_name() << "_1.png";
 		SaveOutput(oss.str());
 		ASSERT_TRUE(CompareToReference(oss.str()));
 	}
@@ -771,7 +769,7 @@ TEST_F(LightTest, Light_ImageBasedLightAndEmissiveQuad)
 
 	{
 		std::ostringstream oss;
-		oss << test_name() << ".png";
+		oss << test_name() << "_0.png";
 		SaveOutput(oss.str());
 		ASSERT_TRUE(CompareToReference(oss.str()));
 	}
@@ -801,8 +799,7 @@ TEST_F(LightTest, Light_ImageBasedLightAndEmissiveQuad)
 
 	{
 		std::ostringstream oss;
-		std::string test_image_name = test_name() + "_redrawn";
-		oss << test_image_name << ".png";
+		oss << test_name() << "_1.png";
 		SaveOutput(oss.str());
 		ASSERT_TRUE(CompareToReference(oss.str()));
 	}
