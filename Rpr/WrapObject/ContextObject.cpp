@@ -215,7 +215,7 @@ void ContextObject::Render()
         auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->Render(scene);
     }
-
+    PostRender();
 }
 
 void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_uint ymax)
@@ -230,6 +230,7 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
         auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->RenderTile(scene, origin, size);
     }
+    PostRender();
 }
 
 
