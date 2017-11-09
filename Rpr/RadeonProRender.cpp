@@ -1839,12 +1839,22 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
         memcpy(&data[0], name.c_str(), size_ret);
         break;
     }
+    case RPR_SCENE_AABB:
+    {
+        RadeonRays::bbox bb = scene->GetBBox();
+        size_ret = 6 * sizeof(float);
+        data.resize(size_ret);
+        memcpy(&data[0], &bb.pmin.x, size_ret/2); // copy pmin
+        memcpy(data.data() + size_ret/2, &bb.pmax.x, size_ret/2); //copy pmax
+
+        break;
+    }
     case RPR_SCENE_BACKGROUND_IMAGE:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND:
-    case RPR_SCENE_AABB:
+
         UNSUPPORTED_FUNCTION
     default:
         UNIMLEMENTED_FUNCTION

@@ -128,6 +128,11 @@ void SceneObject::GetLightList(void* out_list)
     memcpy(out_list, m_lights.data(), m_lights.size() * sizeof(LightObject*));
 }
 
+RadeonRays::bbox SceneObject::GetBBox()
+{
+    return m_scene->GetWorldAABB();
+}
+
 
 void SceneObject::AddEmissive()
 {
