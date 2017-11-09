@@ -1,6 +1,6 @@
 #include "RadeonProRender.h"
-//#include "../RadeonProRender_CL.h"
-//#include "../RadeonProRender_GL.h"
+#include "RadeonProRender_CL.h"
+#include "RadeonProRender_GL.h"
 
 fr_int frRegisterPlugin(fr_char const * path)
 {
@@ -92,6 +92,11 @@ fr_int frContextCreateImage(fr_context context, fr_image_format const format, fr
     return rprContextCreateImage(context, format, image_desc, data, out_image);
 }
 
+fr_int frContextCreateBuffer(fr_context context, fr_buffer_desc const * buffer_desc, void const * data, fr_buffer * out_buffer)
+{
+    return rprContextCreateBuffer(context, buffer_desc, data, out_buffer);
+}
+
 fr_int frContextCreateImageFromFile(fr_context context, fr_char const * path, fr_image * out_image)
 {
     return rprContextCreateImageFromFile(context, path, out_image);
@@ -115,6 +120,11 @@ fr_int frContextCreateMesh(fr_context context, fr_float const * vertices, size_t
 fr_int frContextCreateMeshEx(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t const * num_texcoords, fr_int const * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int const * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_shape * out_mesh)
 {
     return rprContextCreateMeshEx(context, vertices, num_vertices, vertex_stride, normals, num_normals, normal_stride, perVertexFlag, num_perVertexFlags, perVertexFlag_stride, numberOfTexCoordLayers, texcoords, num_texcoords, texcoord_stride, vertex_indices, vidx_stride, normal_indices, nidx_stride, texcoord_indices, tidx_stride, num_face_vertices, num_faces, out_mesh);
+}
+
+fr_int frContextCreateMeshEx2(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t const * num_texcoords, fr_int const * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int const * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_mesh_info const * mesh_properties, fr_shape * out_mesh)
+{
+    return rprContextCreateMeshEx2(context, vertices, num_vertices, vertex_stride, normals, num_normals, normal_stride, perVertexFlag, num_perVertexFlags, perVertexFlag_stride, numberOfTexCoordLayers, texcoords, num_texcoords, texcoord_stride, vertex_indices, vidx_stride, normal_indices, nidx_stride, texcoord_indices, tidx_stride, num_face_vertices, num_faces, mesh_properties, out_mesh);
 }
 
 fr_int frContextCreateCamera(fr_context context, fr_camera * out_camera)
@@ -290,6 +300,11 @@ fr_int frShapeSetLinearMotion(fr_shape shape, fr_float x, fr_float y, fr_float z
 fr_int frShapeSetAngularMotion(fr_shape shape, fr_float x, fr_float y, fr_float z, fr_float w)
 {
     return rprShapeSetAngularMotion(shape, x, y, z, w);
+}
+
+fr_int frShapeSetScaleMotion(fr_shape shape, fr_float x, fr_float y, fr_float z)
+{
+    return rprShapeSetScaleMotion(shape, x, y, z);
 }
 
 fr_int frShapeSetVisibility(fr_shape shape, fr_bool visible)
@@ -477,6 +492,16 @@ fr_int frSceneDetachShape(fr_scene scene, fr_shape shape)
     return rprSceneDetachShape(scene, shape);
 }
 
+fr_int frSceneAttachHeteroVolume(fr_scene scene, fr_hetero_volume heteroVolume)
+{
+    return rprSceneAttachHeteroVolume(scene, heteroVolume);
+}
+
+fr_int frSceneDetachHeteroVolume(fr_scene scene, fr_hetero_volume heteroVolume)
+{
+    return rprSceneDetachHeteroVolume(scene, heteroVolume);
+}
+
 fr_int frSceneAttachLight(fr_scene scene, fr_light light)
 {
     return rprSceneAttachLight(scene, light);
@@ -575,6 +600,11 @@ fr_int frMaterialNodeSetInputU(fr_material_node in_node, fr_char const * in_inpu
 fr_int frMaterialNodeSetInputImageData(fr_material_node in_node, fr_char const * in_input, fr_image image)
 {
     return rprMaterialNodeSetInputImageData(in_node, in_input, image);
+}
+
+fr_int frMaterialNodeSetInputBufferData(fr_material_node in_node, fr_char const * in_input, fr_buffer buffer)
+{
+    return rprMaterialNodeSetInputBufferData(in_node, in_input, buffer);
 }
 
 fr_int frMaterialNodeGetInfo(fr_material_node in_node, fr_material_node_info in_info, size_t in_size, void * in_data, size_t * out_size)
@@ -687,8 +717,23 @@ fr_int frPostEffectGetInfo(fr_post_effect effect, fr_post_effect_info info, size
     return rprPostEffectGetInfo(effect, info, size, data, size_ret);
 }
 
-//fr_int frContextCreateFramebufferFromGLTexture2D(fr_context context, fr_GLenum target, fr_GLint miplevel, fr_GLuint texture, fr_framebuffer * out_fb)
-//{
-//    return rprContextCreateFramebufferFromGLTexture2D(context, target, miplevel, texture, out_fb);
-//}
+fr_int frContextCreateHeteroVolume(fr_context context, fr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, fr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, fr_uint gridDataTopology___unused)
+{
+    return rprContextCreateHeteroVolume(context, out_heteroVolume, gridSizeX, gridSizeY, gridSizeZ, indicesList, numberOfIndices, indicesListTopology, gridData, gridDataSizeByte, gridDataTopology___unused);
+}
+
+fr_int frShapeSetHeteroVolume(fr_shape shape, fr_hetero_volume heteroVolume)
+{
+    return rprShapeSetHeteroVolume(shape, heteroVolume);
+}
+
+fr_int frHeteroVolumeSetTransform(fr_hetero_volume out_heteroVolume, fr_bool transpose, fr_float const * transform)
+{
+    return rprHeteroVolumeSetTransform(out_heteroVolume, transpose, transform);
+}
+
+fr_int frContextCreateFramebufferFromGLTexture2D(fr_context context, fr_GLenum target, fr_GLint miplevel, fr_GLuint texture, fr_framebuffer * out_fb)
+{
+    return rprContextCreateFramebufferFromGLTexture2D(context, target, miplevel, texture, out_fb);
+}
 

@@ -30,11 +30,10 @@ using namespace RadeonRays;
 CameraObject::CameraObject()
     : m_cam(nullptr)
 {
-
     //create perspective camera by default
     //set cam default properties
-    RadeonRays::float3 const eye = { 0.f, 0.f, 0.f };
-    RadeonRays::float3 const at = { 0.f , 0.f , -1.f };
+    RadeonRays::float3 const eye = { 0.f, 1.f, 3.f };
+    RadeonRays::float3 const at = { 0.f , 1.f , 0.f };
     RadeonRays::float3 const up = { 0.f , 1.f , 0.f };
     auto camera = PerspectiveCamera::Create(eye, at, up);
 

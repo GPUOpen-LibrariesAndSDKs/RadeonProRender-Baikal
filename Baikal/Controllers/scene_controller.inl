@@ -323,6 +323,12 @@ namespace Baikal
                                        auto material = std::static_pointer_cast<Material>(item);
                                        material->SetDirty(false);
                                    });
+
+            m_texture_collector.Finalize([](SceneObject::Ptr item)
+            {
+                auto tex = std::static_pointer_cast<Texture>(item);
+                tex->SetDirty(false);
+            });
             
             // Return the scene
             return out;

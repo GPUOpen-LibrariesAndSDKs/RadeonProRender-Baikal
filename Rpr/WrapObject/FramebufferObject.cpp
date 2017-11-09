@@ -25,48 +25,103 @@ THE SOFTWARE.
 #include "Output/clwoutput.h"
 #include "OpenImageIO/imageio.h"
 #include "RadeonProRender.h"
+#include "RadeonProRender_GL.h"
+#include "GL/glew.h"
+#include "Renderers/monte_carlo_renderer.h"
 
-FramebufferObject::FramebufferObject()
-    : m_out(nullptr)
+FramebufferObject::FramebufferObject(Baikal::Output* out)
+    : m_output(out)
+    , m_width(out->width())
+    , m_height(out->height())
 {
 
+}
+
+FramebufferObject::FramebufferObject(CLWContext context, CLWKernel copy_kernel, rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture)
+    : m_output(nullptr)
+    , m_width(0)
+    , m_height(0)
+    , m_context(context)
+    , m_copy_cernel(copy_kernel)
+{
+    if (target != GL_TEXTURE_2D)
+    {
+        throw Exception(RPR_ERROR_INTERNAL_ERROR, "Unsupported GL texture target.");
+    }
+
+    //need to get width and height of GL texture
+    GLint backup_tex = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &backup_tex);
+    glBindTexture(target, texture);
+    glGetTexLevelParameteriv(target, miplevel, GL_TEXTURE_WIDTH, &m_width);
+    glGetTexLevelParameteriv(target, miplevel, GL_TEXTURE_HEIGHT, &m_height);
+
+    //create interop image
+    m_cl_interop_image = context.CreateImage2DFromGLTexture(texture);
+    glBindTexture(target, backup_tex);
 }
 
 FramebufferObject::~FramebufferObject()
 {
-    delete m_out;
-    m_out = nullptr;
+    delete m_output;
+    m_output = nullptr;
 }
 
-int FramebufferObject::GetWidth()
+int FramebufferObject::Width()
 {
-    return m_out->width();
+    return m_width;
 }
 
-int FramebufferObject::GetHeight()
+int FramebufferObject::Height()
 {
-    return m_out->height();
+    return m_height;
 
 }
 
 void FramebufferObject::GetData(void* out_data)
 {
-    m_out->GetData(static_cast<RadeonRays::float3*>(out_data));
+    m_output->GetData(static_cast<RadeonRays::float3*>(out_data));
 }
 
 void FramebufferObject::Clear()
 {
-    Baikal::ClwOutput* output = dynamic_cast<Baikal::ClwOutput*>(m_out);
+    Baikal::ClwOutput* output = dynamic_cast<Baikal::ClwOutput*>(m_output);
     output->Clear(RadeonRays::float3(0.f, 0.f, 0.f, 0.f));
 }
+
+void FramebufferObject::UpdateGlTex()
+{
+    //only if FramebufferObject was created from GL texture
+    if (m_cl_interop_image)
+    {
+        std::vector<cl_mem> objects;
+        objects.push_back(m_cl_interop_image);
+        m_context.AcquireGLObjects(0, objects);
+        
+        int argc = 0;
+        m_copy_cernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(GetOutput())->data());
+        m_copy_cernel.SetArg(argc++, Width());
+        m_copy_cernel.SetArg(argc++, Height());
+        m_copy_cernel.SetArg(argc++, 2.2f);
+        m_copy_cernel.SetArg(argc++, m_cl_interop_image);
+
+        int globalsize = Width() * Height();
+        m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, m_copy_cernel);
+
+        m_context.ReleaseGLObjects(0, objects);
+        m_context.Finish(0);
+    }
+}
+
+
 void FramebufferObject::SaveToFile(const char* path)
 {
     OIIO_NAMESPACE_USING;
 
-    int width = m_out->width();
-    int height = m_out->height();
+    int width = Width();
+    int height = Height();
     std::vector<RadeonRays::float3> tempbuf(width * height);
-    m_out->GetData(tempbuf.data());
+    GetData(tempbuf.data());
     std::vector<RadeonRays::float3> data(tempbuf);
 
     //convert pixels

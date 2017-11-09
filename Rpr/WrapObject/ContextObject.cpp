@@ -215,7 +215,7 @@ void ContextObject::Render()
         auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->Render(scene);
     }
-
+    PostRender();
 }
 
 void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_uint ymax)
@@ -230,12 +230,15 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
         auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->RenderTile(scene, origin, size);
     }
+    PostRender();
 }
 
 
 SceneObject* ContextObject::CreateScene()
 {
-    return new SceneObject();
+    auto scene = new SceneObject;
+    scene->SetCamera(new CameraObject());
+    return scene;
 }
 
 MatSysObject* ContextObject::CreateMaterialSystem()
@@ -299,14 +302,31 @@ FramebufferObject* ContextObject::CreateFrameBuffer(rpr_framebuffer_format const
     //TODO:: implement for several devices
     if (m_cfgs.size() != 1)
     {
-        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: incalid config count.");
+        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
     }
     auto& c = m_cfgs[0];
-    FramebufferObject* result = new FramebufferObject();
     Baikal::Output* out = c.factory->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height).release();
+    FramebufferObject* result = new FramebufferObject(out);
+    return result;
+}
+
+FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture)
+{
+    //TODO:: implement for several devices
+    if (m_cfgs.size() != 1)
+    {
+        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
+    }
+    auto& c = m_cfgs[0];
+    auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(c.renderer.get())->GetCopyKernel();
+    FramebufferObject* result = new FramebufferObject(c.context, copykernel, target, miplevel, texture);
+    int w = result->Width();
+    int h = result->Height();
+    Baikal::Output* out = c.factory->CreateOutput(w, h).release();
     result->SetOutput(out);
     return result;
 }
+
 
 void ContextObject::SetParameter(const std::string& input, float x, float y, float z, float w)
 {
@@ -348,5 +368,14 @@ void ContextObject::PrepareScene()
         {
             c.controller->CompileScene(m_current_scene->GetScene());
         }
+    }
+}
+
+void ContextObject::PostRender()
+{
+    // need to copy data from CL to GL for interop framebuffers
+    for (auto fb : m_output_framebuffers)
+    {
+        fb->UpdateGlTex();
     }
 }
