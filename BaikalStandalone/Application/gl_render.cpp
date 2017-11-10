@@ -127,7 +127,7 @@ namespace Baikal
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); CHECK_GL_ERROR;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); CHECK_GL_ERROR;
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_window_width, m_window_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr); CHECK_GL_ERROR;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_window_width, m_window_height, 0, GL_RGBA, GL_FLOAT, nullptr); CHECK_GL_ERROR;
 
         glBindTexture(GL_TEXTURE_2D, 0); CHECK_GL_ERROR;
     }
