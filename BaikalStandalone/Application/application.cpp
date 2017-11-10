@@ -503,11 +503,17 @@ namespace Baikal
                 update = true;
             }
 
+            RadeonRays::float3 eye, at;
+            eye = camera->GetPosition();
+            at = eye + camera->GetForwardVector();
+
             ImGui::Combo("Output", &output, outputs);
             ImGui::Text(" ");
             ImGui::Text("Number of samples: %d", m_settings.samplecount);
             ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate *m_settings.width * m_settings.height) / 1000000.f);
+            ImGui::Text("Eye: x = %.3f y = %.3f z = %.3f", eye.x, eye.y, eye.z);
+            ImGui::Text("At: x = %.3f y = %.3f z = %.3f", at.x, at.y, at.z);
             ImGui::Separator();
 
             if (m_settings.time_benchmark)
