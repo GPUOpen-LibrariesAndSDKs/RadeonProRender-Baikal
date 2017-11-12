@@ -1,7 +1,7 @@
 pipeline {
   agent {
     node {
-      label 'Windows & VS2015 & BUILDER'
+      label 'Windows && VS2015 && BUILDER'
     }
     
   }
