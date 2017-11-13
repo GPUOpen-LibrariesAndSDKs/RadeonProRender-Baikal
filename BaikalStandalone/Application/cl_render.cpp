@@ -57,7 +57,13 @@ namespace Baikal
         //create cl context
         try
         {
-            ConfigManager::CreateConfigs(settings.mode, settings.interop, m_cfgs, settings.num_bounces);
+            ConfigManager::CreateConfigs(
+                settings.mode,
+                settings.interop,
+                m_cfgs,
+                settings.num_bounces,
+                settings.platform_index,
+                settings.device_index);
         }
         catch (CLWException &)
         {

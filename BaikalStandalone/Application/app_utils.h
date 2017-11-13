@@ -35,6 +35,10 @@ namespace Baikal
     {
         AppSettings();
 
+        // OpenCL platform & device settings
+        int platform_index;
+        int device_index;
+
         //model load settings
         std::string path;
         std::string modelname;

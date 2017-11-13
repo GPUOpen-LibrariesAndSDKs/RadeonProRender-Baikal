@@ -116,6 +116,19 @@ namespace Baikal
                 s.mode = ConfigManager::Mode::kUseAll;
         }
 
+
+        char* platform_index = GetCmdOption(argv, argv + argc, "-platform");
+        s.platform_index = platform_index ? (atoi(platform_index)) : s.platform_index;
+
+        char* device_index = GetCmdOption(argv, argv + argc, "-device");
+        s.device_index = device_index ? (atoi(device_index)) : s.device_index;
+
+        if ((device_index >= 0) && (platform_index < 0))
+        {
+            std::cout <<
+                "Can not set device index, because platform index was not specified" << std::endl;
+        }
+
         if (aorays)
         {
             s.num_ao_rays = atoi(aorays);
@@ -197,6 +210,8 @@ namespace Baikal
         , num_shadow_rays(1)
         , samplecount(0)
         , envmapmul(1.f)
+        , platform_index(-1)
+        , device_index(-1)
     {
     }
 }
