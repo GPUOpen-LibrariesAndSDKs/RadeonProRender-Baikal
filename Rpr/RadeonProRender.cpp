@@ -364,6 +364,12 @@ rpr_int rprContextCreateImage(rpr_context in_context, rpr_image_format const in_
     return result;
 }
 
+rpr_int rprContextCreateBuffer(rpr_context context, rpr_buffer_desc const * buffer_desc, void const * data, rpr_buffer * out_buffer)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+
 rpr_int rprContextCreateImageFromFile(rpr_context in_context, rpr_char const * in_path, rpr_image * out_image)
 {
     //cast data
@@ -559,6 +565,30 @@ rpr_int rprContextCreateFrameBuffer(rpr_context in_context, rpr_framebuffer_form
 
     return RPR_SUCCESS;
 }
+
+rpr_int rprContextCreateFramebufferFromGLTexture2D(rpr_context in_context, rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture, rpr_framebuffer * out_fb)
+{
+    //cast data
+    ContextObject* context = WrapObject::Cast<ContextObject>(in_context);
+    if (!context)
+    {
+        return RPR_ERROR_INVALID_CONTEXT;
+    }
+
+    rpr_int result = RPR_SUCCESS;
+    try
+    {
+        *out_fb = context->CreateFrameBufferFromGLTexture(target, miplevel, texture);
+    }
+    catch (Exception& e)
+    {
+        result = e.m_error;
+    }
+    return result;
+
+    return RPR_SUCCESS;
+}
+
 
 rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, size_t in_size, void * out_data, size_t * out_size_ret)
 {
@@ -1033,6 +1063,12 @@ rpr_int rprShapeSetAngularMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_
 {
     UNSUPPORTED_FUNCTION
 }
+
+rpr_int rprShapeSetScaleMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_float z)
+{
+    UNSUPPORTED_FUNCTION
+}
+
 
 rpr_int rprShapeSetVisibility(rpr_shape shape, rpr_bool visible)
 {
@@ -1700,6 +1736,16 @@ rpr_int rprSceneDetachShape(rpr_scene in_scene, rpr_shape in_shape)
     return RPR_SUCCESS;
 }
 
+rpr_int rprSceneAttachHeteroVolume(rpr_scene scene, rpr_hetero_volume heteroVolume)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprSceneDetachHeteroVolume(rpr_scene scene, rpr_hetero_volume heteroVolume)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 rpr_int rprSceneAttachLight(rpr_scene in_scene, rpr_light in_light)
 {
     //cast
@@ -1793,12 +1839,22 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
         memcpy(&data[0], name.c_str(), size_ret);
         break;
     }
+    case RPR_SCENE_AABB:
+    {
+        RadeonRays::bbox bb = scene->GetBBox();
+        size_ret = 6 * sizeof(float);
+        data.resize(size_ret);
+        memcpy(&data[0], &bb.pmin.x, size_ret/2); // copy pmin
+        memcpy(data.data() + size_ret/2, &bb.pmax.x, size_ret/2); //copy pmax
+
+        break;
+    }
     case RPR_SCENE_BACKGROUND_IMAGE:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND:
-    case RPR_SCENE_AABB:
+
         UNSUPPORTED_FUNCTION
     default:
         UNIMLEMENTED_FUNCTION
@@ -1873,7 +1929,7 @@ rpr_int rprFrameBufferGetInfo(rpr_framebuffer in_frame_buffer, rpr_framebuffer_i
     {
         return RPR_ERROR_INVALID_PARAMETER;
     }
-    int buff_size = sizeof(RadeonRays::float3) * buff->GetWidth() * buff->GetHeight();
+    int buff_size = sizeof(RadeonRays::float3) * buff->Width() * buff->Height();
     switch (in_info)
     {
     case RPR_FRAMEBUFFER_DATA:
@@ -2047,6 +2103,12 @@ rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char con
 
     return RPR_SUCCESS;
 }
+
+rpr_int rprMaterialNodeSetInputBufferData(rpr_material_node in_node, rpr_char const * in_input, rpr_buffer buffer)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprMaterialNodeGetInfo(rpr_material_node in_node, rpr_material_node_info in_info, size_t in_size, void * out_data, size_t * out_size)
 {
@@ -2262,6 +2324,20 @@ rpr_int rprContextGetAttachedPostEffect(rpr_context context, rpr_uint i, rpr_pos
 }
 
 rpr_int rprPostEffectGetInfo(rpr_post_effect effect, rpr_post_effect_info info, size_t size, void *  data, size_t *  size_ret)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, rpr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, rpr_uint gridDataTopology___unused)
+{
+    UNIMLEMENTED_FUNCTION
+}
+rpr_int rprShapeSetHeteroVolume(rpr_shape shape, rpr_hetero_volume heteroVolume)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_heteroVolume, rpr_bool transpose, rpr_float const * transform)
 {
     UNIMLEMENTED_FUNCTION
 }

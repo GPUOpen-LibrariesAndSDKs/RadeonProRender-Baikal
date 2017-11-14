@@ -470,7 +470,7 @@ namespace Baikal
                 update = true;
             }
 
-            auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
+            auto& scene = controller->GetCachedScene(m_scene);
             renderer->Render(scene);
 
             auto now = std::chrono::high_resolution_clock::now();

@@ -60,6 +60,8 @@ public:
     void GetLightList(void* out_list);
     size_t GetLightCount() { return m_scene->GetNumLights(); }
 
+    RadeonRays::bbox GetBBox();
+
 	void AddEmissive();
 	void RemoveEmissive();
     bool IsDirty();
