@@ -60,7 +60,8 @@ void ConfigManager::CreateConfigs(
 
     if (req_platform_index >= (int)platforms.size())
         throw std::runtime_error("There is no such platform index");
-    else if (req_device_index >= (int)platforms[req_platform_index].GetDeviceCount())
+    else if ((req_platform_index > 0) &&
+        (req_device_index >= (int)platforms[req_platform_index].GetDeviceCount()))
         throw std::runtime_error("There is no such device index");
 
     bool hasprimary = false;
