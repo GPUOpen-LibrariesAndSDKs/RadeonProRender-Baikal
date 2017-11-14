@@ -70,7 +70,13 @@ public:
         }
     };
 
-    static void CreateConfigs(Mode mode, bool interop, std::vector<Config>& renderers, int initial_num_bounces);
+    static void CreateConfigs(
+        Mode mode,
+        bool interop,
+        std::vector<Config>& renderers,
+        int initial_num_bounces,
+        int req_platform_index = -1,
+        int req_device_index = -1);
 
 private:
 
