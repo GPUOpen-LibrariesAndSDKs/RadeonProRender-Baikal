@@ -82,11 +82,14 @@ void ConfigManager::CreateConfigs(
 
         for (; d < device_end; ++d)
         {
-            if ((mode == kUseGpus || mode == kUseSingleGpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_GPU)
-                continue;
+            if (req_platform_index < 0)
+            {
+                if ((mode == kUseGpus || mode == kUseSingleGpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_GPU)
+                    continue;
 
-            if ((mode == kUseCpus || mode == kUseSingleCpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_CPU)
-                continue;
+                if ((mode == kUseCpus || mode == kUseSingleCpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_CPU)
+                    continue;
+            }
 
             Config cfg;
             cfg.caninterop = false;
