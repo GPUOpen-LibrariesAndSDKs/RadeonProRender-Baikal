@@ -123,7 +123,7 @@ namespace Baikal
         char* device_index = GetCmdOption(argv, argv + argc, "-device");
         s.device_index = device_index ? (atoi(device_index)) : s.device_index;
 
-        if ((device_index >= 0) && (platform_index < 0))
+        if ((s.device_index >= 0) && (s.platform_index < 0))
         {
             std::cout <<
                 "Can not set device index, because platform index was not specified" << std::endl;
