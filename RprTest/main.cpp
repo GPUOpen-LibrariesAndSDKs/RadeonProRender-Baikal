@@ -517,7 +517,7 @@ void ComplexRenderTest()
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF(diffuse, "color", 0.9f, 0.9f, 0.f, 1.0f);
     assert(status == RPR_SUCCESS);
-    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_diffuse.jpg", &img);
+    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo1.jpg", &img);
     assert(status == RPR_SUCCESS);
     rpr_material_node materialNodeTexture = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &materialNodeTexture);
     assert(status == RPR_SUCCESS);
@@ -1443,7 +1443,7 @@ void AOVTest()
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF(diffuse, "color", 0.9f, 0.9f, 0.f, 1.0f);
     assert(status == RPR_SUCCESS);
-    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_diffuse.jpg", &img);
+    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo1.jpg", &img);
     assert(status == RPR_SUCCESS);
     rpr_material_node materialNodeTexture = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &materialNodeTexture);
     assert(status == RPR_SUCCESS);
@@ -2444,14 +2444,14 @@ void BumpmapTest()
     assert(status == RPR_SUCCESS);
 
     //materials
-    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_diffuse.jpg", &img);
+    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo1.jpg", &img);
     assert(status == RPR_SUCCESS);
     rpr_material_node materialNodeTextureA = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &materialNodeTextureA);
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputImageData(materialNodeTextureA, "data", img);
     assert(status == RPR_SUCCESS);
 
-    rpr_image imgBump = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_normal.jpg", &imgBump);
+    rpr_image imgBump = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo2.jpg", &imgBump);
     assert(status == RPR_SUCCESS);
     rpr_material_node materialNodeTextureB = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_NORMAL_MAP, &materialNodeTextureB);
     assert(status == RPR_SUCCESS);
@@ -2568,7 +2568,7 @@ void test_feature_shaderBumpmap()
     status = rprMaterialNodeSetInputF(shaderMicrofacet, "color", 0.3f, 0.7f, 0.9f, 1.0f);
     assert(status == RPR_SUCCESS);
 
-    rpr_image imageInputA = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_bump.jpg", &imageInputA);
+    rpr_image imageInputA = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo3.jpg", &imageInputA);
     assert(status == RPR_SUCCESS);
     rpr_material_node textureNormalMap = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_BUMP_MAP, &textureNormalMap);
     assert(status == RPR_SUCCESS);
@@ -2656,7 +2656,7 @@ void test_feature_shaderBumpmap()
     status = rprMaterialNodeSetInputF(shaderMicrofacet, "color", 0.9f, 0.7f, 0.3f, 1.0f);
     assert(status == RPR_SUCCESS);
 
-    rpr_image imageInputB = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_bump.jpg", &imageInputB);
+    rpr_image imageInputB = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo3.jpg", &imageInputB);
     assert(status == RPR_SUCCESS);
     rpr_material_node textureNormalMap2 = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_BUMP_MAP, &textureNormalMap2);
     assert(status == RPR_SUCCESS);
@@ -2744,7 +2744,7 @@ void test_feature_shaderTypeLayered()
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF(specularSphere, "color", 0.1f, 0.9f, 0.2f, 1.0f);
     assert(status == RPR_SUCCESS);
-    rpr_image imageInputA = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_normal.jpg", &imageInputA);
+    rpr_image imageInputA = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo2.jpg", &imageInputA);
     assert(status == RPR_SUCCESS);
     rpr_material_node textureNormalMap = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_NORMAL_MAP, &textureNormalMap);
     assert(status == RPR_SUCCESS);
@@ -2840,7 +2840,7 @@ void test_feature_shaderTypeLayered()
 
 
     //dynamic : change parameters :
-    rpr_image imageInputB = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_normal.jpg", &imageInputB);
+    rpr_image imageInputB = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo2.jpg", &imageInputB);
     assert(status == RPR_SUCCESS);
     rpr_material_node textureNormalMap2 = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_NORMAL_MAP, &textureNormalMap2);
     assert(status == RPR_SUCCESS);
@@ -3333,7 +3333,7 @@ void ArithmeticMul()
     status = rprFrameBufferSaveToFile(frame_buffer, "Output/ArithmeticMul_3.jpg");
 
     //update mul value
-    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_normal.jpg", &img);
+    rpr_image img = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo2.jpg", &img);
     assert(status == RPR_SUCCESS);
     rpr_material_node tex = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &tex);
     assert(status == RPR_SUCCESS);
@@ -3395,10 +3395,5 @@ int main(int argc, char* argv[])
     UpdateMaterial();
     ArithmeticMul();
 
-    //    test_feature_multiUV();
-    //    test_apiMecha_Light();
-    //LoadFrs("../Resources/frs/bath_new.frs");
-    LoadGLTF("C:/git/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
-    
     return 0;
 }
