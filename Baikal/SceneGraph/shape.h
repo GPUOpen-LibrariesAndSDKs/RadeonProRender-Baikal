@@ -76,6 +76,10 @@ namespace Baikal
         void SetMaterial(Material::Ptr material);
         Material::Ptr GetMaterial() const;
 
+        // Get and set volume material
+        void SetVolumeMaterial(VolumeMaterial::Ptr volume_mat);
+        Material::Ptr GetVolumeMaterial() const;
+
         // Get and set transform
         void SetTransform(RadeonRays::matrix const& t);
         RadeonRays::matrix GetTransform() const;
@@ -103,6 +107,8 @@ namespace Baikal
     private:
         // Material for the shape
         Material::Ptr m_material;
+        // Volume material for the shape
+        VolumeMaterial::Ptr m_volume;
         // Transform
         RadeonRays::matrix m_transform;
         // Visibility mask
@@ -179,6 +185,7 @@ namespace Baikal
     
     inline Shape::Shape() 
         : m_material(nullptr)
+        , m_volume(nullptr)
         , m_visibility_mask(0xffffffffu)
     {
     }
@@ -192,6 +199,17 @@ namespace Baikal
     inline Material::Ptr Shape::GetMaterial() const
     {
         return m_material;
+    }
+
+    inline void Shape::SetVolumeMaterial(VolumeMaterial::Ptr volume_mat)
+    {
+        m_volume = volume_mat;
+        SetDirty(true);
+    }
+
+    inline Material::Ptr Shape::GetVolumeMaterial() const
+    {
+        return m_volume;
     }
 
     inline void Shape::SetTransform(RadeonRays::matrix const& t)

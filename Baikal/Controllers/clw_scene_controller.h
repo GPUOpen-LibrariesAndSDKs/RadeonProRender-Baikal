@@ -85,7 +85,9 @@ namespace Baikal
         Material::Ptr GetDefaultMaterial() const override;
         // If m_current_scene changes
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
-        
+        // Update volume materiuals
+        void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const override;
+
         // Update intersection API
         void UpdateIntersector(Scene1 const& scene, ClwScene& out) const;
         void UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const;
@@ -100,6 +102,8 @@ namespace Baikal
         void WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const;
         // Write out texture data at data pointer.
         void WriteTextureData(Texture const& texture, void* data) const;
+        // Write single volume at data pointer
+        void WriteVolume(const VolumeMaterial& volume, void* data) const;
 
     private:
         // Context

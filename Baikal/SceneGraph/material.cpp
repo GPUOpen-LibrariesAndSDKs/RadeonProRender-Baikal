@@ -85,81 +85,56 @@ namespace Baikal
     
     // Set input value
     // If specific data type is not supported throws std::runtime_error
+
+    Material::Input& Material::_GetInput(const std::string& name, InputType type)
+    {
+        auto input_iter = m_inputs.find(name);
+        if (input_iter == m_inputs.cend())
+        {
+            throw std::runtime_error("No such input");
+        }
+
+        auto& input = input_iter->second;
+        if (input.info.supported_types.find(type) == input.info.supported_types.cend())
+        {
+            throw std::runtime_error("Input type not supported");
+        }
+
+        return input;
+    }
+
+    void Material::SetInputValue(std::string const& name, uint32_t value)
+    {
+        auto& input = _GetInput(name, InputType::kUint);
+        input.value.type = InputType::kUint;
+        input.value.uint_value = value;
+        SetDirty(true);
+    }
+
     void Material::SetInputValue(std::string const& name, RadeonRays::float4 const& value)
     {
-        auto input_iter = m_inputs.find(name);
-        
-        if (input_iter != m_inputs.cend())
-        {
-            auto& input = input_iter->second;
-            
-            if (input.info.supported_types.find(InputType::kFloat4) != input.info.supported_types.cend())
-            {
-                input.value.type = InputType::kFloat4;
-                input.value.float_value = value;
-                SetDirty(true);
-            }
-            else
-            {
-                throw std::runtime_error("Input type not supported");
-            }
-        }
-        else
-        {
-            throw std::runtime_error("No such input");
-        }
+        auto& input = _GetInput(name, InputType::kFloat4);
+        input.value.type = InputType::kFloat4;
+        input.value.float_value = value;
+        SetDirty(true);
     }
-    
+
     void Material::SetInputValue(std::string const& name, Texture::Ptr texture)
     {
-        auto input_iter = m_inputs.find(name);
-        
-        if (input_iter != m_inputs.cend())
-        {
-            auto& input = input_iter->second;
-            
-            if (input.info.supported_types.find(InputType::kTexture) != input.info.supported_types.cend())
-            {
-                input.value.type = InputType::kTexture;
-                input.value.tex_value = texture;
-                SetDirty(true);
-            }
-            else
-            {
-                throw std::runtime_error("Input type not supported");
-            }
-        }
-        else
-        {
-            throw std::runtime_error("No such input");
-        }
+        auto& input = _GetInput(name, InputType::kTexture);
+        input.value.type = InputType::kTexture;
+        input.value.tex_value = texture;
+        SetDirty(true);
     }
-    
+
     void Material::SetInputValue(std::string const& name, Material::Ptr material)
     {
-        auto input_iter = m_inputs.find(name);
-        
-        if (input_iter != m_inputs.cend())
-        {
-            auto& input = input_iter->second;
-            
-            if (input.info.supported_types.find(InputType::kMaterial) != input.info.supported_types.cend())
-            {
-                input.value.type = InputType::kMaterial;
-                input.value.mat_value = material;
-                SetDirty(true);
-            }
-            else
-            {
-                throw std::runtime_error("Input type not supported");
-            }
-        }
-        else
-        {
-            throw std::runtime_error("No such input");
-        }
+        auto& input = _GetInput(name, InputType::kMaterial);
+        input.value.type = InputType::kMaterial;
+        input.value.mat_value = material;
+        SetDirty(true);
     }
-    
+
     Material::InputValue Material::GetInputValue(std::string const& name) const
     {
         auto input_iter = m_inputs.find(name);
@@ -279,7 +254,27 @@ namespace Baikal
     {
         return false;
     }
-    
+
+    // VolumeMaterial implementation
+    VolumeMaterial::VolumeMaterial()
+    {
+        RegisterInput("absorption", "Absorption of volume material", { InputType::kFloat4 });
+        RegisterInput("scattering", "Scattering of light inside of volume material", { InputType::kFloat4 });
+        RegisterInput("emission", "Emission of light inside of volume material", { InputType::kFloat4 });
+        RegisterInput("phase function", "Phase function", { InputType::kUint });
+
+        SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
+        SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
+        SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+        SetInputValue("phase function", 0);
+    }
+
+    // Check if material has emissive components
+    bool VolumeMaterial::HasEmission() const
+    {
+        return (GetInputValue("emission").float_value.sqnorm() != 0);
+    }
+
     namespace {
         struct SingleBxdfConcrete: public SingleBxdf {
             SingleBxdfConcrete(BxdfType type) :
@@ -293,6 +288,9 @@ namespace Baikal
         
         struct DisneyBxdfConcrete: public DisneyBxdf {
         };
+
+        struct VolumeMaterialConcrete : public VolumeMaterial {
+        };
     }
     
     SingleBxdf::Ptr SingleBxdf::Create(BxdfType type) {
@@ -305,5 +303,9 @@ namespace Baikal
     
     DisneyBxdf::Ptr DisneyBxdf::Create() {
         return std::make_shared<DisneyBxdfConcrete>();
+    }
+
+    VolumeMaterial::Ptr VolumeMaterial::Create() {
+        return std::make_shared<VolumeMaterialConcrete>();
     }
 }

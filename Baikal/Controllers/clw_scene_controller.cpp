@@ -807,6 +807,42 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.materials, materials);
     }
     
+    void ClwSceneController::UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const
+    {
+        if (!volume_collector.GetNumItems())
+            return;
+
+        // Get new buffer size
+        std::size_t vol_buffer_size = volume_collector.GetNumItems();
+
+        // Recreate material buffer if it needs resize
+        if (vol_buffer_size > out.volumes.GetElementCount())
+        {
+            // Create material buffer
+            out.volumes = m_context.CreateBuffer<ClwScene::Volume>(vol_buffer_size, CL_MEM_READ_ONLY);
+        }
+
+        ClwScene::Volume* volumes = nullptr;
+        std::size_t num_materials_written = 0;
+
+        // Map GPU materials buffer
+        m_context.MapBuffer(0, out.volumes, CL_MAP_WRITE, &volumes).Wait();
+
+        // Create volume iterator
+        auto volume_iter = volume_collector.CreateIterator();
+
+        // Serialize
+        size_t num_volumes_copied = 0;
+        for (; volume_iter->IsValid(); volume_iter->Next())
+        {
+            WriteVolume(*volume_iter->ItemAs<VolumeMaterial>(), volumes + num_volumes_copied);
+            ++num_volumes_copied;
+        }
+
+        // Unmap serial buffer
+        m_context.UnmapBuffer(0, out.volumes, volumes);
+    }
+
     void ClwSceneController::ReloadIntersector(Scene1 const& scene, ClwScene& inout) const
     {
         m_api->DetachAll();
@@ -1531,5 +1567,36 @@ namespace Baikal
         auto begin = texture.GetData();
         auto end = begin + texture.GetSizeInBytes();
         std::copy(begin, end, static_cast<char*>(data));
+    }
+
+    void ClwSceneController::WriteVolume(const VolumeMaterial& volume, void* data) const
+    {
+        auto clw_volume = reinterpret_cast<ClwScene::Volume*>(data);
+
+        clw_volume->data = -1;
+        clw_volume->extra = -1;
+        clw_volume->sigma_a = volume.GetInputValue("absorption").float_value;
+        clw_volume->sigma_e = volume.GetInputValue("emission").float_value;
+        clw_volume->sigma_s = volume.GetInputValue("scattering").float_value;
+
+        // copy phase func
+        auto phase_func = static_cast<VolumeMaterial::PhaseFunction>(volume.GetInputValue("phase function").uint_value);
+        switch (phase_func)
+        {
+        case VolumeMaterial::PhaseFunction::kUniform:
+            clw_volume->phase_func = ClwScene::PhaseFunction::kUniform;
+            break;
+        case VolumeMaterial::PhaseFunction::kRayleigh:
+            clw_volume->phase_func = ClwScene::PhaseFunction::kRayleigh;
+            break;
+        case VolumeMaterial::PhaseFunction::kMieMurky:
+            clw_volume->phase_func = ClwScene::PhaseFunction::kMieMurky;
+            break;
+        case VolumeMaterial::PhaseFunction::kMieHazy:
+            clw_volume->phase_func = ClwScene::PhaseFunction::kMieHazy;
+            break;
+        default:
+            assert(false); // invalid phase function value
+        }
     }
 }

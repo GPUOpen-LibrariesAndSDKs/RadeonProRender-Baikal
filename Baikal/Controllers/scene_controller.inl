@@ -50,6 +50,7 @@ namespace Baikal
         // We need to make sure collectors are empty before proceeding
         m_material_collector.Clear();
         m_texture_collector.Clear();
+        m_volume_collector.Clear();
 
         // Create shape and light iterators
         auto shape_iter = scene->CreateShapeIterator();
@@ -109,7 +110,29 @@ namespace Baikal
         
         // Commit stuff (we can iterate over it after commit has happened)
         m_material_collector.Commit();
-        
+
+        // set iterator position at begin
+        shape_iter = scene->CreateShapeIterator();
+        // Collect volume materials from shapes first
+        m_volume_collector.Collect(*shape_iter,
+                                    [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
+                                    {
+                                        // Resulting material set
+                                        std::set<SceneObject::Ptr> vol_mats;
+
+                                        // Get volume material from current shape
+                                        auto shape = std::static_pointer_cast<Shape>(item);
+                                        auto volume_material = shape->GetVolumeMaterial();
+
+                                        if (volume_material)
+                                            vol_mats.emplace(volume_material);
+
+                                        return vol_mats;
+                                    });
+
+        // Commit stuff 
+        m_volume_collector.Commit();
+
         // Now we need to collect textures from our materials
         // Create material iterator
         auto mat_iter = m_material_collector.CreateIterator();
@@ -171,7 +194,7 @@ namespace Baikal
             auto res = m_scene_cache.emplace(std::make_pair(scene, CompiledScene()));
             
             // Recompile all the stuff into cached scene
-            RecompileFull(*scene, m_material_collector, m_texture_collector, res.first->second);
+            RecompileFull(*scene, m_material_collector, m_texture_collector, m_volume_collector, res.first->second);
             
             // Set scene as current
             m_current_scene = scene;
@@ -330,14 +353,21 @@ namespace Baikal
                 tex->SetDirty(false);
             });
             
+            m_volume_collector.Finalize([](SceneObject::Ptr item)
+            {
+                auto volume = std::static_pointer_cast<VolumeMaterial>(item);
+                volume->SetDirty(false);
+            });
+
             // Return the scene
             return out;
         }
     }
-    
+
     template <typename CompiledScene>
     inline
-    void SceneController<CompiledScene>::RecompileFull(Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, CompiledScene& out) const
+    void SceneController<CompiledScene>::RecompileFull(
+        Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, Collector& vol_collector, CompiledScene& out) const
     {
         UpdateCamera(scene, m_material_collector, m_texture_collector, out);
         
@@ -348,5 +378,7 @@ namespace Baikal
         UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
         
         UpdateTextures(scene, m_material_collector, m_texture_collector, out);
+
+        UpdateVolumes(scene, vol_collector, out);
     }
 }
