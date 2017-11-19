@@ -432,6 +432,7 @@ namespace Baikal
         // We retrieve data from here while serializing instances,
         // using base shape lookup.
         std::map<Mesh::Ptr, ClwScene::Shape> shape_data;
+        
         // Handle meshes
         for (auto& iter : meshes)
         {
@@ -463,16 +464,7 @@ namespace Baikal
             
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            
-            if (!material)
-            {
-                material = m_default_material;
-            }
-            
-            shape.material_idx = mat_collector.GetItemIndex(material);
+            shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
             
             shape_data[mesh] = shape;
             
@@ -526,15 +518,7 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            
-            auto material = mesh->GetMaterial();
-            
-            if (!material)
-            {
-                material = m_default_material;
-            }
-            
-            shape.material_idx = mat_collector.GetItemIndex(material);
+            shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
             
             shape_data[mesh] = shape;
             
@@ -561,7 +545,6 @@ namespace Baikal
         {
             auto instance = iter;
             auto base_shape = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
-            auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
             
             // Here shape_data is guaranteed to contain
@@ -577,14 +560,7 @@ namespace Baikal
             
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            
-            // If instance do not have a material, use default one.
-            if (!material)
-            {
-                material = m_default_material;
-            }
-            
-            shape.material_idx = mat_collector.GetItemIndex(material);
+            shape.material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
             
             shapes[num_shapes_written++] = shape;
             
@@ -633,16 +609,7 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            
-            if (!material)
-            {
-                material = m_default_material;
-            }
-
-            current_shape->material_idx = mat_collector.GetItemIndex(material);
+            current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
 
             // Drop dirty flag
             mesh->SetDirty(false);
@@ -660,16 +627,7 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            
-            if (!material)
-            {
-                material = m_default_material;
-            }
-
-            current_shape->material_idx = mat_collector.GetItemIndex(material);
+            current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
 
             // Drop dirty flag
             mesh->SetDirty(false);
@@ -681,21 +639,13 @@ namespace Baikal
         {
             auto instance = iter;
             auto base_shape = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
-            auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
 
             current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-
-            // Check if mesh has a material and use default if not
-            if (!material)
-            {
-                material = m_default_material;
-            }
-
-            current_shape->material_idx = mat_collector.GetItemIndex(material);
+            current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
 
             // Drop dirty flag
             instance->SetDirty(false);
@@ -1472,5 +1422,11 @@ namespace Baikal
         auto begin = texture.GetData();
         auto end = begin + texture.GetSizeInBytes();
         std::copy(begin, end, static_cast<char*>(data));
+    }
+    
+    int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const
+    {
+        auto m = material ? material : m_default_material;
+        return collector.GetItemIndex(m);
     }
 }
