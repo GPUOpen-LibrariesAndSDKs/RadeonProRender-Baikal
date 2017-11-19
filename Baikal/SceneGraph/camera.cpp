@@ -33,21 +33,24 @@ namespace Baikal
 {
     using namespace RadeonRays;
     
+    Camera::Camera(float3 const& eye, float3 const& at, float3 const& up)
+    : m_zcap(0.f, 1000.f)
+    , m_dim(0.1f, 0.1f)
+    {
+        LookAt(eye, at, up);
+    }
+    
     PerspectiveCamera::PerspectiveCamera(float3 const& eye, float3 const& at, float3 const& up)
-    : m_p(eye)
+    : Camera(eye, at, up)
     , m_aperture(0.f)
     , m_focus_distance(0.f)
     , m_focal_length(0.f)
-    , m_zcap(0.f, 0.f)
-    , m_aspect(0.f)
     {
-        // Construct camera frame
-        LookAt(eye, at, up);
     }
 
-    void PerspectiveCamera::LookAt(RadeonRays::float3 const& eye,
-                                    RadeonRays::float3 const& at,
-                                    RadeonRays::float3 const& up)
+    void Camera::LookAt(RadeonRays::float3 const& eye,
+                        RadeonRays::float3 const& at,
+                        RadeonRays::float3 const& up)
     {
         m_p = eye;
         m_forward = normalize(at - eye);
@@ -57,13 +60,13 @@ namespace Baikal
     }
     
     // Rotate camera around world Z axis, use for FPS camera
-    void PerspectiveCamera::Rotate(float angle)
+    void Camera::Rotate(float angle)
     {
         Rotate(float3(0.f, 1.f, 0.f), angle);
         SetDirty(true);
     }
     
-    void PerspectiveCamera::Rotate(float3 v, float angle)
+    void Camera::Rotate(float3 v, float angle)
     {
         /// matrix should have basis vectors in rows
         /// to be used for quaternion construction
@@ -91,123 +94,67 @@ namespace Baikal
     }
     
     // Tilt camera
-    void PerspectiveCamera::Tilt(float angle)
+    void Camera::Tilt(float angle)
     {
         Rotate(m_right, angle);
         SetDirty(true);
     }
     
     // Move along camera Z direction
-    void PerspectiveCamera::MoveForward(float distance)
+    void Camera::MoveForward(float distance)
     {
         m_p += distance * m_forward;
         SetDirty(true);
     }
     
     // Move along camera X direction
-    void PerspectiveCamera::MoveRight(float distance)
+    void Camera::MoveRight(float distance)
     {
         m_p += distance * m_right;
         SetDirty(true);
     }
     
     // Move along camera Y direction
-    void PerspectiveCamera::MoveUp(float distance)
+    void Camera::MoveUp(float distance)
     {
         m_p += distance * m_up;
         SetDirty(true);
     }
     
-    RadeonRays::float3 PerspectiveCamera::GetForwardVector() const
+    RadeonRays::float3 Camera::GetForwardVector() const
     {
         return m_forward;
     }
     
-    RadeonRays::float3 PerspectiveCamera::GetUpVector() const
+    RadeonRays::float3 Camera::GetUpVector() const
     {
         return m_up;
     }
     
-    RadeonRays::float3 PerspectiveCamera::GetRightVector() const
+    RadeonRays::float3 Camera::GetRightVector() const
     {
         return m_right;
     }
     
-    RadeonRays::float3 PerspectiveCamera::GetPosition() const
+    RadeonRays::float3 Camera::GetPosition() const
     {
         return m_p;
     }
     
-    float PerspectiveCamera::GetAspectRatio() const
+    float Camera::GetAspectRatio() const
     {
-        return m_aspect;
-    }
-    
-    // Arcball rotation
-    void PerspectiveCamera::ArcballRotateHorizontally(float3 c, float angle)
-    {
-        // Build camera matrix
-        matrix cam_matrix = matrix(
-                                   m_up.x, m_up.y, m_up.z, 0,
-                                   m_right.x, m_right.y, m_right.z, 0,
-                                   m_forward.x, m_forward.y, m_forward.z, 0,
-                                   0, 0, 0, 1);
-        
-        // Create camera orientation quaternion
-        quaternion q = normalize(quaternion(cam_matrix));
-        
-        // Rotation of camera around the center of interest by a == rotation of the frame by -a and rotation of the position by a
-        q = q * rotation_quaternion(float3(0.f, 1.f, 0.f), -angle);
-        
-        // Rotate the frame
-        q.to_matrix(cam_matrix);
-        
-        m_up = normalize(float3(cam_matrix.m00, cam_matrix.m01, cam_matrix.m02));
-        m_right = normalize(float3(cam_matrix.m10, cam_matrix.m11, cam_matrix.m12));
-        m_forward = normalize(float3(cam_matrix.m20, cam_matrix.m21, cam_matrix.m22));
-        
-        // Rotate the position
-        float3 dir = c - m_p;
-        dir = rotate_vector(dir, rotation_quaternion(float3(0.f, 1.f, 0.f), angle));
-        
-        m_p = c - dir;
-        SetDirty(true);
-    }
-    
-    void PerspectiveCamera::ArcballRotateVertically(float3 c, float angle)
-    {
-        // Build camera matrix
-        matrix cam_matrix = matrix(
-                                   m_up.x, m_up.y, m_up.z, 0,
-                                   m_right.x, m_right.y, m_right.z, 0,
-                                   m_forward.x, m_forward.y, m_forward.z, 0,
-                                   0, 0, 0, 1);
-        
-        // Create camera orientation quaternion
-        quaternion q = normalize(quaternion(cam_matrix));
-        
-        // Rotation of camera around the center of interest by a == rotation of the frame by -a and rotation of the position by a
-        q = q * rotation_quaternion(m_right, -angle);
-        
-        // Rotate the frame
-        q.to_matrix(cam_matrix);
-        
-        m_up = normalize(float3(cam_matrix.m00, cam_matrix.m01, cam_matrix.m02));
-        m_right = normalize(float3(cam_matrix.m10, cam_matrix.m11, cam_matrix.m12));
-        m_forward = normalize(float3(cam_matrix.m20, cam_matrix.m21, cam_matrix.m22));
-        
-        // Rotate the position
-        float3 dir = c - m_p;
-        dir = rotate_vector(dir, rotation_quaternion(m_right, angle));
-        
-        m_p = c - dir;
-        SetDirty(true);
+        return m_dim.x / m_dim.y;
     }
     
     namespace {
         struct PerspectiveCameraConcrete : public PerspectiveCamera {
             PerspectiveCameraConcrete(float3 const& eye, float3 const& at, float3 const& up) :
             PerspectiveCamera(eye, at, up) {}
+        };
+        
+        struct OrthographicCameraConcrete : public OrthographicCamera {
+            OrthographicCameraConcrete(float3 const& eye, float3 const& at, float3 const& up) :
+            OrthographicCamera(eye, at, up) {}
         };
     }
     
@@ -216,5 +163,11 @@ namespace Baikal
                RadeonRays::float3 const& up) {
         return std::make_shared<PerspectiveCameraConcrete>(eye, at, up);
         
+    }
+    
+    OrthographicCamera::Ptr OrthographicCamera::Create(RadeonRays::float3 const& eye,
+                                                     RadeonRays::float3 const& at,
+                                                     RadeonRays::float3 const& up) {
+        return std::make_shared<OrthographicCameraConcrete>(eye, at, up);
     }
 }

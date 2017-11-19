@@ -25,6 +25,25 @@ namespace Baikal
     {
         return (value + 0xF) / 0x10 * 0x10;
     }
+    
+    static CameraType GetCameraType(Camera& camera)
+    {
+        auto perspective = dynamic_cast<PerspectiveCamera*>(&camera);
+        
+        if (perspective)
+        {
+            return perspective->GetAperture() > 0.f ? CameraType::kPhysicalPerspective : CameraType::kPerspective;
+        }
+        
+        auto ortho = dynamic_cast<OrthographicCamera*>(&camera);
+        
+        if (ortho)
+        {
+            return CameraType::kOrthographic;
+        }
+        
+        return CameraType::kPerspective;
+    }
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api)
@@ -307,7 +326,7 @@ namespace Baikal
     void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         // TODO: support different camera types here
-        auto camera = std::static_pointer_cast<PerspectiveCamera>(scene.GetCamera());
+        auto camera = scene.GetCamera();
         
         // Create light buffer if needed
         if (out.camera.GetElementCount() == 0)
@@ -316,7 +335,7 @@ namespace Baikal
         }
         
         // TODO: remove this
-        out.camera_type = camera->GetAperture() > 0.f ? CameraType::kPhysical : CameraType::kDefault;
+        out.camera_type = GetCameraType(*camera);
         
         // Update camera data
         ClwScene::Camera* data = nullptr;
@@ -329,13 +348,18 @@ namespace Baikal
         data->up = camera->GetUpVector();
         data->right = camera->GetRightVector();
         data->p = camera->GetPosition();
-        data->aperture = camera->GetAperture();
         data->aspect_ratio = camera->GetAspectRatio();
         data->dim = camera->GetSensorSize();
-        data->focal_length = camera->GetFocalLength();
-        data->focus_distance = camera->GetFocusDistance();
         data->zcap = camera->GetDepthRange();
         
+        if (out.camera_type == CameraType::kPerspective)
+        {
+            auto physical_camera = std::static_pointer_cast<PerspectiveCamera>(camera);
+            data->aperture = physical_camera->GetAperture();
+            data->focal_length = physical_camera->GetFocalLength();
+            data->focus_distance = physical_camera->GetFocusDistance();
+        }
+
         // Unmap camera buffer
         m_context.UnmapBuffer(0, out.camera, data);
         
