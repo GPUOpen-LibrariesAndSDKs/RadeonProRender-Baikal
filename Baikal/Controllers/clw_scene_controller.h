@@ -102,6 +102,8 @@ namespace Baikal
         void WriteTextureData(Texture const& texture, void* data) const;
 
     private:
+        int GetMaterialIndex(Collector const& collector, Material::Ptr material) const;
+        
         // Context
         CLWContext m_context;
         // Intersection API

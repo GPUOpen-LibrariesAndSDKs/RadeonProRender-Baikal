@@ -629,8 +629,6 @@ KERNEL void FillAOVs(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
-    // Material IDs
-    GLOBAL int const* restrict material_ids,
     // Materials
     GLOBAL Material const* restrict materials,
     // Textures
@@ -703,7 +701,6 @@ KERNEL void FillAOVs(
         uvs,
         indices,
         shapes,
-        material_ids,
         materials,
         lights,
         env_light_idx,

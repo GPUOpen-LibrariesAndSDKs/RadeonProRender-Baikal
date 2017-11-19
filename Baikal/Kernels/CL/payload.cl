@@ -58,12 +58,12 @@ typedef struct
 {
     // Shape starting index
     int startidx;
-    // Number of primitives in the shape
-    int numprims;
     // Start vertex
     int startvtx;
     // Start material idx
-    int start_material_idx;
+    int material_idx;
+    // Number of primitives in the shape
+    int volume_idx;
     // Linear motion vector
     float3 linearvelocity;
     // Angular velocity
