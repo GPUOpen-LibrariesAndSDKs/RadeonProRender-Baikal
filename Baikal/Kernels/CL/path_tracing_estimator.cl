@@ -407,6 +407,17 @@ KERNEL void ShadeSurface(
             s = -s;
         }
 
+        if (Bxdf_IsBtdf(&diffgeo))
+        {
+            if (backfacing)
+            {
+                Path_SetVolumeIdx(path, INVALID_IDX);
+            }
+            else
+            {
+                Path_SetVolumeIdx(path, Scene_GetVolumeIndex(&scene, isect.shapeid - 1));
+            }
+        }
 
         DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
         DifferentialGeometry_CalculateTangentTransforms(&diffgeo);

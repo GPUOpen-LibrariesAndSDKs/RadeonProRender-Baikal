@@ -465,6 +465,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.volume_idx = -1;
             
             shape_data[mesh] = shape;
             
@@ -519,6 +520,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.volume_idx = -1;
             
             shape_data[mesh] = shape;
             
@@ -561,6 +563,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            shape.volume_idx = -1;
             
             shapes[num_shapes_written++] = shape;
             
@@ -610,6 +613,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->volume_idx = -1;
 
             // Drop dirty flag
             mesh->SetDirty(false);
@@ -628,6 +632,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->volume_idx = -1;
 
             // Drop dirty flag
             mesh->SetDirty(false);
@@ -646,6 +651,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            current_shape->volume_idx = -1;
 
             // Drop dirty flag
             instance->SetDirty(false);

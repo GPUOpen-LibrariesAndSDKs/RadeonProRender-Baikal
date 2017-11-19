@@ -125,6 +125,12 @@ INLINE int Scene_GetMaterialIndex(Scene const* scene, int shape_idx, int prim_id
     return shape.material_idx;
 }
 
+INLINE int Scene_GetVolumeIndex(Scene const* scene, int shape_idx)
+{
+    Shape shape = scene->shapes[shape_idx];
+    return shape.volume_idx;
+}
+
 /// Fill DifferentialGeometry structure based on intersection info from RadeonRays
 void Scene_FillDifferentialGeometry(// Scene
                               Scene const* scene,
