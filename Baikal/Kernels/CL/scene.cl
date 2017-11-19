@@ -38,8 +38,6 @@ typedef struct
     GLOBAL int const* restrict indices;
     // Shapes
     GLOBAL Shape const* restrict shapes;
-    // Material IDs
-    GLOBAL int const* restrict materialids;
     // Materials
     GLOBAL Material const* restrict materials;
     // Emissive objects
@@ -124,7 +122,7 @@ INLINE void Scene_InterpolateAttributes(Scene const* scene, int shape_idx, int p
 INLINE int Scene_GetMaterialIndex(Scene const* scene, int shape_idx, int prim_idx)
 {
     Shape shape = scene->shapes[shape_idx];
-    return scene->materialids[shape.start_material_idx + prim_idx];
+    return shape.material_idx;
 }
 
 /// Fill DifferentialGeometry structure based on intersection info from RadeonRays

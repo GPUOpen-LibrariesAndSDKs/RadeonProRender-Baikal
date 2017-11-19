@@ -86,8 +86,6 @@ KERNEL void ShadeVolume(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
-    // Material IDs
-    GLOBAL int const* restrict material_ids,
     // Materials
     GLOBAL Material const* restrict materials,
     // Textures
@@ -133,7 +131,6 @@ KERNEL void ShadeVolume(
         uvs,
         indices,
         shapes,
-        material_ids,
         materials,
         lights,
         env_light_idx,
@@ -269,8 +266,6 @@ KERNEL void ShadeSurface(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
-    // Material IDs
-    GLOBAL int const* restrict material_ids,
     // Materials
     GLOBAL Material const* restrict materials,
     // Textures
@@ -316,7 +311,6 @@ KERNEL void ShadeSurface(
         uvs,
         indices,
         shapes,
-        material_ids,
         materials,
         lights,
         env_light_idx,
@@ -365,7 +359,7 @@ KERNEL void ShadeSurface(
         bool backfacing = ngdotwi < 0.f;
 
         // Select BxDF 
-        Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+        Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo); 
 
         // Terminate if emissive
         if (Bxdf_IsEmissive(&diffgeo))
