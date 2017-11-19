@@ -13,10 +13,11 @@ namespace Baikal
 
     enum class CameraType
     {
-        kDefault,
-        kPhysical,
+        kPerspective,
+        kPhysicalPerspective,
         kSpherical,
-        kFisheye
+        kFisheye,
+        kOrthographic
     };
 
     struct ClwScene
