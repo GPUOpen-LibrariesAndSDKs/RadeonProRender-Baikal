@@ -352,7 +352,8 @@ namespace Baikal
         data->dim = camera->GetSensorSize();
         data->zcap = camera->GetDepthRange();
         
-        if (out.camera_type == CameraType::kPerspective)
+        if (out.camera_type == CameraType::kPerspective ||
+            out.camera_type == CameraType::kPhysicalPerspective)
         {
             auto physical_camera = std::static_pointer_cast<PerspectiveCamera>(camera);
             data->aperture = physical_camera->GetAperture();
