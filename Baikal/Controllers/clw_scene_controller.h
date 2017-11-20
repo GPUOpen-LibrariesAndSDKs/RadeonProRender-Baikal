@@ -72,7 +72,7 @@ namespace Baikal
         // Update camera data only.
         void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update shape data only.
-        void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
+        void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const override;
         // Update transform data only
         void UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update lights data only.
@@ -107,7 +107,8 @@ namespace Baikal
 
     private:
         int GetMaterialIndex(Collector const& collector, Material::Ptr material) const;
-        
+        int GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const;
+
         // Context
         CLWContext m_context;
         // Intersection API

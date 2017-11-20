@@ -78,7 +78,7 @@ namespace Baikal
 
         // Get and set volume material
         void SetVolumeMaterial(VolumeMaterial::Ptr volume_mat);
-        Material::Ptr GetVolumeMaterial() const;
+        VolumeMaterial::Ptr GetVolumeMaterial() const;
 
         // Get and set transform
         void SetTransform(RadeonRays::matrix const& t);
@@ -207,7 +207,7 @@ namespace Baikal
         SetDirty(true);
     }
 
-    inline Material::Ptr Shape::GetVolumeMaterial() const
+    inline VolumeMaterial::Ptr Shape::GetVolumeMaterial() const
     {
         return m_volume;
     }

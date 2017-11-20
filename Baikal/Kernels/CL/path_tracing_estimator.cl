@@ -231,7 +231,7 @@ KERNEL void ShadeVolume(
         Ray_Init(indirect_rays + global_id, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
 
         // Update path throughput multiplying by phase function.
-        Path_MulThroughput(path, volumes[volume_idx].sigma_s * PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
+        Path_MulThroughput(path, PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
 #else
         // Single-scattering mode only,
         // kill the path and compact away on next iteration
