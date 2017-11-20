@@ -25,6 +25,25 @@ namespace Baikal
     {
         return (value + 0xF) / 0x10 * 0x10;
     }
+    
+    static CameraType GetCameraType(Camera& camera)
+    {
+        auto perspective = dynamic_cast<PerspectiveCamera*>(&camera);
+        
+        if (perspective)
+        {
+            return perspective->GetAperture() > 0.f ? CameraType::kPhysicalPerspective : CameraType::kPerspective;
+        }
+        
+        auto ortho = dynamic_cast<OrthographicCamera*>(&camera);
+        
+        if (ortho)
+        {
+            return CameraType::kOrthographic;
+        }
+        
+        return CameraType::kPerspective;
+    }
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api)
@@ -307,7 +326,7 @@ namespace Baikal
     void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         // TODO: support different camera types here
-        auto camera = std::static_pointer_cast<PerspectiveCamera>(scene.GetCamera());
+        auto camera = scene.GetCamera();
         
         // Create light buffer if needed
         if (out.camera.GetElementCount() == 0)
@@ -316,7 +335,7 @@ namespace Baikal
         }
         
         // TODO: remove this
-        out.camera_type = camera->GetAperture() > 0.f ? CameraType::kPhysical : CameraType::kDefault;
+        out.camera_type = GetCameraType(*camera);
         
         // Update camera data
         ClwScene::Camera* data = nullptr;
@@ -329,13 +348,19 @@ namespace Baikal
         data->up = camera->GetUpVector();
         data->right = camera->GetRightVector();
         data->p = camera->GetPosition();
-        data->aperture = camera->GetAperture();
         data->aspect_ratio = camera->GetAspectRatio();
         data->dim = camera->GetSensorSize();
-        data->focal_length = camera->GetFocalLength();
-        data->focus_distance = camera->GetFocusDistance();
         data->zcap = camera->GetDepthRange();
         
+        if (out.camera_type == CameraType::kPerspective ||
+            out.camera_type == CameraType::kPhysicalPerspective)
+        {
+            auto physical_camera = std::static_pointer_cast<PerspectiveCamera>(camera);
+            data->aperture = physical_camera->GetAperture();
+            data->focal_length = physical_camera->GetFocalLength();
+            data->focus_distance = physical_camera->GetFocusDistance();
+        }
+
         // Unmap camera buffer
         m_context.UnmapBuffer(0, out.camera, data);
         
@@ -349,13 +374,11 @@ namespace Baikal
         std::size_t num_normals = 0;
         std::size_t num_uvs = 0;
         std::size_t num_indices = 0;
-        std::size_t num_material_ids = 0;
         
         std::size_t num_vertices_written = 0;
         std::size_t num_normals_written = 0;
         std::size_t num_uvs_written = 0;
         std::size_t num_indices_written = 0;
-        std::size_t num_matids_written = 0;
         std::size_t num_shapes_written = 0;
         
         auto shape_iter = scene.CreateShapeIterator();
@@ -379,7 +402,6 @@ namespace Baikal
             num_normals += mesh->GetNumNormals();
             num_uvs += mesh->GetNumUVs();
             num_indices += mesh->GetNumIndices();
-            num_material_ids += mesh->GetNumIndices() / 3;
         }
         
         // Excluded meshes still occupy space in vertex buffers.
@@ -391,7 +413,6 @@ namespace Baikal
             num_normals += mesh->GetNumNormals();
             num_uvs += mesh->GetNumUVs();
             num_indices += mesh->GetNumIndices();
-            num_material_ids += mesh->GetNumIndices() / 3;
         }
         
         // Instances only occupy material IDs space.
@@ -399,7 +420,6 @@ namespace Baikal
         {
             auto instance = iter;
             auto mesh = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
-            num_material_ids += mesh->GetNumIndices() / 3;
         }
 
         LogInfo("Creating vertex buffer...\n");
@@ -418,13 +438,11 @@ namespace Baikal
         // Total number of entries in shapes GPU array
         auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
         out.shapes = m_context.CreateBuffer<ClwScene::Shape>(num_shapes, CL_MEM_READ_ONLY);
-        out.materialids = m_context.CreateBuffer<int>(num_material_ids, CL_MEM_READ_ONLY);
         
         float3* vertices = nullptr;
         float3* normals = nullptr;
         float2* uvs = nullptr;
         int* indices = nullptr;
-        int* matids = nullptr;
         ClwScene::Shape* shapes = nullptr;
         
         // Map arrays and prepare to write data
@@ -433,13 +451,13 @@ namespace Baikal
         m_context.MapBuffer(0, out.normals, CL_MAP_WRITE, &normals);
         m_context.MapBuffer(0, out.uvs, CL_MAP_WRITE, &uvs);
         m_context.MapBuffer(0, out.indices, CL_MAP_WRITE, &indices);
-        m_context.MapBuffer(0, out.materialids, CL_MAP_WRITE, &matids);
         m_context.MapBuffer(0, out.shapes, CL_MAP_WRITE, &shapes).Wait();
 
         // Keep associated shapes data for instance look up.
         // We retrieve data from here while serializing instances,
         // using base shape lookup.
         std::map<Mesh::Ptr, ClwScene::Shape> shape_data;
+        
         // Handle meshes
         for (auto& iter : meshes)
         {
@@ -460,10 +478,8 @@ namespace Baikal
             
             // Prepare shape descriptor
             ClwScene::Shape shape;
-            shape.numprims = static_cast<int>(mesh_num_indices / 3);
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
-            shape.start_material_idx = static_cast<int>(num_matids_written);
             
             auto transform = mesh->GetTransform();
             shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
@@ -473,6 +489,8 @@ namespace Baikal
             
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+            shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.volume_idx = -1;
             
             shape_data[mesh] = shape;
             
@@ -490,18 +508,6 @@ namespace Baikal
 
             shapes[num_shapes_written++] = shape;
 
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            if (!material)
-            {
-                material = m_default_material;
-            }
-            
-            auto matidx = mat_collector.GetItemIndex(material);
-            std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, matidx);
-            
-            num_matids_written += mesh_num_indices / 3;
-            
             // Drop dirty flag
             mesh->SetDirty(false);
         }
@@ -527,10 +533,8 @@ namespace Baikal
             
             // Prepare shape descriptor
             ClwScene::Shape shape;
-            shape.numprims = static_cast<int>(mesh_num_indices / 3);
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
-            shape.start_material_idx = static_cast<int>(num_matids_written);
 
             auto transform = mesh->GetTransform();
             shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
@@ -540,6 +544,8 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+            shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.volume_idx = -1;
             
             shape_data[mesh] = shape;
             
@@ -557,11 +563,6 @@ namespace Baikal
             
             shapes[num_shapes_written++] = shape;
             
-            // We do not need materials for excluded shapes, we never shade them.
-            std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, -1);
-            
-            num_matids_written += mesh_num_indices / 3;
-            
             // Drop dirty flag
             mesh->SetDirty(false);
         }
@@ -571,16 +572,12 @@ namespace Baikal
         {
             auto instance = iter;
             auto base_shape = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
-            auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
-            auto mesh_num_indices = base_shape->GetNumIndices();
             
             // Here shape_data is guaranteed to contain
             // info for base_shape since we have serialized it
             // above in a different pass.
             ClwScene::Shape shape = shape_data[base_shape];
-            // Instance has its own material part.
-            shape.start_material_idx = static_cast<int>(num_matids_written);
             
             // Instance has its own transform.
             shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
@@ -590,19 +587,10 @@ namespace Baikal
             
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
+            shape.material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            shape.volume_idx = -1;
             
             shapes[num_shapes_written++] = shape;
-            
-            // If instance do not have a material, use default one.
-            if (!material)
-            {
-                material = m_default_material;
-            }
-            
-            auto mat_idx = mat_collector.GetItemIndex(material);
-            std::fill(matids + num_matids_written, matids + num_matids_written + mesh_num_indices / 3, mat_idx);
-            
-            num_matids_written += mesh_num_indices / 3;
             
             // Drop dirty flag
             instance->SetDirty(false);
@@ -613,10 +601,10 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.normals, normals);
         m_context.UnmapBuffer(0, out.uvs, uvs);
         m_context.UnmapBuffer(0, out.indices, indices);
-        m_context.UnmapBuffer(0, out.materialids, matids);
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
 
         LogInfo("Updating intersector...\n");
+        
         UpdateIntersector(scene, out);
 
         ReloadIntersector(scene, out);
@@ -624,8 +612,6 @@ namespace Baikal
 
     void ClwSceneController::UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
-        std::size_t num_material_ids = 0;
-
         auto shape_iter = scene.CreateShapeIterator();
 
         // Sort shapes into meshes and instances sets.
@@ -636,35 +622,9 @@ namespace Baikal
         std::set<Instance::Ptr> instances;
         SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
 
-        // Calculate GPU array sizes. Do that only for meshes,
-        // since instances do not occupy space in vertex buffers.
-        // However instances still have their own material ids.
-        for (auto& iter : meshes)
-        {
-            auto mesh = iter;
-            num_material_ids += mesh->GetNumIndices() / 3;
-        }
-
-        // Excluded meshes still occupy space in vertex buffers.
-        for (auto& iter : excluded_meshes)
-        {
-            auto mesh = iter;
-            num_material_ids += mesh->GetNumIndices() / 3;
-        }
-
-        // Instances only occupy material IDs space.
-        for (auto& iter : instances)
-        {
-            auto instance = iter;
-            auto mesh = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
-            num_material_ids += mesh->GetNumIndices() / 3;
-        }
-
-        int* matids = nullptr;
         ClwScene::Shape* shapes = nullptr;
 
         // Map arrays and prepare to write data
-        m_context.MapBuffer(0, out.materialids, CL_MAP_READ | CL_MAP_WRITE, &matids);
         m_context.MapBuffer(0, out.shapes, CL_MAP_READ | CL_MAP_WRITE, &shapes).Wait();
 
         auto current_shape = shapes;
@@ -672,25 +632,13 @@ namespace Baikal
         {
             auto mesh = iter;
 
-            auto mesh_num_indices = mesh->GetNumIndices();
-
             auto transform = mesh->GetTransform();
             current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            if (!material)
-            {
-                material = m_default_material;
-            }
-
-            auto matidx = mat_collector.GetItemIndex(material);
-            std::fill(matids + current_shape->start_material_idx, 
-                matids + current_shape->start_material_idx + mesh_num_indices / 3, 
-                matidx);
+            current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->volume_idx = -1;
 
             // Drop dirty flag
             mesh->SetDirty(false);
@@ -703,25 +651,13 @@ namespace Baikal
         {
             auto mesh = iter;
 
-            auto mesh_num_indices = mesh->GetNumIndices();
-
             auto transform = mesh->GetTransform();
             current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-
-            // Check if mesh has a material and use default if not
-            auto material = mesh->GetMaterial();
-            if (!material)
-            {
-                material = m_default_material;
-            }
-
-            auto matidx = mat_collector.GetItemIndex(material);
-            std::fill(matids + current_shape->start_material_idx,
-                matids + current_shape->start_material_idx + mesh_num_indices / 3,
-                matidx);
+            current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->volume_idx = -1;
 
             // Drop dirty flag
             mesh->SetDirty(false);
@@ -733,35 +669,21 @@ namespace Baikal
         {
             auto instance = iter;
             auto base_shape = std::static_pointer_cast<Mesh>(instance->GetBaseShape());
-            auto material = instance->GetMaterial();
             auto transform = instance->GetTransform();
-            auto mesh_num_indices = base_shape->GetNumIndices();
 
             current_shape->transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-
-            // Check if mesh has a material and use default if not
-            if (!material)
-            {
-                material = m_default_material;
-            }
-
-            auto matidx = mat_collector.GetItemIndex(material);
-            std::fill(matids + current_shape->start_material_idx,
-                matids + current_shape->start_material_idx + mesh_num_indices / 3,
-                matidx);
+            current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            current_shape->volume_idx = -1;
 
             // Drop dirty flag
             instance->SetDirty(false);
             ++current_shape;
         }
-
-        m_context.UnmapBuffer(0, out.materialids, matids);
+        
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
-
-
     }
     
     void ClwSceneController::UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const
@@ -1598,5 +1520,11 @@ namespace Baikal
         default:
             assert(false); // invalid phase function value
         }
+    }
+    
+    int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const
+    {
+        auto m = material ? material : m_default_material;
+        return collector.GetItemIndex(m);
     }
 }

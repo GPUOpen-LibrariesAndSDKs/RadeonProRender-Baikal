@@ -130,7 +130,7 @@ namespace Baikal
         Material& operator = (Material const&) = delete;
 
     protected:
-        Input& _GetInput(const std::string& name, InputType type);
+        Input& GetInput(const std::string& name, InputType type);
 
         Material();
     

@@ -13,10 +13,11 @@ namespace Baikal
 
     enum class CameraType
     {
-        kDefault,
-        kPhysical,
+        kPerspective,
+        kPhysicalPerspective,
         kSpherical,
-        kFisheye
+        kFisheye,
+        kOrthographic
     };
 
     struct ClwScene
@@ -32,7 +33,6 @@ namespace Baikal
 
         CLWBuffer<Material> materials;
         CLWBuffer<Light> lights;
-        CLWBuffer<int> materialids;
         CLWBuffer<Volume> volumes;
         CLWBuffer<Texture> textures;
         CLWBuffer<char> texturedata;

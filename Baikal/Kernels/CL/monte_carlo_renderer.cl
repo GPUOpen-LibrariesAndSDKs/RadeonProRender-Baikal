@@ -629,8 +629,6 @@ KERNEL void FillAOVs(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
-    // Material IDs
-    GLOBAL int const* restrict material_ids,
     // Materials
     GLOBAL Material const* restrict materials,
     // Textures
@@ -703,7 +701,6 @@ KERNEL void FillAOVs(
         uvs,
         indices,
         shapes,
-        material_ids,
         materials,
         lights,
         env_light_idx,
@@ -1071,5 +1068,93 @@ KERNEL void EstimateVariance(
         }
     }
 }
+
+KERNEL
+void  OrthographicCamera_GeneratePaths(
+                                     // Camera
+                                     GLOBAL Camera const* restrict camera,
+                                     // Image resolution
+                                     int output_width,
+                                     int output_height,
+                                     // Pixel domain buffer
+                                     GLOBAL int const* restrict pixel_idx,
+                                     // Size of pixel domain buffer
+                                     GLOBAL int const* restrict num_pixels,
+                                     // RNG seed value
+                                     uint rng_seed,
+                                     // Current frame
+                                     uint frame,
+                                     // Rays to generate
+                                     GLOBAL ray* restrict rays,
+                                     // RNG data
+                                     GLOBAL uint* restrict random,
+                                     GLOBAL uint const* restrict sobol_mat
+                                     )
+{
+    int global_id = get_global_id(0);
+    
+    // Check borders
+    if (global_id < *num_pixels)
+    {
+        int idx = pixel_idx[global_id];
+        int y = idx / output_width;
+        int x = idx % output_width;
+        
+        // Get pointer to ray & path handles
+        GLOBAL ray* my_ray = rays + global_id;
+        
+        // Initialize sampler
+        Sampler sampler;
+#if SAMPLER == SOBOL
+        uint scramble = random[x + output_width * y] * 0x1fe3434f;
+        
+        if (frame & 0xF)
+        {
+            random[x + output_width * y] = WangHash(scramble);
+        }
+        
+        Sampler_Init(&sampler, frame, SAMPLE_DIM_CAMERA_OFFSET, scramble);
+#elif SAMPLER == RANDOM
+        uint scramble = x + output_width * y * rng_seed;
+        Sampler_Init(&sampler, scramble);
+#elif SAMPLER == CMJ
+        uint rnd = random[x + output_width * y];
+        uint scramble = rnd * 0x1fe3434f * ((frame + 133 * rnd) / (CMJ_DIM * CMJ_DIM));
+        Sampler_Init(&sampler, frame % (CMJ_DIM * CMJ_DIM), SAMPLE_DIM_CAMERA_OFFSET, scramble);
+#endif
+        
+        // Generate sample
+#ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
+        float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+#else
+        float2 sample0 = make_float2(0.5f, 0.5f);
+#endif
+        
+        // Calculate [0..1] image plane sample
+        float2 img_sample;
+        img_sample.x = (float)x / output_width + sample0.x / output_width;
+        img_sample.y = (float)y / output_height + sample0.y / output_height;
+        
+        // Transform into [-0.5, 0.5]
+        float2 h_sample = img_sample - make_float2(0.5f, 0.5f);
+        // Transform into [-dim/2, dim/2]
+        float2 c_sample = h_sample * camera->dim;
+        
+        // Calculate direction to image plane
+        my_ray->d.xyz = normalize(camera->forward);
+        // Origin == camera position + nearz * d
+        my_ray->o.xyz = camera->p + c_sample.x * camera->right + c_sample.y * camera->up;
+        // Max T value = zfar - znear since we moved origin to znear
+        my_ray->o.w = camera->zcap.y - camera->zcap.x;
+        // Generate random time from 0 to 1
+        my_ray->d.w = sample0.x;
+        // Set ray max
+        my_ray->extra.x = 0xFFFFFFFF;
+        my_ray->extra.y = 0xFFFFFFFF;
+        Ray_SetExtra(my_ray, 1.f);
+        Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
+    }
+}
+
 
 #endif // MONTE_CARLO_RENDERER_CL

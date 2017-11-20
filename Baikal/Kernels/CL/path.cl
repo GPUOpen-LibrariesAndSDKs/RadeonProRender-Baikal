@@ -87,6 +87,11 @@ int Path_GetVolumeIdx(__global Path const* path)
     return path->volume;
 }
 
+void Path_SetVolumeIdx(__global Path* path, int volume_idx)
+{
+    path->volume = volume_idx;
+}
+
 float3 Path_GetThroughput(__global Path const* path)
 {
     float3 t = path->throughput;

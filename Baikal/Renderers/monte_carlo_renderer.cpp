@@ -235,7 +235,6 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.uvs);
         fill_kernel.SetArg(argc++, scene.indices);
         fill_kernel.SetArg(argc++, scene.shapes);
-        fill_kernel.SetArg(argc++, scene.materialids);
         fill_kernel.SetArg(argc++, scene.materials);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
@@ -267,7 +266,21 @@ namespace Baikal
             GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, fill_kernel);
         }
     }
-
+    
+    static std::string GetCameraKernelName(CameraType type)
+    {
+        switch (type) {
+            case CameraType::kPerspective:
+                return "PerspectiveCamera_GeneratePaths";
+            case CameraType::kPhysicalPerspective:
+                return "PerspectiveCameraDof_GeneratePaths";
+            case CameraType::kOrthographic:
+                return "OrthographicCamera_GeneratePaths";
+            default:
+                assert(false);
+                return "none";
+        }
+    }
 
     void MonteCarloRenderer::GeneratePrimaryRays(
         ClwScene const& scene, 
@@ -277,8 +290,7 @@ namespace Baikal
     )
     {
         // Fetch kernel
-        std::string kernel_name = (scene.camera_type == CameraType::kDefault) ? "PerspectiveCamera_GeneratePaths" : "PerspectiveCameraDof_GeneratePaths";
-
+        auto kernel_name = GetCameraKernelName(scene.camera_type);
         auto genkernel = GetKernel(kernel_name, generate_at_pixel_center ? "-D BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER " : "");
 
         // Set kernel parameters

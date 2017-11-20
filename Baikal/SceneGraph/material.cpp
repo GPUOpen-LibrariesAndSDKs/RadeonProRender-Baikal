@@ -86,7 +86,7 @@ namespace Baikal
     // Set input value
     // If specific data type is not supported throws std::runtime_error
 
-    Material::Input& Material::_GetInput(const std::string& name, InputType type)
+    Material::Input& Material::GetInput(const std::string& name, InputType type)
     {
         auto input_iter = m_inputs.find(name);
         if (input_iter == m_inputs.cend())
@@ -105,7 +105,7 @@ namespace Baikal
 
     void Material::SetInputValue(std::string const& name, uint32_t value)
     {
-        auto& input = _GetInput(name, InputType::kUint);
+        auto& input = GetInput(name, InputType::kUint);
         input.value.type = InputType::kUint;
         input.value.uint_value = value;
         SetDirty(true);
@@ -113,7 +113,7 @@ namespace Baikal
 
     void Material::SetInputValue(std::string const& name, RadeonRays::float4 const& value)
     {
-        auto& input = _GetInput(name, InputType::kFloat4);
+        auto& input = GetInput(name, InputType::kFloat4);
         input.value.type = InputType::kFloat4;
         input.value.float_value = value;
         SetDirty(true);
@@ -121,7 +121,7 @@ namespace Baikal
 
     void Material::SetInputValue(std::string const& name, Texture::Ptr texture)
     {
-        auto& input = _GetInput(name, InputType::kTexture);
+        auto& input = GetInput(name, InputType::kTexture);
         input.value.type = InputType::kTexture;
         input.value.tex_value = texture;
         SetDirty(true);
@@ -129,7 +129,7 @@ namespace Baikal
 
     void Material::SetInputValue(std::string const& name, Material::Ptr material)
     {
-        auto& input = _GetInput(name, InputType::kMaterial);
+        auto& input = GetInput(name, InputType::kMaterial);
         input.value.type = InputType::kMaterial;
         input.value.mat_value = material;
         SetDirty(true);
