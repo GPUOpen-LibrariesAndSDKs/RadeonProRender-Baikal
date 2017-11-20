@@ -41,6 +41,7 @@ namespace Baikal
         CLWBuffer<int> light_distributions;
 
         std::unique_ptr<Bundle> material_bundle;
+        std::unique_ptr<Bundle> volume_bundle;
         std::unique_ptr<Bundle> texture_bundle;
 
         int num_lights;

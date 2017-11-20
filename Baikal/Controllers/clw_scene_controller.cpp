@@ -368,7 +368,7 @@ namespace Baikal
         camera->SetDirty(false);
     }
     
-    void ClwSceneController::UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
+    void ClwSceneController::UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const
     {
         std::size_t num_vertices = 0;
         std::size_t num_normals = 0;
@@ -490,7 +490,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            shape.volume_idx = -1;
+            shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
             
             shape_data[mesh] = shape;
             
@@ -545,7 +545,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            shape.volume_idx = -1;
+            shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
             
             shape_data[mesh] = shape;
             
@@ -588,7 +588,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
-            shape.volume_idx = -1;
+            shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
             
             shapes[num_shapes_written++] = shape;
             
@@ -753,6 +753,7 @@ namespace Baikal
         // Create volume iterator
         auto volume_iter = volume_collector.CreateIterator();
 
+        out.volume_bundle.reset(volume_collector.CreateBundle());
         // Serialize
         size_t num_volumes_copied = 0;
         for (; volume_iter->IsValid(); volume_iter->Next())
@@ -1495,6 +1496,7 @@ namespace Baikal
     {
         auto clw_volume = reinterpret_cast<ClwScene::Volume*>(data);
 
+        clw_volume->type = ClwScene::VolumeType::kHomogeneous;
         clw_volume->data = -1;
         clw_volume->extra = -1;
         clw_volume->sigma_a = volume.GetInputValue("absorption").float_value;
@@ -1526,5 +1528,10 @@ namespace Baikal
     {
         auto m = material ? material : m_default_material;
         return collector.GetItemIndex(m);
+    }
+
+    int ClwSceneController::GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const
+    {
+        return (volume) ? collector.GetItemIndex(volume) : (-1);
     }
 }

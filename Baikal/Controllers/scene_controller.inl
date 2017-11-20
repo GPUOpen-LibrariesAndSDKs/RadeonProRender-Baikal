@@ -112,7 +112,7 @@ namespace Baikal
         m_material_collector.Commit();
 
         // set iterator position at begin
-        shape_iter = scene->CreateShapeIterator();
+        shape_iter->Reset();
         // Collect volume materials from shapes first
         m_volume_collector.Collect(*shape_iter,
                                     [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
@@ -208,6 +208,12 @@ namespace Baikal
                                        auto material = std::static_pointer_cast<Material>(item);
                                        material->SetDirty(false);
                                    });
+
+            m_volume_collector.Finalize([](SceneObject::Ptr item)
+            {
+                auto volume = std::static_pointer_cast<VolumeMaterial>(item);
+                volume->SetDirty(false);
+            });
             
             // Return the scene
             return res.first->second;
@@ -224,6 +230,14 @@ namespace Baikal
             {
                 auto mat = std::static_pointer_cast<Material>(ptr);
                 return mat->IsDirty();
+            });
+
+            bool should_update_volumes = !out.volume_bundle ||
+                m_volume_collector.NeedsUpdate(out.volume_bundle.get(),
+                                               [](SceneObject::Ptr ptr)->bool
+            {
+                auto volume = std::static_pointer_cast<VolumeMaterial>(ptr);
+                return volume->IsDirty();
             });
 
             bool should_update_textures = m_texture_collector.GetNumItems() > 0 && (
@@ -308,7 +322,7 @@ namespace Baikal
                 // Update shapes if needed
                 if (dirty & Scene1::kShapes)
                 {
-                    UpdateShapes(*scene, m_material_collector, m_texture_collector, out);
+                    UpdateShapes(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
                 }
                 else if (shapes_changed)
                 {
@@ -327,6 +341,12 @@ namespace Baikal
             if (should_update_textures)
             {
                 UpdateTextures(*scene, m_material_collector, m_texture_collector, out);
+            }
+
+            // If volumes need an update, do it.
+            if (should_update_volumes)
+            {
+                UpdateVolumes(*scene, m_volume_collector, out);
             }
 
             // Set current scene
@@ -373,7 +393,7 @@ namespace Baikal
         
         UpdateLights(scene, m_material_collector, m_texture_collector, out);
         
-        UpdateShapes(scene, m_material_collector, m_texture_collector, out);
+        UpdateShapes(scene, m_material_collector, m_texture_collector, vol_collector, out);
         
         UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
         
