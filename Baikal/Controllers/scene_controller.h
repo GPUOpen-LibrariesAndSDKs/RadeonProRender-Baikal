@@ -64,7 +64,7 @@ namespace Baikal
     protected:
         // Recompile the scene from scratch, i.e. not loading from cache.
         // All the buffers are recreated and reloaded.
-        void RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const;
+        void RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, CompiledScene& out) const;
 
     public:
         // Update camera data only.
@@ -83,6 +83,8 @@ namespace Baikal
         virtual Material::Ptr GetDefaultMaterial() const = 0;
         // If m_current_scene changes
         virtual void UpdateCurrentScene(Scene1 const& scene, CompiledScene& out) const = 0;
+        // Update volume materials only
+        virtual void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, CompiledScene& out) const = 0;
         
     private:
         mutable Scene1::Ptr m_current_scene;
@@ -90,6 +92,7 @@ namespace Baikal
         mutable std::map<Scene1::Ptr, CompiledScene> m_scene_cache;
 
         mutable Collector m_material_collector;
+        mutable Collector m_volume_collector;
         mutable Collector m_texture_collector;
     };
 }

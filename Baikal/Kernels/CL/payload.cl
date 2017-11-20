@@ -211,7 +211,7 @@ typedef enum
 
 typedef enum
     {
-        kUniform,
+        kUniform = 0,
         kRayleigh,
         kMieMurky,
         kMieHazy,

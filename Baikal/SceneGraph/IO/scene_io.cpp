@@ -102,7 +102,7 @@ namespace Baikal
                     auto diffuse = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
                     auto specular = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetGGX);
 
-                    specular->SetInputValue("roughness", 0.01f);
+                    specular->SetInputValue("roughness", RadeonRays::float4(0.01f));
 
                     // Set albedo
                     if (!mat.diffuse_texname.empty())
