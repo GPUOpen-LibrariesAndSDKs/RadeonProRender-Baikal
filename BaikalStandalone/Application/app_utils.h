@@ -67,6 +67,7 @@ namespace Baikal
         float camera_aperture;
         float camera_focus_distance;
         float camera_focal_length;
+        CameraType camera_type;
 
         //app
         bool progressive;

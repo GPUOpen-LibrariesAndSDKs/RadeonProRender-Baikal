@@ -462,30 +462,42 @@ namespace Baikal
             ImGui::Text("Number of instances: %d", m_num_instances);
             ImGui::Separator();
             ImGui::SliderInt("GI bounces", &num_bounces, 1, 10);
-            ImGui::SliderFloat("Aperture(mm)", &aperture, 0.0f, 100.0f);
-            ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
-            ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
 
             auto camera = m_cl->GetCamera();
-            if (aperture != m_settings.camera_aperture * 1000.f)
-            {
-                m_settings.camera_aperture = aperture / 1000.f;
-                camera->SetAperture(m_settings.camera_aperture);
-                update = true;
-            }
 
-            if (focus_distance != m_settings.camera_focus_distance)
+            if (m_settings.camera_type == CameraType::kPerspective)
             {
-                m_settings.camera_focus_distance = focus_distance;
-                camera->SetFocusDistance(m_settings.camera_focus_distance);
-                update = true;
-            }
+                auto perspective_camera = std::dynamic_pointer_cast<PerspectiveCamera>(camera);
 
-            if (focal_length != m_settings.camera_focal_length * 1000.f)
-            {
-                m_settings.camera_focal_length = focal_length / 1000.f;
-                camera->SetFocalLength(m_settings.camera_focal_length);
-                update = true;
+                if (!perspective_camera)
+                {
+                    throw std::runtime_error("Application::UpdateGui(...): can not cast to perspective camera");
+                }
+
+                if (aperture != m_settings.camera_aperture * 1000.f)
+                {
+                    m_settings.camera_aperture = aperture / 1000.f;
+                    perspective_camera->SetAperture(m_settings.camera_aperture);
+                    update = true;
+                }
+
+                if (focus_distance != m_settings.camera_focus_distance)
+                {
+                    m_settings.camera_focus_distance = focus_distance;
+                    perspective_camera->SetFocusDistance(m_settings.camera_focus_distance);
+                    update = true;
+                }
+
+                if (focal_length != m_settings.camera_focal_length * 1000.f)
+                {
+                    m_settings.camera_focal_length = focal_length / 1000.f;
+                    perspective_camera->SetFocalLength(m_settings.camera_focal_length);
+                    update = true;
+                }
+
+                ImGui::SliderFloat("Aperture(mm)", &aperture, 0.0f, 100.0f);
+                ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
+                ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
             }
 
             if (num_bounces != m_settings.num_bounces)
@@ -619,7 +631,7 @@ namespace Baikal
 
                 if (mesh)
                 {
-                    m_num_triangles += mesh->GetNumIndices() / 3;
+                    m_num_triangles += (int)(mesh->GetNumIndices() / 3);
                 }
                 else
                 {
