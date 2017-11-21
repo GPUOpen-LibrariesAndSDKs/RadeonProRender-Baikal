@@ -290,11 +290,13 @@ namespace Baikal
                 
                 
                 // Update lights if needed
-                if (dirty & Scene1::kLights || lights_changed || 
+                if (dirty & Scene1::kLights || lights_changed ||
                     should_update_textures || should_update_materials)
                 {
                     UpdateLights(*scene, m_material_collector, m_texture_collector, out);
-                    DropLightDirty(scene->CreateLightIterator());
+                    light_iter->Reset();
+                    // don't use light_iter after this
+                    DropLightDirty(std::move(light_iter));
                 }
             }
             
@@ -325,7 +327,8 @@ namespace Baikal
                 if (dirty & Scene1::kShapes)
                 {
                     UpdateShapes(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
-                    DropShapeDirty(scene->CreateShapeIterator());
+                    shape_iter->Reset();
+                    DropShapeDirty(std::move(shape_iter));
                 }
                 else if (shapes_changed)
                 {
