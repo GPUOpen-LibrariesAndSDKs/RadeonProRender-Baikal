@@ -204,10 +204,10 @@ namespace Baikal
             
             // Drop dirty flags for materials
             m_material_collector.Finalize([](SceneObject::Ptr item)
-                                   {
-                                       auto material = std::static_pointer_cast<Material>(item);
-                                       material->SetDirty(false);
-                                   });
+            {
+                auto material = std::static_pointer_cast<Material>(item);
+                material->SetDirty(false);
+            });
 
             m_volume_collector.Finalize([](SceneObject::Ptr item)
             {
@@ -261,6 +261,7 @@ namespace Baikal
             if (dirty & Scene1::kCamera || camera_changed)
             {
                 UpdateCamera(*scene, m_material_collector, m_texture_collector, out);
+                DropCameraDirty(*scene);
             }
             
             {
@@ -293,6 +294,7 @@ namespace Baikal
                     should_update_textures || should_update_materials)
                 {
                     UpdateLights(*scene, m_material_collector, m_texture_collector, out);
+                    DropLightDirty(scene->CreateLightIterator());
                 }
             }
             
@@ -323,6 +325,7 @@ namespace Baikal
                 if (dirty & Scene1::kShapes)
                 {
                     UpdateShapes(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
+                    DropShapeDirty(scene->CreateShapeIterator());
                 }
                 else if (shapes_changed)
                 {
@@ -362,10 +365,10 @@ namespace Baikal
             
             // Clear material dirty flags
             m_material_collector.Finalize([](SceneObject::Ptr item)
-                                   {
-                                       auto material = std::static_pointer_cast<Material>(item);
-                                       material->SetDirty(false);
-                                   });
+            {
+                auto material = std::static_pointer_cast<Material>(item);
+                material->SetDirty(false);
+            });
 
             m_texture_collector.Finalize([](SceneObject::Ptr item)
             {
@@ -390,15 +393,46 @@ namespace Baikal
         Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, Collector& vol_collector, CompiledScene& out) const
     {
         UpdateCamera(scene, m_material_collector, m_texture_collector, out);
-        
+        DropCameraDirty(scene);
+
         UpdateLights(scene, m_material_collector, m_texture_collector, out);
-        
+        DropLightDirty(scene.CreateLightIterator());
+
         UpdateShapes(scene, m_material_collector, m_texture_collector, vol_collector, out);
-        
+        DropShapeDirty(scene.CreateShapeIterator());
+
         UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
         
         UpdateTextures(scene, m_material_collector, m_texture_collector, out);
 
         UpdateVolumes(scene, vol_collector, out);
+    }
+
+    template <typename CompiledScene>
+    inline
+    void SceneController<CompiledScene>::DropCameraDirty(Scene1 const& scene) const
+    {
+        auto camera = scene.GetCamera();
+
+        if (!camera)
+            throw std::runtime_error("SceneController::RecompileFull(...): camera was not set");
+
+        camera->SetDirty(false);
+    }
+
+    template <typename CompiledScene>
+    inline
+    void SceneController<CompiledScene>::DropLightDirty(std::unique_ptr<Iterator> light_iterator) const
+    {
+        for (; light_iterator->IsValid(); light_iterator->Next())
+            light_iterator->ItemAs<Light>()->SetDirty(false);
+    }
+
+    template <typename CompiledScene>
+    inline
+    void SceneController<CompiledScene>::DropShapeDirty(std::unique_ptr<Iterator> shape_iterator) const
+    {
+        for (; shape_iterator->IsValid(); shape_iterator->Next())
+            shape_iterator->ItemAs<Shape>()->SetDirty(false);
     }
 }
