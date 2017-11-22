@@ -24,31 +24,16 @@ THE SOFTWARE.
 #include "SceneGraph/camera.h"
 #include "radeon_rays.h"
 
+#include <assert.h>
+
+#include "WrapObject/SceneObject.h"
+
 using namespace Baikal;
 using namespace RadeonRays;
 
 CameraObject::CameraObject()
     : m_cam(nullptr)
 {
-    //create perspective camera by default
-    //set cam default properties
-    RadeonRays::float3 const eye = { 0.f, 1.f, 3.f };
-    RadeonRays::float3 const at = { 0.f , 1.f , 0.f };
-    RadeonRays::float3 const up = { 0.f , 1.f , 0.f };
-    auto camera = PerspectiveCamera::Create(eye, at, up);
-
-    float2 camera_sensor_size = float2(0.036f, 0.024f);  // default full frame sensor 36x24 mm
-    float2 camera_zcap = float2(0.0f, 100000.f);
-    float camera_focal_length = 0.035f; // 35mm lens
-    float camera_focus_distance = 1.f;
-    float camera_aperture = 0.f;
-
-    camera->SetSensorSize(camera_sensor_size);
-    camera->SetDepthRange(camera_zcap);
-    camera->SetFocalLength(camera_focal_length);
-    camera->SetFocusDistance(camera_focus_distance);
-    camera->SetAperture(camera_aperture);
-    m_cam = camera;
 }
 
 CameraObject::~CameraObject()
@@ -57,21 +42,121 @@ CameraObject::~CameraObject()
 
 void CameraObject::SetTransform(const RadeonRays::matrix& m)
 {
-	//default values
-	RadeonRays::float3 eye(0.f, 0.f, 0.f);
-	RadeonRays::float3 at(0.f, 0.f, -1.f);
-	RadeonRays::float3 up(0.f, 1.f, 0.f);
-	eye = m * eye;
-	at = m * at;
-	up = m * up;
-	m_cam->LookAt(eye, at, up);
+    //default values
+    RadeonRays::float4 eye(0.f, 0.f, 0.f, 1.0f);
+    RadeonRays::float4 at(0.f, 0.f, -1.f, 0.0f);
+    RadeonRays::float4 up(0.f, 1.f, 0.f, 0.0f);
+    m_eye = m * eye;
+    m_at = m * at;
+    m_up = m * up;
+    UpdateCameraParams();
 }
 
 void CameraObject::GetLookAt(RadeonRays::float3& eye,
     RadeonRays::float3& at,
     RadeonRays::float3& up)
 {
-    eye = m_cam->GetPosition();
-    at = m_cam->GetForwardVector() + eye;
-    up = m_cam->GetUpVector();
+    eye = m_eye;
+    at = m_at;
+    up = m_up;
+}
+
+Baikal::Camera::Ptr CameraObject::GetCamera() 
+{ 
+    if (m_mode == RPR_CAMERA_MODE_PERSPECTIVE)
+    {
+        Baikal::PerspectiveCamera::Ptr camera = PerspectiveCamera::Create(m_eye, m_at, m_up);
+        camera->SetSensorSize(m_camera_sensor_size);
+        camera->SetDepthRange(m_camera_zcap);
+        camera->SetFocalLength(m_camera_focal_length);
+        camera->SetFocusDistance(m_camera_focus_distance);
+        camera->SetAperture(m_camera_aperture);
+        m_cam = camera;
+        return m_cam;
+    }
+    else if (m_mode == RPR_CAMERA_MODE_ORTHOGRAPHIC)
+    {
+        Baikal::OrthographicCamera::Ptr camera = OrthographicCamera::Create(m_eye, m_at, m_up);
+        camera->SetSensorSize(m_camera_sensor_size);
+        camera->SetDepthRange(m_camera_zcap);
+        m_cam = camera;
+        return m_cam;
+    }
+
+    assert(!"Usupported camera type");
+    return nullptr; 
+}
+
+void CameraObject::LookAt(RadeonRays::float3 const& eye,
+    RadeonRays::float3 const& at,
+    RadeonRays::float3 const& up)
+{
+    m_eye = eye;
+    m_at = at;
+    m_up = up;
+    UpdateCameraParams();
+}
+
+void CameraObject::SetMode(rpr_camera_mode mode)
+{
+    m_mode = mode;
+    UpdateCameraParams();
+}
+
+void CameraObject::UpdateCameraParams()
+{
+    // Replace camera in all scenes that have it
+    for (::SceneObject* scene : m_scenes)
+    {
+        scene->SetCamera(this);
+    }
+}
+
+void CameraObject::AddToScene(::SceneObject* scene)
+{
+    auto it = std::find(m_scenes.begin(), m_scenes.end(), scene);
+    if (it != m_scenes.end()) return;
+
+    m_scenes.push_back(scene);
+}
+
+void CameraObject::RemoveFromScene(::SceneObject* scene)
+{
+    m_scenes.remove(scene);
+}
+
+void CameraObject::SetFocalLength(rpr_float flen) 
+{ 
+    m_camera_focal_length = flen / 1000.f; 
+    UpdateCameraParams(); 
+}
+
+void CameraObject::SetFocusDistance(rpr_float fdist) 
+{ 
+    m_camera_focus_distance = fdist; 
+    UpdateCameraParams(); 
+}
+
+void CameraObject::SetSensorSize(RadeonRays::float2 size) 
+{ 
+    m_camera_sensor_size = size * 0.001f; 
+    UpdateCameraParams(); 
+}
+
+void CameraObject::SetOrthoWidth(float width) 
+{ 
+    m_camera_sensor_size.x = width; 
+    UpdateCameraParams(); 
+}
+
+void CameraObject::SetOrthoHeight(float height) 
+{ 
+    m_camera_sensor_size.y = height; 
+    UpdateCameraParams(); 
+}
+
+void CameraObject::SetAperture(rpr_float fstop) 
+{ 
+    m_camera_aperture = fstop / 1000.f; 
+    UpdateCameraParams(); 
 }

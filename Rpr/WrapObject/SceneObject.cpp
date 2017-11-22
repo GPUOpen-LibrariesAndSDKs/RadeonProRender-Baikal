@@ -43,7 +43,7 @@ SceneObject::~SceneObject()
 
 void SceneObject::Clear()
 {
-	m_shapes.clear();
+    m_shapes.clear();
     m_lights.clear();
 
     //remove lights
@@ -59,31 +59,33 @@ void SceneObject::Clear()
         m_scene->DetachShape(it_shape->ItemAs<Baikal::Mesh>());
         it_shape = m_scene->CreateShapeIterator();
     }
+
+    if (m_current_camera) m_current_camera->RemoveFromScene(this);
 }
 
 void SceneObject::AttachShape(ShapeObject* shape)
 {
-	//check is mesh already in scene
-	auto it = std::find(m_shapes.begin(), m_shapes.end(), shape);
-	if (it != m_shapes.end())
-	{
-		return;
-	}
-	m_shapes.push_back(shape);
+    //check is mesh already in scene
+    auto it = std::find(m_shapes.begin(), m_shapes.end(), shape);
+    if (it != m_shapes.end())
+    {
+        return;
+    }
+    m_shapes.push_back(shape);
 
     m_scene->AttachShape(shape->GetShape());
 }
 
 void SceneObject::DetachShape(ShapeObject* shape)
 {
-	//check is mesh in scene
-	auto it = std::find(m_shapes.begin(), m_shapes.end(), shape);
-	if (it == m_shapes.end())
-	{
-		return;
-	}
-	m_shapes.erase(it);
-	m_scene->DetachShape(shape->GetShape());
+    //check is mesh in scene
+    auto it = std::find(m_shapes.begin(), m_shapes.end(), shape);
+    if (it == m_shapes.end())
+    {
+        return;
+    }
+    m_shapes.erase(it);
+    m_scene->DetachShape(shape->GetShape());
 }
 
 void SceneObject::AttachLight(LightObject* light)
@@ -114,13 +116,14 @@ void SceneObject::DetachLight(LightObject* light)
 void SceneObject::SetCamera(CameraObject* cam)
 {
     m_current_camera = cam;
+    if (m_current_camera) cam->AddToScene(this);
     auto baikal_cam = cam ? cam->GetCamera() : nullptr;
     m_scene->SetCamera(baikal_cam);
 }
 
 void SceneObject::GetShapeList(void* out_list)
 {
-	memcpy(out_list, m_shapes.data(), m_shapes.size() * sizeof(ShapeObject*));
+    memcpy(out_list, m_shapes.data(), m_shapes.size() * sizeof(ShapeObject*));
 }
 
 void SceneObject::GetLightList(void* out_list)
@@ -139,52 +142,52 @@ void SceneObject::AddEmissive()
     //TODO: check scene isn't changed
     //recreate amissives if scene is dirty
     if (!m_scene->GetDirtyFlags())
-	{
-		return;
-	}
+    {
+        return;
+    }
     RemoveEmissive();
 
-	//handle emissive materials
-	for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid(); it_shape->Next())
-	{
-		auto shape = it_shape->ItemAs<Baikal::Shape>();
+    //handle emissive materials
+    for (std::unique_ptr<Baikal::Iterator> it_shape(m_scene->CreateShapeIterator()); it_shape->IsValid(); it_shape->Next())
+    {
+        auto shape = it_shape->ItemAs<Baikal::Shape>();
         auto mesh = std::dynamic_pointer_cast<Baikal::Mesh>(shape);
-		//instance case
-		if (!mesh)
-		{
+        //instance case
+        if (!mesh)
+        {
             auto inst = std::dynamic_pointer_cast<Baikal::Instance>(shape);
-			assert(inst);
+            assert(inst);
             mesh = std::dynamic_pointer_cast<Baikal::Mesh>(inst->GetBaseShape());
-		}
-		assert(mesh);
+        }
+        assert(mesh);
 
-		auto mat = mesh->GetMaterial();
-		if (!mat)
-		{
-			continue;
-		}
-		//fine shapes with emissive material
-		if (mat->HasEmission())
-		{
-			// Add area light for each polygon of emissive mesh
-			for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
-			{
+        auto mat = mesh->GetMaterial();
+        if (!mat)
+        {
+            continue;
+        }
+        //fine shapes with emissive material
+        if (mat->HasEmission())
+        {
+            // Add area light for each polygon of emissive mesh
+            for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
+            {
                 auto light = Baikal::AreaLight::Create(mesh, l);
                 m_scene->AttachLight(light);
-				m_emmisive_lights.push_back(light);
-			}
-		}
-	}
+                m_emmisive_lights.push_back(light);
+            }
+        }
+    }
 }
 
 void SceneObject::RemoveEmissive()
 {
-	for (auto light : m_emmisive_lights)
-	{
-		m_scene->DetachLight(light);
-	}
+    for (auto light : m_emmisive_lights)
+    {
+        m_scene->DetachLight(light);
+    }
     
-	m_emmisive_lights.clear();
+    m_emmisive_lights.clear();
 }
 
 bool SceneObject::IsDirty()

@@ -27,7 +27,7 @@ extern "C" {
 
 #include "cstddef"
 
-#define RPR_API_VERSION 0x010028200 
+#define RPR_API_VERSION 0x010028300 
 
 /* rpr_status */
 #define RPR_SUCCESS 0 
