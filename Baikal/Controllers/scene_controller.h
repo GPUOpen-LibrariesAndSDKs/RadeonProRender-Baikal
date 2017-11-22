@@ -67,6 +67,10 @@ namespace Baikal
         // All the buffers are recreated and reloaded.
         void RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, CompiledScene& out) const;
 
+        // set dirty flag to false for camera object
+        void DropCameraDirty(Scene1 const& scene) const;
+        // set dirty flag to false for iterator
+        void DropDirty(Iterator& light_iterator) const;
     public:
         // Update camera data only.
         virtual void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;

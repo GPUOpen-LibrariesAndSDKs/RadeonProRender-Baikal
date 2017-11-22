@@ -25,7 +25,7 @@ namespace Baikal
     {
         return (value + 0xF) / 0x10 * 0x10;
     }
-    
+     
     static CameraType GetCameraType(Camera& camera)
     {
         auto perspective = dynamic_cast<PerspectiveCamera*>(&camera);
@@ -363,9 +363,6 @@ namespace Baikal
 
         // Unmap camera buffer
         m_context.UnmapBuffer(0, out.camera, data);
-        
-        // Drop camera dirty flag
-        camera->SetDirty(false);
     }
     
     void ClwSceneController::UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const
@@ -507,9 +504,6 @@ namespace Baikal
             num_indices_written += mesh_num_indices;
 
             shapes[num_shapes_written++] = shape;
-
-            // Drop dirty flag
-            mesh->SetDirty(false);
         }
         
         // Excluded shapes are handled in almost the same way
@@ -562,9 +556,6 @@ namespace Baikal
             num_indices_written += mesh_num_indices;
             
             shapes[num_shapes_written++] = shape;
-            
-            // Drop dirty flag
-            mesh->SetDirty(false);
         }
         
         // Handle instances
@@ -591,9 +582,6 @@ namespace Baikal
             shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
             
             shapes[num_shapes_written++] = shape;
-            
-            // Drop dirty flag
-            instance->SetDirty(false);
         }
 
         LogInfo("Unmapping buffers...\n");
@@ -640,8 +628,6 @@ namespace Baikal
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
             current_shape->volume_idx = -1;
 
-            // Drop dirty flag
-            mesh->SetDirty(false);
             ++current_shape;
         }
 
@@ -659,8 +645,6 @@ namespace Baikal
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
             current_shape->volume_idx = -1;
 
-            // Drop dirty flag
-            mesh->SetDirty(false);
             ++current_shape;
         }
 
@@ -678,8 +662,6 @@ namespace Baikal
             current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
             current_shape->volume_idx = -1;
 
-            // Drop dirty flag
-            instance->SetDirty(false);
             ++current_shape;
         }
         
@@ -1279,8 +1261,6 @@ namespace Baikal
             default:
             break;
         }
-        
-        material.SetDirty(false);
     }
     
     // Convert Light:: types to ClwScene:: types
@@ -1418,7 +1398,6 @@ namespace Baikal
                 }
 
                 ++num_lights_written;
-                light->SetDirty(false);
 
                 auto power = light->GetPower(scene);
 
