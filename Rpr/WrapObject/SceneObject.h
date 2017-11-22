@@ -31,6 +31,7 @@ THE SOFTWARE.
 class ShapeObject;
 class LightObject;
 class CameraObject;
+class MaterialObject;
 
 //this class represent rpr_context
 class SceneObject
@@ -61,6 +62,8 @@ public:
     size_t GetLightCount() { return m_scene->GetNumLights(); }
 
     RadeonRays::bbox GetBBox();
+
+    void SetBackgroundImage(MaterialObject* image);
 
 	void AddEmissive();
 	void RemoveEmissive();

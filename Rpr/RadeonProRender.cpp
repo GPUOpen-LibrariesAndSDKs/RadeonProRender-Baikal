@@ -1912,9 +1912,25 @@ rpr_int rprSceneSetEnvironmentOverride(rpr_scene scene, rpr_environment_override
     UNSUPPORTED_FUNCTION
 }
 
-rpr_int rprSceneSetBackgroundImage(rpr_scene scene, rpr_image image)
+rpr_int rprSceneSetBackgroundImage(rpr_scene in_scene, rpr_image in_image)
 {
-    UNSUPPORTED_FUNCTION
+    MaterialObject* img = WrapObject::Cast<MaterialObject>(in_image);
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    if (!scene || !img || !img->IsImg())
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        scene->SetBackgroundImage(img);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+    
+    return RPR_SUCCESS;
 }
 
 rpr_int rprSceneGetBackgroundImage(rpr_scene scene, rpr_image * out_image)

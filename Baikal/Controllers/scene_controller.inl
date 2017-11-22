@@ -182,6 +182,10 @@ namespace Baikal
                                   return textures;
                               });
 
+        auto background_texture = scene->GetBackgroundImage();
+        if (background_texture)
+            m_texture_collector.Collect(background_texture);
+
         // Commit textures
         m_texture_collector.Commit();
         

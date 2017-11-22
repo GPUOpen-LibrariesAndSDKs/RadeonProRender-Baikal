@@ -63,7 +63,8 @@ namespace Baikal
             kLights,
             kShapes,
             kShapeTransforms,
-            kCamera
+            kCamera,
+            kBackground
         };
         
         // Destructor
@@ -106,6 +107,10 @@ namespace Baikal
 
         // World space bounding sphere radius
         float GetRadius() const;
+
+        // Background image override
+        void SetBackgroundImage(Baikal::Texture::Ptr texture);
+        Baikal::Texture::Ptr GetBackgroundImage() const;
         
         // Forbidden stuff
         Scene1(Scene1 const&) = delete;
