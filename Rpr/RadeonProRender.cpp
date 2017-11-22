@@ -69,7 +69,7 @@ rpr_int rprCreateContext(rpr_int api_version, rpr_int * pluginIDs, size_t plugin
 
 rpr_int rprContextSetActivePlugin(rpr_context context, rpr_int pluginID)
 {
-	UNSUPPORTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprContextGetInfo(rpr_context in_context, rpr_context_info in_context_info, size_t in_size, void * out_data, size_t * out_size_ret)
@@ -686,27 +686,27 @@ rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, s
         break;
     }
     case RPR_CAMERA_ORTHO_WIDTH:
-	{
-		rpr_float value = cam->GetOrthoWidth();
-		size_ret = sizeof(value);
-		data.resize(size_ret);
-		memcpy(&data[0], &value, size_ret);
-		break;
-	}
+    {
+        rpr_float value = cam->GetOrthoWidth();
+        size_ret = sizeof(value);
+        data.resize(size_ret);
+        memcpy(&data[0], &value, size_ret);
+        break;
+    }
     case RPR_CAMERA_ORTHO_HEIGHT:
-	{
-		rpr_float value = cam->GetOrthoHeight();
-		size_ret = sizeof(value);
-		data.resize(size_ret);
-		memcpy(&data[0], &value, size_ret);
-		break;
-	}
-	case RPR_CAMERA_APERTURE_BLADES:
-	case RPR_CAMERA_EXPOSURE:
-	case RPR_CAMERA_FOCAL_TILT:
-	case RPR_CAMERA_IPD:
-	case RPR_CAMERA_LENS_SHIFT:
-		UNSUPPORTED_FUNCTION
+    {
+        rpr_float value = cam->GetOrthoHeight();
+        size_ret = sizeof(value);
+        data.resize(size_ret);
+        memcpy(&data[0], &value, size_ret);
+        break;
+    }
+    case RPR_CAMERA_APERTURE_BLADES:
+    case RPR_CAMERA_EXPOSURE:
+    case RPR_CAMERA_FOCAL_TILT:
+    case RPR_CAMERA_IPD:
+    case RPR_CAMERA_LENS_SHIFT:
+        UNSUPPORTED_FUNCTION
         break;
     default:
         UNIMLEMENTED_FUNCTION
@@ -846,9 +846,9 @@ rpr_int rprCameraSetMode(rpr_camera in_camera, rpr_camera_mode mode)
     switch (mode)
     {
     case RPR_CAMERA_MODE_PERSPECTIVE:
-	case RPR_CAMERA_MODE_ORTHOGRAPHIC:
-		camera->SetMode(mode);
-		break;
+    case RPR_CAMERA_MODE_ORTHOGRAPHIC:
+        camera->SetMode(mode);
+        break;
     default:
         UNIMLEMENTED_FUNCTION
     }
@@ -858,14 +858,14 @@ rpr_int rprCameraSetMode(rpr_camera in_camera, rpr_camera_mode mode)
 
 rpr_int rprCameraSetOrthoWidth(rpr_camera in_camera, rpr_float width)
 {
-	CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
-	if (!camera)
-	{
-		return RPR_ERROR_INVALID_PARAMETER;
-	}
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
 
-	camera->SetOrthoWidth(width);
-	return RPR_SUCCESS;
+    camera->SetOrthoWidth(width);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprCameraSetFocalTilt(rpr_camera camera, rpr_float tilt)
@@ -901,14 +901,14 @@ rpr_int rprCameraSetNearPlane(rpr_camera camera, rpr_float near)
 
 rpr_int rprCameraSetOrthoHeight(rpr_camera in_camera, rpr_float height)
 {
-	CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
-	if (!camera)
-	{
-		return RPR_ERROR_INVALID_PARAMETER;
-	}
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
 
-	camera->SetOrthoHeight(height);
-	return RPR_SUCCESS;
+    camera->SetOrthoHeight(height);
+    return RPR_SUCCESS;
 
 }
 
