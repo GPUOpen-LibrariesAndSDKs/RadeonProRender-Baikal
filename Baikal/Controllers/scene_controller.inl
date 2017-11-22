@@ -295,8 +295,7 @@ namespace Baikal
                 {
                     UpdateLights(*scene, m_material_collector, m_texture_collector, out);
                     light_iter->Reset();
-                    // don't use light_iter after this
-                    DropLightDirty(std::move(light_iter));
+                    DropDirty(*light_iter);
                 }
             }
             
@@ -328,7 +327,7 @@ namespace Baikal
                 {
                     UpdateShapes(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
                     shape_iter->Reset();
-                    DropShapeDirty(std::move(shape_iter));
+                    DropDirty(*shape_iter);
                 }
                 else if (shapes_changed)
                 {
@@ -399,10 +398,12 @@ namespace Baikal
         DropCameraDirty(scene);
 
         UpdateLights(scene, m_material_collector, m_texture_collector, out);
-        DropLightDirty(scene.CreateLightIterator());
+        auto light_iterator = scene.CreateLightIterator();
+        DropDirty(*light_iterator);
 
         UpdateShapes(scene, m_material_collector, m_texture_collector, vol_collector, out);
-        DropShapeDirty(scene.CreateShapeIterator());
+        auto shape_iterator = scene.CreateShapeIterator();
+        DropDirty(*shape_iterator);
 
         UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
         
@@ -425,17 +426,9 @@ namespace Baikal
 
     template <typename CompiledScene>
     inline
-    void SceneController<CompiledScene>::DropLightDirty(std::unique_ptr<Iterator> light_iterator) const
+    void SceneController<CompiledScene>::DropDirty(Iterator& iterator) const
     {
-        for (; light_iterator->IsValid(); light_iterator->Next())
-            light_iterator->ItemAs<Light>()->SetDirty(false);
-    }
-
-    template <typename CompiledScene>
-    inline
-    void SceneController<CompiledScene>::DropShapeDirty(std::unique_ptr<Iterator> shape_iterator) const
-    {
-        for (; shape_iterator->IsValid(); shape_iterator->Next())
-            shape_iterator->ItemAs<Shape>()->SetDirty(false);
+        for (; iterator.IsValid(); iterator.Next())
+            iterator.ItemAs<SceneObject>()->SetDirty(false);
     }
 }
