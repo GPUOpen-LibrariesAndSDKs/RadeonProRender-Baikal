@@ -237,7 +237,8 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
 SceneObject* ContextObject::CreateScene()
 {
     auto scene = new SceneObject;
-    scene->SetCamera(new CameraObject());
+    //scene->SetCamera(new CameraObject());
+	m_current_scene = m_current_scene ? m_current_scene : scene;
     return scene;
 }
 

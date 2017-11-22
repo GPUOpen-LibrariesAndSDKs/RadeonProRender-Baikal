@@ -59,6 +59,8 @@ void SceneObject::Clear()
         m_scene->DetachShape(it_shape->ItemAs<Baikal::Mesh>());
         it_shape = m_scene->CreateShapeIterator();
     }
+
+	if (m_current_camera) m_current_camera->RemoveFromScene(this);
 }
 
 void SceneObject::AttachShape(ShapeObject* shape)
@@ -114,7 +116,8 @@ void SceneObject::DetachLight(LightObject* light)
 void SceneObject::SetCamera(CameraObject* cam)
 {
     m_current_camera = cam;
-    auto baikal_cam = cam ? cam->GetCamera() : nullptr;
+	if (m_current_camera) cam->AddToScene(this);
+	auto baikal_cam = cam ? cam->GetCamera() : nullptr;
     m_scene->SetCamera(baikal_cam);
 }
 
