@@ -130,7 +130,8 @@ namespace Baikal
             QualityLevel quality,
             CLWBuffer<RadeonRays::float3> output,
             bool use_output_indices = true,
-            bool atomic_update = false
+            bool atomic_update = false,
+            MissedPrimaryRaysHandler missedPrimaryRaysHandler = nullptr
         ) override;
 
         /**

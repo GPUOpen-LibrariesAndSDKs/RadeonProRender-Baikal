@@ -168,7 +168,8 @@ namespace Baikal
         QualityLevel quality,
         CLWBuffer<RadeonRays::float3> output,
         bool use_output_indices,
-        bool atomic_update
+        bool atomic_update,
+        MissedPrimaryRaysHandler missedPrimaryRaysHandler
     )
     {
         if (atomic_update)
@@ -207,7 +208,7 @@ namespace Baikal
             // Apply scattering
             EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
-            if (pass > 0 && scene.envmapidx > -1)
+            if (scene.envmapidx > -1)
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
             }
@@ -236,7 +237,17 @@ namespace Baikal
 
             // Shade missing rays
             if (pass == 0)
-                ShadeBackground(scene, pass, num_estimates, output, use_output_indices);
+            {
+                if (missedPrimaryRaysHandler)
+                    missedPrimaryRaysHandler(
+                        m_render_data->rays[0], 
+                        m_render_data->intersections,
+                        m_render_data->pixelindices[1], 
+                        use_output_indices ? m_render_data->output_indices : m_render_data->iota,
+                        num_estimates, output);
+                else if(scene.envmapidx > -1)
+                    ShadeBackground(scene, 0, num_estimates, output, use_output_indices);
+            }
 
             // Intersect shadow rays
             GetIntersector()->QueryOcclusion(

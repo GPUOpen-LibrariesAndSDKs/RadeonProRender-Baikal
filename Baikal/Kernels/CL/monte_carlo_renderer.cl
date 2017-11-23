@@ -1156,5 +1156,51 @@ void  OrthographicCamera_GeneratePaths(
     }
 }
 
+///< Illuminate missing rays
+KERNEL void ShadeBackgroundImage(
+    // Ray batch
+    GLOBAL ray const* restrict rays,
+    // Intersection data
+    GLOBAL Intersection const* restrict isects,
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
+    // Number of rays
+    int num_rays,
+    int background_idx,
+    // Output size
+    int width,
+    int height,
+    // Textures
+    TEXTURE_ARG_LIST,
+    // Output values
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+
+    if (global_id < num_rays)
+    {
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+
+        float x = (float)(output_index % width) / (float)width;
+        float y = (float)(output_index / width) / (float)height;
+
+        float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
+
+        // In case of a miss
+        if (isects[global_id].shapeid < 0 && background_idx != -1)
+        {
+//            float2 uv = make_float2((rays[global_id].d.x + 1.0f) / 2.0f, (rays[global_id].d.y + 1.0f) / 2.0f);
+            float2 uv = make_float2(x, y);
+            v.xyz = Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
+        }
+
+        ADD_FLOAT4(&output[output_index], v);
+    }
+}
+
 
 #endif // MONTE_CARLO_RENDERER_CL

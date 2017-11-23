@@ -796,4 +796,3 @@ KERNEL void ShadeMiss(
         }
     }
 }
-

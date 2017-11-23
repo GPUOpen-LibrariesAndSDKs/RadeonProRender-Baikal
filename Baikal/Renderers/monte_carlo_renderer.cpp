@@ -119,11 +119,21 @@ namespace Baikal
             GenerateTileDomain(output_size, tile_origin, tile_size);
             GeneratePrimaryRays(scene, *output, tile_size);
 
+            //auto fun = std::bind(&MonteCarloRenderer::HandleMissedRays, scene, output_size.x, output_size.y);
+
             m_estimator->Estimate(
                 scene,
                 num_rays,
                 Estimator::QualityLevel::kStandard,
-                output->data());
+                output->data(),
+                true,
+                false,
+                [&](CLWBuffer<ray> rays, CLWBuffer<Intersection> intersections, CLWBuffer<int> pixel_indices,
+                    CLWBuffer<int> output_indices, std::size_t size, CLWBuffer<RadeonRays::float3> output)
+            {
+                this->HandleMissedRays(scene, output_size.x, output_size.y, rays, intersections, pixel_indices, output_indices, size, output);
+            }
+            );
         }
 
         // Check if we have other outputs, than color
@@ -344,4 +354,31 @@ namespace Baikal
     {
         m_estimator->SetMaxBounces(max_bounces);
     }
+
+    void MonteCarloRenderer::HandleMissedRays(const ClwScene &scene, uint32_t w, uint32_t h,
+        CLWBuffer<ray> rays, CLWBuffer<Intersection> intersections, CLWBuffer<int> pixel_indices,
+        CLWBuffer<int> output_indices, std::size_t size, CLWBuffer<RadeonRays::float3> output)
+    {
+        // Fetch kernel
+        auto misskernel = GetKernel("ShadeBackgroundImage") ;
+
+        // Set kernel parameters
+        int argc = 0;
+        misskernel.SetArg(argc++, rays);
+        misskernel.SetArg(argc++, intersections);
+        misskernel.SetArg(argc++, pixel_indices);
+        misskernel.SetArg(argc++, output_indices);
+        misskernel.SetArg(argc++, (cl_int)size);
+        misskernel.SetArg(argc++, scene.background_idx);
+        misskernel.SetArg(argc++, w);
+        misskernel.SetArg(argc++, h);
+        misskernel.SetArg(argc++, scene.textures);
+        misskernel.SetArg(argc++, scene.texturedata);
+        misskernel.SetArg(argc++, output);
+
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, misskernel);
+        }
+    }
+
 }
