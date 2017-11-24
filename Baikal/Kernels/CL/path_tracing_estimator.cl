@@ -796,3 +796,26 @@ KERNEL void ShadeMiss(
         }
     }
 }
+
+///< Advance iteration count. Used on missed rays
+KERNEL void AdvanceIterationCount(
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
+    // Number of rays
+    GLOBAL int* restrict num_rays,
+    // Output values
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+    if (global_id < num_rays)
+    {
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+
+        float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
+        ADD_FLOAT4(&output[output_index], v);
+    }
+}

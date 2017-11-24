@@ -243,6 +243,8 @@ namespace Baikal
             bool use_output_indices
         );
 
+        void AdvanceIterationCount(int pass, std::size_t size, CLWBuffer<RadeonRays::float3> output, bool use_output_indices);
+
         // Restore pixel indices after compaction
         void RestorePixelIndices(int pass, std::size_t size);
 

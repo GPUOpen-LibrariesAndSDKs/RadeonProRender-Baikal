@@ -208,8 +208,7 @@ namespace Baikal
             // Apply scattering
             EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
-            // Don't call ShadeMiss on first pass.
-            if ((scene.envmapidx > -1) && (pass != 0))
+            if (pass > 0 && scene.envmapidx > -1)
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
             }
@@ -241,13 +240,15 @@ namespace Baikal
             {
                 if (missedPrimaryRaysHandler)
                     missedPrimaryRaysHandler(
-                        m_render_data->rays[0], 
+                        m_render_data->rays[0],
                         m_render_data->intersections,
-                        m_render_data->pixelindices[1], 
+                        m_render_data->pixelindices[1],
                         use_output_indices ? m_render_data->output_indices : m_render_data->iota,
                         num_estimates, output);
-                else
+                else if (scene.envmapidx > -1)
                     ShadeBackground(scene, 0, num_estimates, output, use_output_indices);
+                else
+                    AdvanceIterationCount(0, num_estimates, output, use_output_indices);
             }
 
             // Intersect shadow rays
@@ -760,6 +761,27 @@ namespace Baikal
         else
         {
             return false;
+        }
+    }
+
+    void PathTracingEstimator::AdvanceIterationCount(
+        int pass, 
+        std::size_t size, 
+        CLWBuffer<RadeonRays::float3> output, 
+        bool use_output_indices)
+    {
+        auto misskernel = GetKernel("AdvanceIterationCount");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
+        int argc = 0;
+        misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        misskernel.SetArg(argc++, output_indices);
+        misskernel.SetArg(argc++, m_render_data->hitcount);
+        misskernel.SetArg(argc++, output);
+
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, misskernel);
         }
     }
 }
