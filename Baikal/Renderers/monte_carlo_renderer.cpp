@@ -119,22 +119,26 @@ namespace Baikal
             GenerateTileDomain(output_size, tile_origin, tile_size);
             GeneratePrimaryRays(scene, *output, tile_size);
 
-            auto handler = nullptr;
             if (scene.background_idx > -1)
             {
-                std::bind(&MonteCarloRenderer::HandleMissedRays, this, std::ref(scene), output_size.x, output_size.y,
-                    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
-                    std::placeholders::_5, std::placeholders::_6);
+                m_estimator->Estimate(
+                    scene,
+                    num_rays,
+                    Estimator::QualityLevel::kStandard,
+                    output->data(),
+                    true,
+                    false,
+                    std::bind(&MonteCarloRenderer::HandleMissedRays, this, std::ref(scene), output_size.x, output_size.y,
+                        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+                        std::placeholders::_5, std::placeholders::_6));
             }
+            else
+                m_estimator->Estimate(
+                    scene,
+                    num_rays,
+                    Estimator::QualityLevel::kStandard,
+                    output->data());
 
-            m_estimator->Estimate(
-                scene,
-                num_rays,
-                Estimator::QualityLevel::kStandard,
-                output->data(),
-                true,
-                false,
-                handler);
         }
 
         // Check if we have other outputs, than color
