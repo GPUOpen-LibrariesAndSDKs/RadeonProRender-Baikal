@@ -3736,7 +3736,7 @@ void BackgroundImageTest()
 
 int main(int argc, char* argv[])
 {
-/*    MeshCreationTest();
+    MeshCreationTest();
     SimpleRenderTest();
     ComplexRenderTest();
     EnvLightClearTest();
@@ -3755,7 +3755,7 @@ int main(int argc, char* argv[])
     test_feature_shaderTypeLayered();
     UpdateMaterial();
     ArithmeticMul();
-    OrthoRenderTest();*/
+    OrthoRenderTest();
     BackgroundImageTest();
 
     return 0;
