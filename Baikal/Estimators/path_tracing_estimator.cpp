@@ -246,7 +246,7 @@ namespace Baikal
                         m_render_data->pixelindices[1], 
                         use_output_indices ? m_render_data->output_indices : m_render_data->iota,
                         num_estimates, output);
-                else if(scene.envmapidx > -1)
+                else
                     ShadeBackground(scene, 0, num_estimates, output, use_output_indices);
             }
 

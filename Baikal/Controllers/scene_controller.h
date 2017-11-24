@@ -86,6 +86,8 @@ namespace Baikal
         virtual void UpdateCurrentScene(Scene1 const& scene, CompiledScene& out) const = 0;
         // Update volume materials only
         virtual void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, CompiledScene& out) const = 0;
+        // If scene attributes changed
+        virtual void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, CompiledScene& out) const = 0;
         
     private:
         mutable Scene1::Ptr m_current_scene;

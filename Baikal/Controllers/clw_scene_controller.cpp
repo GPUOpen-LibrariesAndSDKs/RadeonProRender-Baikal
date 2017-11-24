@@ -852,9 +852,6 @@ namespace Baikal
 
         // Unmap material buffer
         m_context.UnmapBuffer(0, out.texturedata, data);
-        auto bg_image = scene.GetBackgroundImage();
-        if (bg_image)
-            out.background_idx = tex_collector.GetItemIndex(bg_image);
     }
     
     // Convert Material:: types to ClwScene:: types
@@ -1536,5 +1533,11 @@ namespace Baikal
     int ClwSceneController::GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const
     {
         return (volume) ? collector.GetItemIndex(volume) : (-1);
+    }
+
+    void ClwSceneController::UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const
+    {
+        auto bg_image = scene.GetBackgroundImage();
+        out.background_idx = (bg_image) ? tex_collector.GetItemIndex(bg_image) : -1;
     }
 }

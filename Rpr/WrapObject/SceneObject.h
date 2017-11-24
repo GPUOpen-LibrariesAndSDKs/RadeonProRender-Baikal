@@ -64,6 +64,7 @@ public:
     RadeonRays::bbox GetBBox();
 
     void SetBackgroundImage(MaterialObject* image);
+    MaterialObject* GetBackgroundImage() const;
 
 	void AddEmissive();
 	void RemoveEmissive();
@@ -75,4 +76,5 @@ private:
     std::vector<Baikal::AreaLight::Ptr> m_emmisive_lights;//area lights fro emissive shapes
     std::vector<ShapeObject*> m_shapes;
     std::vector<LightObject*> m_lights;
+    MaterialObject *m_background_image;
 };

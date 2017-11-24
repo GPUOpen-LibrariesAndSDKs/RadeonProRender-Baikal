@@ -1933,9 +1933,25 @@ rpr_int rprSceneSetBackgroundImage(rpr_scene in_scene, rpr_image in_image)
     return RPR_SUCCESS;
 }
 
-rpr_int rprSceneGetBackgroundImage(rpr_scene scene, rpr_image * out_image)
+rpr_int rprSceneGetBackgroundImage(rpr_scene in_scene, rpr_image * out_image)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+
+    if (!scene || !out_image)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        *out_image = scene->GetBackgroundImage();
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
 rpr_int rprSceneSetCamera(rpr_scene in_scene, rpr_camera in_camera)
