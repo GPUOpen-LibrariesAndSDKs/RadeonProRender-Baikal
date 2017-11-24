@@ -3617,7 +3617,7 @@ void BackgroundImageTest()
     //material
     rpr_material_node spec = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_MICROFACET, &spec);
     assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputF(spec, "color", rand_float(), rand_float(), rand_float(), 1.f);
+    status = rprMaterialNodeSetInputF(spec, "color", 1.0f, 1.0f, 1.0f, 1.f);
     status = rprMaterialNodeSetInputF(spec, "roughness", 0.0f , 0.0f, 0.0f, 1.f);
     assert(status == RPR_SUCCESS);
 
@@ -3638,11 +3638,16 @@ void BackgroundImageTest()
     status = rprSceneAttachLight(scene, light);
     assert(status == RPR_SUCCESS);
 
-    rpr_image bgImage= NULL; 
+    rpr_image bgImage = NULL;
     status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo1.jpg", &bgImage);
     assert(status == RPR_SUCCESS);
     status = rprSceneSetBackgroundImage(scene, bgImage);
     assert(status == RPR_SUCCESS);
+
+    rpr_image bgImage1 = NULL;
+    status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo2.jpg", &bgImage1);
+    assert(status == RPR_SUCCESS);
+
 
     //camera
     rpr_camera camera = NULL; status = rprContextCreateCamera(context, &camera);
@@ -3671,10 +3676,7 @@ void BackgroundImageTest()
     assert(status == RPR_SUCCESS);
     status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
     assert(status == RPR_SUCCESS);
-    status = rprFrameBufferClear(frame_buffer);  assert(status == RPR_SUCCESS);
-
-    //change light
-    status = rprFrameBufferClear(frame_buffer);  assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
 
     for (int i = 0; i < kRenderIterations; ++i)
@@ -3683,8 +3685,25 @@ void BackgroundImageTest()
         assert(status == RPR_SUCCESS);
     }
 
-    status = rprFrameBufferSaveToFile(frame_buffer, "Output/BackgroundImageTest.jpg");
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/BackgroundImageTest_pass0.jpg");
     assert(status == RPR_SUCCESS);
+
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetBackgroundImage(scene, bgImage1);
+    assert(status == RPR_SUCCESS);
+
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/BackgroundImageTest_pass1.jpg");
+    assert(status == RPR_SUCCESS);
+
+
     rpr_render_statistics rs;
     status = rprContextGetInfo(context, RPR_CONTEXT_RENDER_STATISTICS, sizeof(rpr_render_statistics), &rs, NULL);
     assert(status == RPR_SUCCESS);
@@ -3693,6 +3712,10 @@ void BackgroundImageTest()
     status = rprSceneDetachLight(scene, light);
     assert(status == RPR_SUCCESS);
     status = rprObjectDelete(light); light = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(bgImage);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(bgImage1);
     assert(status == RPR_SUCCESS);
     rprObjectDelete(spec);
     status = rprSceneSetCamera(scene, NULL);

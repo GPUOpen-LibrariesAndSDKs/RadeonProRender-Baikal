@@ -208,7 +208,8 @@ namespace Baikal
             // Apply scattering
             EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
-            if (scene.envmapidx > -1)
+            // Don't call ShadeMiss on first pass.
+            if ((scene.envmapidx > -1) && (pass != 0))
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
             }

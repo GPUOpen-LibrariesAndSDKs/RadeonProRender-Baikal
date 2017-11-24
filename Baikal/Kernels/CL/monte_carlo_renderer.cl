@@ -1191,13 +1191,12 @@ KERNEL void ShadeBackgroundImage(
         float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
 
         // In case of a miss
-        if (isects[global_id].shapeid < 0 && background_idx != -1)
+        if (isects[global_id].shapeid < 0)
         {
-//            float2 uv = make_float2((rays[global_id].d.x + 1.0f) / 2.0f, (rays[global_id].d.y + 1.0f) / 2.0f);
             float2 uv = make_float2(x, y);
             v.xyz = Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
         }
-
+        
         ADD_FLOAT4(&output[output_index], v);
     }
 }

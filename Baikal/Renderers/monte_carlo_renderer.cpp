@@ -119,8 +119,6 @@ namespace Baikal
             GenerateTileDomain(output_size, tile_origin, tile_size);
             GeneratePrimaryRays(scene, *output, tile_size);
 
-            //auto fun = std::bind(&MonteCarloRenderer::HandleMissedRays, scene, output_size.x, output_size.y);
-
             m_estimator->Estimate(
                 scene,
                 num_rays,
@@ -355,7 +353,7 @@ namespace Baikal
         m_estimator->SetMaxBounces(max_bounces);
     }
 
-    void MonteCarloRenderer::HandleMissedRays(const ClwScene &scene, uint32_t w, uint32_t h,
+    void MonteCarloRenderer::HandleMissedRays(const ClwScene &scene , uint32_t w, uint32_t h,
         CLWBuffer<ray> rays, CLWBuffer<Intersection> intersections, CLWBuffer<int> pixel_indices,
         CLWBuffer<int> output_indices, std::size_t size, CLWBuffer<RadeonRays::float3> output)
     {
@@ -380,5 +378,5 @@ namespace Baikal
             GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, misskernel);
         }
     }
-
+    
 }
