@@ -78,8 +78,7 @@ namespace Baikal
 
         // Set max number of light bounces
         void SetMaxBounces(std::uint32_t max_bounces);
-
-
+        
     protected:
         void GeneratePrimaryRays(
             ClwScene const& scene,
@@ -99,7 +98,6 @@ namespace Baikal
             int2 const& tile_origin,
             int2 const& tile_size
         );
-
 
         Estimator& GetEstimator() { return *m_estimator;  }
 
