@@ -20,6 +20,7 @@ namespace Baikal
         ShapeList m_shapes;
         LightList m_lights;
         Camera::Ptr m_camera;
+        Baikal::Texture::Ptr m_background_texture;
 
         DirtyFlags m_dirty_flags;
     };
@@ -181,6 +182,17 @@ namespace Baikal
         return std::sqrt((aabb.pmax - c).sqnorm());
     }
     
+    void Scene1::SetBackgroundImage(Baikal::Texture::Ptr texture)
+    {
+        m_impl->m_background_texture = texture;
+        SetDirtyFlag(kBackground);
+    }
+
+    Baikal::Texture::Ptr Scene1::GetBackgroundImage() const
+    {
+        return m_impl->m_background_texture;
+    }
+
     namespace {
         struct Scene1Concrete : public Scene1 {
         };

@@ -59,7 +59,12 @@ namespace Baikal
             m_impl->m_set.insert(cur_items.cbegin(), cur_items.cend());
         }
     }
-    
+
+    void Collector::Collect(std::shared_ptr < Baikal::SceneObject > object)
+    {
+        m_impl->m_set.insert(object);
+    }
+
     void Collector::Commit()
     {
         m_impl->m_map.clear();

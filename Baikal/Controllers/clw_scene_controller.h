@@ -87,6 +87,8 @@ namespace Baikal
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
         // Update volume materiuals
         void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const override;
+        // If scene attributes changed
+        void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const override;
 
         // Update intersection API
         void UpdateIntersector(Scene1 const& scene, ClwScene& out) const;

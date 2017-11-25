@@ -182,6 +182,11 @@ namespace Baikal
                                   return textures;
                               });
 
+        // Add background texture from scene into texture collector
+        auto background_texture = scene->GetBackgroundImage();
+        if (background_texture)
+            m_texture_collector.Collect(background_texture);
+
         // Commit textures
         m_texture_collector.Commit();
         
@@ -362,6 +367,12 @@ namespace Baikal
                 UpdateCurrentScene(*scene, out);
             }
 
+            // If background image need an update, do it.
+            if ((scene->GetDirtyFlags() & Scene1::kBackground) == Scene1::kBackground)
+            {
+                UpdateSceneAttributes(*scene, m_texture_collector, out);
+            }
+
             // Make sure to clear dirty flags
             scene->ClearDirtyFlags();
             
@@ -410,6 +421,8 @@ namespace Baikal
         UpdateTextures(scene, m_material_collector, m_texture_collector, out);
 
         UpdateVolumes(scene, vol_collector, out);
+
+        UpdateSceneAttributes(scene, m_texture_collector, out);
     }
 
     template <typename CompiledScene>

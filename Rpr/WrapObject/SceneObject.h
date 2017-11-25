@@ -31,6 +31,7 @@ THE SOFTWARE.
 class ShapeObject;
 class LightObject;
 class CameraObject;
+class MaterialObject;
 
 //this class represent rpr_context
 class SceneObject
@@ -62,6 +63,9 @@ public:
 
     RadeonRays::bbox GetBBox();
 
+    void SetBackgroundImage(MaterialObject* image);
+    MaterialObject* GetBackgroundImage() const;
+
 	void AddEmissive();
 	void RemoveEmissive();
     bool IsDirty();
@@ -72,4 +76,5 @@ private:
     std::vector<Baikal::AreaLight::Ptr> m_emmisive_lights;//area lights fro emissive shapes
     std::vector<ShapeObject*> m_shapes;
     std::vector<LightObject*> m_lights;
+    MaterialObject *m_background_image;
 };

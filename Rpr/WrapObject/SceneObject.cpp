@@ -195,3 +195,15 @@ bool SceneObject::IsDirty()
     auto dirty = m_scene->GetDirtyFlags();
     return dirty != Baikal::Scene1::kNone;
 }
+
+void SceneObject::SetBackgroundImage(MaterialObject* image)
+{
+    m_background_image = image;
+    Baikal::Texture::Ptr texture = m_background_image->GetTexture();
+    m_scene->SetBackgroundImage(texture);
+}
+
+MaterialObject* SceneObject::GetBackgroundImage() const
+{
+    return m_background_image;
+}

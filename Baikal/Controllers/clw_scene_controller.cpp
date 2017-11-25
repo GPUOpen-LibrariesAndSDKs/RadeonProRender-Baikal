@@ -1513,4 +1513,10 @@ namespace Baikal
     {
         return (volume) ? collector.GetItemIndex(volume) : (-1);
     }
+
+    void ClwSceneController::UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const
+    {
+        auto bg_image = scene.GetBackgroundImage();
+        out.background_idx = (bg_image) ? tex_collector.GetItemIndex(bg_image) : -1;
+    }
 }
