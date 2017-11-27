@@ -100,6 +100,17 @@ project "Baikal"
 	defines {"ENABLE_RAYMASK"}
     end
 
+    if _OPTIONS["embed_kernels"] then
+        defines {"BAIKAL_EMBED_KERNELS=1"}
+
+        os.execute( "python ../Tools/scripts/baikal_stringify.py " ..
+                            os.getcwd() .. "/Kernels/CL/ "  ..
+                            ".cl " ..
+                            "opencl " ..
+                             "> ./Kernels/CL/cache/kernels.h"
+                            )
+        print ">> Baikal: CL kernels embedded"
+    end
 
     configuration {"x32", "Debug"}
         targetdir "../Bin/Debug/x86"

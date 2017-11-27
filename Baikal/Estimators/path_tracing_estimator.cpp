@@ -10,7 +10,7 @@
 
 #include "Utils/sobol.h"
 
-#ifdef RR_EMBED_KERNELS
+#ifdef BAIKAL_EMBED_KERNELS
 #include "./Kernels/CL/cache/kernels.h"
 #endif
 
@@ -75,7 +75,15 @@ namespace Baikal
         std::shared_ptr<RadeonRays::IntersectionApi> api,
         std::string const& cache_path
     ) : 
+#ifdef BAIKAL_EMBED_KERNELS
+        ClwClass(context,
+            g_path_tracing_estimator_opencl,
+            g_path_tracing_estimator_opencl_inc,
+            sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
+            "", cache_path)
+#else
         ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
+#endif
         , Estimator(api)
         , m_sample_counter(0)
         , m_render_data(new RenderData)
