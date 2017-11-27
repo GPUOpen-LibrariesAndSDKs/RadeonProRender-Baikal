@@ -3668,7 +3668,7 @@ void BackgroundImageTest()
 
     //setup out
     rpr_framebuffer_desc desc;
-    desc.fb_width = 800;
+    desc.fb_width = 900;
     desc.fb_height = 600;
 
     rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
@@ -3733,10 +3733,199 @@ void BackgroundImageTest()
 
 }
 
+void EnvironmentOverrideTest()
+{
+    rpr_int status = RPR_SUCCESS;
+    rpr_context	context;
+    status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
+    assert(status == RPR_SUCCESS);
+    rpr_material_system matsys = NULL;
+    status = rprContextCreateMaterialSystem(context, 0, &matsys);
+    assert(status == RPR_SUCCESS);
+
+    rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
+    assert(status == RPR_SUCCESS);
+
+    //material
+    rpr_material_node reflective = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_MICROFACET, &reflective);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputF(reflective, "color", 1.0f, 1.0f, 1.0f, 1.f);
+    status = rprMaterialNodeSetInputF(reflective, "roughness", 0.0f, 0.0f, 0.0f, 1.f);
+    assert(status == RPR_SUCCESS);
+
+    rpr_material_node refractive = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_REFRACTION, &refractive);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputF(refractive, "color", 1.0f, 1.0f, 1.0f, 1.f);
+    status = rprMaterialNodeSetInputF(refractive, "roughness", 0.0f, 0.0f, 0.0f, 1.f);
+    status = rprMaterialNodeSetInputF(refractive, "ior", 2.0f, 2.0f, 2.0f, 1.f);
+    assert(status == RPR_SUCCESS);
+
+    rpr_material_node transparent = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_TRANSPARENT, &transparent);
+    assert(status == RPR_SUCCESS);
+    status = rprMaterialNodeSetInputF(transparent, "color", 1.0f, 1.0f, 1.0f, 1.f);
+    assert(status == RPR_SUCCESS);
+
+    //sphere
+    rpr_shape mesh_reflective = CreateSphere(context, 64, 32, 2.f, float3());
+    assert(status == RPR_SUCCESS);
+    matrix translate = translation(float3(-5.0, 0.0, 0.0));
+    status = rprShapeSetTransform(mesh_reflective, true, &translate.m[0][0]);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachShape(scene, mesh_reflective);
+    assert(status == RPR_SUCCESS);
+    status = rprShapeSetMaterial(mesh_reflective, reflective);
+    assert(status == RPR_SUCCESS);
+
+    rpr_shape mesh_refractive = CreateSphere(context, 64, 32, 2.f, float3());
+    assert(status == RPR_SUCCESS);
+    translate = translation(float3(0.0, 0.0, 0.0));
+    status = rprShapeSetTransform(mesh_refractive, true, &translate.m[0][0]);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachShape(scene, mesh_refractive);
+    assert(status == RPR_SUCCESS);
+    status = rprShapeSetMaterial(mesh_refractive, refractive);
+    assert(status == RPR_SUCCESS);
+
+    rpr_shape mesh_transparent = CreateSphere(context, 64, 32, 2.f, float3());
+    assert(status == RPR_SUCCESS);
+    translate = translation(float3(5.0, 0.0, 0.0));
+    status = rprShapeSetTransform(mesh_transparent, true, &translate.m[0][0]);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachShape(scene, mesh_transparent);
+    assert(status == RPR_SUCCESS);
+    status = rprShapeSetMaterial(mesh_transparent, transparent);
+    assert(status == RPR_SUCCESS);
+
+
+    rpr_light light = NULL; status = rprContextCreateEnvironmentLight(context, &light);
+    assert(status == RPR_SUCCESS);
+    rpr_image imageInput = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/studio015.hdr", &imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light, imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+
+    rpr_image bgImage = NULL;
+    status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo1.jpg", &bgImage);
+    assert(status == RPR_SUCCESS);
+    /*status = rprSceneSetBackgroundImage(scene, bgImage);
+    assert(status == RPR_SUCCESS);*/
+
+    //hdr overrides
+    rpr_image hdr_reflection, hdr_refraction, hdr_transparency, hdr_background;
+    rpr_light light_reflection, light_refraction, light_transparency, light_background;
+
+    status = rprContextCreateImageFromFile(context, "../Resources/Textures/Canopus_Ground_4k.exr", &hdr_reflection);
+    assert(status == RPR_SUCCESS);
+    status = rprContextCreateEnvironmentLight(context, &light_reflection);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light_reflection, hdr_reflection);
+    assert(status == RPR_SUCCESS);
+
+    status = rprContextCreateImageFromFile(context, "../Resources/Textures/HDR_112_River_Road_2_Ref.hdr", &hdr_refraction);
+    assert(status == RPR_SUCCESS);
+    status = rprContextCreateEnvironmentLight(context, &light_refraction);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light_refraction, hdr_refraction);
+    assert(status == RPR_SUCCESS);
+
+    status = rprContextCreateImageFromFile(context, "../Resources/Textures/HDR_Free_City_Night_Lights_Ref.hdr", &hdr_transparency);
+    assert(status == RPR_SUCCESS);
+    status = rprContextCreateEnvironmentLight(context, &light_transparency);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light_transparency, hdr_transparency);
+    assert(status == RPR_SUCCESS);
+
+    status = rprContextCreateImageFromFile(context, "../Resources/Textures/stonewall.hdr", &hdr_background);
+    assert(status == RPR_SUCCESS);
+    status = rprContextCreateEnvironmentLight(context, &light_background);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light_background, hdr_background);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, light_reflection);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, light_refraction);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, light_transparency);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, light_background);
+    assert(status == RPR_SUCCESS);
+
+    //camera
+    rpr_camera camera = NULL; status = rprContextCreateCamera(context, &camera);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraLookAt(camera, 0, 0, 10, 0, 0, 0, 0, 1, 0);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraSetFocalLength(camera, 23.f);
+    assert(status == RPR_SUCCESS);
+    //status = rprCameraSetFStop(camera, 5.4f);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetCamera(scene, camera);
+    assert(status == RPR_SUCCESS);
+
+    status = rprContextSetScene(context, scene);
+    assert(status == RPR_SUCCESS);
+
+    //light
+
+    //setup out
+    rpr_framebuffer_desc desc;
+    desc.fb_width = 900;
+    desc.fb_height = 600;
+
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer frame_buffer = NULL; status = rprContextCreateFrameBuffer(context, fmt, &desc, &frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/EnvironmentOverrideTest_pass0.jpg");
+    assert(status == RPR_SUCCESS);
+
+    rpr_render_statistics rs;
+    status = rprContextGetInfo(context, RPR_CONTEXT_RENDER_STATISTICS, sizeof(rpr_render_statistics), &rs, NULL);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneDetachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(light); light = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(bgImage);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(reflective);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(refractive);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(transparent);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetCamera(scene, NULL);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(scene); scene = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(camera); camera = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
+
+}
 
 int main(int argc, char* argv[])
 {
-    MeshCreationTest();
+    /*MeshCreationTest();
     SimpleRenderTest();
     ComplexRenderTest();
     EnvLightClearTest();
@@ -3756,7 +3945,9 @@ int main(int argc, char* argv[])
     UpdateMaterial();
     ArithmeticMul();
     OrthoRenderTest();
-    BackgroundImageTest();
+    BackgroundImageTest();*/
+
+    EnvironmentOverrideTest();
 
     return 0;
 }
