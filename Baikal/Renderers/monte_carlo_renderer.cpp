@@ -34,7 +34,7 @@
 #include "Utils/sobol.h"
 #include "math/int2.h"
 
-#ifdef RR_EMBED_KERNELS
+#ifdef BAIKAL_EMBED_KERNELS
 #include "./Kernels/CL/cache/kernels.h"
 #endif
 
@@ -51,7 +51,15 @@ namespace Baikal
         std::unique_ptr<Estimator> estimator,
         std::string const& cache_path
     )
+#ifdef BAIKAL_EMBED_KERNELS
+        : Baikal::ClwClass( context, 
+                            g_monte_carlo_renderer_opencl, 
+                            g_monte_carlo_renderer_opencl_inc, 
+                            sizeof(g_monte_carlo_renderer_opencl_inc)/sizeof(*g_monte_carlo_renderer_opencl_inc),
+                            "", cache_path)
+#else
         : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl", "", cache_path)
+#endif
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
     {
