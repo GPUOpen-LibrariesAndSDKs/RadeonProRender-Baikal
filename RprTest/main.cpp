@@ -3760,10 +3760,11 @@ void EnvironmentOverrideTest()
     status = rprMaterialNodeSetInputF(refractive, "ior", 2.0f, 2.0f, 2.0f, 1.f);
     assert(status == RPR_SUCCESS);
 
-    rpr_material_node transparent = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_TRANSPARENT, &transparent);
+    rpr_material_node transparent = NULL; status = rprMaterialSystemCreateNode(matsys, /*RPR_MATERIAL_NODE_TRANSPARENT*/
+        RPR_MATERIAL_NODE_PASSTHROUGH, &transparent);
     assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputF(transparent, "color", 1.0f, 1.0f, 1.0f, 1.f);
-    assert(status == RPR_SUCCESS);
+/*    status = rprMaterialNodeSetInputF(transparent, "color", 1.0f, 1.0f, 1.0f, 1.f);
+    assert(status == RPR_SUCCESS);*/
 
     //sphere
     rpr_shape mesh_reflective = CreateSphere(context, 64, 32, 2.f, float3());

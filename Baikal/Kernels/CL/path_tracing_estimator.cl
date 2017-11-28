@@ -512,6 +512,34 @@ KERNEL void ShadeSurface(
             Path_ClearSpecularFlag(path);
         }
 
+        if (Bxdf_IsRefraction(&diffgeo))
+        {
+            Path_SetRefractionFlag(path);
+        }
+        else
+        {
+            Path_ClearRefractionFlag(path);
+        }
+
+        if (Bxdf_IsReflection(&diffgeo))
+        {
+            Path_SetReflectionFlag(path);
+        }
+        else
+        {
+            Path_ClearReflectionFlag(path);
+        }
+
+        if (Bxdf_IsTransparency(&diffgeo))
+        {
+            Path_SetTransparencyFlag(path);
+        }
+        else
+        {
+            Path_ClearTransparencyFlag(path);
+        }
+
+
         bxdfwo = normalize(bxdfwo);
         float3 t = bxdf * fabs(dot(diffgeo.n, bxdfwo));
 
@@ -817,5 +845,76 @@ KERNEL void AdvanceIterationCount(
 
         float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
         ADD_FLOAT4(&output[output_index], v);
+    }
+}
+
+///< Illuminate missing rays with respect for environment override settings
+KERNEL void ShadeMissWithOverride(
+    // Ray batch
+    GLOBAL ray const* restrict rays,
+    // Intersection data
+    GLOBAL Intersection const* restrict isects,
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
+    // Number of rays
+    GLOBAL int const* restrict num_rays,
+    GLOBAL Light const* restrict lights,
+    // Light distribution
+    GLOBAL int const* restrict light_distribution,
+    // Number of emissive objects
+    int num_lights,
+    int env_light_idx,
+    int env_reflection_idx,
+    int env_refraction_idx,
+    int env_transparency_idx,
+    // Textures
+    TEXTURE_ARG_LIST,
+    GLOBAL Path const* restrict paths,
+    GLOBAL Volume const* restrict volumes,
+    // Output values
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+
+    if (global_id < *num_rays)
+    {
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+
+        GLOBAL Path const* path = paths + pixel_idx;
+
+        // In case of a miss
+        if (isects[global_id].shapeid < 0 && Path_IsAlive(path))
+        {
+            int used_env_light_idx = env_light_idx;
+            if (Path_IsReflection(path))
+            {
+                used_env_light_idx = env_reflection_idx;
+            }
+            if (Path_IsRefraction(path))
+            {
+                used_env_light_idx = env_refraction_idx;
+            }
+            if (Path_IsTransparency(path))
+            {
+                used_env_light_idx = env_transparency_idx;
+            }
+
+            Light light = lights[used_env_light_idx];
+
+            // Apply MIS
+            float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
+            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, rays[global_id].d.xyz, TEXTURE_ARGS);
+            float2 extra = Ray_GetExtra(&rays[global_id]);
+            float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
+
+            float3 t = Path_GetThroughput(path);
+            float4 v = 0.f;
+            v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
+            ADD_FLOAT4(&output[output_index], v);
+        }
     }
 }

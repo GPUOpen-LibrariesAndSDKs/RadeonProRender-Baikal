@@ -90,17 +90,24 @@ void SingleBxdfMaterialObject::SetInputF(const std::string& input_name, const Ra
     m_base_mat->SetInputValue(input_name, val);
 
     //if roughness is to small replace microfacet by ideal reflect
-    if (GetType() && input_name == "roughness")
+    MaterialObject::Type type = GetType();
+    if ( type && input_name == "roughness")
     {
         if (val.sqnorm() < 1e-6f)
         {
             auto bxdf_mat = std::dynamic_pointer_cast<SingleBxdf>(m_base_mat);
-            bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kIdealReflect);
+            if (type == MaterialObject::Type::kMicrofacet)
+                bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kIdealReflect);
+            else if (type == MaterialObject::Type::kMicrofacetRefraction)
+                bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kIdealRefract);
         }
         else
         {
             auto bxdf_mat = std::dynamic_pointer_cast<SingleBxdf>(m_base_mat);
-            bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
+            if (type == MaterialObject::Type::kMicrofacet)
+                bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
+            else 
+                bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
         }
     }
 }

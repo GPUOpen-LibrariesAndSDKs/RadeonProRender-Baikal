@@ -47,6 +47,10 @@ namespace Baikal
         int num_lights;
         int envmapidx;
         int background_idx;
+        int env_reflection_override_idx;
+        int env_refraction_override_idx;
+        int env_transparency_override_idx;
+        int env_background_override_idx;
         CameraType camera_type;
 
         std::vector<RadeonRays::Shape*> isect_shapes;
