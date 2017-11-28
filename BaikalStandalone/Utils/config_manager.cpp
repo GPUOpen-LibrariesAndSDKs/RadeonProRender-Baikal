@@ -162,7 +162,7 @@ void ConfigManager::CreateConfigs(
 
     for (int i = 0; i < configs.size(); ++i)
     {
-        configs[i].factory = std::make_unique<Baikal::ClwRenderFactory>(configs[i].context);
+        configs[i].factory = std::make_unique<Baikal::ClwRenderFactory>(configs[i].context, "cache");
         configs[i].controller = configs[i].factory->CreateSceneController();
         configs[i].renderer = configs[i].factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     }
