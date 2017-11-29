@@ -1292,11 +1292,11 @@ namespace Baikal
     void ClwSceneController::WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const
     {
         auto clw_light = reinterpret_cast<ClwScene::Light*>(data);
-        
+
         auto type = GetLightType(light);
-        
+
         clw_light->type = type;
-        
+
         switch (type)
         {
             case ClwScene::kPoint:
@@ -1305,14 +1305,14 @@ namespace Baikal
                 clw_light->intensity = light.GetEmittedRadiance();
                 break;
             }
-            
+
             case ClwScene::kDirectional:
             {
                 clw_light->d = light.GetDirection();
                 clw_light->intensity = light.GetEmittedRadiance();
                 break;
             }
-            
+
             case ClwScene::kSpot:
             {
                 clw_light->p = light.GetPosition();
@@ -1324,32 +1324,38 @@ namespace Baikal
                 clw_light->oa = cone_shape.y;
                 break;
             }
-            
+
             case ClwScene::kIbl:
             {
-                // TODO: support this
-                clw_light->multiplier = static_cast<ImageBasedLight const&>(light).GetMultiplier();
-                auto tex = static_cast<ImageBasedLight const&>(light).GetTexture();
-                clw_light->tex = tex_collector.GetItemIndex(tex);
-                clw_light->texdiffuse = clw_light->tex;
+                auto& ibl = static_cast<ImageBasedLight const&>(light);
+                clw_light->multiplier = ibl.GetMultiplier();
+                auto main_tex = ibl.GetTexture();
+                clw_light->tex = main_tex ? tex_collector.GetItemIndex(main_tex) : -1;
+                auto reflection_tex = ibl.GetReflectionTexture();
+                clw_light->tex_reflection = reflection_tex ? tex_collector.GetItemIndex(reflection_tex) : -1;
+                auto refraction_tex = ibl.GetRefractionTexture();
+                clw_light->tex_refraction = refraction_tex ? tex_collector.GetItemIndex(refraction_tex) : -1;
+                auto transparency_tex = ibl.GetTransparencyTexture();
+                clw_light->tex_transparency = transparency_tex ? tex_collector.GetItemIndex(transparency_tex) : -1;
+                auto background_tex = ibl.GetBackgroundTexture();
+                clw_light->tex_background = background_tex ? tex_collector.GetItemIndex(background_tex) : -1;
                 break;
             }
-            
+
             case ClwScene::kArea:
             {
                 // TODO: optimize this linear search
                 auto shape = static_cast<AreaLight const&>(light).GetShape();
-                
+
                 auto shape_iter = scene.CreateShapeIterator();
-                
+
                 auto idx = GetShapeIdx(*shape_iter, shape);
-                
+
                 clw_light->shapeidx = static_cast<int>(idx);
                 clw_light->primidx = static_cast<int>(static_cast<AreaLight const&>(light).GetPrimitiveIdx());
                 break;
             }
-            
-            
+
             default:
             assert(false);
             break;
@@ -1379,10 +1385,6 @@ namespace Baikal
 
         // Disable IBL by default
         out.envmapidx = -1;
-        out.env_background_override_idx = -1;
-        out.env_reflection_override_idx = -1;
-        out.env_refraction_override_idx = -1;
-        out.env_transparency_override_idx = -1;
 
         // Allocate intermediate storage for lights power distribution
         std::vector<float> light_power(num_lights);
@@ -1400,16 +1402,7 @@ namespace Baikal
                 auto ibl = std::dynamic_pointer_cast<ImageBasedLight>(light_iter->ItemAs<Light>());
                 if (ibl)
                 {
-                    if (ibl == env_override.m_background)
-                        out.env_background_override_idx = static_cast<int>(num_lights_written);
-                    else if(ibl == env_override.m_reflection)
-                        out.env_reflection_override_idx = static_cast<int>(num_lights_written);
-                    else if (ibl == env_override.m_refraction)
-                        out.env_refraction_override_idx = static_cast<int>(num_lights_written);
-                    else if (ibl == env_override.m_transparency)
-                        out.env_transparency_override_idx = static_cast<int>(num_lights_written);
-                    else 
-                        out.envmapidx = static_cast<int>(num_lights_written);
+                    out.envmapidx = static_cast<int>(num_lights_written);
                 }
 
                 ++num_lights_written;

@@ -219,6 +219,23 @@ public:
         delete input;
     }
 
+    void ApplyMaterialToObject(
+        std::string const& name,
+        Baikal::Material::Ptr material
+    )
+    {
+        for (auto iter = m_scene->CreateShapeIterator();
+            iter->IsValid();
+            iter->Next())
+        {
+            auto mesh = iter->ItemAs<Baikal::Mesh>();
+            if (mesh->GetName() == name)
+            {
+                mesh->SetMaterial(material);
+            }
+        }
+    }
+
     bool CompareToReference(std::string const& file_name)
     {
         if (m_generate)

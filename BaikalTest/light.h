@@ -804,3 +804,206 @@ TEST_F(LightTest, Light_ImageBasedLightAndEmissiveQuad)
         ASSERT_TRUE(CompareToReference(oss.str()));
     }
 }
+
+TEST_F(LightTest, Light_IblReflectionOverride)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    LoadTestScene();
+
+    auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
+    material->SetInputValue("roughness", RadeonRays::float3(0.07f, 0.07f, 0.07f));
+    ApplyMaterialToObject("sphere", material);
+
+    m_scene->SetCamera(m_camera);
+
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto light_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+    auto reflection_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+    auto light = Baikal::ImageBasedLight::Create();
+
+    light->SetTexture(nullptr);
+    light->SetReflectionTexture(reflection_texture);
+    light->SetMultiplier(1.f);
+    m_scene->AttachLight(light);
+
+    ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (std::uint32_t i = 0; i < kNumIterations; i++)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_1.png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // reset texture and params to be sure that render reset its params
+    auto another_light_texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+    light->SetBackgroundTexture(another_light_texture);
+    light->SetMultiplier(2.f);
+
+    m_scene->DetachLight(light);
+    ASSERT_TRUE(m_scene->GetNumLights() == 0);
+    m_scene->AttachLight(light);
+    ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    for (std::uint32_t i = 0; i < kNumIterations; i++)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_2.png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+}
+
+TEST_F(LightTest, Light_IblRefractionOverride)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    LoadTestScene();
+
+    auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealRefract);
+    material->SetInputValue("ior", RadeonRays::float3(2.f, 2.f, 2.f));
+    ApplyMaterialToObject("sphere", material);
+
+    m_scene->SetCamera(m_camera);
+
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto light_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+    auto refraction_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+    auto light = Baikal::ImageBasedLight::Create();
+
+    light->SetTexture(nullptr);
+    light->SetRefractionTexture(refraction_texture);
+    light->SetMultiplier(1.f);
+    m_scene->AttachLight(light);
+
+    ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (std::uint32_t i = 0; i < kNumIterations; i++)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_1.png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // reset texture and params to be sure that render reset its params
+    auto another_light_texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+    light->SetBackgroundTexture(another_light_texture);
+    light->SetMultiplier(2.f);
+
+    m_scene->DetachLight(light);
+    ASSERT_TRUE(m_scene->GetNumLights() == 0);
+    m_scene->AttachLight(light);
+    ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    for (std::uint32_t i = 0; i < kNumIterations; i++)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_2.png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+}
+
+TEST_F(LightTest, Light_IblTransparencyOverride)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    LoadTestScene();
+
+    auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kPassthrough);
+    ApplyMaterialToObject("sphere", material);
+
+    m_scene->SetCamera(m_camera);
+
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto light_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+    auto refraction_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+    auto light = Baikal::ImageBasedLight::Create();
+
+    light->SetTexture(nullptr);
+    light->SetTransparencyTexture(refraction_texture);
+    light->SetMultiplier(1.f);
+    m_scene->AttachLight(light);
+
+    ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (std::uint32_t i = 0; i < kNumIterations; i++)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_1.png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // reset texture and params to be sure that render reset its params
+    auto another_light_texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+    light->SetBackgroundTexture(another_light_texture);
+    light->SetMultiplier(2.f);
+
+    m_scene->DetachLight(light);
+    ASSERT_TRUE(m_scene->GetNumLights() == 0);
+    m_scene->AttachLight(light);
+    ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    for (std::uint32_t i = 0; i < kNumIterations; i++)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_2.png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+}

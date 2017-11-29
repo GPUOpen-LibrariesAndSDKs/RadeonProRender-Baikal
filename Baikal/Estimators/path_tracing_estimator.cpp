@@ -216,9 +216,9 @@ namespace Baikal
             // Apply scattering
             EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
-            if ((pass > 0) && (
-                (scene.envmapidx > -1) || (scene.env_reflection_override_idx > -1) ||
-                (scene.env_refraction_override_idx > -1) || (scene.env_transparency_override_idx > -1)))
+            bool has_some_environment = scene.envmapidx > -1;
+
+            if ((pass > 0) && has_some_environment)
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
             }
@@ -255,7 +255,7 @@ namespace Baikal
                         m_render_data->pixelindices[1],
                         use_output_indices ? m_render_data->output_indices : m_render_data->iota,
                         num_estimates, output);
-                else if ((scene.envmapidx > -1) || (scene.env_background_override_idx > -1))
+                else if (scene.envmapidx > -1)
                     ShadeBackground(scene, 0, num_estimates, output, use_output_indices);
                 else
                     AdvanceIterationCount(0, num_estimates, output, use_output_indices);
@@ -453,8 +453,6 @@ namespace Baikal
         
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
-        int envmap = (scene.env_background_override_idx > -1) ? scene.env_background_override_idx : scene.envmapidx;
-
         // Set kernel parameters
         int argc = 0;
         misskernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
@@ -463,7 +461,7 @@ namespace Baikal
         misskernel.SetArg(argc++, output_indices);
         misskernel.SetArg(argc++, (cl_int)size);
         misskernel.SetArg(argc++, scene.lights);
-        misskernel.SetArg(argc++, envmap);
+        misskernel.SetArg(argc++, scene.envmapidx);
         misskernel.SetArg(argc++, scene.textures);
         misskernel.SetArg(argc++, scene.texturedata);
         misskernel.SetArg(argc++, m_render_data->paths);
@@ -574,9 +572,7 @@ namespace Baikal
         bool use_output_indices
     )
     {
-        bool use_miss_with_override = (scene.env_reflection_override_idx > -1) ||
-            (scene.env_refraction_override_idx > -1) || (scene.env_transparency_override_idx > -1);
-        auto misskernel = (use_miss_with_override) ? GetKernel("ShadeMissWithOverride") : GetKernel("ShadeMiss");
+        auto misskernel = GetKernel("ShadeMiss");
 
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
@@ -590,12 +586,6 @@ namespace Baikal
         misskernel.SetArg(argc++, scene.light_distributions);
         misskernel.SetArg(argc++, scene.num_lights);
         misskernel.SetArg(argc++, scene.envmapidx);
-        if (use_miss_with_override)
-        {
-            misskernel.SetArg(argc++, scene.env_reflection_override_idx);
-            misskernel.SetArg(argc++, scene.env_refraction_override_idx);
-            misskernel.SetArg(argc++, scene.env_transparency_override_idx);
-        }
         misskernel.SetArg(argc++, scene.textures);
         misskernel.SetArg(argc++, scene.texturedata);
         misskernel.SetArg(argc++, m_render_data->paths);

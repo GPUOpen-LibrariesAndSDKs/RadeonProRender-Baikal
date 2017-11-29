@@ -180,9 +180,9 @@ typedef struct
         struct
         {
             int tex;
-            int texdiffuse;
-            float multiplier;
-            int padding1;
+            int tex_reflection;
+            int tex_refraction;
+            int tex_transparency;
         };
 
         // Spot
@@ -199,7 +199,9 @@ typedef struct
     float3 d;
     float3 intensity;
     int type;
-    int padding[3];
+    float multiplier;
+    int tex_background;
+    int padding;
 } Light;
 
 typedef enum
