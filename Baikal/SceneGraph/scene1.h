@@ -66,7 +66,15 @@ namespace Baikal
             kCamera,
             kBackground
         };
-        
+
+        struct EnvironmentOverride
+        {
+            ImageBasedLight::Ptr m_reflection;
+            ImageBasedLight::Ptr m_refraction;
+            ImageBasedLight::Ptr m_transparency;
+            ImageBasedLight::Ptr m_background;
+        };
+      
         // Destructor
         virtual ~Scene1();
 
@@ -111,6 +119,9 @@ namespace Baikal
         // Background image override
         void SetBackgroundImage(Baikal::Texture::Ptr texture);
         Baikal::Texture::Ptr GetBackgroundImage() const;
+
+        void SetEnvironmentOverride(const EnvironmentOverride& env_override);
+        const EnvironmentOverride& GetEnvironmentOverride() const;
         
         // Forbidden stuff
         Scene1(Scene1 const&) = delete;

@@ -199,11 +199,67 @@ bool SceneObject::IsDirty()
 void SceneObject::SetBackgroundImage(MaterialObject* image)
 {
     m_background_image = image;
-    Baikal::Texture::Ptr texture = m_background_image->GetTexture();
-    m_scene->SetBackgroundImage(texture);
+    if (m_background_image && m_background_image->IsTexture())
+        m_scene->SetBackgroundImage(m_background_image->GetTexture());
+    else
+       m_scene->SetBackgroundImage(nullptr);
 }
 
 MaterialObject* SceneObject::GetBackgroundImage() const
 {
     return m_background_image;
+}
+
+void SceneObject::SetEnvironmentOverride(OverrideType overrride, LightObject* light)
+{
+    switch (overrride)
+    {
+    case OverrideType::kBackground:
+        m_environment_override.m_background = light;
+        break;
+    case OverrideType::kReflection:
+        m_environment_override.m_reflection = light;
+        break;
+    case OverrideType::kRefraction:
+        m_environment_override.m_refraction = light;
+        break;
+    case OverrideType::kTransparency:
+        m_environment_override.m_transparency = light;
+        break;
+    }
+
+    m_scene->SetEnvironmentOverride(m_environment_override.ToScene1EnvironmentOverride());
+}
+
+LightObject* SceneObject::GetEnvironmentOverride(OverrideType overrride)
+{
+    switch (overrride)
+    {
+    case OverrideType::kBackground:
+        return m_environment_override.m_background;
+    case OverrideType::kReflection:
+        return m_environment_override.m_reflection;
+    case OverrideType::kRefraction:
+        return m_environment_override.m_refraction;
+    case OverrideType::kTransparency:
+        return m_environment_override.m_transparency;
+    }
+}
+
+Baikal::Scene1::EnvironmentOverride SceneObject::EnvironmentOverride::ToScene1EnvironmentOverride() const
+{
+    Baikal::Scene1::EnvironmentOverride out;
+    out.m_background = m_background ? 
+        std::static_pointer_cast<Baikal::ImageBasedLight>(m_background->GetLight()) : nullptr;
+
+    out.m_reflection = m_reflection ? 
+        std::static_pointer_cast<Baikal::ImageBasedLight>(m_reflection->GetLight()) : nullptr;
+
+    out.m_refraction = m_refraction ? 
+        std::static_pointer_cast<Baikal::ImageBasedLight>(m_refraction->GetLight()) : nullptr;
+
+    out.m_transparency = m_transparency ? 
+        std::static_pointer_cast<Baikal::ImageBasedLight>(m_transparency->GetLight()) : nullptr;
+
+    return out;
 }

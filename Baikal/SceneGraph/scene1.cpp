@@ -21,6 +21,7 @@ namespace Baikal
         LightList m_lights;
         Camera::Ptr m_camera;
         Baikal::Texture::Ptr m_background_texture;
+        EnvironmentOverride m_environment_override;
 
         DirtyFlags m_dirty_flags;
     };
@@ -191,6 +192,30 @@ namespace Baikal
     Baikal::Texture::Ptr Scene1::GetBackgroundImage() const
     {
         return m_impl->m_background_texture;
+    }
+
+    void Scene1::SetEnvironmentOverride(const EnvironmentOverride& env_override)
+    {
+        auto check_and_set_light = [&](ImageBasedLight::Ptr current_light, ImageBasedLight::Ptr new_light)
+        {
+            if (current_light != new_light)
+            {
+                if (current_light)
+                    DetachLight(current_light);
+                if (new_light)
+                    AttachLight(new_light);
+            }
+        };
+
+        check_and_set_light(m_impl->m_environment_override.m_background, env_override.m_background);
+        check_and_set_light(m_impl->m_environment_override.m_reflection, env_override.m_reflection);
+        check_and_set_light(m_impl->m_environment_override.m_refraction, env_override.m_refraction);
+        check_and_set_light(m_impl->m_environment_override.m_transparency, env_override.m_transparency);
+        m_impl->m_environment_override = env_override;
+    }
+    const Scene1::EnvironmentOverride& Scene1::GetEnvironmentOverride() const
+    {
+        return m_impl->m_environment_override;
     }
 
     namespace {

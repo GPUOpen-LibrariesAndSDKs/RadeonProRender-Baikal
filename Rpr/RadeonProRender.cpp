@@ -1902,27 +1902,89 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
     return RPR_SUCCESS;
 }
 
-rpr_int rprSceneGetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light * out_light)
+rpr_int rprSceneGetEnvironmentOverride(rpr_scene in_scene, rpr_environment_override overrride, rpr_light * out_light)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    static const std::map<rpr_environment_override, SceneObject::OverrideType> override_type_conversion =
+    {
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, SceneObject::OverrideType::kBackground },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, SceneObject::OverrideType::kReflection },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, SceneObject::OverrideType::kRefraction },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, SceneObject::OverrideType::kTransparency }
+    };
+
+    auto overryde_type = override_type_conversion.find(overrride);
+    if (overryde_type == override_type_conversion.end())
+        return RPR_ERROR_INVALID_PARAMETER;
+
+    try
+    {
+        *out_light = scene->GetEnvironmentOverride(overryde_type->second);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneSetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light light)
+rpr_int rprSceneSetEnvironmentOverride(rpr_scene in_scene, rpr_environment_override overrride, rpr_light in_light)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    LightObject* light = WrapObject::Cast<LightObject>(in_light);
+
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    static const std::map<rpr_environment_override, SceneObject::OverrideType> override_type_conversion =
+    {
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, SceneObject::OverrideType::kBackground },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, SceneObject::OverrideType::kReflection },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, SceneObject::OverrideType::kRefraction },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, SceneObject::OverrideType::kTransparency }
+    };
+
+    auto override_type = override_type_conversion.find(overrride);
+    if (override_type  == override_type_conversion.end())
+        return RPR_ERROR_INVALID_PARAMETER;
+
+    try
+    {
+        if ((overrride == RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND) && light)
+            rprSceneSetBackgroundImage(scene, nullptr);
+
+        scene->SetEnvironmentOverride(override_type->second, light);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
 rpr_int rprSceneSetBackgroundImage(rpr_scene in_scene, rpr_image in_image)
 {
     MaterialObject* img = WrapObject::Cast<MaterialObject>(in_image);
     SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
-    if (!scene || !img || !img->IsImg())
+    if (!scene)
     {
         return RPR_ERROR_INVALID_PARAMETER;
     }
 
     try
     {
+        if (img)
+            rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, nullptr);
         scene->SetBackgroundImage(img);
     }
     catch (Exception& e)

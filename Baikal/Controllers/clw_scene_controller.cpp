@@ -1360,6 +1360,8 @@ namespace Baikal
     {
         std::size_t num_lights_written = 0;
         
+        auto env_override = scene.GetEnvironmentOverride();
+
         auto num_lights = scene.GetNumLights();
         auto distribution_buffer_size = (1 + 1 + num_lights + num_lights);
 
@@ -1377,6 +1379,10 @@ namespace Baikal
 
         // Disable IBL by default
         out.envmapidx = -1;
+        out.env_background_override_idx = -1;
+        out.env_reflection_override_idx = -1;
+        out.env_refraction_override_idx = -1;
+        out.env_transparency_override_idx = -1;
 
         // Allocate intermediate storage for lights power distribution
         std::vector<float> light_power(num_lights);
@@ -1394,7 +1400,16 @@ namespace Baikal
                 auto ibl = std::dynamic_pointer_cast<ImageBasedLight>(light_iter->ItemAs<Light>());
                 if (ibl)
                 {
-                    out.envmapidx = static_cast<int>(num_lights_written);
+                    if (ibl == env_override.m_background)
+                        out.env_background_override_idx = static_cast<int>(num_lights_written);
+                    else if(ibl == env_override.m_reflection)
+                        out.env_reflection_override_idx = static_cast<int>(num_lights_written);
+                    else if (ibl == env_override.m_refraction)
+                        out.env_refraction_override_idx = static_cast<int>(num_lights_written);
+                    else if (ibl == env_override.m_transparency)
+                        out.env_transparency_override_idx = static_cast<int>(num_lights_written);
+                    else 
+                        out.envmapidx = static_cast<int>(num_lights_written);
                 }
 
                 ++num_lights_written;

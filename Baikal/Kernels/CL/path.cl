@@ -38,7 +38,10 @@ typedef enum _PathFlags
     kNone = 0x0,
     kKilled = 0x1,
     kScattered = 0x2,
-    kSpecularBounce = 0x4
+    kSpecularBounce = 0x4,
+    kRefraction = 0x8,
+    kTransparency = 0x10,
+    kReflectionn = 0x20
 } PathFlags;
 
 bool Path_IsScattered(__global Path const* path)
@@ -113,6 +116,48 @@ void Path_AddContribution(__global Path* path, __global float3* output, int idx,
     output[idx] += Path_GetThroughput(path) * val;
 }
 
+void Path_SetRefractionFlag(__global Path* path)
+{
+    path->flags |= kRefraction;
+}
 
+void Path_ClearRefractionFlag(__global Path* path)
+{
+    path->flags &= ~kRefraction;
+}
 
+bool Path_IsRefraction(__global Path const* path)
+{
+    return path->flags & kRefraction;
+}
+
+void Path_SetTransparencyFlag(__global Path* path)
+{
+    path->flags |= kTransparency;
+}
+
+void Path_ClearTransparencyFlag(__global Path* path)
+{
+    path->flags &= ~kTransparency;
+}
+
+bool Path_IsTransparency(__global Path const* path)
+{
+    return path->flags & kTransparency;
+}
+
+void Path_SetReflectionFlag(__global Path* path)
+{
+    path->flags |= kReflectionn;
+}
+
+void Path_ClearReflectionFlag(__global Path* path)
+{
+    path->flags &= ~kReflectionn;
+}
+
+bool Path_IsReflection(__global Path const* path)
+{
+    return path->flags & kReflectionn;
+}
 #endif
