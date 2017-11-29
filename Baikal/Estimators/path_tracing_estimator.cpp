@@ -575,7 +575,7 @@ namespace Baikal
     )
     {
         bool use_miss_with_override = (scene.env_reflection_override_idx > -1) ||
-            (scene.env_refraction_override_idx > -1) || (scene.env_transparency_override_idx);
+            (scene.env_refraction_override_idx > -1) || (scene.env_transparency_override_idx > -1);
         auto misskernel = (use_miss_with_override) ? GetKernel("ShadeMissWithOverride") : GetKernel("ShadeMiss");
 
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
