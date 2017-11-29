@@ -1421,8 +1421,6 @@ namespace Baikal
             }
         }
 
-
-
         m_context.UnmapBuffer(0, out.lights, lights);
 
         // Create distribution over light sources based on their power

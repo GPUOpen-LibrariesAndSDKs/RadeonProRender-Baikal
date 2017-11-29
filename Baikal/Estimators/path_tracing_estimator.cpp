@@ -216,7 +216,7 @@ namespace Baikal
             // Apply scattering
             EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
-            if (pass > 0 && (
+            if ((pass > 0) && (
                 (scene.envmapidx > -1) || (scene.env_reflection_override_idx > -1) ||
                 (scene.env_refraction_override_idx > -1) || (scene.env_transparency_override_idx > -1)))
             {

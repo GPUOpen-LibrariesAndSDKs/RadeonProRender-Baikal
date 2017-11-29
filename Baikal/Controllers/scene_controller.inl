@@ -368,7 +368,7 @@ namespace Baikal
             }
 
             // If background image need an update, do it.
-            if (((scene->GetDirtyFlags() & Scene1::kBackground) == Scene1::kBackground)) 
+            if ((scene->GetDirtyFlags() & Scene1::kBackground) == Scene1::kBackground) 
             {
                 UpdateSceneAttributes(*scene, m_texture_collector, out);
             }
