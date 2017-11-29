@@ -98,6 +98,12 @@ float3 EnvironmentLight_GetLe(// Light
 
     int tex = EnvironmentLight_GetTexture(light, surface_interaction_flags);
 
+
+    if (tex == -1)
+    {
+        return 0.f;
+    }
+
     return light->multiplier * Texture_SampleEnvMap(normalize(*wo), TEXTURE_ARGS_IDX(tex));
 }
 
@@ -129,6 +135,12 @@ float3 EnvironmentLight_Sample(// Light
     *pdf = 1.f / (2.f * PI);
 
     int tex = EnvironmentLight_GetTexture(light, surface_interaction_flags);
+
+    if (tex == -1)
+    {
+        *pdf = 0.f;
+        return 0.f;
+    }
 
     // Sample envmap
     return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(tex));

@@ -553,7 +553,7 @@ KERNEL void ShadeBackgroundEnvMap(
     GLOBAL Path const* restrict paths,
     GLOBAL Volume const* restrict volumes,
     // Output values
-    GLOBAL float4* restrict output   
+    GLOBAL float4* restrict output
 )
 {
     int global_id = get_global_id(0);
@@ -572,16 +572,20 @@ KERNEL void ShadeBackgroundEnvMap(
             int volume_idx = paths[pixel_idx].volume;
 
             Light light = lights[env_light_idx];
+
             int tex = EnvironmentLight_GetBackgroundTexture(&light);
 
-            if (volume_idx == -1)
-                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
-            else
+            if (tex != -1)
             {
-                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) *
-                    Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                if (volume_idx == -1)
+                    v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                else
+                {
+                    v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) *
+                        Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
 
-                v.xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                    v.xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                }
             }
         }
 
