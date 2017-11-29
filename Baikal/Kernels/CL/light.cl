@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
+#include <../Baikal/Kernels/CL/path.cl>
 
 
 INLINE
@@ -53,6 +54,27 @@ bool IntersectTriangle(ray const* r, float3 v1, float3 v2, float3 v3, float* a, 
     }
 }
 
+INLINE int EnvironmentLight_GetTexture(Light const* light, int path_flags)
+{
+    int tex = light->tex;
+
+    if ((path_flags & kReflectionn) && light->tex_reflection != -1)
+        tex = light->tex_reflection;
+
+    if ((path_flags & kRefraction) && light->tex_refraction != -1)
+        tex = light->tex_refraction;
+
+    if ((path_flags & kTransparency) && light->tex_transparency != -1)
+        tex = light->tex_transparency;
+
+    return tex;
+}
+
+INLINE int EnvironmentLight_GetBackgroundTexture(Light const* light)
+{
+    return light->tex_background == -1 ? light->tex : light->tex_background;
+}
+
 /*
  Environment light
  */
@@ -63,6 +85,8 @@ float3 EnvironmentLight_GetLe(// Light
                               Scene const* scene,
                               // Geometry
                               DifferentialGeometry const* dg,
+                              // Path flags
+                              int path_flags,
                               // Direction to light source
                               float3* wo,
                               // Textures
@@ -71,8 +95,10 @@ float3 EnvironmentLight_GetLe(// Light
 {
     // Sample envmap
     *wo *= 100000.f;
-    //
-    return light->multiplier * Texture_SampleEnvMap(normalize(*wo), TEXTURE_ARGS_IDX(light->tex));
+
+    int tex = EnvironmentLight_GetTexture(light, path_flags);
+
+    return light->multiplier * Texture_SampleEnvMap(normalize(*wo), TEXTURE_ARGS_IDX(tex));
 }
 
 /// Sample direction to the light
@@ -86,6 +112,8 @@ float3 EnvironmentLight_Sample(// Light
                                TEXTURE_ARG_LIST,
                                // Sample
                                float2 sample,
+                               // Path flags
+                               int path_flags,
                                // Direction to light source
                                float3* wo,
                                // PDF
@@ -100,8 +128,10 @@ float3 EnvironmentLight_Sample(// Light
     // Envmap PDF
     *pdf = 1.f / (2.f * PI);
 
+    int tex = EnvironmentLight_GetTexture(light, path_flags);
+
     // Sample envmap
-    return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(light->tex));
+    return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(tex));
 }
 
 /// Get PDF for a given direction
@@ -112,6 +142,8 @@ float EnvironmentLight_GetPdf(
                               Scene const* scene,
                               // Geometry
                               DifferentialGeometry const* dg,
+                              // Path flags
+                              int path_flags,
                               // Direction to light source
                               float3 wo,
                               // Textures
@@ -536,6 +568,8 @@ float3 Light_GetLe(// Light index
                    Scene const* scene,
                    // Geometry
                    DifferentialGeometry const* dg,
+                    // Path flags
+                    int path_flags,
                    // Direction to light source
                    float3* wo,
                    // Textures
@@ -547,7 +581,7 @@ float3 Light_GetLe(// Light index
     switch(light.type)
     {
         case kIbl:
-            return EnvironmentLight_GetLe(&light, scene, dg, wo, TEXTURE_ARGS);
+            return EnvironmentLight_GetLe(&light, scene, dg, path_flags, wo, TEXTURE_ARGS);
         case kArea:
             return AreaLight_GetLe(&light, scene, dg, wo, TEXTURE_ARGS);
         case kDirectional:
@@ -572,6 +606,8 @@ float3 Light_Sample(// Light index
                     TEXTURE_ARG_LIST,
                     // Sample
                     float2 sample,
+                    // Path flags
+                    int path_flags,
                     // Direction to light source
                     float3* wo,
                     // PDF
@@ -582,7 +618,7 @@ float3 Light_Sample(// Light index
     switch(light.type)
     {
         case kIbl:
-            return EnvironmentLight_Sample(&light, scene, dg, TEXTURE_ARGS, sample, wo, pdf);
+            return EnvironmentLight_Sample(&light, scene, dg, TEXTURE_ARGS, sample, path_flags, wo, pdf);
         case kArea:
             return AreaLight_Sample(&light, scene, dg, TEXTURE_ARGS, sample, wo, pdf);
         case kDirectional:
@@ -604,6 +640,8 @@ float Light_GetPdf(// Light index
                    Scene const* scene,
                    // Geometry
                    DifferentialGeometry const* dg,
+                    // Path flags
+                    int path_flags,
                    // Direction to light source
                    float3 wo,
                    // Textures
@@ -615,7 +653,7 @@ float Light_GetPdf(// Light index
     switch(light.type)
     {
         case kIbl:
-            return EnvironmentLight_GetPdf(&light, scene, dg, wo, TEXTURE_ARGS);
+            return EnvironmentLight_GetPdf(&light, scene, dg, path_flags, wo, TEXTURE_ARGS);
         case kArea:
             return AreaLight_GetPdf(&light, scene, dg, wo, TEXTURE_ARGS);
         case kDirectional:

@@ -82,6 +82,10 @@ namespace Baikal
 
     ImageBasedLight::ImageBasedLight()
         : m_texture(nullptr)
+        , m_reflection_texture(nullptr)
+        , m_refraction_texture(nullptr)
+        , m_transparency_texture(nullptr)
+        , m_background_texture(nullptr)
         , m_multiplier(1.f)
     {
     }
@@ -97,6 +101,51 @@ namespace Baikal
         SetDirty(true);
     }
 
+
+    void ImageBasedLight::SetReflectionTexture(Texture::Ptr texture)
+    {
+        m_reflection_texture = texture;
+        SetDirty(true);
+    }
+
+    Texture::Ptr ImageBasedLight::GetReflectionTexture() const
+    {
+        return m_reflection_texture;
+    }
+
+    void ImageBasedLight::SetRefractionTexture(Texture::Ptr texture)
+    {
+        m_refraction_texture = texture;
+        SetDirty(true);
+    }
+
+    Texture::Ptr ImageBasedLight::GetRefractionTexture() const
+    {
+        return m_refraction_texture;
+    }
+
+    void ImageBasedLight::SetTransparencyTexture(Texture::Ptr texture)
+    {
+        m_transparency_texture = texture;
+        SetDirty(true);
+    }
+
+    Texture::Ptr ImageBasedLight::GetTransparencyTexture() const
+    {
+        return m_transparency_texture;
+    }
+
+    void ImageBasedLight::SetBackgroundTexture(Texture::Ptr texture)
+    {
+        m_background_texture = texture;
+        SetDirty(true);
+    }
+
+    Texture::Ptr ImageBasedLight::GetBackgroundTexture() const
+    {
+        return m_background_texture;
+    }
+
     std::unique_ptr<Iterator> ImageBasedLight::CreateTextureIterator() const
     {
         std::set<Texture::Ptr> result;
@@ -104,6 +153,21 @@ namespace Baikal
         if (m_texture)
         {
             result.insert(m_texture);
+        }
+
+        if (m_reflection_texture)
+        {
+            result.insert(m_reflection_texture);
+        }
+
+        if (m_refraction_texture)
+        {
+            result.insert(m_refraction_texture);
+        }
+
+        if (m_transparency_texture)
+        {
+            result.insert(m_transparency_texture);
         }
 
         return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(result));
@@ -130,8 +194,34 @@ namespace Baikal
     RadeonRays::float3 ImageBasedLight::GetPower(Scene1 const& scene) const
     {
         auto scene_radius = scene.GetRadius();
-        auto avg = m_texture->ComputeAverageValue();
-        return PI * avg * scene_radius * scene_radius;
+        auto avg = RadeonRays::float3();
+        auto cnt = 0u;
+        if (m_texture)
+        {
+            avg += m_texture->ComputeAverageValue();
+            ++cnt;
+        }
+
+        if (m_reflection_texture)
+        {
+            avg += m_reflection_texture->ComputeAverageValue();
+            ++cnt;
+        }
+
+        if (m_refraction_texture)
+        {
+            avg += m_refraction_texture->ComputeAverageValue();
+            ++cnt;
+        }
+
+        if (m_transparency_texture)
+        {
+            avg += m_transparency_texture->ComputeAverageValue();
+            ++cnt;
+        }
+
+        // We do not count background texture here since it is only for missing primary rays
+        return PI * avg * (1.f / cnt) * scene_radius * scene_radius;
     }
 
     RadeonRays::float3 AreaLight::GetPower(Scene1 const& scene) const

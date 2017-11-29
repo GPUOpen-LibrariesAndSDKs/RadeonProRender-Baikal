@@ -43,7 +43,6 @@ enum BxdfFlags
     kAll = kReflection | kTransmission | kDiffuse | kSpecular | kGlossy
 };
 
-
 /// Schlick's approximation of Fresnel equtions
 float SchlickFresnel(float eta, float ndotw)
 {

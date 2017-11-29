@@ -177,27 +177,43 @@ namespace Baikal
     public:
         using Ptr = std::shared_ptr<ImageBasedLight>;
         static Ptr Create();
-        
+
         // Get and set illuminant texture
         void SetTexture(Texture::Ptr texture);
         Texture::Ptr GetTexture() const;
-        
+
+        void SetReflectionTexture(Texture::Ptr texture);
+        Texture::Ptr GetReflectionTexture() const;
+
+        void SetRefractionTexture(Texture::Ptr texture);
+        Texture::Ptr GetRefractionTexture() const;
+
+        void SetTransparencyTexture(Texture::Ptr texture);
+        Texture::Ptr GetTransparencyTexture() const;
+
+        void SetBackgroundTexture(Texture::Ptr texture);
+        Texture::Ptr GetBackgroundTexture() const;
+
         // Get and set multiplier.
         // Multiplier is used to adjust emissive power.
         float GetMultiplier() const;
         void SetMultiplier(float m);
-        
+
         // Iterator for all the textures used by the light
         std::unique_ptr<Iterator> CreateTextureIterator() const override;
         
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
-        
+
     protected:
         ImageBasedLight();
-        
+
     private:
         // Illuminant texture
         Texture::Ptr m_texture;
+        Texture::Ptr m_reflection_texture;
+        Texture::Ptr m_refraction_texture;
+        Texture::Ptr m_transparency_texture;
+        Texture::Ptr m_background_texture;
         // Emissive multiplier
         float m_multiplier;
     };
