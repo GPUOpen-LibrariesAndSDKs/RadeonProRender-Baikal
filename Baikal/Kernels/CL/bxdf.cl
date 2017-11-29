@@ -1203,7 +1203,7 @@ bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealReflect;
+    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann;;
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)

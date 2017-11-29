@@ -170,6 +170,11 @@ namespace Baikal
             result.insert(m_transparency_texture);
         }
 
+        if (m_background_texture)
+        {
+            result.insert(m_background_texture);
+        }
+
         return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(result));
     }
 

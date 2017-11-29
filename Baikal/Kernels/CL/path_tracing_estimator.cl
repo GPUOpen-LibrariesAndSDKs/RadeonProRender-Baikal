@@ -439,7 +439,7 @@ KERNEL void ShadeSurface(
         float bxdf_weight = 1.f;
         float light_weight = 1.f;
 
-        int light_idx = Scene_SampleLight(&scene, Sampler_Sample1D(&sampler, SAMPLER_ARGS), &selection_pdf);
+        int light_idx = Scene_SampleLight(&scene, Sampler_Sample1D(&sampler, SAMPLER_ARGS), &selection_pdf); 
 
         float3 throughput = Path_GetThroughput(path);
 
@@ -747,7 +747,7 @@ KERNEL void ShadeMiss(
     // Ray batch
     GLOBAL ray const* restrict rays,
     // Intersection data
-    GLOBAL Intersection const* restrict isects, 
+    GLOBAL Intersection const* restrict isects,  
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
     // Output indices
@@ -793,7 +793,11 @@ KERNEL void ShadeMiss(
             float4 v = 0.f;
 
             int tex = EnvironmentLight_GetTexture(&light, surface_interaction_flags);
-            v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
+            if (tex != -1)
+            {
+                v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
+            }
+
             ADD_FLOAT4(&output[output_index], v);
         }
     }
