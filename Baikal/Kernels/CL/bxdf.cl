@@ -38,8 +38,13 @@ enum BxdfFlags
     kDiffuse = (1 << 2),
     kSpecular = (1 << 3),
     kGlossy = (1 << 4),
+    kTransparency = (1 << 5),
     kAllReflection = kReflection | kDiffuse | kSpecular | kGlossy,
+    kGlossyReflection = kReflection | kSpecular | kGlossy,
+    kSpecularReflection = kReflection | kSpecular,
     kAllTransmission = kTransmission | kDiffuse | kSpecular | kGlossy,
+    kGlossyTransmission = kTransmission | kSpecular | kGlossy,
+    kSpecularTransmission = kTransmission | kSpecular,
     kAll = kReflection | kTransmission | kDiffuse | kSpecular | kGlossy
 };
 

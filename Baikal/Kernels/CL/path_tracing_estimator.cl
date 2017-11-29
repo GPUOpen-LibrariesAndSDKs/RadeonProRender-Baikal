@@ -52,7 +52,7 @@ void InitPathData(
         GLOBAL Path* my_path = paths + global_id;
         dst_index[global_id] = src_index[global_id];
 
-        // Initalize path data
+        // Initalize path data 
         my_path->throughput = make_float3(1.f, 1.f, 1.f);
         my_path->volume = INVALID_IDX;
         my_path->flags = 0;
@@ -188,7 +188,8 @@ KERNEL void ShadeVolume(
         // since EvaluateVolume has put it there
         dg.p = o + wi * Intersection_GetDistance(isects + hit_idx);
         // Get light sample intencity
-        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), path->flags, &wo, &pdf);
+        int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
+        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &wo, &pdf);
 
         // Generate shadow ray
         float shadow_ray_length = length(wo);
@@ -241,45 +242,6 @@ KERNEL void ShadeVolume(
     }
 }
 
-
-INLINE void Path_SetFlags(DifferentialGeometry* diffgeo, GLOBAL Path* restrict path)
-{
-    if (Bxdf_IsSingular(diffgeo))
-    {
-        Path_SetSpecularFlag(path);
-    }
-    else
-    {
-        Path_ClearSpecularFlag(path);
-    }
-
-    if (Bxdf_IsRefraction(diffgeo))
-    {
-        Path_SetRefractionFlag(path);
-    }
-    else
-    {
-        Path_ClearRefractionFlag(path);
-    }
-
-    if (Bxdf_IsReflection(diffgeo))
-    {
-        Path_SetReflectionFlag(path);
-    }
-    else
-    {
-        Path_ClearReflectionFlag(path);
-    }
-
-    if (Bxdf_IsTransparency(diffgeo))
-    {
-        Path_SetTransparencyFlag(path);
-    }
-    else
-    {
-        Path_ClearTransparencyFlag(path);
-    }
-}
 
 // Handle ray-surface interaction possibly generating path continuation. 
 // This is only applied to non-scattered paths.
@@ -488,7 +450,8 @@ KERNEL void ShadeSurface(
         if (light_idx > -1) 
         {
             // Sample light
-            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), path->flags, &lightwo, &light_pdf);
+            int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
+            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &lightwo, &light_pdf);
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
 
@@ -816,15 +779,16 @@ KERNEL void ShadeMiss(
             Light light = lights[env_light_idx];
 
             // Apply MIS
+            int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
             float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
-            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, path->flags, rays[global_id].d.xyz, TEXTURE_ARGS);
+            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, surface_interaction_flags, rays[global_id].d.xyz, TEXTURE_ARGS);
             float2 extra = Ray_GetExtra(&rays[global_id]);
             float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
 
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;
 
-            int tex = EnvironmentLight_GetTexture(&light, path->flags);
+            int tex = EnvironmentLight_GetTexture(&light, surface_interaction_flags);
             v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
             ADD_FLOAT4(&output[output_index], v);
         }
