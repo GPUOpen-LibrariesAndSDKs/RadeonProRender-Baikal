@@ -3968,7 +3968,7 @@ void EnvironmentOverrideTest()
 
 int main(int argc, char* argv[])
 {
-    /*MeshCreationTest();
+    MeshCreationTest();
     SimpleRenderTest();
     ComplexRenderTest();
     EnvLightClearTest();
@@ -3988,8 +3988,7 @@ int main(int argc, char* argv[])
     UpdateMaterial();
     ArithmeticMul();
     OrthoRenderTest();
-    BackgroundImageTest();*/
-
+    BackgroundImageTest();
     EnvironmentOverrideTest();
 
     return 0;
