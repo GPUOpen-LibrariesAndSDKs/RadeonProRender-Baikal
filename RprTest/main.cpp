@@ -3760,11 +3760,8 @@ void EnvironmentOverrideTest()
     status = rprMaterialNodeSetInputF(refractive, "ior", 2.0f, 2.0f, 2.0f, 1.f);
     assert(status == RPR_SUCCESS);
 
-    rpr_material_node transparent = NULL; status = rprMaterialSystemCreateNode(matsys, /*RPR_MATERIAL_NODE_TRANSPARENT*/
-        RPR_MATERIAL_NODE_PASSTHROUGH, &transparent);
+    rpr_material_node transparent = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_PASSTHROUGH, &transparent);
     assert(status == RPR_SUCCESS);
-/*    status = rprMaterialNodeSetInputF(transparent, "color", 1.0f, 1.0f, 1.0f, 1.f);
-    assert(status == RPR_SUCCESS);*/
 
     //sphere
     rpr_shape mesh_reflective = CreateSphere(context, 64, 32, 2.f, float3());
@@ -3810,8 +3807,6 @@ void EnvironmentOverrideTest()
     rpr_image bgImage = NULL;
     status = rprContextCreateImageFromFile(context, "../Resources/Textures/test_albedo1.jpg", &bgImage);
     assert(status == RPR_SUCCESS);
-    /*status = rprSceneSetBackgroundImage(scene, bgImage);
-    assert(status == RPR_SUCCESS);*/
 
     //hdr overrides
     rpr_image hdr_reflection, hdr_refraction, hdr_transparency, hdr_background;
@@ -3892,6 +3887,53 @@ void EnvironmentOverrideTest()
 
     status = rprFrameBufferSaveToFile(frame_buffer, "Output/EnvironmentOverrideTest_pass0.jpg");
     assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, nullptr);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, nullptr);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetBackgroundImage(scene, bgImage);
+    assert(status == RPR_SUCCESS);
+
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/EnvironmentOverrideTest_pass1.jpg");
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, light_background);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, light_reflection);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, nullptr);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, nullptr);
+    assert(status == RPR_SUCCESS);
+
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/EnvironmentOverrideTest_pass2.jpg");
+    assert(status == RPR_SUCCESS);
+
+
 
     rpr_render_statistics rs;
     status = rprContextGetInfo(context, RPR_CONTEXT_RENDER_STATISTICS, sizeof(rpr_render_statistics), &rs, NULL);

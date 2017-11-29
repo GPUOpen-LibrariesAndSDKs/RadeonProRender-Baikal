@@ -890,15 +890,15 @@ KERNEL void ShadeMissWithOverride(
         if (isects[global_id].shapeid < 0 && Path_IsAlive(path))
         {
             int used_env_light_idx = env_light_idx;
-            if (Path_IsReflection(path))
+            if (Path_IsReflection(path) && (env_reflection_idx > -1))
             {
                 used_env_light_idx = env_reflection_idx;
             }
-            if (Path_IsRefraction(path))
+            else if (Path_IsRefraction(path) && (env_refraction_idx > -1))
             {
                 used_env_light_idx = env_refraction_idx;
             }
-            if (Path_IsTransparency(path))
+            else if (Path_IsTransparency(path) && (env_transparency_idx > -1))
             {
                 used_env_light_idx = env_transparency_idx;
             }

@@ -1379,6 +1379,10 @@ namespace Baikal
 
         // Disable IBL by default
         out.envmapidx = -1;
+        out.env_background_override_idx = -1;
+        out.env_reflection_override_idx = -1;
+        out.env_refraction_override_idx = -1;
+        out.env_transparency_override_idx = -1;
 
         // Allocate intermediate storage for lights power distribution
         std::vector<float> light_power(num_lights);

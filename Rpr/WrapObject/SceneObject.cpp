@@ -199,8 +199,10 @@ bool SceneObject::IsDirty()
 void SceneObject::SetBackgroundImage(MaterialObject* image)
 {
     m_background_image = image;
-    Baikal::Texture::Ptr texture = m_background_image->GetTexture();
-    m_scene->SetBackgroundImage(texture);
+    if (m_background_image && m_background_image->IsTexture())
+        m_scene->SetBackgroundImage(m_background_image->GetTexture());
+    else
+       m_scene->SetBackgroundImage(nullptr);
 }
 
 MaterialObject* SceneObject::GetBackgroundImage() const

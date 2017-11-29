@@ -96,17 +96,17 @@ void SingleBxdfMaterialObject::SetInputF(const std::string& input_name, const Ra
         if (val.sqnorm() < 1e-6f)
         {
             auto bxdf_mat = std::dynamic_pointer_cast<SingleBxdf>(m_base_mat);
-            if (type == MaterialObject::Type::kMicrofacet)
+            if ((type == MaterialObject::Type::kMicrofacet) || (type == MaterialObject::Type::kReflection))
                 bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kIdealReflect);
-            else if (type == MaterialObject::Type::kMicrofacetRefraction)
+            else if ((type == MaterialObject::Type::kMicrofacetRefraction) || (type == MaterialObject::Type::kRefraction))
                 bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kIdealRefract);
         }
         else
         {
             auto bxdf_mat = std::dynamic_pointer_cast<SingleBxdf>(m_base_mat);
-            if (type == MaterialObject::Type::kMicrofacet)
+            if ((type == MaterialObject::Type::kMicrofacet) || (type == MaterialObject::Type::kReflection))
                 bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
-            else 
+            else if ((type == MaterialObject::Type::kMicrofacetRefraction) || (type == MaterialObject::Type::kRefraction))
                 bxdf_mat->SetBxdfType(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
         }
     }
