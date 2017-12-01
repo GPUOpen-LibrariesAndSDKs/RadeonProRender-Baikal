@@ -22,6 +22,8 @@ THE SOFTWARE.
 #pragma once
 #include "clw_post_effect.h"
 
+#include "SceneGraph/IO/image_io.h"
+
 #include <limits>
 
 namespace Baikal
@@ -31,7 +33,7 @@ namespace Baikal
 
     \details SVGF implements wavelet filter with edge-stopping function. Edge-stopping function is tuned
     by spatio-temporal variance. Temporal component is presented by sample reconstruction from history frames.
-    Filter performs multiple passes, inserting pow(2, pass_index - 1) holes in 
+    Filter performs multiple passes, inserting pow(2, pass_index - 1) holes in
     kernel on each pass.
     Parameters:
     * color_sensitivity - Higher the sensitivity the more it smoothes out depending on color difference.
@@ -39,6 +41,7 @@ namespace Baikal
     Required AOVs in input set:
     * kColor
     * kAlbedo
+    * kMeshID
     * kWorldShadingNormal
     * kWorldPosition
     */
@@ -52,7 +55,7 @@ namespace Baikal
         void Apply(InputSet const& input_set, Output& output) override;
         void Update(PerspectiveCamera* camera);
 
-    private: 
+    private:
         // Find required output
         ClwOutput* FindOutput(InputSet const& input_set, Renderer::OutputType type);
 
@@ -68,18 +71,24 @@ namespace Baikal
         ClwOutput*          m_colors[m_num_tmp_buffers];
         ClwOutput*          m_positions[m_num_tmp_buffers];
         ClwOutput*          m_normals[m_num_tmp_buffers];
+        ClwOutput*          m_mesh_ids[m_num_tmp_buffers];
         ClwOutput*          m_tmp_buffers[m_num_tmp_buffers];
+        ClwOutput*          m_updated_variance;
         ClwOutput*          m_moments[m_num_tmp_buffers];
-		ClwOutput*			m_depth[m_num_tmp_buffers];
+
+        // MLAA buffers
+        ClwOutput*			m_edge_detection;
+        ClwOutput*			m_blending_weight_calculation;
 
         // Number of wavelet passes
         uint32_t            m_max_wavelet_passes;
-        
+
         matrix              m_view_proj;
         matrix              m_prev_view_proj;
 
         CLWBuffer<float>    m_view_proj_buffer;
         CLWBuffer<float>    m_prev_view_proj_buffer;
+        CLWBuffer<float>    m_area_map_buffer;
 
         uint32_t            m_buffers_width;
         uint32_t            m_buffers_height;
@@ -108,6 +117,41 @@ namespace Baikal
 
         m_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
         m_prev_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
+
+        auto image_io(ImageIo::CreateImageIo());
+
+        // Area map for MLAA weight coefficients
+        Texture::Ptr area_map = image_io->LoadImage("../Resources/Textures/AreaMap33.dds");
+
+        if (area_map == nullptr)
+            throw std::runtime_error("AreaMap33.dds is missing");
+
+        std::vector<float> area_map_values;
+
+        const size_t area_map_buffer_size_in_bytes = area_map->GetSizeInBytes();
+        const size_t pixels_num = area_map->GetSize().x * area_map->GetSize().y;
+
+        area_map_values.reserve(pixels_num);
+
+        const unsigned char* area_map_data = (const unsigned char*)area_map->GetData();
+
+        // Normalize area texture values
+        for (size_t i = 0; i < area_map_buffer_size_in_bytes; i += 4)
+        {
+            float r = static_cast<float>(area_map_data[i]) / 255.0f;
+            float g = static_cast<float>(area_map_data[i + 1]) / 255.0f;
+            float b = static_cast<float>(area_map_data[i + 2]) / 255.0f;
+            float a = static_cast<float>(area_map_data[i + 3]) / 255.0f;
+
+            area_map_values.push_back(r);
+            area_map_values.push_back(g);
+            area_map_values.push_back(b);
+            area_map_values.push_back(a);
+        }
+
+        m_area_map_buffer = context.CreateBuffer<float>(area_map_values.size(), CL_MEM_READ_WRITE);
+
+        context.WriteBuffer(0, m_area_map_buffer, &area_map_values[0], area_map_values.size()).Wait();
     }
 
     inline WaveletDenoiser::~WaveletDenoiser()
@@ -116,7 +160,17 @@ namespace Baikal
         {
             delete m_tmp_buffers[i];
             delete m_colors[i];
+            delete m_positions[i];
+            delete m_normals[i];
+            delete m_mesh_ids[i];
+            delete m_moments[i];
         }
+
+        delete m_updated_variance;
+        delete m_motion_buffer;
+
+        delete m_edge_detection;
+        delete m_blending_weight_calculation;
     }
 
     inline ClwOutput* WaveletDenoiser::FindOutput(InputSet const& input_set, Renderer::OutputType type)
@@ -143,39 +197,49 @@ namespace Baikal
         auto normal = FindOutput(input_set, Renderer::OutputType::kWorldShadingNormal);
         auto position = FindOutput(input_set, Renderer::OutputType::kWorldPosition);
         auto albedo = FindOutput(input_set, Renderer::OutputType::kAlbedo);
+        auto mesh_id = FindOutput(input_set, Renderer::OutputType::kMeshID);
+
         auto out_color = static_cast<ClwOutput*>(&output);
 
         auto color_width = color->width();
         auto color_height = color->height();
-        
+
         // Create ping pong buffers if they still need to be initialized
         if (!m_buffers_initialized)
         {
             for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
             {
                 m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
-                m_colors[buffer_index]      = new ClwOutput(GetContext(), color_width, color_height);
-                m_positions[buffer_index]   = new ClwOutput(GetContext(), color_width, color_height);
-                m_normals[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
-                m_moments[buffer_index]     = new ClwOutput(GetContext(), color_width, color_height);
-                m_depth[buffer_index]       = new ClwOutput(GetContext(), color_width, color_height);
+
+                m_colors[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_positions[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_normals[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_mesh_ids[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
 
                 m_tmp_buffers[buffer_index]->Clear(0.f);
                 m_colors[buffer_index]->Clear(0.f);
                 m_positions[buffer_index]->Clear(0.f);
                 m_normals[buffer_index]->Clear(0.f);
                 m_moments[buffer_index]->Clear(0.f);
-                m_depth[buffer_index]->Clear(0.f);
+                m_mesh_ids[buffer_index]->Clear(0.f);
             }
 
-            m_motion_buffer             = new ClwOutput(GetContext(), color_width, color_height);
-            m_motion_buffer->Clear(0.f);
+            m_motion_buffer = new ClwOutput(GetContext(), color_width, color_height);
+            m_updated_variance = new ClwOutput(GetContext(), color_width, color_height);
+            m_edge_detection = new ClwOutput(GetContext(), color_width, color_height);
+            m_blending_weight_calculation = new ClwOutput(GetContext(), color_width, color_height);
 
-            m_buffers_width             = color_width;
-            m_buffers_height            = color_height;
-            m_buffers_initialized       = true;
+            m_motion_buffer->Clear(0.f);
+            m_updated_variance->Clear(0.f);
+            m_edge_detection->Clear(0.f);
+            m_blending_weight_calculation->Clear(0.f);
+
+            m_buffers_width = color_width;
+            m_buffers_height = color_height;
+            m_buffers_initialized = true;
         }
-        
+
         // Resize AOV if main buffer size has changed
         if (color_width != m_buffers_width || color_height != m_buffers_height)
         {
@@ -201,14 +265,26 @@ namespace Baikal
                 m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
                 m_moments[buffer_index]->Clear(0.f);
 
-                delete m_depth[buffer_index];
-                m_depth[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
-                m_depth[buffer_index]->Clear(0.f);
+                delete m_mesh_ids[buffer_index];
+                m_mesh_ids[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_mesh_ids[buffer_index]->Clear(0.f);
             }
 
             delete m_motion_buffer;
+            delete m_updated_variance;
+            delete m_edge_detection;
+            delete m_blending_weight_calculation;
+
+
             m_motion_buffer = new ClwOutput(GetContext(), color_width, color_height);
+            m_updated_variance = new ClwOutput(GetContext(), color_width, color_height);
+            m_edge_detection = new ClwOutput(GetContext(), color_width, color_height);
+            m_blending_weight_calculation = new ClwOutput(GetContext(), color_width, color_height);
+
             m_motion_buffer->Clear(0.f);
+            m_updated_variance->Clear(0.f);
+            m_edge_detection->Clear(0.f);
+            m_blending_weight_calculation->Clear(0.f);
 
             m_buffers_width = color_width;
             m_buffers_height = color_height;
@@ -224,11 +300,13 @@ namespace Baikal
             copy_buffers_kernel.SetArg(argc++, color->data());
             copy_buffers_kernel.SetArg(argc++, position->data());
             copy_buffers_kernel.SetArg(argc++, normal->data());
+            copy_buffers_kernel.SetArg(argc++, mesh_id->data());
             copy_buffers_kernel.SetArg(argc++, color->width());
             copy_buffers_kernel.SetArg(argc++, color->height());
             copy_buffers_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
             copy_buffers_kernel.SetArg(argc++, m_positions[m_current_buffer_index]->data());
             copy_buffers_kernel.SetArg(argc++, m_normals[m_current_buffer_index]->data());
+            copy_buffers_kernel.SetArg(argc++, m_mesh_ids[m_current_buffer_index]->data());
 
             // Run shading kernel
             {
@@ -252,7 +330,6 @@ namespace Baikal
             generate_motion_kernel.SetArg(argc++, m_view_proj_buffer);
             generate_motion_kernel.SetArg(argc++, m_prev_view_proj_buffer);
             generate_motion_kernel.SetArg(argc++, m_motion_buffer->data());
-			generate_motion_kernel.SetArg(argc++, m_depth[m_current_buffer_index]->data());
 
             // Run shading kernel
             {
@@ -279,6 +356,8 @@ namespace Baikal
             accumulation_kernel.SetArg(argc++, m_motion_buffer->data());
             accumulation_kernel.SetArg(argc++, m_moments[prev_buffer_index]->data());
             accumulation_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_mesh_ids[m_current_buffer_index]->data());
+            accumulation_kernel.SetArg(argc++, m_mesh_ids[prev_buffer_index]->data());
             accumulation_kernel.SetArg(argc++, m_buffers_width);
             accumulation_kernel.SetArg(argc++, m_buffers_height);
 
@@ -299,9 +378,6 @@ namespace Baikal
             // Set kernel parameters
             copy_buffer_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
             copy_buffer_kernel.SetArg(argc++, m_tmp_buffers[0]->data());
-            //copy_buffer_kernel.SetArg(argc++, m_colors[m_current_buffer_index]->data());
-            //copy_buffer_kernel.SetArg(argc++, out_color->data());
-
             copy_buffer_kernel.SetArg(argc++, m_buffers_width);
             copy_buffer_kernel.SetArg(argc++, m_buffers_height);
 
@@ -315,25 +391,28 @@ namespace Baikal
         }
 
         {
-            auto filter_kernel          = GetKernel("WaveletFilter_main");
+            auto filter_kernel = GetKernel("WaveletFilter_main");
             auto update_variance_kernel = GetKernel("UpdateVariance_main");
+
+            Baikal::ClwOutput* current_input = nullptr;
+            Baikal::ClwOutput* current_output = nullptr;
+            Baikal::ClwOutput* current_variance = nullptr;
 
             for (uint32_t pass_index = 0; pass_index < m_max_wavelet_passes; pass_index++)
             {
-                Baikal::ClwOutput* current_input = nullptr;
-                Baikal::ClwOutput* current_output = nullptr;
-                
                 if (pass_index == 0)
                 {
                     // Result of first wavelet pass goes to color buffer for next frame
                     current_input = m_tmp_buffers[pass_index % m_num_tmp_buffers];
-                    current_output = m_colors[m_current_buffer_index];
+                    current_output = m_max_wavelet_passes == 1 ? out_color : m_colors[m_current_buffer_index];
+                    current_variance = m_moments[m_current_buffer_index];
                 }
                 else
                 {
                     // Last pass goes to output buffer
                     current_input = pass_index == 1 ? m_colors[m_current_buffer_index] : m_tmp_buffers[pass_index % m_num_tmp_buffers];
-                    current_output = pass_index < m_max_wavelet_passes - 1 ? m_tmp_buffers[(pass_index + 1) % m_num_tmp_buffers] : out_color;
+                    current_output = m_tmp_buffers[(pass_index + 1) % m_num_tmp_buffers];
+                    current_variance = m_updated_variance;
                 }
 
                 const int step_width = 1 << pass_index;
@@ -344,7 +423,7 @@ namespace Baikal
                 filter_kernel.SetArg(argc++, current_input->data());
                 filter_kernel.SetArg(argc++, m_normals[m_current_buffer_index]->data());
                 filter_kernel.SetArg(argc++, m_positions[m_current_buffer_index]->data());
-                filter_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+                filter_kernel.SetArg(argc++, current_variance->data());
                 filter_kernel.SetArg(argc++, albedo->data());
 
                 filter_kernel.SetArg(argc++, color->width());
@@ -369,7 +448,7 @@ namespace Baikal
                 update_variance_kernel.SetArg(argc++, m_normals[m_current_buffer_index]->data());
                 update_variance_kernel.SetArg(argc++, color->width());
                 update_variance_kernel.SetArg(argc++, color->height());
-                update_variance_kernel.SetArg(argc++, m_moments[m_current_buffer_index]->data());
+                update_variance_kernel.SetArg(argc++, m_updated_variance->data());
 
                 // Run update variance kernel
                 {
@@ -378,6 +457,57 @@ namespace Baikal
 
                     GetContext().Launch2D(0, gs, ls, update_variance_kernel);
                 }
+            }
+
+            int argc = 0;
+
+            auto edge_detection_kernel = GetKernel("EdgeDetectionMLAA");
+            edge_detection_kernel.SetArg(argc++, m_mesh_ids[m_current_buffer_index]->data());
+            edge_detection_kernel.SetArg(argc++, normal->data());
+            edge_detection_kernel.SetArg(argc++, color->width());
+            edge_detection_kernel.SetArg(argc++, color->height());
+            edge_detection_kernel.SetArg(argc++, m_edge_detection->data());
+
+            // Run edge detection kernel
+            {
+                size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                size_t ls[] = { 8, 8 };
+
+                GetContext().Launch2D(0, gs, ls, edge_detection_kernel);
+            }
+
+            argc = 0;
+
+            auto blending_weight_calclulation_kernel = GetKernel("BlendingWeightCalculationMLAA");
+            blending_weight_calclulation_kernel.SetArg(argc++, m_edge_detection->data());
+            blending_weight_calclulation_kernel.SetArg(argc++, m_area_map_buffer);
+            blending_weight_calclulation_kernel.SetArg(argc++, color->width());
+            blending_weight_calclulation_kernel.SetArg(argc++, color->height());
+            blending_weight_calclulation_kernel.SetArg(argc++, m_blending_weight_calculation->data());
+
+            // Run blending weight kernel
+            {
+                size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                size_t ls[] = { 8, 8 };
+
+                GetContext().Launch2D(0, gs, ls, blending_weight_calclulation_kernel);
+            }
+
+            argc = 0;
+
+            auto neighborhood_blending_kernel = GetKernel("NeighborhoodBlendingMLAA");
+            neighborhood_blending_kernel.SetArg(argc++, current_output->data());
+            neighborhood_blending_kernel.SetArg(argc++, m_blending_weight_calculation->data());
+            neighborhood_blending_kernel.SetArg(argc++, color->width());
+            neighborhood_blending_kernel.SetArg(argc++, color->height());
+            neighborhood_blending_kernel.SetArg(argc++, out_color->data());
+
+            // Run neighborhood blending kernel
+            {
+                size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+                size_t ls[] = { 8, 8 };
+
+                GetContext().Launch2D(0, gs, ls, neighborhood_blending_kernel);
             }
         }
     }
@@ -388,13 +518,13 @@ namespace Baikal
 
         const float focal_length = camera->GetFocalLength();
         const float2 sensor_size = camera->GetSensorSize();
-        
-        float2 z_range  = camera->GetDepthRange();
-        
+
+        float2 z_range = camera->GetDepthRange();
+
         // Nan-avoidance in perspective matrix
         z_range.x = std::max(z_range.x, std::numeric_limits<float>::epsilon());
 
-        const float fovy = 2 * atan(sensor_size.y / (2.0f * focal_length));
+        const float fovy = atan(sensor_size.y / (2.0f * focal_length));
 
         const float3 up = camera->GetUpVector();
         const float3 right = -camera->GetRightVector();
@@ -404,12 +534,11 @@ namespace Baikal
         const matrix proj = perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
         const float3 ip = float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
 
-        const matrix view = matrix
-            (   right.x, right.y, right.z, ip.x,
-                up.x, up.y, up.z, ip.y,
-                forward.x, forward.y, forward.z, ip.z,
-                0.0f, 0.0f, 0.0f, 1.0f);
-      
+        const matrix view = matrix(right.x, right.y, right.z, ip.x,
+            up.x, up.y, up.z, ip.y,
+            forward.x, forward.y, forward.z, ip.z,
+            0.0f, 0.0f, 0.0f, 1.0f);
+
         m_view_proj = proj * view;
 
         GetContext().WriteBuffer(0, m_view_proj_buffer, &m_view_proj.m[0][0], 16).Wait();

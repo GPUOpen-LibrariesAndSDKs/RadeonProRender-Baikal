@@ -683,6 +683,10 @@ KERNEL void FillAOVs(
     int gloss_enabled,
     // Specularity map
     GLOBAL float4* restrict aov_gloss,
+	// Mesh_id enabled flag
+    int mesh_id_enabled,
+	// Mesh_id AOV
+    GLOBAL float4* restrict mesh_id,
     // Depth enabled flag
     int depth_enabled,
     // Depth map
@@ -881,7 +885,12 @@ KERNEL void FillAOVs(
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
             }
-
+            
+            if (mesh_id_enabled)
+            {
+                mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
+            }
+            
             if (depth_enabled)
             {
                 float w = aov_depth[idx].w;
