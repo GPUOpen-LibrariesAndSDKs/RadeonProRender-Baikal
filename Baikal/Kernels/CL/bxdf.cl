@@ -38,11 +38,15 @@ enum BxdfFlags
     kDiffuse = (1 << 2),
     kSpecular = (1 << 3),
     kGlossy = (1 << 4),
+    kTransparency = (1 << 5),
     kAllReflection = kReflection | kDiffuse | kSpecular | kGlossy,
+    kGlossyReflection = kReflection | kSpecular | kGlossy,
+    kSpecularReflection = kReflection | kSpecular,
     kAllTransmission = kTransmission | kDiffuse | kSpecular | kGlossy,
+    kGlossyTransmission = kTransmission | kSpecular | kGlossy,
+    kSpecularTransmission = kTransmission | kSpecular,
     kAll = kReflection | kTransmission | kDiffuse | kSpecular | kGlossy
 };
-
 
 /// Schlick's approximation of Fresnel equtions
 float SchlickFresnel(float eta, float ndotw)
@@ -1190,6 +1194,21 @@ bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
     return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
         dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+}
+
+bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
+{
+    return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+}
+
+bool Bxdf_IsReflection(DifferentialGeometry const* dg)
+{
+    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann;;
+}
+
+bool Bxdf_IsTransparency(DifferentialGeometry const* dg)
+{
+    return dg->mat.type == kPassthrough;
 }
 
 #endif // BXDF_CL

@@ -114,25 +114,26 @@ namespace Baikal
     void Application::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
         switch (key)
         {
         case GLFW_KEY_UP:
-            g_is_fwd_pressed = action == GLFW_PRESS ? true : false;
+            g_is_fwd_pressed = press_or_repeat;
             break;
         case GLFW_KEY_DOWN:
-            g_is_back_pressed = action == GLFW_PRESS ? true : false;
+            g_is_back_pressed = press_or_repeat;
             break;
         case GLFW_KEY_LEFT:
-            g_is_left_pressed = action == GLFW_PRESS ? true : false;
+            g_is_left_pressed = press_or_repeat;
             break;
         case GLFW_KEY_RIGHT:
-            g_is_right_pressed = action == GLFW_PRESS ? true : false;
+            g_is_right_pressed = press_or_repeat;
             break;
         case GLFW_KEY_HOME:
-            g_is_home_pressed = action == GLFW_PRESS ? true : false;
+            g_is_home_pressed = press_or_repeat;
             break;
         case GLFW_KEY_END:
-            g_is_end_pressed = action == GLFW_PRESS ? true : false;
+            g_is_end_pressed = press_or_repeat;
             break;
         case GLFW_KEY_F1:
             app->m_settings.gui_visible = action == GLFW_PRESS ? !app->m_settings.gui_visible : app->m_settings.gui_visible;
@@ -461,30 +462,42 @@ namespace Baikal
             ImGui::Text("Number of instances: %d", m_num_instances);
             ImGui::Separator();
             ImGui::SliderInt("GI bounces", &num_bounces, 1, 10);
-            ImGui::SliderFloat("Aperture(mm)", &aperture, 0.0f, 100.0f);
-            ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
-            ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
 
             auto camera = m_cl->GetCamera();
-            if (aperture != m_settings.camera_aperture * 1000.f)
-            {
-                m_settings.camera_aperture = aperture / 1000.f;
-                camera->SetAperture(m_settings.camera_aperture);
-                update = true;
-            }
 
-            if (focus_distance != m_settings.camera_focus_distance)
+            if (m_settings.camera_type == CameraType::kPerspective)
             {
-                m_settings.camera_focus_distance = focus_distance;
-                camera->SetFocusDistance(m_settings.camera_focus_distance);
-                update = true;
-            }
+                auto perspective_camera = std::dynamic_pointer_cast<PerspectiveCamera>(camera);
 
-            if (focal_length != m_settings.camera_focal_length * 1000.f)
-            {
-                m_settings.camera_focal_length = focal_length / 1000.f;
-                camera->SetFocalLength(m_settings.camera_focal_length);
-                update = true;
+                if (!perspective_camera)
+                {
+                    throw std::runtime_error("Application::UpdateGui(...): can not cast to perspective camera");
+                }
+
+                if (aperture != m_settings.camera_aperture * 1000.f)
+                {
+                    m_settings.camera_aperture = aperture / 1000.f;
+                    perspective_camera->SetAperture(m_settings.camera_aperture);
+                    update = true;
+                }
+
+                if (focus_distance != m_settings.camera_focus_distance)
+                {
+                    m_settings.camera_focus_distance = focus_distance;
+                    perspective_camera->SetFocusDistance(m_settings.camera_focus_distance);
+                    update = true;
+                }
+
+                if (focal_length != m_settings.camera_focal_length * 1000.f)
+                {
+                    m_settings.camera_focal_length = focal_length / 1000.f;
+                    perspective_camera->SetFocalLength(m_settings.camera_focal_length);
+                    update = true;
+                }
+
+                ImGui::SliderFloat("Aperture(mm)", &aperture, 0.0f, 100.0f);
+                ImGui::SliderFloat("Focal length(mm)", &focal_length, 5.f, 200.0f);
+                ImGui::SliderFloat("Focus distance(m)", &focus_distance, 0.05f, 20.f);
             }
 
             if (num_bounces != m_settings.num_bounces)
@@ -502,11 +515,17 @@ namespace Baikal
                 update = true;
             }
 
+            RadeonRays::float3 eye, at;
+            eye = camera->GetPosition();
+            at = eye + camera->GetForwardVector();
+
             ImGui::Combo("Output", &output, outputs);
             ImGui::Text(" ");
             ImGui::Text("Number of samples: %d", m_settings.samplecount);
             ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::Text("Renderer performance %.3f Msamples/s", (ImGui::GetIO().Framerate *m_settings.width * m_settings.height) / 1000000.f);
+            ImGui::Text("Eye: x = %.3f y = %.3f z = %.3f", eye.x, eye.y, eye.z);
+            ImGui::Text("At: x = %.3f y = %.3f z = %.3f", at.x, at.y, at.z);
             ImGui::Separator();
 
             if (m_settings.time_benchmark)
@@ -612,7 +631,7 @@ namespace Baikal
 
                 if (mesh)
                 {
-                    m_num_triangles += mesh->GetNumIndices() / 3;
+                    m_num_triangles += (int)(mesh->GetNumIndices() / 3);
                 }
                 else
                 {

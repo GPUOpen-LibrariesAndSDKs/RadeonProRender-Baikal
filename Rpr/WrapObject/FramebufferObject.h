@@ -23,30 +23,40 @@ THE SOFTWARE.
 
 #include "WrapObject.h"
 #include "Output/clwoutput.h"
+#include "Renderers/renderer.h"
+#include "RadeonProRender_GL.h"
 
 //this class represent rpr_context
 class FramebufferObject
     : public WrapObject
 {
 public:
-    FramebufferObject();
+    FramebufferObject(Baikal::Output* out);
+    FramebufferObject(CLWContext context, CLWKernel copy_cernel, rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture);
     virtual ~FramebufferObject();
 
     //output
     void SetOutput(Baikal::Output* out)
     { 
-        delete m_out;
-        m_out = out;
+        delete m_output;
+        m_output = out;
     }
 
-    int GetWidth();
-    int GetHeight();
+    int Width();
+    int Height();
     void GetData(void* out_data);
 
     void Clear();
     void SaveToFile(const char* path);
-
-    Baikal::Output* GetOutput() { return m_out; }
+    
+    //if interop this will copy CL output data to GL texture
+    void UpdateGlTex();
+    Baikal::Output* GetOutput() { return m_output; }
 private:
-    Baikal::Output* m_out;
+    Baikal::Output* m_output;
+    int m_width;
+    int m_height;
+    CLWImage2D m_cl_interop_image;
+    CLWContext m_context;
+    CLWKernel m_copy_cernel;
 };

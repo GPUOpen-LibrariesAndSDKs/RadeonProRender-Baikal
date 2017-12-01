@@ -87,10 +87,10 @@ namespace Baikal
         void SaveFrameBuffer(AppSettings& settings);
         void SaveImage(const std::string& name, int width, int height, const RadeonRays::float3* data);
 
-        Baikal::PerspectiveCamera::Ptr GetCamera() { return m_camera; };
-        Baikal::Scene1::Ptr GetScene() { return m_scene; };
-        CLWDevice GetDevice(int i) { return m_cfgs[m_primary].context.GetDevice(i); };
-        Renderer::OutputType GetOutputType() { return m_output_type; };
+        inline Baikal::Camera::Ptr GetCamera() { return m_camera; };
+        inline Baikal::Scene1::Ptr GetScene() { return m_scene; };
+        inline CLWDevice GetDevice(int i) { return m_cfgs[m_primary].context.GetDevice(i); };
+        inline Renderer::OutputType GetOutputType() { return m_output_type; };
 
         void SetNumBounces(int num_bounces);
         void SetOutputType(Renderer::OutputType type);
@@ -105,7 +105,7 @@ namespace Baikal
         void RenderThread(ControlData& cd);
 
         Baikal::Scene1::Ptr m_scene;
-        Baikal::PerspectiveCamera::Ptr m_camera;
+        Baikal::Camera::Ptr m_camera;
 
         std::vector<ConfigManager::Config> m_cfgs;
         std::vector<OutputData> m_outputs;

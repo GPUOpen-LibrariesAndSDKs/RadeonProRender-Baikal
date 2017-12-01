@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <numeric>
 #include <vector>
 #include <fstream>
 #include <regex>
@@ -15,8 +16,17 @@ namespace Baikal
     class ClwClass
     {
     public:
+        //create from file
         ClwClass(CLWContext context,
             std::string const& cl_file,
+            std::string const& opts = "",
+            std::string const& cache_path = "");
+
+        //create from memory
+        ClwClass(CLWContext context,
+            const char* data,
+            const char* includes[],
+            std::size_t inc_num,
             std::string const& opts = "",
             std::string const& cache_path = "");
 
@@ -84,6 +94,31 @@ namespace Baikal
     , m_cache_path(cache_path)
     {
         auto program = CreateProgram(cl_file, m_default_opts, m_context);
+        m_programs.emplace(std::make_pair(m_default_opts, program));
+    }
+
+    inline ClwClass::ClwClass(CLWContext context,
+        const char* data,
+        const char* includes[],
+        std::size_t inc_num,
+        std::string const& opts,
+        std::string const& cache_path)
+        : m_context(context)
+        , m_cl_file("")
+        , m_default_opts(opts)
+        , m_cache_path(cache_path)
+    {
+        auto options = opts;
+        AddCommonOptions(options);
+
+        std::string src("");
+        //append all includes and data
+        for (int i = 0; i < inc_num; ++i)
+        {
+            src += includes[i];
+        }
+        src += data;
+        auto program = CLWProgram::CreateFromSource(src.data(), src.length(), m_default_opts.c_str(), m_context);
         m_programs.emplace(std::make_pair(m_default_opts, program));
     }
 

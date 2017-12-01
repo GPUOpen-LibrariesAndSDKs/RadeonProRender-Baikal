@@ -27,7 +27,7 @@ THE SOFTWARE.
 #include "WrapObject/CameraObject.h"
 #include "WrapObject/LightObject.h"
 #include "WrapObject/FramebufferObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 #include "WrapObject/Exception.h"
 
 #include "SceneGraph/scene1.h"
@@ -109,7 +109,7 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = (creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP);
+    bool interop = creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
     if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
     {
         try
@@ -126,7 +126,7 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
     else
     {
         result = RPR_ERROR_UNIMPLEMENTED;
-    }
+    }    
 
     if (result != RPR_SUCCESS)
     {
@@ -215,7 +215,7 @@ void ContextObject::Render()
         auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->Render(scene);
     }
-
+    PostRender();
 }
 
 void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_uint ymax)
@@ -230,12 +230,15 @@ void ContextObject::RenderTile(rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_
         auto& scene = c.controller->GetCachedScene(m_current_scene->GetScene());
         c.renderer->RenderTile(scene, origin, size);
     }
+    PostRender();
 }
 
 
 SceneObject* ContextObject::CreateScene()
 {
-    return new SceneObject();
+    auto scene = new SceneObject;
+    m_current_scene = m_current_scene ? m_current_scene : scene;
+    return scene;
 }
 
 MatSysObject* ContextObject::CreateMaterialSystem()
@@ -271,15 +274,15 @@ ShapeObject* ContextObject::CreateShapeInstance(ShapeObject* mesh)
     return mesh->CreateInstance();
 }
 
-MaterialObject* ContextObject::CreateTexture(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data)
+MaterialObject* ContextObject::CreateImage(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data)
 {
-    MaterialObject* result = new MaterialObject(in_format, in_image_desc, in_data);
+    MaterialObject* result = MaterialObject::CreateImage(in_format, in_image_desc, in_data);
     return result;
 }
 
-MaterialObject* ContextObject::CreateTextureFromFile(rpr_char const * in_path)
+MaterialObject* ContextObject::CreateImageFromFile(rpr_char const * in_path)
 {
-    MaterialObject* result = new MaterialObject(in_path);
+    MaterialObject* result = MaterialObject::CreateImage(in_path);
     return result;
 }
 
@@ -299,14 +302,31 @@ FramebufferObject* ContextObject::CreateFrameBuffer(rpr_framebuffer_format const
     //TODO:: implement for several devices
     if (m_cfgs.size() != 1)
     {
-        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: incalid config count.");
+        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
     }
     auto& c = m_cfgs[0];
-    FramebufferObject* result = new FramebufferObject();
     Baikal::Output* out = c.factory->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height).release();
+    FramebufferObject* result = new FramebufferObject(out);
+    return result;
+}
+
+FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture)
+{
+    //TODO:: implement for several devices
+    if (m_cfgs.size() != 1)
+    {
+        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
+    }
+    auto& c = m_cfgs[0];
+    auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(c.renderer.get())->GetCopyKernel();
+    FramebufferObject* result = new FramebufferObject(c.context, copykernel, target, miplevel, texture);
+    int w = result->Width();
+    int h = result->Height();
+    Baikal::Output* out = c.factory->CreateOutput(w, h).release();
     result->SetOutput(out);
     return result;
 }
+
 
 void ContextObject::SetParameter(const std::string& input, float x, float y, float z, float w)
 {
@@ -342,11 +362,20 @@ void ContextObject::PrepareScene()
 {
     m_current_scene->AddEmissive();
 
-    if (m_current_scene->IsDirty())
+    //if (m_current_scene->IsDirty())
     {
         for (auto& c : m_cfgs)
         {
             c.controller->CompileScene(m_current_scene->GetScene());
         }
+    }
+}
+
+void ContextObject::PostRender()
+{
+    // need to copy data from CL to GL for interop framebuffers
+    for (auto fb : m_output_framebuffers)
+    {
+        fb->UpdateGlTex();
     }
 }

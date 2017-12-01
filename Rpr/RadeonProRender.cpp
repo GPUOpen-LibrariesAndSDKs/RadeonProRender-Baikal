@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "WrapObject/CameraObject.h"
 #include "WrapObject/FramebufferObject.h"
 #include "WrapObject/LightObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 #include "WrapObject/MatSysObject.h"
 #include "WrapObject/SceneObject.h"
 #include "WrapObject/ShapeObject.h"
@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include "math/matrix.h"
 #include "math/mathutils.h"
 
-//defines behaviour for unimplemented API part
+//defines behavior for unimplemented API part
 //#define UNIMLEMENTED_FUNCTION return RPR_SUCCESS;
 #define UNIMLEMENTED_FUNCTION return RPR_ERROR_UNIMPLEMENTED;
 
@@ -44,7 +44,7 @@ THE SOFTWARE.
 
 rpr_int rprRegisterPlugin(rpr_char const * path)
 {
-    UNIMLEMENTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprCreateContext(rpr_int api_version, rpr_int * pluginIDs, size_t pluginCount, rpr_creation_flags creation_flags, rpr_context_properties const * props, rpr_char const * cache_path, rpr_context * out_context)
@@ -69,7 +69,7 @@ rpr_int rprCreateContext(rpr_int api_version, rpr_int * pluginIDs, size_t plugin
 
 rpr_int rprContextSetActivePlugin(rpr_context context, rpr_int pluginID)
 {
-    UNIMLEMENTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprContextGetInfo(rpr_context in_context, rpr_context_info in_context_info, size_t in_size, void * out_data, size_t * out_size_ret)
@@ -206,7 +206,7 @@ rpr_int rprContextSetParameter1u(rpr_context in_context, rpr_char const * name, 
     }
 
     //TODO: handle context parameters
-	return RPR_SUCCESS;
+    return RPR_SUCCESS;
 
     if (!strcmp(name, "rendermode"))
     {
@@ -354,7 +354,7 @@ rpr_int rprContextCreateImage(rpr_context in_context, rpr_image_format const in_
     rpr_int result = RPR_SUCCESS;
     try
     {
-        *out_image = context->CreateTexture(in_format, in_image_desc, in_data);
+        *out_image = context->CreateImage(in_format, in_image_desc, in_data);
     }
     catch (Exception& e)
     {
@@ -363,6 +363,12 @@ rpr_int rprContextCreateImage(rpr_context in_context, rpr_image_format const in_
 
     return result;
 }
+
+rpr_int rprContextCreateBuffer(rpr_context context, rpr_buffer_desc const * buffer_desc, void const * data, rpr_buffer * out_buffer)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprContextCreateImageFromFile(rpr_context in_context, rpr_char const * in_path, rpr_image * out_image)
 {
@@ -375,7 +381,7 @@ rpr_int rprContextCreateImageFromFile(rpr_context in_context, rpr_char const * i
     rpr_int result = RPR_SUCCESS;
     try
     {
-        *out_image = context->CreateTextureFromFile(in_path);
+        *out_image = context->CreateImageFromFile(in_path);
     }
     catch (Exception& e)
     {
@@ -472,15 +478,13 @@ rpr_int rprContextCreateMesh(rpr_context in_context,
 }
 
 rpr_int rprContextCreateMeshEx(rpr_context context, 
-                                rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, 
-                                rpr_float const * normals, size_t num_normals, rpr_int normal_stride, 
-                                rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, 
-                                rpr_int numberOfTexCoordLayers, 
-                                rpr_float const ** texcoords, size_t * num_texcoords, rpr_int * texcoord_stride, 
-                                rpr_int const * vertex_indices, rpr_int vidx_stride, 
-                                rpr_int const * normal_indices, rpr_int nidx_stride, 
-                                rpr_int const ** texcoord_indices, rpr_int * tidx_stride, 
-                                rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh)
+                                                    rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, 
+                                                    rpr_float const * normals, size_t num_normals, rpr_int normal_stride, 
+                                                    rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers, 
+                                                    rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride, 
+                                                    rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, 
+                                                    rpr_int const ** texcoord_indices, rpr_int const * tidx_stride, 
+                                                    rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh)
 {
     if (num_perVertexFlags == 0 && numberOfTexCoordLayers == 1)
     {
@@ -495,6 +499,27 @@ rpr_int rprContextCreateMeshEx(rpr_context context,
                                 num_face_vertices, num_faces, out_mesh);
     }
     UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextCreateMeshEx2(rpr_context context,
+    rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride,
+    rpr_float const * normals, size_t num_normals, rpr_int normal_stride,
+    rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers,
+    rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride,
+    rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride,
+    rpr_int const ** texcoord_indices, rpr_int const * tidx_stride,
+    rpr_int const * num_face_vertices, size_t num_faces, 
+    rpr_mesh_info const * mesh_properties, rpr_shape * out_mesh)
+{
+    return rprContextCreateMeshEx(context,
+        vertices, num_vertices, vertex_stride,
+        normals, num_normals, normal_stride,
+        perVertexFlag, num_perVertexFlags, perVertexFlag_stride, numberOfTexCoordLayers,
+        texcoords, num_texcoords, texcoord_stride,
+        vertex_indices, vidx_stride, normal_indices, nidx_stride,
+        texcoord_indices, tidx_stride,
+        num_face_vertices, num_faces,
+        out_mesh);
 }
 
 rpr_int rprContextCreateCamera(rpr_context in_context, rpr_camera * out_camera)
@@ -541,6 +566,30 @@ rpr_int rprContextCreateFrameBuffer(rpr_context in_context, rpr_framebuffer_form
     return RPR_SUCCESS;
 }
 
+rpr_int rprContextCreateFramebufferFromGLTexture2D(rpr_context in_context, rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture, rpr_framebuffer * out_fb)
+{
+    //cast data
+    ContextObject* context = WrapObject::Cast<ContextObject>(in_context);
+    if (!context)
+    {
+        return RPR_ERROR_INVALID_CONTEXT;
+    }
+
+    rpr_int result = RPR_SUCCESS;
+    try
+    {
+        *out_fb = context->CreateFrameBufferFromGLTexture(target, miplevel, texture);
+    }
+    catch (Exception& e)
+    {
+        result = e.m_error;
+    }
+    return result;
+
+    return RPR_SUCCESS;
+}
+
+
 rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, size_t in_size, void * out_data, size_t * out_size_ret)
 {
     CameraObject* cam = WrapObject::Cast<CameraObject>(in_camera);
@@ -580,7 +629,7 @@ rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, s
     case RPR_CAMERA_MODE:
     {
         //TODO: only prespective camera supported now
-        rpr_camera_mode value = RPR_CAMERA_MODE_PERSPECTIVE;
+        rpr_camera_mode value = cam->GetMode();
         size_ret = sizeof(value);
         data.resize(size_ret);
         memcpy(&data[0], &value, size_ret);
@@ -636,14 +685,27 @@ rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, s
         memcpy(&data[0], name.c_str(), size_ret);
         break;
     }
+    case RPR_CAMERA_ORTHO_WIDTH:
+    {
+        rpr_float value = cam->GetOrthoWidth();
+        size_ret = sizeof(value);
+        data.resize(size_ret);
+        memcpy(&data[0], &value, size_ret);
+        break;
+    }
+    case RPR_CAMERA_ORTHO_HEIGHT:
+    {
+        rpr_float value = cam->GetOrthoHeight();
+        size_ret = sizeof(value);
+        data.resize(size_ret);
+        memcpy(&data[0], &value, size_ret);
+        break;
+    }
     case RPR_CAMERA_APERTURE_BLADES:
     case RPR_CAMERA_EXPOSURE:
-    case RPR_CAMERA_ORTHO_WIDTH:
     case RPR_CAMERA_FOCAL_TILT:
     case RPR_CAMERA_IPD:
     case RPR_CAMERA_LENS_SHIFT:
-    case RPR_CAMERA_ORTHO_HEIGHT:
-
         UNSUPPORTED_FUNCTION
         break;
     default:
@@ -692,24 +754,24 @@ rpr_int rprCameraSetFocusDistance(rpr_camera in_camera, rpr_float fdist)
 
 rpr_int rprCameraSetTransform(rpr_camera in_camera, rpr_bool transpose, rpr_float * transform)
 {
-	//cast data
-	CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
-	if (!camera)
-	{
-		return RPR_ERROR_INVALID_PARAMETER;
-	}
+    //cast data
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
 
-	RadeonRays::matrix m;
-	//fill matrix
-	memcpy(m.m, transform, 16 * sizeof(rpr_float));
+    RadeonRays::matrix m;
+    //fill matrix
+    memcpy(m.m, transform, 16 * sizeof(rpr_float));
 
-	if (!transpose)
-	{
-		m = m.transpose();
-	}
+    if (!transpose)
+    {
+        m = m.transpose();
+    }
 
-	camera->SetTransform(m);
-	return RPR_SUCCESS;
+    camera->SetTransform(m);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprCameraSetSensorSize(rpr_camera in_camera, rpr_float in_width, rpr_float in_height)
@@ -784,6 +846,8 @@ rpr_int rprCameraSetMode(rpr_camera in_camera, rpr_camera_mode mode)
     switch (mode)
     {
     case RPR_CAMERA_MODE_PERSPECTIVE:
+    case RPR_CAMERA_MODE_ORTHOGRAPHIC:
+        camera->SetMode(mode);
         break;
     default:
         UNIMLEMENTED_FUNCTION
@@ -792,9 +856,16 @@ rpr_int rprCameraSetMode(rpr_camera in_camera, rpr_camera_mode mode)
     return RPR_SUCCESS;
 }
 
-rpr_int rprCameraSetOrthoWidth(rpr_camera camera, rpr_float width)
+rpr_int rprCameraSetOrthoWidth(rpr_camera in_camera, rpr_float width)
 {
-    UNSUPPORTED_FUNCTION
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    camera->SetOrthoWidth(width);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprCameraSetFocalTilt(rpr_camera camera, rpr_float tilt)
@@ -812,9 +883,33 @@ rpr_int rprCameraSetLensShift(rpr_camera camera, rpr_float shiftx, rpr_float shi
     UNSUPPORTED_FUNCTION
 }
 
-rpr_int rprCameraSetOrthoHeight(rpr_camera camera, rpr_float height)
+rpr_int rprCameraSetTiltCorrection(rpr_camera camera, rpr_float tiltX, rpr_float tiltY)
 {
     UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprCameraSetFarPlane(rpr_camera camera, rpr_float far)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+
+rpr_int rprCameraSetNearPlane(rpr_camera camera, rpr_float near)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprCameraSetOrthoHeight(rpr_camera in_camera, rpr_float height)
+{
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    camera->SetOrthoHeight(height);
+    return RPR_SUCCESS;
+
 }
 
 rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t in_size, void * in_data, size_t * in_size_ret)
@@ -832,7 +927,7 @@ rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t
     case RPR_IMAGE_FORMAT:
     {
         //texture data always stored as 4 component FLOAT32
-        rpr_image_format value = img->GetTextureFormat();
+        rpr_image_format value = img->GetImageFormat();
         size_ret = sizeof(value);
         data.resize(size_ret);
         memcpy(&data[0], &value, size_ret);
@@ -840,7 +935,7 @@ rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t
     }
     case RPR_IMAGE_DESC:
     {
-        rpr_image_desc value = img->GetTextureDesc();
+        rpr_image_desc value = img->GetImageDesc();
         size_ret = sizeof(value);
         data.resize(size_ret);
         memcpy(&data[0], &value, size_ret);
@@ -848,8 +943,8 @@ rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t
     }
     case RPR_IMAGE_DATA:
     {
-        rpr_image_desc desc = img->GetTextureDesc();
-        const char* value = img->GetTextureData();
+        rpr_image_desc desc = img->GetImageDesc();
+        const char* value = img->GetImageData();
         size_ret = desc.image_width * desc.image_height * desc.image_depth;
         data.resize(size_ret);
         memcpy(&data[0], value, size_ret);
@@ -886,6 +981,12 @@ rpr_int rprImageSetWrap(rpr_image image, rpr_image_wrap_type type)
 {
     UNSUPPORTED_FUNCTION
 }
+
+rpr_int rprImageSetOption(rpr_image image, rpr_image_option option)
+{
+    UNSUPPORTED_FUNCTION
+}
+
 
 rpr_int rprShapeSetTransform(rpr_shape in_shape, rpr_bool transpose, rpr_float const * transform)
 {
@@ -934,6 +1035,17 @@ rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint objectGroupID)
     UNSUPPORTED_FUNCTION
 }
 
+rpr_int rprShapeSetDisplacementMaterial(rpr_shape shape, rpr_material_node materialNode)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprShapeSetMaterialFaces(rpr_shape shape, rpr_material_node node, rpr_int* face_indices, size_t num_faces)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+
 rpr_int rprShapeSetDisplacementImage(rpr_shape shape, rpr_image image)
 {
     UNSUPPORTED_FUNCTION
@@ -981,6 +1093,12 @@ rpr_int rprShapeSetAngularMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_
 {
     UNSUPPORTED_FUNCTION
 }
+
+rpr_int rprShapeSetScaleMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_float z)
+{
+    UNSUPPORTED_FUNCTION
+}
+
 
 rpr_int rprShapeSetVisibility(rpr_shape shape, rpr_bool visible)
 {
@@ -1082,7 +1200,12 @@ rpr_int rprShapeGetInfo(rpr_shape in_shape, rpr_shape_info in_info, size_t in_si
     case RPR_SHAPE_SUBDIVISION_BOUNDARYINTEROP:
     case RPR_SHAPE_DISPLACEMENT_SCALE:
     case RPR_SHAPE_OBJECT_GROUP_ID:
-    case RPR_SHAPE_DISPLACEMENT_IMAGE:
+    case RPR_SHAPE_VIDMEM_USAGE:
+    case RPR_SHAPE_VISIBILITY_PRIMARY_ONLY_FLAG:
+    case RPR_SHAPE_VISIBILITY_IN_SPECULAR_FLAG:
+    case RPR_SHAPE_VOLUME_MATERIAL:
+    case RPR_SHAPE_DISPLACEMENT_MATERIAL:
+    case RPR_SHAPE_MATERIALS_PER_FACE:
         UNSUPPORTED_FUNCTION
     default:
         UNIMLEMENTED_FUNCTION
@@ -1417,6 +1540,16 @@ rpr_int rprEnvironmentLightSetIntensityScale(rpr_light in_env_light, rpr_float i
     return RPR_SUCCESS;
 }
 
+rpr_int rprEnvironmentLightAttachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprEnvironmentLightDetachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 rpr_int rprEnvironmentLightAttachPortal(rpr_light env_light, rpr_shape portal)
 {
     UNIMLEMENTED_FUNCTION
@@ -1446,6 +1579,17 @@ rpr_int rprSkyLightSetScale(rpr_light skylight, rpr_float scale)
 {
     UNIMLEMENTED_FUNCTION
 }
+
+rpr_int rprSkyLightAttachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprSkyLightDetachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprSkyLightAttachPortal(rpr_light skylight, rpr_shape portal)
 {
@@ -1622,6 +1766,16 @@ rpr_int rprSceneDetachShape(rpr_scene in_scene, rpr_shape in_shape)
     return RPR_SUCCESS;
 }
 
+rpr_int rprSceneAttachHeteroVolume(rpr_scene scene, rpr_hetero_volume heteroVolume)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprSceneDetachHeteroVolume(rpr_scene scene, rpr_hetero_volume heteroVolume)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 rpr_int rprSceneAttachLight(rpr_scene in_scene, rpr_light in_light)
 {
     //cast
@@ -1656,13 +1810,13 @@ rpr_int rprSceneDetachLight(rpr_scene in_scene, rpr_light in_light)
 
 rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_size, void * out_data, size_t * out_size_ret)
 {
-	//cast
-	SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
-	if (!scene)
-	{
-		return RPR_ERROR_INVALID_PARAMETER;
-	}
-	
+    //cast
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+    
     std::vector<char> data;
     size_t size_ret = 0;
     switch (in_info)
@@ -1715,12 +1869,22 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
         memcpy(&data[0], name.c_str(), size_ret);
         break;
     }
+    case RPR_SCENE_AABB:
+    {
+        RadeonRays::bbox bb = scene->GetBBox();
+        size_ret = 6 * sizeof(float);
+        data.resize(size_ret);
+        memcpy(&data[0], &bb.pmin.x, size_ret/2); // copy pmin
+        memcpy(data.data() + size_ret/2, &bb.pmax.x, size_ret/2); //copy pmax
+
+        break;
+    }
     case RPR_SCENE_BACKGROUND_IMAGE:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY:
     case RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND:
-    case RPR_SCENE_AXIS_ALIGNED_BOUNDING_BOX:
+
         UNSUPPORTED_FUNCTION
     default:
         UNIMLEMENTED_FUNCTION
@@ -1738,24 +1902,118 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
     return RPR_SUCCESS;
 }
 
-rpr_int rprSceneGetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light * out_light)
+rpr_int rprSceneGetEnvironmentOverride(rpr_scene in_scene, rpr_environment_override overrride, rpr_light * out_light)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    static const std::map<rpr_environment_override, SceneObject::OverrideType> override_type_conversion =
+    {
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, SceneObject::OverrideType::kBackground },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, SceneObject::OverrideType::kReflection },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, SceneObject::OverrideType::kRefraction },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, SceneObject::OverrideType::kTransparency }
+    };
+
+    auto overryde_type = override_type_conversion.find(overrride);
+    if (overryde_type == override_type_conversion.end())
+        return RPR_ERROR_INVALID_PARAMETER;
+
+    try
+    {
+        *out_light = scene->GetEnvironmentOverride(overryde_type->second);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneSetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light light)
+rpr_int rprSceneSetEnvironmentOverride(rpr_scene in_scene, rpr_environment_override overrride, rpr_light in_light)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    LightObject* light = WrapObject::Cast<LightObject>(in_light);
+
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    static const std::map<rpr_environment_override, SceneObject::OverrideType> override_type_conversion =
+    {
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, SceneObject::OverrideType::kBackground },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, SceneObject::OverrideType::kReflection },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, SceneObject::OverrideType::kRefraction },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, SceneObject::OverrideType::kTransparency }
+    };
+
+    auto override_type = override_type_conversion.find(overrride);
+    if (override_type  == override_type_conversion.end())
+        return RPR_ERROR_INVALID_PARAMETER;
+
+    try
+    {
+        if ((overrride == RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND) && light)
+            rprSceneSetBackgroundImage(scene, nullptr);
+
+        scene->SetEnvironmentOverride(override_type->second, light);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneSetBackgroundImage(rpr_scene scene, rpr_image image)
+rpr_int rprSceneSetBackgroundImage(rpr_scene in_scene, rpr_image in_image)
 {
-    UNSUPPORTED_FUNCTION
+    MaterialObject* img = WrapObject::Cast<MaterialObject>(in_image);
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        if (img)
+            rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, nullptr);
+        scene->SetBackgroundImage(img);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+    
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneGetBackgroundImage(rpr_scene scene, rpr_image * out_image)
+rpr_int rprSceneGetBackgroundImage(rpr_scene in_scene, rpr_image * out_image)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+
+    if (!scene || !out_image)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        *out_image = scene->GetBackgroundImage();
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
 rpr_int rprSceneSetCamera(rpr_scene in_scene, rpr_camera in_camera)
@@ -1795,7 +2053,7 @@ rpr_int rprFrameBufferGetInfo(rpr_framebuffer in_frame_buffer, rpr_framebuffer_i
     {
         return RPR_ERROR_INVALID_PARAMETER;
     }
-    int buff_size = sizeof(RadeonRays::float3) * buff->GetWidth() * buff->GetHeight();
+    int buff_size = sizeof(RadeonRays::float3) * buff->Width() * buff->Height();
     switch (in_info)
     {
     case RPR_FRAMEBUFFER_DATA:
@@ -1872,6 +2130,12 @@ rpr_int rprContextCreateMaterialSystem(rpr_context in_context, rpr_material_syst
     return RPR_SUCCESS;
 }
 
+rpr_int rprMaterialSystemGetSize(rpr_context in_context, rpr_uint * out_size)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+
 rpr_int rprMaterialSystemCreateNode(rpr_material_system in_matsys, rpr_material_node_type in_type, rpr_material_node * out_node)
 {
     //cast
@@ -1906,7 +2170,7 @@ rpr_int rprMaterialNodeSetInputN(rpr_material_node in_node, rpr_char const * in_
 
     try
     {
-        mat->SetInputMaterial(in_input, input_node);
+        mat->SetInputValue(in_input, input_node);
     }
     catch (Exception& e)
     {
@@ -1939,7 +2203,7 @@ rpr_int rprMaterialNodeSetInputF(rpr_material_node in_node, rpr_char const * in_
 
 rpr_int rprMaterialNodeSetInputU(rpr_material_node in_node, rpr_char const * in_input, rpr_uint in_value)
 {
-	UNIMLEMENTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char const * in_input, rpr_image in_image)
@@ -1954,7 +2218,7 @@ rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char con
     
     try
     {
-        mat->SetInputMaterial(in_input, img);
+        mat->SetInputValue(in_input, img);
     }
     catch (Exception& e)
     {
@@ -1963,6 +2227,12 @@ rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char con
 
     return RPR_SUCCESS;
 }
+
+rpr_int rprMaterialNodeSetInputBufferData(rpr_material_node in_node, rpr_char const * in_input, rpr_buffer buffer)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprMaterialNodeGetInfo(rpr_material_node in_node, rpr_material_node_info in_info, size_t in_size, void * out_data, size_t * out_size)
 {
@@ -2065,6 +2335,45 @@ rpr_int rprMaterialNodeGetInputInfo(rpr_material_node in_node, rpr_int in_input_
     return RPR_SUCCESS;
 }
 
+rpr_int rprContextCreateComposite(rpr_context context, rpr_composite_type in_type, rpr_composite * out_composite)
+{
+    UNIMLEMENTED_FUNCTION
+}
+rpr_int rprCompositeSetInputFb(rpr_composite composite, const char * inputName, rpr_framebuffer input)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInputC(rpr_composite composite, const char * inputName, rpr_composite input)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInput4f(rpr_composite composite, const char * inputName, float x, float y, float z, float w)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInput1u(rpr_composite composite, const char * inputName, unsigned int value)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeSetInputOp(rpr_composite composite, const char * inputName, rpr_material_node_arithmetic_operation op)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeCompute(rpr_composite composite, rpr_framebuffer fb)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprCompositeGetInfo(rpr_composite composite, rpr_composite_info composite_info, size_t size, void *  data, size_t * size_ret)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 rpr_int rprObjectDelete(void * in_obj)
 {
     WrapObject* obj = static_cast<WrapObject*>(in_obj);
@@ -2124,6 +2433,35 @@ rpr_int rprPostEffectSetParameter3f(rpr_post_effect effect, rpr_char const * nam
 }
 
 rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect, rpr_char const * name, rpr_float x, rpr_float y, rpr_float z, rpr_float w)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextGetAttachedPostEffectCount(rpr_context context, rpr_uint *  nb)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextGetAttachedPostEffect(rpr_context context, rpr_uint i, rpr_post_effect * out_effect)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprPostEffectGetInfo(rpr_post_effect effect, rpr_post_effect_info info, size_t size, void *  data, size_t *  size_ret)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, rpr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, rpr_uint gridDataTopology___unused)
+{
+    UNIMLEMENTED_FUNCTION
+}
+rpr_int rprShapeSetHeteroVolume(rpr_shape shape, rpr_hetero_volume heteroVolume)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_heteroVolume, rpr_bool transpose, rpr_float const * transform)
 {
     UNIMLEMENTED_FUNCTION
 }

@@ -192,7 +192,7 @@ __kernel void EvaluateVolume(
                 // and clear scatter flag
                 Path_ClearScatterFlag(path);
                 // Emission contribution accounting for a throughput we have so far
-                Path_AddContribution(path, output, pixelidx, Volume_Emission(&volumes[volidx], &rays[globalid], maxdist));
+                Path_AddContribution(path, output, output_indices[pixelidx], Volume_Emission(&volumes[volidx], &rays[globalid], maxdist));
                 // And finally update the throughput
                 Path_MulThroughput(path, Volume_Transmittance(&volumes[volidx], &rays[globalid], maxdist));
             }
@@ -201,7 +201,7 @@ __kernel void EvaluateVolume(
                 // Set scattering flag to notify ShadeVolume kernel to handle this path
                 Path_SetScatterFlag(path);
                 // Emission contribution accounting for a throughput we have so far
-                Path_AddContribution(path, output, pixelidx, Volume_Emission(&volumes[volidx], &rays[globalid], d) / pdf);
+                Path_AddContribution(path, output, output_indices[pixelidx], Volume_Emission(&volumes[volidx], &rays[globalid], d) / pdf);
                 // Update the throughput
                 Path_MulThroughput(path, (Volume_Transmittance(&volumes[volidx], &rays[globalid], d) / pdf));
                 // Put fake shape to prevent from being compacted away

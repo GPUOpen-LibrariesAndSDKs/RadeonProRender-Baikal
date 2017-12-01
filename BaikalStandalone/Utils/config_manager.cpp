@@ -39,7 +39,13 @@ THE SOFTWARE.
 #include <GL/glx.h>
 #endif
 
-void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& configs, int initial_num_bounces)
+void ConfigManager::CreateConfigs(
+    Mode mode,
+    bool interop,
+    std::vector<Config>& configs,
+    int initial_num_bounces,
+    int req_platform_index,
+    int req_device_index)
 {
     std::vector<CLWPlatform> platforms;
 
@@ -52,24 +58,48 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 
     configs.clear();
 
+    if (req_platform_index >= (int)platforms.size())
+        throw std::runtime_error("There is no such platform index");
+    else if ((req_platform_index > 0) &&
+        (req_device_index >= (int)platforms[req_platform_index].GetDeviceCount()))
+        throw std::runtime_error("There is no such device index");
+
     bool hasprimary = false;
-    for (int i = 0; i < platforms.size(); ++i)
+
+    int i = (req_platform_index >= 0) ? (req_platform_index) : 0;
+    int d = (req_device_index >= 0) ? (req_device_index) : 0;
+
+    int platforms_end = (req_platform_index >= 0) ?
+        (req_platform_index + 1) : ((int)platforms.size());
+
+    for (; i < platforms_end; ++i)
     {
-        std::vector<CLWDevice> devices;
+        if (i == 0) continue; // $TMP DELETE BEFORE SUBMIT!!!
 
-        for (int d = 0; d < (int)platforms[i].GetDeviceCount(); ++d)
+        int device_end = 0;
+
+        if (req_platform_index < 0 || req_device_index < 0)
+            device_end = (int)platforms[i].GetDeviceCount();
+        else
+            device_end = req_device_index + 1;
+
+        for (; d < device_end; ++d)
         {
-            if ((mode == kUseGpus || mode == kUseSingleGpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_GPU)
-                continue;
+            if (req_platform_index < 0)
+            {
+                if ((mode == kUseGpus || mode == kUseSingleGpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_GPU)
+                    continue;
 
-            if ((mode == kUseCpus || mode == kUseSingleCpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_CPU)
-                continue;
+                if ((mode == kUseCpus || mode == kUseSingleCpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_CPU)
+                    continue;
+            }
 
             Config cfg;
             cfg.caninterop = false;
-#ifdef WIN32
+
             if (platforms[i].GetDevice(d).HasGlInterop() && !hasprimary && interop)
             {
+#ifdef WIN32
                 cl_context_properties props[] =
                 {
                     //OpenCL platform
@@ -80,18 +110,7 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
                     CL_WGL_HDC_KHR, (cl_context_properties)wglGetCurrentDC(),
                     0
                 };
-
-                cfg.context = CLWContext::Create(platforms[i].GetDevice(d), props);
-                devices.push_back(platforms[i].GetDevice(d));
-                cfg.type = kPrimary;
-                cfg.caninterop = true;
-                hasprimary = true;
-            }
-            else
 #elif __linux__
-
-            if (platforms[i].GetDevice(d).HasGlInterop() && !hasprimary && interop)
-            {
                 cl_context_properties props[] =
                 {
                     //OpenCL platform
@@ -102,33 +121,21 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
                     CL_GLX_DISPLAY_KHR, (cl_context_properties)glXGetCurrentDisplay(),
                     0
                 };
-
+#elif __APPLE__
+                CGLContextObj kCGLContext = CGLGetCurrentContext();
+                CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+                // Create CL context properties, add handle & share-group enum !
+                cl_context_properties props[] = {
+                    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+                    (cl_context_properties)kCGLShareGroup, 0
+                };
+#endif
                 cfg.context = CLWContext::Create(platforms[i].GetDevice(d), props);
-                devices.push_back(platforms[i].GetDevice(d));
                 cfg.type = kPrimary;
                 cfg.caninterop = true;
                 hasprimary = true;
             }
             else
-#elif __APPLE__
-                if (platforms[i].GetDevice(d).HasGlInterop() && !hasprimary && interop)
-                {
-                    CGLContextObj kCGLContext = CGLGetCurrentContext();
-                    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
-                    // Create CL context properties, add handle & share-group enum !
-                    cl_context_properties props[] = {
-                    CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
-                    (cl_context_properties)kCGLShareGroup, 0
-                    };
-
-                    cfg.context = CLWContext::Create(platforms[i].GetDevice(d), props);
-                    devices.push_back(platforms[i].GetDevice(d));
-                    cfg.type = kPrimary;
-                    cfg.caninterop = true;
-                    hasprimary = true;
-                }
-                else
-#endif
             {
                 cfg.context = CLWContext::Create(platforms[i].GetDevice(d));
                 cfg.type = kSecondary;
@@ -142,6 +149,12 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 
         if (configs.size() == 1 && (mode == kUseSingleGpu || mode == kUseSingleCpu))
             break;
+    }
+
+    if (configs.size() == 0)
+    {
+        throw std::runtime_error(
+            "No devices was selected (probably device index type does not correspond with real device type).");
     }
 
     if (!hasprimary)
@@ -158,7 +171,13 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
 }
 
 #else
-void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& configs, int initial_num_bounces)
+void ConfigManager::CreateConfigs(
+    Mode mode,
+    bool interop,
+    std::vector<Config>& configs,
+    int initial_num_bounces,
+    int req_platform_index,
+    int req_device_index)
 {
     std::vector<CLWPlatform> platforms;
 
@@ -172,11 +191,8 @@ void ConfigManager::CreateConfigs(Mode mode, bool interop, std::vector<Config>& 
     configs.clear();
 
     bool hasprimary = false;
-    for (int i = 0; i < platforms.size(); ++i)
+    for (int i = 0; i < (int)platforms.size(); ++i)
     {
-        std::vector<CLWDevice> devices;
-        int startidx = (int)configs.size();
-
         for (int d = 0; d < (int)platforms[i].GetDeviceCount(); ++d)
         {
             if ((mode == kUseGpus || mode == kUseSingleGpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_GPU)

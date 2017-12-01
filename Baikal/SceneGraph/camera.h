@@ -41,7 +41,82 @@ namespace Baikal
         using Ptr = std::shared_ptr<Camera>;
         
         Camera() = default;
-        virtual ~Camera() = default;
+        virtual ~Camera() = 0;
+        
+        // Pass camera position, camera aim, camera up vector
+        void LookAt(RadeonRays::float3 const& eye,
+                    RadeonRays::float3 const& at,
+                    RadeonRays::float3 const& up);
+        
+        // Rotate camera around world Z axis
+        void Rotate(float angle);
+        // Tilt camera
+        void Tilt(float angle);
+        // Move along camera Z direction
+        void MoveForward(float distance);
+        // Move along camera X direction
+        void MoveRight(float distance);
+        // Move along camera Y direction
+        void MoveUp(float distance);
+        
+        RadeonRays::float3 GetForwardVector() const;
+        RadeonRays::float3 GetUpVector() const;
+        RadeonRays::float3 GetRightVector() const;
+        RadeonRays::float3 GetPosition() const;
+        
+        // Set camera depth range.
+        // Does not really make sence for physical camera
+        void SetDepthRange(RadeonRays::float2 const& range);
+        RadeonRays::float2 GetDepthRange() const;
+        
+        
+        float GetAspectRatio() const;
+        
+        // Set camera sensor size in meters.
+        // This distinguishes APC-S vs full-frame, etc
+        void SetSensorSize(RadeonRays::float2 const& size);
+        RadeonRays::float2 GetSensorSize() const;
+        
+    protected:
+        // Rotate camera around world Z axis
+        void Rotate(RadeonRays::float3, float angle);
+        
+        Camera(RadeonRays::float3 const& eye,
+               RadeonRays::float3 const& at,
+               RadeonRays::float3 const& up);
+        
+        // Camera coordinate frame
+        RadeonRays::float3 m_forward;
+        RadeonRays::float3 m_right;
+        RadeonRays::float3 m_up;
+        RadeonRays::float3 m_p;
+        
+        // Image plane width & hight in scene units
+        RadeonRays::float2 m_dim;
+        
+        // Near and far Z
+        RadeonRays::float2 m_zcap;
+    };
+    
+    class OrthographicCamera : public Camera
+    {
+    public:
+        using Ptr = std::shared_ptr<OrthographicCamera>;
+        
+        static Ptr Create(RadeonRays::float3 const& eye,
+                          RadeonRays::float3 const& at,
+                          RadeonRays::float3 const& up);
+        
+        ~OrthographicCamera() = default;
+        
+        
+    protected:
+        OrthographicCamera(RadeonRays::float3 const& eye,
+                           RadeonRays::float3 const& at,
+                           RadeonRays::float3 const& up)
+        : Camera(eye, at, up)
+        {
+        }
     };
     
     class PerspectiveCamera : public Camera
@@ -52,10 +127,7 @@ namespace Baikal
                           RadeonRays::float3 const& at,
                           RadeonRays::float3 const& up);
         
-        // Pass camera position, camera aim, camera up vector
-        void LookAt(RadeonRays::float3 const& eye,
-                    RadeonRays::float3 const& at,
-                    RadeonRays::float3 const& up);
+        
         // Set camera focus distance in meters,
         // this is essentially a distance from the lens to the focal plane.
         // Altering this is similar to rotating the focus ring on real lens.
@@ -73,39 +145,6 @@ namespace Baikal
         void SetAperture(float aperture);
         float GetAperture() const;
         
-        // Set camera sensor size in meters.
-        // This distinguishes APC-S vs full-frame, etc
-        void SetSensorSize(RadeonRays::float2 const& size);
-        RadeonRays::float2 GetSensorSize() const;
-        
-        // Set camera depth range.
-        // Does not really make sence for physical camera
-        void SetDepthRange(RadeonRays::float2 const& range);
-        RadeonRays::float2 GetDepthRange() const;
-        
-        RadeonRays::float3 GetForwardVector() const;
-        RadeonRays::float3 GetUpVector() const;
-        RadeonRays::float3 GetRightVector() const;
-        RadeonRays::float3 GetPosition() const;
-        float GetAspectRatio() const;
-        
-        
-        // Rotate camera around world Z axis
-        void Rotate(float angle);
-        // Tilt camera
-        void Tilt(float angle);
-        // Move along camera Z direction
-        void MoveForward(float distance);
-        // Move along camera X direction
-        void MoveRight(float distance);
-        // Move along camera Y direction
-        void MoveUp(float distance);
-        
-        //
-        void ArcballRotateHorizontally(RadeonRays::float3 c, float angle);
-        //
-        void ArcballRotateVertically(RadeonRays::float3 c, float angle);
-        
     protected:
         // Pass camera position, camera aim, camera up vector, depth limits, vertical field of view
         // and image plane aspect ratio
@@ -113,30 +152,17 @@ namespace Baikal
                           RadeonRays::float3 const& at,
                           RadeonRays::float3 const& up);
         
-        
     private:
-        // Rotate camera around world Z axis
-        void Rotate(RadeonRays::float3, float angle);
-        
-        // Camera coordinate frame
-        RadeonRays::float3 m_forward;
-        RadeonRays::float3 m_right;
-        RadeonRays::float3 m_up;
-        RadeonRays::float3 m_p;
-        
-        // Image plane width & hight in scene units
-        RadeonRays::float2 m_dim;
-        
-        // Near and far Z
-        RadeonRays::float2 m_zcap;
-        
         float  m_focal_length;
-        float  m_aspect;
         float  m_focus_distance;
         float  m_aperture;
         
         friend std::ostream& operator << (std::ostream& o, PerspectiveCamera const& p);
     };
+    
+    inline Camera::~Camera()
+    {
+    }
     
     inline void PerspectiveCamera::SetFocusDistance(float distance)
     {
@@ -171,26 +197,24 @@ namespace Baikal
         return m_aperture;
     }
     
-    inline RadeonRays::float2 PerspectiveCamera::GetSensorSize() const
+    inline RadeonRays::float2 Camera::GetSensorSize() const
     {
         return m_dim;
     }
     
-    inline void PerspectiveCamera::SetSensorSize(RadeonRays::float2 const& size)
+    inline void Camera::SetSensorSize(RadeonRays::float2 const& size)
     {
         m_dim = size;
-        m_aspect = m_dim.x / m_dim.y;
-
         SetDirty(true);
     }
     
-    inline void PerspectiveCamera::SetDepthRange(RadeonRays::float2 const& range)
+    inline void Camera::SetDepthRange(RadeonRays::float2 const& range)
     {
         m_zcap = range;
         SetDirty(true);
     }
     
-    inline RadeonRays::float2 PerspectiveCamera::GetDepthRange() const
+    inline RadeonRays::float2 Camera::GetDepthRange() const
     {
         return m_zcap;
     }

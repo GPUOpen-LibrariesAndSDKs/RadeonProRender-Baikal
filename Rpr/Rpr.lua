@@ -1,4 +1,4 @@
-project "Rpr"
+project "RadeonProRender"
     kind "SharedLib"
     location "../Rpr"
     links {"RadeonRays", "CLW", "Calc"}
@@ -18,6 +18,8 @@ project "Rpr"
 
     if os.is("windows") then
         includedirs { "../3rdparty/glew/include", "../3rdparty/oiio/include"  }
+
+        linkoptions { '/DEF:"RadeonProRender.def"' }
 
         links {"RadeonRays",}
         links {"glew", "OpenGL32"}
@@ -65,7 +67,8 @@ project "Rpr"
         end
     end
 
-
+    configuration {"x64", "Debug"}
+        targetsuffix "64"
     configuration {"x32", "Debug"}
         targetdir "../Bin/Debug/x86"
     configuration {"x64", "Debug"}

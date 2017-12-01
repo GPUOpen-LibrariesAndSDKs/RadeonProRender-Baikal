@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include <vector>
 #include "RadeonProRender.h"
+#include "RadeonProRender_GL.h"
 
 class TextureObject;
 class FramebufferObject;
@@ -74,12 +75,16 @@ public:
                             rpr_int const * in_texcoord_indices, rpr_int in_tidx_stride,
                             rpr_int const * in_num_face_vertices, size_t in_num_faces);
     ShapeObject* CreateShapeInstance(ShapeObject* mesh);
-    MaterialObject* CreateTexture(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data);
-    MaterialObject* CreateTextureFromFile(rpr_char const * in_path);
+    MaterialObject* CreateImage(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data);
+    MaterialObject* CreateImageFromFile(rpr_char const * in_path);
     CameraObject* CreateCamera();
     FramebufferObject* CreateFrameBuffer(rpr_framebuffer_format const in_format, rpr_framebuffer_desc const * in_fb_desc);
+    FramebufferObject* CreateFrameBufferFromGLTexture(rpr_GLenum target, rpr_GLint miplevel, rpr_GLuint texture);
 private:
     void PrepareScene();
+
+    //after render update
+    void PostRender();
 
     //render configs
     std::vector<ConfigManager::Config> m_cfgs;

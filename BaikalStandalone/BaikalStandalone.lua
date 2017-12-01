@@ -23,7 +23,7 @@ project "BaikalStandalone"
                     "../3rdparty/freeglut/lib/%{cfg.platform}",
                     "../3rdparty/embree/lib/%{cfg.platform}",
                     "../3rdparty/oiio/lib/%{cfg.platform}",
-        "../3rdparty/glfw/lib/%{cfg.platform}" }
+                    "../3rdparty/glfw/lib/%{cfg.platform}" }
 
         configuration {"Debug"}
             links {"OpenImageIOD"}
@@ -62,6 +62,18 @@ project "BaikalStandalone"
 
             links {"libfbxsdk-md"}
         end
+    end
+
+    if _OPTIONS["gltf"] then
+        defines {"ENABLE_GLTF"}
+        libdirs{"../3rdparty/FreeImage/lib/",
+                "../3rdparty/RprSupport/lib/%{cfg.platform}",
+                "../3rdparty/RprLoadStore/lib/%{cfg.platform}",
+                "../3rdparty/ProRenderGLTF/lib/%{cfg.platform}"}
+        links{"FreeImage",
+              "RadeonProRender",
+              "RprSupport64",
+              "ProRenderGLTF"}
     end
 
     if os.is("linux") then

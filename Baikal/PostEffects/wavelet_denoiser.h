@@ -210,17 +210,30 @@ namespace Baikal
             for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
             {
                 m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
                 m_colors[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
                 m_positions[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
                 m_normals[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
                 m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
                 m_mesh_ids[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+
+                m_tmp_buffers[buffer_index]->Clear(0.f);
+                m_colors[buffer_index]->Clear(0.f);
+                m_positions[buffer_index]->Clear(0.f);
+                m_normals[buffer_index]->Clear(0.f);
+                m_moments[buffer_index]->Clear(0.f);
+                m_mesh_ids[buffer_index]->Clear(0.f);
             }
 
             m_motion_buffer = new ClwOutput(GetContext(), color_width, color_height);
             m_updated_variance = new ClwOutput(GetContext(), color_width, color_height);
             m_edge_detection = new ClwOutput(GetContext(), color_width, color_height);
             m_blending_weight_calculation = new ClwOutput(GetContext(), color_width, color_height);
+
+            m_motion_buffer->Clear(0.f);
+            m_updated_variance->Clear(0.f);
+            m_edge_detection->Clear(0.f);
+            m_blending_weight_calculation->Clear(0.f);
 
             m_buffers_width = color_width;
             m_buffers_height = color_height;
@@ -234,21 +247,27 @@ namespace Baikal
             {
                 delete m_tmp_buffers[buffer_index];
                 m_tmp_buffers[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_tmp_buffers[buffer_index]->Clear(0.f);
 
                 delete m_colors[buffer_index];
                 m_colors[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_colors[buffer_index]->Clear(0.f);
 
                 delete m_positions[buffer_index];
                 m_positions[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_positions[buffer_index]->Clear(0.f);
 
                 delete m_normals[buffer_index];
                 m_normals[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_normals[buffer_index]->Clear(0.f);
 
                 delete m_moments[buffer_index];
                 m_moments[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_moments[buffer_index]->Clear(0.f);
 
                 delete m_mesh_ids[buffer_index];
                 m_mesh_ids[buffer_index] = new ClwOutput(GetContext(), color_width, color_height);
+                m_mesh_ids[buffer_index]->Clear(0.f);
             }
 
             delete m_motion_buffer;
@@ -261,6 +280,11 @@ namespace Baikal
             m_updated_variance = new ClwOutput(GetContext(), color_width, color_height);
             m_edge_detection = new ClwOutput(GetContext(), color_width, color_height);
             m_blending_weight_calculation = new ClwOutput(GetContext(), color_width, color_height);
+
+            m_motion_buffer->Clear(0.f);
+            m_updated_variance->Clear(0.f);
+            m_edge_detection->Clear(0.f);
+            m_blending_weight_calculation->Clear(0.f);
 
             m_buffers_width = color_width;
             m_buffers_height = color_height;
@@ -436,7 +460,7 @@ namespace Baikal
             }
 
             int argc = 0;
-            
+
             auto edge_detection_kernel = GetKernel("EdgeDetectionMLAA");
             edge_detection_kernel.SetArg(argc++, m_mesh_ids[m_current_buffer_index]->data());
             edge_detection_kernel.SetArg(argc++, normal->data());
@@ -510,10 +534,10 @@ namespace Baikal
         const matrix proj = perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
         const float3 ip = float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
 
-        const matrix view = matrix( right.x, right.y, right.z, ip.x,
-                                    up.x, up.y, up.z, ip.y,
-                                    forward.x, forward.y, forward.z, ip.z,
-                                    0.0f, 0.0f, 0.0f, 1.0f);
+        const matrix view = matrix(right.x, right.y, right.z, ip.x,
+            up.x, up.y, up.z, ip.y,
+            forward.x, forward.y, forward.z, ip.z,
+            0.0f, 0.0f, 0.0f, 1.0f);
 
         m_view_proj = proj * view;
 

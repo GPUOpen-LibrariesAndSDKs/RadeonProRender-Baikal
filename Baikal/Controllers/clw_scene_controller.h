@@ -72,7 +72,7 @@ namespace Baikal
         // Update camera data only.
         void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update shape data only.
-        void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
+        void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const override;
         // Update transform data only
         void UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update lights data only.
@@ -85,7 +85,11 @@ namespace Baikal
         Material::Ptr GetDefaultMaterial() const override;
         // If m_current_scene changes
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
-        
+        // Update volume materiuals
+        void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const override;
+        // If scene attributes changed
+        void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const override;
+
         // Update intersection API
         void UpdateIntersector(Scene1 const& scene, ClwScene& out) const;
         void UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const;
@@ -100,8 +104,13 @@ namespace Baikal
         void WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const;
         // Write out texture data at data pointer.
         void WriteTextureData(Texture const& texture, void* data) const;
+        // Write single volume at data pointer
+        void WriteVolume(const VolumeMaterial& volume, void* data) const;
 
     private:
+        int GetMaterialIndex(Collector const& collector, Material::Ptr material) const;
+        int GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const;
+
         // Context
         CLWContext m_context;
         // Intersection API

@@ -21,9 +21,9 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "MatSysObject.h"
-#include "WrapObject/MaterialObject.h"
+#include "WrapObject/Materials/MaterialObject.h"
 
 MaterialObject* MatSysObject::CreateMaterial(rpr_material_node_type in_type)
 {
-    return new MaterialObject(in_type);
+    return MaterialObject::CreateMaterial(in_type);
 }

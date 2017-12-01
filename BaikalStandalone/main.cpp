@@ -23,7 +23,15 @@ THE SOFTWARE.
 
 int main(int argc, char * argv[])
 {
-    Baikal::Application app(argc, argv);
-    app.Run();
+    try
+    {
+        Baikal::Application app(argc, argv);
+        app.Run();
+    }
+    catch (std::exception& ex)
+    {
+        std::cout << ex.what() << std::endl;
+        return -1;
+    }
     return 0;
 }

@@ -10,7 +10,7 @@
 
 #include "Utils/sobol.h"
 
-#ifdef RR_EMBED_KERNELS
+#ifdef BAIKAL_EMBED_KERNELS
 #include "./Kernels/CL/cache/kernels.h"
 #endif
 
@@ -75,7 +75,15 @@ namespace Baikal
         std::shared_ptr<RadeonRays::IntersectionApi> api,
         std::string const& cache_path
     ) : 
+#ifdef BAIKAL_EMBED_KERNELS
+        ClwClass(context,
+            g_path_tracing_estimator_opencl,
+            g_path_tracing_estimator_opencl_inc,
+            sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
+            "", cache_path)
+#else
         ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
+#endif
         , Estimator(api)
         , m_sample_counter(0)
         , m_render_data(new RenderData)
@@ -168,7 +176,8 @@ namespace Baikal
         QualityLevel quality,
         CLWBuffer<RadeonRays::float3> output,
         bool use_output_indices,
-        bool atomic_update
+        bool atomic_update,
+        MissedPrimaryRaysHandler missedPrimaryRaysHandler
     )
     {
         if (atomic_update)
@@ -207,7 +216,9 @@ namespace Baikal
             // Apply scattering
             EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
 
-            if (pass > 0 && scene.envmapidx > -1)
+            bool has_some_environment = scene.envmapidx > -1;
+
+            if ((pass > 0) && has_some_environment)
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
             }
@@ -236,7 +247,19 @@ namespace Baikal
 
             // Shade missing rays
             if (pass == 0)
-                ShadeBackground(scene, pass, num_estimates, output, use_output_indices);
+            {
+                if (missedPrimaryRaysHandler)
+                    missedPrimaryRaysHandler(
+                        m_render_data->rays[0],
+                        m_render_data->intersections,
+                        m_render_data->pixelindices[1],
+                        use_output_indices ? m_render_data->output_indices : m_render_data->iota,
+                        num_estimates, output);
+                else if (scene.envmapidx > -1)
+                    ShadeBackground(scene, 0, num_estimates, output, use_output_indices);
+                else
+                    AdvanceIterationCount(0, num_estimates, output, use_output_indices);
+            }
 
             // Intersect shadow rays
             GetIntersector()->QueryOcclusion(
@@ -304,7 +327,6 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.uvs);
         shadekernel.SetArg(argc++, scene.indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materialids);
         shadekernel.SetArg(argc++, scene.materials);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
@@ -356,7 +378,6 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.uvs);
         shadekernel.SetArg(argc++, scene.indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materialids);
         shadekernel.SetArg(argc++, scene.materials);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
@@ -429,7 +450,7 @@ namespace Baikal
     {
         // Fetch kernel
         auto misskernel = GetKernel("ShadeBackgroundEnvMap");
-
+        
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         // Set kernel parameters
@@ -750,6 +771,27 @@ namespace Baikal
         else
         {
             return false;
+        }
+    }
+
+    void PathTracingEstimator::AdvanceIterationCount(
+        int pass, 
+        std::size_t size, 
+        CLWBuffer<RadeonRays::float3> output, 
+        bool use_output_indices)
+    {
+        auto misskernel = GetKernel("AdvanceIterationCount");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
+        int argc = 0;
+        misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        misskernel.SetArg(argc++, output_indices);
+        misskernel.SetArg(argc++, m_render_data->hitcount);
+        misskernel.SetArg(argc++, output);
+
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, misskernel);
         }
     }
 }

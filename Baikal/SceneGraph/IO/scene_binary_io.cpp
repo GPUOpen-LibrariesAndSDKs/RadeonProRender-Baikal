@@ -153,8 +153,6 @@ namespace Baikal
             scene->AttachShape(mesh);
         }
 
-
-
         auto  ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
 
         auto ibl = ImageBasedLight::Create();

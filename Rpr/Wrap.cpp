@@ -1,4 +1,6 @@
 #include "RadeonProRender.h"
+#include "RadeonProRender_CL.h"
+#include "RadeonProRender_GL.h"
 
 fr_int frRegisterPlugin(fr_char const * path)
 {
@@ -90,6 +92,11 @@ fr_int frContextCreateImage(fr_context context, fr_image_format const format, fr
     return rprContextCreateImage(context, format, image_desc, data, out_image);
 }
 
+fr_int frContextCreateBuffer(fr_context context, fr_buffer_desc const * buffer_desc, void const * data, fr_buffer * out_buffer)
+{
+    return rprContextCreateBuffer(context, buffer_desc, data, out_buffer);
+}
+
 fr_int frContextCreateImageFromFile(fr_context context, fr_char const * path, fr_image * out_image)
 {
     return rprContextCreateImageFromFile(context, path, out_image);
@@ -110,9 +117,14 @@ fr_int frContextCreateMesh(fr_context context, fr_float const * vertices, size_t
     return rprContextCreateMesh(context, vertices, num_vertices, vertex_stride, normals, num_normals, normal_stride, texcoords, num_texcoords, texcoord_stride, vertex_indices, vidx_stride, normal_indices, nidx_stride, texcoord_indices, tidx_stride, num_face_vertices, num_faces, out_mesh);
 }
 
-fr_int frContextCreateMeshEx(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t * num_texcoords, fr_int * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_shape * out_mesh)
+fr_int frContextCreateMeshEx(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t const * num_texcoords, fr_int const * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int const * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_shape * out_mesh)
 {
     return rprContextCreateMeshEx(context, vertices, num_vertices, vertex_stride, normals, num_normals, normal_stride, perVertexFlag, num_perVertexFlags, perVertexFlag_stride, numberOfTexCoordLayers, texcoords, num_texcoords, texcoord_stride, vertex_indices, vidx_stride, normal_indices, nidx_stride, texcoord_indices, tidx_stride, num_face_vertices, num_faces, out_mesh);
+}
+
+fr_int frContextCreateMeshEx2(fr_context context, fr_float const * vertices, size_t num_vertices, fr_int vertex_stride, fr_float const * normals, size_t num_normals, fr_int normal_stride, fr_int const * perVertexFlag, size_t num_perVertexFlags, fr_int perVertexFlag_stride, fr_int numberOfTexCoordLayers, fr_float const ** texcoords, size_t const * num_texcoords, fr_int const * texcoord_stride, fr_int const * vertex_indices, fr_int vidx_stride, fr_int const * normal_indices, fr_int nidx_stride, fr_int const ** texcoord_indices, fr_int const * tidx_stride, fr_int const * num_face_vertices, size_t num_faces, fr_mesh_info const * mesh_properties, fr_shape * out_mesh)
+{
+    return rprContextCreateMeshEx2(context, vertices, num_vertices, vertex_stride, normals, num_normals, normal_stride, perVertexFlag, num_perVertexFlags, perVertexFlag_stride, numberOfTexCoordLayers, texcoords, num_texcoords, texcoord_stride, vertex_indices, vidx_stride, normal_indices, nidx_stride, texcoord_indices, tidx_stride, num_face_vertices, num_faces, mesh_properties, out_mesh);
 }
 
 fr_int frContextCreateCamera(fr_context context, fr_camera * out_camera)
@@ -138,6 +150,11 @@ fr_int frCameraSetFocalLength(fr_camera camera, fr_float flength)
 fr_int frCameraSetFocusDistance(fr_camera camera, fr_float fdist)
 {
     return rprCameraSetFocusDistance(camera, fdist);
+}
+
+fr_int frImageSetOption(fr_image image, fr_image_option option)
+{
+    return rprImageSetOption(image, option);
 }
 
 fr_int frCameraSetTransform(fr_camera camera, fr_bool transpose, fr_float * transform)
@@ -195,9 +212,24 @@ fr_int frCameraSetLensShift(fr_camera camera, fr_float shiftx, fr_float shifty)
     return rprCameraSetLensShift(camera, shiftx, shifty);
 }
 
+fr_int frCameraSetTiltCorrection(fr_camera camera, fr_float tiltX, fr_float tiltY)
+{
+    return rprCameraSetTiltCorrection(camera, tiltX, tiltY);
+}
+
 fr_int frCameraSetOrthoHeight(fr_camera camera, fr_float height)
 {
     return rprCameraSetOrthoHeight(camera, height);
+}
+
+fr_int frCameraSetNearPlane(fr_camera camera, fr_float near)
+{
+    return rprCameraSetNearPlane(camera, near);
+}
+
+fr_int frCameraSetFarPlane(fr_camera camera, fr_float far)
+{
+    return rprCameraSetFarPlane(camera, far);
 }
 
 fr_int frImageGetInfo(fr_image image, fr_image_info image_info, size_t size, void * data, size_t * size_ret)
@@ -240,9 +272,9 @@ fr_int frShapeSetObjectGroupID(fr_shape shape, fr_uint objectGroupID)
     return rprShapeSetObjectGroupID(shape, objectGroupID);
 }
 
-fr_int frShapeSetDisplacementImage(fr_shape shape, fr_image image)
+fr_int frShapeSetDisplacementMaterial(fr_shape shape, fr_material_node materialNode)
 {
-    return rprShapeSetDisplacementImage(shape, image);
+    return rprShapeSetDisplacementMaterial(shape, materialNode);
 }
 
 fr_int frShapeSetMaterial(fr_shape shape, fr_material_node node)
@@ -250,9 +282,9 @@ fr_int frShapeSetMaterial(fr_shape shape, fr_material_node node)
     return rprShapeSetMaterial(shape, node);
 }
 
-fr_int frShapeSetMaterialOverride(fr_shape shape, fr_material_node node)
+fr_int frShapeSetMaterialFaces(fr_shape shape, fr_material_node node, fr_int* face_indices, size_t num_faces)
 {
-    return rprShapeSetMaterialOverride(shape, node);
+    return rprShapeSetMaterialFaces(shape, node, face_indices, num_faces);
 }
 
 fr_int frShapeSetVolumeMaterial(fr_shape shape, fr_material_node node)
@@ -268,6 +300,11 @@ fr_int frShapeSetLinearMotion(fr_shape shape, fr_float x, fr_float y, fr_float z
 fr_int frShapeSetAngularMotion(fr_shape shape, fr_float x, fr_float y, fr_float z, fr_float w)
 {
     return rprShapeSetAngularMotion(shape, x, y, z, w);
+}
+
+fr_int frShapeSetScaleMotion(fr_shape shape, fr_float x, fr_float y, fr_float z)
+{
+    return rprShapeSetScaleMotion(shape, x, y, z);
 }
 
 fr_int frShapeSetVisibility(fr_shape shape, fr_bool visible)
@@ -375,14 +412,14 @@ fr_int frEnvironmentLightSetIntensityScale(fr_light env_light, fr_float intensit
     return rprEnvironmentLightSetIntensityScale(env_light, intensity_scale);
 }
 
-fr_int frEnvironmentLightAttachPortal(fr_light env_light, fr_shape portal)
+fr_int frEnvironmentLightAttachPortal(fr_scene scene, fr_light env_light, fr_shape portal)
 {
-    return rprEnvironmentLightAttachPortal(env_light, portal);
+    return rprEnvironmentLightAttachPortal(scene, env_light, portal);
 }
 
-fr_int frEnvironmentLightDetachPortal(fr_light env_light, fr_shape portal)
+fr_int frEnvironmentLightDetachPortal(fr_scene scene, fr_light env_light, fr_shape portal)
 {
-    return rprEnvironmentLightDetachPortal(env_light, portal);
+    return rprEnvironmentLightDetachPortal(scene, env_light, portal);
 }
 
 fr_int frContextCreateSkyLight(fr_context context, fr_light * out_light)
@@ -405,14 +442,14 @@ fr_int frSkyLightSetScale(fr_light skylight, fr_float scale)
     return rprSkyLightSetScale(skylight, scale);
 }
 
-fr_int frSkyLightAttachPortal(fr_light skylight, fr_shape portal)
+fr_int frSkyLightAttachPortal(fr_scene scene, fr_light skylight, fr_shape portal)
 {
-    return rprSkyLightAttachPortal(skylight, portal);
+    return rprSkyLightAttachPortal(scene, skylight, portal);
 }
 
-fr_int frSkyLightDetachPortal(fr_light skylight, fr_shape portal)
+fr_int frSkyLightDetachPortal(fr_scene scene, fr_light skylight, fr_shape portal)
 {
-    return rprSkyLightDetachPortal(skylight, portal);
+    return rprSkyLightDetachPortal(scene, skylight, portal);
 }
 
 fr_int frContextCreateIESLight(fr_context context, fr_light * light)
@@ -453,6 +490,16 @@ fr_int frSceneAttachShape(fr_scene scene, fr_shape shape)
 fr_int frSceneDetachShape(fr_scene scene, fr_shape shape)
 {
     return rprSceneDetachShape(scene, shape);
+}
+
+fr_int frSceneAttachHeteroVolume(fr_scene scene, fr_hetero_volume heteroVolume)
+{
+    return rprSceneAttachHeteroVolume(scene, heteroVolume);
+}
+
+fr_int frSceneDetachHeteroVolume(fr_scene scene, fr_hetero_volume heteroVolume)
+{
+    return rprSceneDetachHeteroVolume(scene, heteroVolume);
 }
 
 fr_int frSceneAttachLight(fr_scene scene, fr_light light)
@@ -525,6 +572,11 @@ fr_int frContextCreateMaterialSystem(fr_context in_context, fr_material_system_t
     return rprContextCreateMaterialSystem(in_context, type, out_matsys);
 }
 
+fr_int frMaterialSystemGetSize(fr_context in_context, fr_uint * out_size)
+{
+    return rprMaterialSystemGetSize(in_context, out_size);
+}
+
 fr_int frMaterialSystemCreateNode(fr_material_system in_matsys, fr_material_node_type in_type, fr_material_node * out_node)
 {
     return rprMaterialSystemCreateNode(in_matsys, in_type, out_node);
@@ -550,6 +602,11 @@ fr_int frMaterialNodeSetInputImageData(fr_material_node in_node, fr_char const *
     return rprMaterialNodeSetInputImageData(in_node, in_input, image);
 }
 
+fr_int frMaterialNodeSetInputBufferData(fr_material_node in_node, fr_char const * in_input, fr_buffer buffer)
+{
+    return rprMaterialNodeSetInputBufferData(in_node, in_input, buffer);
+}
+
 fr_int frMaterialNodeGetInfo(fr_material_node in_node, fr_material_node_info in_info, size_t in_size, void * in_data, size_t * out_size)
 {
     return rprMaterialNodeGetInfo(in_node, in_info, in_size, in_data, out_size);
@@ -558,6 +615,46 @@ fr_int frMaterialNodeGetInfo(fr_material_node in_node, fr_material_node_info in_
 fr_int frMaterialNodeGetInputInfo(fr_material_node in_node, fr_int in_input_idx, fr_material_node_input_info in_info, size_t in_size, void * in_data, size_t * out_size)
 {
     return rprMaterialNodeGetInputInfo(in_node, in_input_idx, in_info, in_size, in_data, out_size);
+}
+
+fr_int frContextCreateComposite(fr_context context, fr_composite_type in_type, fr_composite * out_composite)
+{
+    return rprContextCreateComposite(context, in_type, out_composite);
+}
+
+fr_int frCompositeSetInputFb(fr_composite composite, const char * inputName, fr_framebuffer input)
+{
+    return rprCompositeSetInputFb(composite, inputName, input);
+}
+
+fr_int frCompositeSetInputC(fr_composite composite, const char * inputName, fr_composite input)
+{
+    return rprCompositeSetInputC(composite, inputName, input);
+}
+
+fr_int frCompositeSetInput4f(fr_composite composite, const char * inputName, float x, float y, float z, float w)
+{
+    return rprCompositeSetInput4f(composite, inputName, x, y, z, w);
+}
+
+fr_int frCompositeSetInput1u(fr_composite composite, const char * inputName, unsigned int value)
+{
+    return rprCompositeSetInput1u(composite, inputName, value);
+}
+
+fr_int frCompositeSetInputOp(fr_composite composite, const char * inputName, fr_material_node_arithmetic_operation op)
+{
+    return rprCompositeSetInputOp(composite, inputName, op);
+}
+
+fr_int frCompositeCompute(fr_composite composite, fr_framebuffer fb)
+{
+    return rprCompositeCompute(composite, fb);
+}
+
+fr_int frCompositeGetInfo(fr_composite composite, fr_composite_info composite_info, size_t size, void *  data, size_t * size_ret)
+{
+    return rprCompositeGetInfo(composite, composite_info, size, data, size_ret);
 }
 
 fr_int frObjectDelete(void * obj)
@@ -605,9 +702,38 @@ fr_int frPostEffectSetParameter4f(fr_post_effect effect, fr_char const * name, f
     return rprPostEffectSetParameter4f(effect, name, x, y, z, w);
 }
 
-//TODO: RadeonProRender_GL.h
-//fr_int frContextCreateFramebufferFromGLTexture2D(fr_context context, fr_GLenum target, fr_GLint miplevel, fr_GLuint texture, fr_framebuffer * out_fb)
-//{
-//    return rprContextCreateFramebufferFromGLTexture2D(context, target, miplevel, texture, out_fb);
-//}
+fr_int frContextGetAttachedPostEffectCount(fr_context context, fr_uint *  nb)
+{
+    return rprContextGetAttachedPostEffectCount(context, nb);
+}
+
+fr_int frContextGetAttachedPostEffect(fr_context context, fr_uint i, fr_post_effect * out_effect)
+{
+    return rprContextGetAttachedPostEffect(context, i, out_effect);
+}
+
+fr_int frPostEffectGetInfo(fr_post_effect effect, fr_post_effect_info info, size_t size,  void *  data, size_t *  size_ret)
+{
+    return rprPostEffectGetInfo(effect, info, size, data, size_ret);
+}
+
+fr_int frContextCreateHeteroVolume(fr_context context, fr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, fr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, fr_uint gridDataTopology___unused)
+{
+    return rprContextCreateHeteroVolume(context, out_heteroVolume, gridSizeX, gridSizeY, gridSizeZ, indicesList, numberOfIndices, indicesListTopology, gridData, gridDataSizeByte, gridDataTopology___unused);
+}
+
+fr_int frShapeSetHeteroVolume(fr_shape shape, fr_hetero_volume heteroVolume)
+{
+    return rprShapeSetHeteroVolume(shape, heteroVolume);
+}
+
+fr_int frHeteroVolumeSetTransform(fr_hetero_volume out_heteroVolume, fr_bool transpose, fr_float const * transform)
+{
+    return rprHeteroVolumeSetTransform(out_heteroVolume, transpose, transform);
+}
+
+fr_int frContextCreateFramebufferFromGLTexture2D(fr_context context, fr_GLenum target, fr_GLint miplevel, fr_GLuint texture, fr_framebuffer * out_fb)
+{
+    return rprContextCreateFramebufferFromGLTexture2D(context, target, miplevel, texture, out_fb);
+}
 
