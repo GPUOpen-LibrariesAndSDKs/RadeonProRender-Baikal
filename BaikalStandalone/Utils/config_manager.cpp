@@ -74,8 +74,6 @@ void ConfigManager::CreateConfigs(
 
     for (; i < platforms_end; ++i)
     {
-        if (i == 0) continue; // $TMP DELETE BEFORE SUBMIT!!!
-
         int device_end = 0;
 
         if (req_platform_index < 0 || req_device_index < 0)
