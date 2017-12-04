@@ -1,9 +1,10 @@
+def axisWindowsTesters = ["Windows && OpenCL && Tester","osx-agent-2"]
 
 
 pipeline {
     agent none
-    stages {
-        stage('Build') {
+/*    stages {*/
+/*        stage('Build') {*/
             parallel {
                 stage('Build On Windows') {
                     agent {
@@ -54,8 +55,8 @@ pipeline {
                     }
                 }
             }
-        }
-    }
+        /*}*/
+    /*}*/
 }
 
 
