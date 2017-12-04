@@ -30,15 +30,15 @@ pipeline {
                         %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution%
 
 
-                        xcopy /SEY ".\Baikal\Kernels" ".\deployDir\Baikal\Kernels\"
-                        xcopy /SEY ".\Bin\*.dll" ".\deployDir\Bin\"
-                        xcopy /SEY ".\Bin\*.exe" ".\deployDir\Bin\"
-                        xcopy /SEY ".\Resources" ".\deployDir\Resources\"
+                        xcopy /SEY ".\\Baikal\\Kernels" ".\\deployDir\\Baikal\\Kernels\\"
+                        xcopy /SEY ".\\Bin\\*.dll" ".\\deployDir\\Bin\\"
+                        xcopy /SEY ".\\Bin\\*.exe" ".\\deployDir\\Bin\\"
+                        xcopy /SEY ".\\Resources" ".\\deployDir\\Resources\\"
 
-                        mkdir .\deployDir\BaikalTest\OutputImages
-                        mkdir .\deployDir\BaikalTest\ReferenceImages
-                        echo placeholder > .\deployDir\BaikalTest\OutputImages\placeholder.txt
-                        echo placeholder > .\deployDir\BaikalTest\ReferenceImages\placeholder.txt
+                        mkdir .\\deployDir\\BaikalTest\\OutputImages
+                        mkdir .\\deployDir\\BaikalTest\\ReferenceImages
+                        echo placeholder > .\\deployDir\\BaikalTest\\OutputImages\\placeholder.txt
+                        echo placeholder > .\\deployDir\\BaikalTest\\ReferenceImages\\placeholder.txt
 
                         IF EXIST "%CIS_TOOLS%\\sendFiles.bat" (
                             %CIS_TOOLS%\\sendFiles.bat output/_ProductionBuild/RadeonProRender*.msi builds/RadeonProRender-Baikal/Build#%BUILD_ID%
