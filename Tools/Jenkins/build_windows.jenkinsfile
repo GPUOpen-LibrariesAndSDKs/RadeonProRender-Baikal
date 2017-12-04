@@ -1,5 +1,51 @@
 
-/*6*/
+
+pipeline {
+    agent none
+    stages {
+        stage('Build') {
+            parallel {
+                stage('Build On Windows') {
+                    agent {
+                        label "Windows && VS2015"
+                    }
+                    steps {
+                        bat '''
+                        echo build on windows
+                        '''
+                    }
+                    post {
+                        always {
+                        bat '''
+                        echo post build on windows
+                        '''
+                        }
+                    }
+                }
+                stage('Build On OSX') {
+                    agent {
+                        label "OSX"
+                    }
+                    steps {
+                        echo'''
+                        build on OSX
+                        '''
+                    }
+                    post {
+                        always {
+                        echo'''
+                        post build on OSX
+                        '''
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/*
 pipeline {
     agent {
         node {
@@ -30,3 +76,4 @@ pipeline {
     }
 }
 
+*/
