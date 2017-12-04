@@ -41,7 +41,7 @@ pipeline {
                         echo placeholder > .\\deployDir\\BaikalTest\\ReferenceImages\\placeholder.txt
 
                         IF EXIST "%CIS_TOOLS%\\sendFiles.bat" (
-                            %CIS_TOOLS%\\sendFiles.bat output/_ProductionBuild/RadeonProRender*.msi builds/RadeonProRender-Baikal/Build#%BUILD_ID%
+                            %CIS_TOOLS%\\sendFiles.bat deployDir/* builds/RadeonProRender-Baikal/Build#%BUILD_ID%
                             )
 
                         '''
