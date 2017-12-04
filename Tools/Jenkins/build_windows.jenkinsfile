@@ -12,6 +12,8 @@ pipeline {
                     }
                     steps {
                         bat '''
+                        set
+
                         set msbuild="C:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe"
                         if not exist %msbuild% (
                             set msbuild="C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\MSBuild\\15.0\\Bin\\MSBuild.exe"
@@ -26,6 +28,22 @@ pipeline {
                         
                         rem %msbuild% /target:%target% %maxcpucount% /property:Configuration=Debug;Platform=x64 %parameters% %solution%
                         %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution%
+
+
+                        xcopy /SEY ".\Baikal\Kernels" ".\deployDir\Baikal\Kernels\"
+                        xcopy /SEY ".\Bin\*.dll" ".\deployDir\Bin\"
+                        xcopy /SEY ".\Bin\*.exe" ".\deployDir\Bin\"
+                        xcopy /SEY ".\Resources" ".\deployDir\Resources\"
+
+                        mkdir .\deployDir\BaikalTest\OutputImages
+                        mkdir .\deployDir\BaikalTest\ReferenceImages
+                        echo placeholder > .\deployDir\BaikalTest\OutputImages\placeholder.txt
+                        echo placeholder > .\deployDir\BaikalTest\ReferenceImages\placeholder.txt
+
+                        IF EXIST "%CIS_TOOLS%\\sendFiles.bat" (
+                            %CIS_TOOLS%\\sendFiles.bat output/_ProductionBuild/RadeonProRender*.msi builds/RadeonProRender-Baikal/Build#%BUILD_ID%
+                            )
+
                         '''
                     }
                     post {
