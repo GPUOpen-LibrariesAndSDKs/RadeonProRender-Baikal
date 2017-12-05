@@ -40,11 +40,14 @@ pipeline {
                         echo placeholder > .\\deployDir\\BaikalTest\\OutputImages\\placeholder.txt
                         echo placeholder > .\\deployDir\\BaikalTest\\ReferenceImages\\placeholder.txt
 
+                        /*
                         IF EXIST "%CIS_TOOLS%\\sendFiles.bat" (
                             %CIS_TOOLS%\\sendFiles.bat deployDir/* builds/RadeonProRender-Baikal/Build#%BUILD_ID%
                             )
-
+                        */
                         '''
+                        stash includes: 'Bin/**/*', name: 'appWindows'
+
                     }
                     post {
                         always {
@@ -68,6 +71,62 @@ pipeline {
                         always {
                         sh '''
                         echo post build on OSX
+                        '''
+                        }
+                    }
+                }
+            }
+        }
+        stage('Test') {
+            parallel {
+                stage('Test on WX9100') {
+                    agent {
+                        label "gpuAMD_WX9100"
+                    }
+                    steps {
+                        bat '''
+                        HOSTNAME
+                        '''
+
+                        unstash 'appWindows'
+        
+                        dir('BaikalTest')
+                        {
+                            bat '''
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                        bat '''
+                        
+                        '''
+                        }
+                    }
+                }
+                stage('Test on WX7100') {
+                    agent {
+                        label "gpuAMD_WX7100"
+                    }
+                    steps {
+                        bat '''
+                        HOSTNAME
+                        '''
+
+                        unstash 'appWindows'
+        
+                        dir('BaikalTest')
+                        {
+                            bat '''
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                        bat '''
+                        
                         '''
                         }
                     }
