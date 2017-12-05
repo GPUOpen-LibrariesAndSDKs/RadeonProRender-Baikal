@@ -66,6 +66,7 @@ pipeline {
                         Tools/premake/osx/premake5 gmake
                         make config=release_x64
                         '''
+                        stash includes: 'Bin/**/*', name: 'appOSX'
                     }
                     post {
                         always {
@@ -79,55 +80,72 @@ pipeline {
         }
         stage('Test') {
             parallel {
-                stage('Test on WX9100') {
+                stage('Test-Windows-WX9100') {
                     agent {
-                        label "gpuAMD_WX9100"
+                        label "Windows && Tester && OpenCL && gpuAMD_WX9100"
                     }
                     steps {
                         bat '''
-                        HOSTNAME
+                        HOSTNAME > Windows_WX9100.log
                         '''
-
                         unstash 'appWindows'
         
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> Windows_WX9100.log
                             '''
                         }
                     }
                     post {
                         always {
-                        bat '''
-                        
-                        '''
+                            archiveArtifacts artifacts: ./BaikalTest/Windows_WX9100.log
                         }
                     }
                 }
-                stage('Test on WX7100') {
+                stage('Test-Windows-WX7100') {
                     agent {
-                        label "gpuAMD_WX7100"
+                        label "Windows && Tester && OpenCL && gpuAMD_WX7100"
                     }
                     steps {
                         bat '''
-                        HOSTNAME
+                        HOSTNAME > Windows_WX7100.log
                         '''
-
                         unstash 'appWindows'
         
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> Windows_WX7100.log
                             '''
                         }
                     }
                     post {
                         always {
+                            archiveArtifacts artifacts: ./BaikalTest/Windows_WX7100.log
+                        }
+                    }
+                }
+                stage('Test-OSX-IntelIris') {
+                    agent {
+                        label "OSX && Tester && OpenCL && gpuIntel_Iris"
+                    }
+                    steps {
                         bat '''
-                        
+                        uname -a > OSX_Iris.log
                         '''
+                        unstash 'appOSX'
+        
+                        dir('BaikalTest')
+                        {
+                            bat '''
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> OSX_Iris.log
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                            archiveArtifacts artifacts: ./BaikalTest/OSX_Iris.log
                         }
                     }
                 }
