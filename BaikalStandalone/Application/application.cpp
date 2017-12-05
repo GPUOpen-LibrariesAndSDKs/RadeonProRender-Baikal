@@ -225,6 +225,12 @@ namespace Baikal
 			if (g_is_f10_pressed)
 			{
 				g_is_f10_pressed = false; //one time execution
+				int w, h;
+				glfwGetWindowSize(m_window, &w, &h);
+				assert(glGetError() == 0);
+				auto *data = new GLubyte[3 * w * h];
+				glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+				delete[] data;
 			}
         }
 
