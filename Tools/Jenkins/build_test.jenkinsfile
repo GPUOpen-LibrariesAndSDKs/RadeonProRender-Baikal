@@ -28,7 +28,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
 }
 
 pipeline {
-    agent label "master"
+    agent label none
     stages {
         stage('Build') {
             parallel {
@@ -78,7 +78,6 @@ pipeline {
                     post {
                         always {
                             archiveArtifacts 'Build_Windows_VS2015.log'
-                            notifyBuild 
                         }
                     }
                 }
