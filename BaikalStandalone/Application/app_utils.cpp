@@ -229,9 +229,9 @@ namespace Baikal
         , time_benchmark(false)
         , time_benchmark_time(0.f)
 
-		//imagefile
-	    , base_image_file_name("out")
-	    , image_file_format("png")
+        //imagefile
+        , base_image_file_name("out")
+        , image_file_format("png")
 
         //unused
         , num_shadow_rays(1)

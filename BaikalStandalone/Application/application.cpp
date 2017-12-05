@@ -80,7 +80,7 @@ namespace Baikal
     static bool     g_is_home_pressed = false;
     static bool     g_is_end_pressed = false;
     static bool     g_is_mouse_tracking = false;
-	static bool		g_is_f10_pressed = false;
+    static bool     g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
 
@@ -144,9 +144,9 @@ namespace Baikal
         case GLFW_KEY_F3:
             app->m_settings.benchmark = action == GLFW_PRESS ? true : app->m_settings.benchmark;
             break;
-		case GLFW_KEY_F10:
-			g_is_f10_pressed = action == GLFW_PRESS;
-			break;
+        case GLFW_KEY_F10:
+            g_is_f10_pressed = action == GLFW_PRESS;
+            break;
         default:
             break;
         }
@@ -224,11 +224,11 @@ namespace Baikal
                 update = true;
             }
 
-			if (g_is_f10_pressed)
-			{
-				g_is_f10_pressed = false; //one time execution
-				SaveToFile(time);
-			}
+            if (g_is_f10_pressed)
+            {
+                g_is_f10_pressed = false; //one time execution
+                SaveToFile(time);
+            }
         }
 
         if (update)
@@ -257,39 +257,39 @@ namespace Baikal
         m_cl->Update(m_settings);
     }
 
-	void Application::SaveToFile(std::chrono::steady_clock::time_point time) const
-	{
-		using namespace OIIO;
-		int w, h;
-		glfwGetWindowSize(m_window, &w, &h);
-		assert(glGetError() == 0);
-		const auto channels = 3;
-		auto *data = new GLubyte[channels * w * h];
-		glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-		//opengl coordinates to oiio coordinates
-		for (auto i = 0; i <= h / 2; ++i)
-		{
-			std::swap_ranges(data + channels * w * i, data + channels * w * (i + 1) - 1, data + channels * w * (h - (i + 1)));
-		}
-
-		const auto filename = m_settings.path + "\\" + m_settings.base_image_file_name + "-" + std::to_string(time.time_since_epoch().count()) + "." + m_settings.image_file_format;
-		auto out = ImageOutput::create(filename);
-		if (out)
-		{
-			ImageSpec spec{ w, h, channels, TypeDesc::UINT8 };
-			out->open(filename, spec);
-			out->write_image(TypeDesc::UINT8, data);
-			out->close();
-			delete out; // ImageOutput::destroy not found
-		}
-		else
-		{
-			std::cout << "Wrong file format\n";
-		}
-
-		delete[] data;
-	}
+    void Application::SaveToFile(std::chrono::steady_clock::time_point time) const
+    {
+        using namespace OIIO;
+        int w, h;
+        glfwGetFramebufferSize(m_window, &w, &h);
+        assert(glGetError() == 0);
+        const auto channels = 3;
+        auto *data = new GLubyte[channels * w * h];
+        glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+        
+        //opengl coordinates to oiio coordinates
+        for (auto i = 0; i <= h / 2; ++i)
+        {
+            std::swap_ranges(data + channels * w * i, data + channels * w * (i + 1) - 1, data + channels * w * (h - (i + 1)));
+        }
+        
+        const auto filename = m_settings.path + "\\" + m_settings.base_image_file_name + "-" + std::to_string(time.time_since_epoch().count()) + "." + m_settings.image_file_format;
+        auto out = ImageOutput::create(filename);
+        if (out)
+        {
+            ImageSpec spec{ w, h, channels, TypeDesc::UINT8 };
+            out->open(filename, spec);
+            out->write_image(TypeDesc::UINT8, data);
+            out->close();
+            delete out; // ImageOutput::destroy not found
+        }
+        else
+        {
+            std::cout << "Wrong file format\n";
+        }
+        
+        delete[] data;
+    }
 
 
     void OnError(int error, const char* description)

@@ -83,9 +83,9 @@ namespace Baikal
         bool time_benchmark;
         float time_benchmark_time;
 
-		//image file
-		std::string base_image_file_name;
-		std::string image_file_format;
+        //image file
+        std::string base_image_file_name;
+        std::string image_file_format;
 
         //unused
         int num_shadow_rays;
