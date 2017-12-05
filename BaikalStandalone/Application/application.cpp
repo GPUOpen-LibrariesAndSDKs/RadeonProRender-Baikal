@@ -226,37 +226,8 @@ namespace Baikal
 
 			if (g_is_f10_pressed)
 			{
-				using namespace OIIO;
 				g_is_f10_pressed = false; //one time execution
-				int w, h;
-				glfwGetWindowSize(m_window, &w, &h);
-				assert(glGetError() == 0);
-				const auto channels = 3;
-				auto *data = new GLubyte[channels * w * h];
-				glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-				//opengl coordinates to oiio coordinates
-				for (auto i = 0; i <= h / 2; ++i)
-				{
-					std::swap_ranges(data + channels * w * i, data + channels * w * (i + 1) - 1, data + channels * w * (h - (i + 1)));
-				}
-
-				const auto filename = m_settings.path + "\\" + "out-" + std::to_string(time.time_since_epoch().count()) + ".png";
-				auto out = ImageOutput::create(filename);
-				if (out)
-				{
-					ImageSpec spec{ w, h, channels, TypeDesc::UINT8 };
-					out->open(filename, spec);
-					out->write_image(TypeDesc::UINT8, data);
-					out->close();
-					delete out; //?
-				}
-				else
-				{
-					std::cout << "Wrong file format\n";
-				}
-
-				delete[] data;
+				SaveToFile();
 			}
         }
 
@@ -285,6 +256,41 @@ namespace Baikal
 
         m_cl->Update(m_settings);
     }
+
+	void Application::SaveToFile(std::chrono::steady_clock::time_point time) const
+	{
+		using namespace OIIO;
+		int w, h;
+		glfwGetWindowSize(m_window, &w, &h);
+		assert(glGetError() == 0);
+		const auto channels = 3;
+		auto *data = new GLubyte[channels * w * h];
+		glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+		//opengl coordinates to oiio coordinates
+		for (auto i = 0; i <= h / 2; ++i)
+		{
+			std::swap_ranges(data + channels * w * i, data + channels * w * (i + 1) - 1, data + channels * w * (h - (i + 1)));
+		}
+
+		const auto filename = m_settings.path + "\\" + "out-" + std::to_string(time.time_since_epoch().count()) + ".png";
+		auto out = ImageOutput::create(filename);
+		if (out)
+		{
+			ImageSpec spec{ w, h, channels, TypeDesc::UINT8 };
+			out->open(filename, spec);
+			out->write_image(TypeDesc::UINT8, data);
+			out->close();
+			delete out; // ImageOutput::destroy not found
+		}
+		else
+		{
+			std::cout << "Wrong file format\n";
+		}
+
+		delete[] data;
+	}
+
 
     void OnError(int error, const char* description)
     {
