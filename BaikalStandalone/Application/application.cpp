@@ -227,7 +227,7 @@ namespace Baikal
 			if (g_is_f10_pressed)
 			{
 				g_is_f10_pressed = false; //one time execution
-				SaveToFile();
+				SaveToFile(time);
 			}
         }
 
@@ -273,7 +273,7 @@ namespace Baikal
 			std::swap_ranges(data + channels * w * i, data + channels * w * (i + 1) - 1, data + channels * w * (h - (i + 1)));
 		}
 
-		const auto filename = m_settings.path + "\\" + "out-" + std::to_string(time.time_since_epoch().count()) + ".png";
+		const auto filename = m_settings.path + "\\" + m_settings.base_image_file_name + "-" + std::to_string(time.time_since_epoch().count()) + "." + m_settings.image_file_format;
 		auto out = ImageOutput::create(filename);
 		if (out)
 		{
