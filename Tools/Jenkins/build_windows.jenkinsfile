@@ -23,11 +23,11 @@ pipeline {
                         set maxcpucount=/maxcpucount 
                         set PATH=C:\\Python27\\;%PATH%
                         rem .\\Tools\\premake\\win\\premake5 --rpr vs2015
-                        .\\Tools\\premake\\win\\premake5 vs2015 >> Build_Windows_VS2015.log
+                        .\\Tools\\premake\\win\\premake5 vs2015 >> Build_Windows_VS2015.log 2>&1
                         set solution=.\\Baikal.sln
                         
                         rem %msbuild% /target:%target% %maxcpucount% /property:Configuration=Debug;Platform=x64 %parameters% %solution%
-                        %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution% >> Build_Windows_VS2015.log
+                        %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution% >> Build_Windows_VS2015.log 2>&1
                         '''
 
                         /*
@@ -62,8 +62,8 @@ pipeline {
                     steps {
                         sh '''
                         uname -a > Build_OSX.log
-                        Tools/premake/osx/premake5 gmake >> Build_OSX.log
-                        make config=release_x64          >> Build_OSX.log
+                        Tools/premake/osx/premake5 gmake >> Build_OSX.log 2>&1
+                        make config=release_x64          >> Build_OSX.log 2>&1
                         '''
                         stash includes: 'Bin/**/*', name: 'appOSX'
                     }
@@ -90,7 +90,7 @@ pipeline {
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX9100.log
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX9100.log 2>&1
                             '''
                         }
                     }
@@ -113,7 +113,7 @@ pipeline {
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX7100.log
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX7100.log 2>&1
                             '''
                         }
                     }
@@ -136,7 +136,7 @@ pipeline {
                         dir('BaikalTest')
                         {
                             sh '''
-                            ../Bin/Release/x64/BaikalTest64 -genref 1 >> ../TestOSX_Iris.log
+                            ../Bin/Release/x64/BaikalTest64 -genref 1 >> ../TestOSX_Iris.log 2>&1
                             '''
                         }
                     }
