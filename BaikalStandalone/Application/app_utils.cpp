@@ -96,6 +96,12 @@ namespace Baikal
         char* camera_senor_size_x = GetCmdOption(argv, argv + argc, "-ssx");
         s.camera_sensor_size.x = camera_senor_size_x ? (float)atof(camera_senor_size_x) : s.camera_sensor_size.x;
 
+        char* image_file_name = GetCmdOption(argv, argv + argc, "-ifn");
+        s.base_image_file_name = image_file_name ? image_file_name : s.base_image_file_name;
+
+        char* image_file_format = GetCmdOption(argv, argv + argc, "-iff");
+        s.image_file_format = image_file_format ? image_file_format : s.image_file_format;
+
         char* camera_type = GetCmdOption(argv, argv + argc, "-ct");
 
         if (camera_type)
