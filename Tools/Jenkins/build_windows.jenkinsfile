@@ -23,12 +23,12 @@ pipeline {
                         set maxcpucount=/maxcpucount 
                         set PATH=C:\\Python27\\;%PATH%
                         rem .\\Tools\\premake\\win\\premake5 --rpr vs2015
-                        .\\Tools\\premake\\win\\premake5 vs2015
+                        .\\Tools\\premake\\win\\premake5 vs2015 >> Build_Windows_VS2015.log
                         set solution=.\\Baikal.sln
                         
                         rem %msbuild% /target:%target% %maxcpucount% /property:Configuration=Debug;Platform=x64 %parameters% %solution%
                         %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution% >> Build_Windows_VS2015.log
-
+                        '''
 
                         /*
                         xcopy /SEY ".\\Baikal\\Kernels" ".\\deployDir\\Baikal\\Kernels\\"
@@ -45,7 +45,7 @@ pipeline {
                             %CIS_TOOLS%\\sendFiles.bat deployDir/* builds/RadeonProRender-Baikal/Build#%BUILD_ID%
                             )
                         */
-                        '''
+
                         stash includes: 'Bin/**/*', name: 'appWindows'
 
                     }
@@ -83,20 +83,20 @@ pipeline {
                     }
                     steps {
                         bat '''
-                        HOSTNAME > Windows_WX9100.log
+                        HOSTNAME > TestWindows_WX9100.log
                         '''
                         unstash 'appWindows'
         
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> Windows_WX9100.log
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX9100.log
                             '''
                         }
                     }
                     post {
                         always {
-                            archiveArtifacts './BaikalTest/Windows_WX9100.log'
+                            archiveArtifacts 'TestWindows_WX9100.log'
                         }
                     }
                 }
@@ -106,20 +106,20 @@ pipeline {
                     }
                     steps {
                         bat '''
-                        HOSTNAME > Windows_WX7100.log
+                        HOSTNAME > TestWindows_WX7100.log
                         '''
                         unstash 'appWindows'
         
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> Windows_WX7100.log
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX7100.log
                             '''
                         }
                     }
                     post {
                         always {
-                            archiveArtifacts './BaikalTest/Windows_WX7100.log'
+                            archiveArtifacts 'TestWindows_WX7100.log'
                         }
                     }
                 }
@@ -128,21 +128,21 @@ pipeline {
                         label "OSX && Tester && OpenCL && gpuIntel_Iris"
                     }
                     steps {
-                        bat '''
-                        uname -a > OSX_Iris.log
+                        sh '''
+                        uname -a > TestOSX_Iris.log
                         '''
                         unstash 'appOSX'
         
                         dir('BaikalTest')
                         {
-                            bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> OSX_Iris.log
+                            sh '''
+                            ../Bin/Release/x64/BaikalTest64 -genref 1 >> ../TestOSX_Iris.log
                             '''
                         }
                     }
                     post {
                         always {
-                            archiveArtifacts './BaikalTest/OSX_Iris.log'
+                            archiveArtifacts 'TestOSX_Iris.log'
                         }
                     }
                 }
@@ -152,35 +152,3 @@ pipeline {
 }
 
 
-/*
-pipeline {
-    agent {
-        node {
-            label 'Windows && VS2015 && BUILDER'
-        } 
-    }
-    stages {
-        stage('Build') {
-            steps {
-                bat '''
-                set msbuild="C:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe"
-                if not exist %msbuild% (
-                    set msbuild="C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\MSBuild\\15.0\\Bin\\MSBuild.exe"
-                )
-
-                set target=build
-                set maxcpucount=/maxcpucount 
-                set PATH=C:\\Python27\\;%PATH%
-                rem .\\Tools\\premake\\win\\premake5 --rpr vs2015
-                .\\Tools\\premake\\win\\premake5 vs2015
-                set solution=.\\Baikal.sln
-                
-                %msbuild% /target:%target% %maxcpucount% /property:Configuration=Debug;Platform=x64 %parameters% %solution%
-                %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution%
-                '''
-            }
-        }
-    }
-}
-
-*/
