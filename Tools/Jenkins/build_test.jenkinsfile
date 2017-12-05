@@ -185,7 +185,6 @@ pipeline {
     post {
         always {
             echo 'sending notification result...'
-            echo sh(returnStdout: true, script: 'env')
             notifyBuild(currentBuild.result)
         }
     }
