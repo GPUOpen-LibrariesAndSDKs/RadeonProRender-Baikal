@@ -90,12 +90,13 @@ pipeline {
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX9100.log 2>&1
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 --gtest_output TestWindows_WX9100.xml >> ..\\TestWindows_WX9100.log 2>&1
                             '''
                         }
                     }
                     post {
                         always {
+                            junit 'TestWindows_WX9100.xml'
                             archiveArtifacts 'TestWindows_WX9100.log'
                         }
                     }
@@ -113,12 +114,13 @@ pipeline {
                         dir('BaikalTest')
                         {
                             bat '''
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 >> ..\\TestWindows_WX7100.log 2>&1
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 --gtest_output TestWindows_WX7100.xml >> ..\\TestWindows_WX7100.log 2>&1
                             '''
                         }
                     }
                     post {
                         always {
+                            junit 'TestWindows_WX7100.xml'
                             archiveArtifacts 'TestWindows_WX7100.log'
                         }
                     }
@@ -136,12 +138,13 @@ pipeline {
                         dir('BaikalTest')
                         {
                             sh '''
-                            ../Bin/Release/x64/BaikalTest64 -genref 1 >> ../TestOSX_Iris.log 2>&1
+                            ../Bin/Release/x64/BaikalTest64 -genref 1 --gtest_output TestOSX_Iris.xml >> ../TestOSX_Iris.log 2>&1
                             '''
                         }
                     }
                     post {
                         always {
+                            junit 'TestOSX_Iris.xml'
                             archiveArtifacts 'TestOSX_Iris.log'
                         }
                     }
