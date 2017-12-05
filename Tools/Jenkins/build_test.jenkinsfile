@@ -80,9 +80,6 @@ pipeline {
                             archiveArtifacts 'Build_Windows_VS2015.log'
                             notifyBuild 
                         }
-                        failure {
-                            mail to: aakravchenko@luxoft.com, subject: 'Windows Build Failed', body 'Windows Build Failed', from: 'mailer@cis.luxoft.com'
-                        }            
                     }
                 }
                 stage('Build On OSX') {
