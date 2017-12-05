@@ -12,7 +12,7 @@ pipeline {
                     }
                     steps {
                         bat '''
-                        set
+                        HOSTNAME > Build_Windows_VS2015.log
 
                         set msbuild="C:\\Program Files (x86)\\MSBuild\\14.0\\Bin\\MSBuild.exe"
                         if not exist %msbuild% (
@@ -27,9 +27,10 @@ pipeline {
                         set solution=.\\Baikal.sln
                         
                         rem %msbuild% /target:%target% %maxcpucount% /property:Configuration=Debug;Platform=x64 %parameters% %solution%
-                        %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution%
+                        %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution% >> Build_Windows_VS2015.log
 
 
+                        /*
                         xcopy /SEY ".\\Baikal\\Kernels" ".\\deployDir\\Baikal\\Kernels\\"
                         xcopy /SEY ".\\Bin\\*.dll" ".\\deployDir\\Bin\\"
                         xcopy /SEY ".\\Bin\\*.exe" ".\\deployDir\\Bin\\"
@@ -40,7 +41,6 @@ pipeline {
                         echo placeholder > .\\deployDir\\BaikalTest\\OutputImages\\placeholder.txt
                         echo placeholder > .\\deployDir\\BaikalTest\\ReferenceImages\\placeholder.txt
 
-                        /*
                         IF EXIST "%CIS_TOOLS%\\sendFiles.bat" (
                             %CIS_TOOLS%\\sendFiles.bat deployDir/* builds/RadeonProRender-Baikal/Build#%BUILD_ID%
                             )
@@ -51,9 +51,7 @@ pipeline {
                     }
                     post {
                         always {
-                        bat '''
-                        echo post build on windows
-                        '''
+                            archiveArtifacts 'Build_Windows_VS2015.log'
                         }
                     }
                 }
@@ -63,16 +61,15 @@ pipeline {
                     }
                     steps {
                         sh '''
-                        Tools/premake/osx/premake5 gmake
-                        make config=release_x64
+                        uname -a > Build_OSX.log
+                        Tools/premake/osx/premake5 gmake >> Build_OSX.log
+                        make config=release_x64          >> Build_OSX.log
                         '''
                         stash includes: 'Bin/**/*', name: 'appOSX'
                     }
                     post {
                         always {
-                        sh '''
-                        echo post build on OSX
-                        '''
+                            archiveArtifacts 'Build_OSX.log'
                         }
                     }
                 }
@@ -99,7 +96,7 @@ pipeline {
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: ./BaikalTest/Windows_WX9100.log
+                            archiveArtifacts './BaikalTest/Windows_WX9100.log'
                         }
                     }
                 }
@@ -122,7 +119,7 @@ pipeline {
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: ./BaikalTest/Windows_WX7100.log
+                            archiveArtifacts './BaikalTest/Windows_WX7100.log'
                         }
                     }
                 }
@@ -145,7 +142,7 @@ pipeline {
                     }
                     post {
                         always {
-                            archiveArtifacts artifacts: ./BaikalTest/OSX_Iris.log
+                            archiveArtifacts './BaikalTest/OSX_Iris.log'
                         }
                     }
                 }
