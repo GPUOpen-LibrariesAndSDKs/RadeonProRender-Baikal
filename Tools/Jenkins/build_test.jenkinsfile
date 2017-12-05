@@ -1,5 +1,31 @@
-def axisWindowsTesters = ["Windows && OpenCL && Tester","osx-agent-2"]
 
+def notifyBuild(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+ 
+  // Default values
+  def colorName = 'RED'
+  def colorCode = '#FF0000'
+  def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' Branch 'env.BRANCH_NAME'"
+  def summary = "${subject} (${env.BUILD_URL})"
+  def details = """<p>STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+    <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>"</p>"""
+ 
+  // Override default values based on build status
+  if (buildStatus == 'STARTED') {
+    color = 'YELLOW'
+    colorCode = '#FFFF00'
+  } else if (buildStatus == 'SUCCESSFUL') {
+    color = 'GREEN'
+    colorCode = '#00FF00'
+  } else {
+    color = 'RED'
+    colorCode = '#FF0000'
+  }
+ 
+  // Send notifications
+  slackSend (color: colorCode, message: summary)
+}
 
 pipeline {
     agent none
@@ -52,7 +78,11 @@ pipeline {
                     post {
                         always {
                             archiveArtifacts 'Build_Windows_VS2015.log'
+                            notifyBuild 
                         }
+                        failure {
+                            mail to: aakravchenko@luxoft.com, subject: 'Windows Build Failed', body 'Windows Build Failed', from: 'mailer@cis.luxoft.com'
+                        }            
                     }
                 }
                 stage('Build On OSX') {
@@ -150,6 +180,13 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            echo 'sending notification result...'
+            echo sh(returnStdout: true, script: 'env')
+            notifyBuild(currentBuild.result)
         }
     }
 }
