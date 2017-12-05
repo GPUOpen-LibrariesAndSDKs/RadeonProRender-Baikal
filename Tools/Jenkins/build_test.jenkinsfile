@@ -28,7 +28,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
 }
 
 pipeline {
-    agent none
+    agent label "master"
     stages {
         stage('Build') {
             parallel {
