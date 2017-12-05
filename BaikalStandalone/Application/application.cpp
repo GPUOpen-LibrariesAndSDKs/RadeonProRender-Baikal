@@ -78,6 +78,7 @@ namespace Baikal
     static bool     g_is_home_pressed = false;
     static bool     g_is_end_pressed = false;
     static bool     g_is_mouse_tracking = false;
+	static bool		g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
 
@@ -141,6 +142,9 @@ namespace Baikal
         case GLFW_KEY_F3:
             app->m_settings.benchmark = action == GLFW_PRESS ? true : app->m_settings.benchmark;
             break;
+		case GLFW_KEY_F10:
+			g_is_f10_pressed = action == GLFW_PRESS;
+			break;
         default:
             break;
         }
@@ -217,6 +221,11 @@ namespace Baikal
                 camera->MoveUp(-(float)dt.count() * kMovementSpeed);
                 update = true;
             }
+
+			if (g_is_f10_pressed)
+			{
+				g_is_f10_pressed = false; //one time execution
+			}
         }
 
         if (update)
