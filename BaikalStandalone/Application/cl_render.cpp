@@ -57,7 +57,13 @@ namespace Baikal
         //create cl context
         try
         {
-            ConfigManager::CreateConfigs(settings.mode, settings.interop, m_cfgs, settings.num_bounces);
+            ConfigManager::CreateConfigs(
+                settings.mode,
+                settings.interop,
+                m_cfgs,
+                settings.num_bounces,
+                settings.platform_index,
+                settings.device_index);
         }
         catch (CLWException &)
         {
@@ -193,10 +199,24 @@ namespace Baikal
             }
         }
 
-        m_camera = Baikal::PerspectiveCamera::Create(
-            settings.camera_pos
-            , settings.camera_at
-            , settings.camera_up);
+        switch (settings.camera_type)
+        {
+        case CameraType::kPerspective:
+            m_camera = Baikal::PerspectiveCamera::Create(
+                settings.camera_pos
+                , settings.camera_at
+                , settings.camera_up);
+
+            break;
+        case CameraType::kOrthographic:
+            m_camera = Baikal::OrthographicCamera::Create(
+                settings.camera_pos
+                , settings.camera_at
+                , settings.camera_up);
+            break;
+        default:
+            throw std::runtime_error("AppClRender::InitCl(...): unsupported camera type");
+        }
 
         m_scene->SetCamera(m_camera);
 
@@ -206,14 +226,21 @@ namespace Baikal
 
         m_camera->SetSensorSize(settings.camera_sensor_size);
         m_camera->SetDepthRange(settings.camera_zcap);
-        m_camera->SetFocalLength(settings.camera_focal_length);
-        m_camera->SetFocusDistance(settings.camera_focus_distance);
-        m_camera->SetAperture(settings.camera_aperture);
 
-        std::cout << "Camera type: " << (m_camera->GetAperture() > 0.f ? "Physical" : "Pinhole") << "\n";
-        std::cout << "Lens focal length: " << m_camera->GetFocalLength() * 1000.f << "mm\n";
-        std::cout << "Lens focus distance: " << m_camera->GetFocusDistance() << "m\n";
-        std::cout << "F-Stop: " << 1.f / (m_camera->GetAperture() * 10.f) << "\n";
+        auto perspective_camera = std::dynamic_pointer_cast<Baikal::PerspectiveCamera>(m_camera);
+
+        // if camera mode is kPerspective
+        if (perspective_camera)
+        {
+            perspective_camera->SetFocalLength(settings.camera_focal_length);
+            perspective_camera->SetFocusDistance(settings.camera_focus_distance);
+            perspective_camera->SetAperture(settings.camera_aperture);
+            std::cout << "Camera type: " << (perspective_camera->GetAperture() > 0.f ? "Physical" : "Pinhole") << "\n";
+            std::cout << "Lens focal length: " << perspective_camera->GetFocalLength() * 1000.f << "mm\n";
+            std::cout << "Lens focus distance: " << perspective_camera->GetFocusDistance() << "m\n";
+            std::cout << "F-Stop: " << 1.f / (perspective_camera->GetAperture() * 10.f) << "\n";
+        }
+
         std::cout << "Sensor size: " << settings.camera_sensor_size.x * 1000.f << "x" << settings.camera_sensor_size.y * 1000.f << "mm\n";
     }
 

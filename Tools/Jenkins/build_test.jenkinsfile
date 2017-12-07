@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> upstream/master
 def notifyBuild(String buildStatus = 'STARTED') {
   // build status of null means successful
   buildStatus =  buildStatus ?: 'SUCCESSFUL'
@@ -55,6 +58,7 @@ pipeline {
                         rem %msbuild% /target:%target% %maxcpucount% /property:Configuration=Debug;Platform=x64 %parameters% %solution%
                         %msbuild% /target:%target% %maxcpucount% /property:Configuration=Release;Platform=x64 %parameters% %solution% >> Build_Windows_VS2015.log 2>&1
                         '''
+<<<<<<< HEAD
 
                         /*
                         xcopy /SEY ".\\Baikal\\Kernels" ".\\deployDir\\Baikal\\Kernels\\"
@@ -72,6 +76,8 @@ pipeline {
                             )
                         */
 
+=======
+>>>>>>> upstream/master
                         stash includes: 'Bin/**/*', name: 'appWindows'
 
                     }
@@ -185,5 +191,8 @@ pipeline {
         }
     }
 }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> upstream/master

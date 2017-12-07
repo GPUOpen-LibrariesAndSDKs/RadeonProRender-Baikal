@@ -58,12 +58,12 @@ typedef struct
 {
     // Shape starting index
     int startidx;
-    // Number of primitives in the shape
-    int numprims;
     // Start vertex
     int startvtx;
     // Start material idx
-    int start_material_idx;
+    int material_idx;
+    // Number of primitives in the shape
+    int volume_idx;
     // Linear motion vector
     float3 linearvelocity;
     // Angular velocity
@@ -180,9 +180,9 @@ typedef struct
         struct
         {
             int tex;
-            int texdiffuse;
-            float multiplier;
-            int padding1;
+            int tex_reflection;
+            int tex_refraction;
+            int tex_transparency;
         };
 
         // Spot
@@ -199,7 +199,9 @@ typedef struct
     float3 d;
     float3 intensity;
     int type;
-    int padding[3];
+    float multiplier;
+    int tex_background;
+    int padding;
 } Light;
 
 typedef enum
@@ -211,7 +213,7 @@ typedef enum
 
 typedef enum
     {
-        kUniform,
+        kUniform = 0,
         kRayleigh,
         kMieMurky,
         kMieHazy,

@@ -52,7 +52,7 @@ void InitPathData(
         GLOBAL Path* my_path = paths + global_id;
         dst_index[global_id] = src_index[global_id];
 
-        // Initalize path data
+        // Initalize path data 
         my_path->throughput = make_float3(1.f, 1.f, 1.f);
         my_path->volume = INVALID_IDX;
         my_path->flags = 0;
@@ -86,8 +86,6 @@ KERNEL void ShadeVolume(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
-    // Material IDs
-    GLOBAL int const* restrict material_ids,
     // Materials
     GLOBAL Material const* restrict materials,
     // Textures
@@ -133,7 +131,6 @@ KERNEL void ShadeVolume(
         uvs,
         indices,
         shapes,
-        material_ids,
         materials,
         lights,
         env_light_idx,
@@ -191,7 +188,8 @@ KERNEL void ShadeVolume(
         // since EvaluateVolume has put it there
         dg.p = o + wi * Intersection_GetDistance(isects + hit_idx);
         // Get light sample intencity
-        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &wo, &pdf);
+        int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
+        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &wo, &pdf);
 
         // Generate shadow ray
         float shadow_ray_length = length(wo);
@@ -231,10 +229,10 @@ KERNEL void ShadeVolume(
         pdf = 1.f / (4.f * PI);
 
         // Generate new path segment
-        Ray_Init(indirect_rays + global_id, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
+        Ray_Init(indirect_rays + global_id, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF); 
 
         // Update path throughput multiplying by phase function.
-        Path_MulThroughput(path, volumes[volume_idx].sigma_s * PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
+        Path_MulThroughput(path, PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
 #else
         // Single-scattering mode only,
         // kill the path and compact away on next iteration
@@ -243,6 +241,7 @@ KERNEL void ShadeVolume(
 #endif
     }
 }
+
 
 // Handle ray-surface interaction possibly generating path continuation. 
 // This is only applied to non-scattered paths.
@@ -269,8 +268,6 @@ KERNEL void ShadeSurface(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
-    // Material IDs
-    GLOBAL int const* restrict material_ids,
     // Materials
     GLOBAL Material const* restrict materials,
     // Textures
@@ -316,7 +313,6 @@ KERNEL void ShadeSurface(
         uvs,
         indices,
         shapes,
-        material_ids,
         materials,
         lights,
         env_light_idx,
@@ -366,6 +362,8 @@ KERNEL void ShadeSurface(
 
         // Select BxDF 
         Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+        // Set surface interaction flags
+        Path_SetFlags(&diffgeo, path);
 
         // Terminate if emissive
         if (Bxdf_IsEmissive(&diffgeo))
@@ -399,7 +397,6 @@ KERNEL void ShadeSurface(
             return;
         }
 
-
         float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
         if (backfacing && !Bxdf_IsBtdf(&diffgeo))
         {
@@ -413,6 +410,17 @@ KERNEL void ShadeSurface(
             s = -s;
         }
 
+        if (Bxdf_IsBtdf(&diffgeo))
+        {
+            if (backfacing)
+            {
+                Path_SetVolumeIdx(path, INVALID_IDX);
+            }
+            else
+            {
+                Path_SetVolumeIdx(path, Scene_GetVolumeIndex(&scene, isect.shapeid - 1));
+            }
+        }
 
         DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
         DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
@@ -431,7 +439,7 @@ KERNEL void ShadeSurface(
         float bxdf_weight = 1.f;
         float light_weight = 1.f;
 
-        int light_idx = Scene_SampleLight(&scene, Sampler_Sample1D(&sampler, SAMPLER_ARGS), &selection_pdf);
+        int light_idx = Scene_SampleLight(&scene, Sampler_Sample1D(&sampler, SAMPLER_ARGS), &selection_pdf); 
 
         float3 throughput = Path_GetThroughput(path);
 
@@ -442,7 +450,8 @@ KERNEL void ShadeSurface(
         if (light_idx > -1) 
         {
             // Sample light
-            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &lightwo, &light_pdf);
+            int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
+            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &lightwo, &light_pdf);
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
 
@@ -496,15 +505,6 @@ KERNEL void ShadeSurface(
         if (rr_apply)
         {
             Path_MulThroughput(path, 1.f / q);
-        }
-
-        if (Bxdf_IsSingular(&diffgeo))
-        {
-            Path_SetSpecularFlag(path);
-        }
-        else
-        {
-            Path_ClearSpecularFlag(path);
         }
 
         bxdfwo = normalize(bxdfwo);
@@ -566,22 +566,26 @@ KERNEL void ShadeBackgroundEnvMap(
         float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
 
         // In case of a miss
-        if (isects[global_id].shapeid < 0 && env_light_idx != -1)
+        if (isects[global_id].shapeid < 0 && env_light_idx != -1)  
         {
             // Multiply by throughput
             int volume_idx = paths[pixel_idx].volume;
 
             Light light = lights[env_light_idx];
 
+            int tex = EnvironmentLight_GetBackgroundTexture(&light);
 
-            if (volume_idx == -1)
-                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex));
-            else
+            if (tex != -1)
             {
-                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) *
-                    Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                if (volume_idx == -1)
+                    v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                else
+                {
+                    v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) *
+                        Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
 
-                v.xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                    v.xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
+                }
             }
         }
 
@@ -743,7 +747,7 @@ KERNEL void ShadeMiss(
     // Ray batch
     GLOBAL ray const* restrict rays,
     // Intersection data
-    GLOBAL Intersection const* restrict isects, 
+    GLOBAL Intersection const* restrict isects,  
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
     // Output indices
@@ -779,16 +783,45 @@ KERNEL void ShadeMiss(
             Light light = lights[env_light_idx];
 
             // Apply MIS
+            int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
             float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
-            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, rays[global_id].d.xyz, TEXTURE_ARGS);
+            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, surface_interaction_flags, rays[global_id].d.xyz, TEXTURE_ARGS);
             float2 extra = Ray_GetExtra(&rays[global_id]);
             float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
 
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;
-            v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(light.tex)) * t);
+
+            int tex = EnvironmentLight_GetTexture(&light, surface_interaction_flags);
+            if (tex != -1)
+            {
+                v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
+            }
+
             ADD_FLOAT4(&output[output_index], v);
         }
     }
 }
 
+///< Advance iteration count. Used on missed rays
+KERNEL void AdvanceIterationCount(
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const*  restrict output_indices,
+    // Number of rays
+    GLOBAL int* restrict num_rays,
+    // Output values
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+    if (global_id < num_rays)
+    {
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+
+        float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
+        ADD_FLOAT4(&output[output_index], v);
+    }
+}

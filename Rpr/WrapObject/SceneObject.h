@@ -31,12 +31,21 @@ THE SOFTWARE.
 class ShapeObject;
 class LightObject;
 class CameraObject;
+class MaterialObject;
 
 //this class represent rpr_context
 class SceneObject
     : public WrapObject
 {
 public:
+    enum class OverrideType
+    {
+        kReflection,
+        kRefraction,
+        kTransparency,
+        kBackground
+    };
+
     SceneObject();
     virtual ~SceneObject();
 
@@ -62,6 +71,14 @@ public:
 
     RadeonRays::bbox GetBBox();
 
+    // Image override
+    void SetBackgroundImage(MaterialObject* image);
+    MaterialObject* GetBackgroundImage() const;
+
+    // Environment override
+    void SetEnvironmentOverride(OverrideType overrride, LightObject* light);
+    LightObject* GetEnvironmentOverride(OverrideType overrride);
+
 	void AddEmissive();
 	void RemoveEmissive();
     bool IsDirty();
@@ -72,4 +89,14 @@ private:
     std::vector<Baikal::AreaLight::Ptr> m_emmisive_lights;//area lights fro emissive shapes
     std::vector<ShapeObject*> m_shapes;
     std::vector<LightObject*> m_lights;
+    MaterialObject *m_background_image;
+
+    struct EnvironmentOverride
+    {
+        LightObject* m_reflection = nullptr;
+        LightObject* m_refraction = nullptr;
+        LightObject* m_transparency = nullptr;
+        LightObject* m_background = nullptr;
+        Baikal::Scene1::EnvironmentOverride ToScene1EnvironmentOverride() const;
+    } m_environment_override;
 };

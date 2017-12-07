@@ -130,7 +130,8 @@ namespace Baikal
             QualityLevel quality,
             CLWBuffer<RadeonRays::float3> output,
             bool use_output_indices = true,
-            bool atomic_update = false
+            bool atomic_update = false,
+            MissedPrimaryRaysHandler missedPrimaryRaysHandler = nullptr
         ) override;
 
         /**
@@ -241,6 +242,8 @@ namespace Baikal
             CLWBuffer<RadeonRays::float3> output,
             bool use_output_indices
         );
+
+        void AdvanceIterationCount(int pass, std::size_t size, CLWBuffer<RadeonRays::float3> output, bool use_output_indices);
 
         // Restore pixel indices after compaction
         void RestorePixelIndices(int pass, std::size_t size);

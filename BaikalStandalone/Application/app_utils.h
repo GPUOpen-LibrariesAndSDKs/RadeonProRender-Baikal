@@ -35,6 +35,10 @@ namespace Baikal
     {
         AppSettings();
 
+        // OpenCL platform & device settings
+        int platform_index;
+        int device_index;
+
         //model load settings
         std::string path;
         std::string modelname;
@@ -63,6 +67,7 @@ namespace Baikal
         float camera_aperture;
         float camera_focus_distance;
         float camera_focal_length;
+        CameraType camera_type;
 
         //app
         bool progressive;

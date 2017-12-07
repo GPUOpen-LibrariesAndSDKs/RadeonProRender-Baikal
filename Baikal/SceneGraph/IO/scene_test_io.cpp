@@ -271,10 +271,10 @@ namespace Baikal
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.2f, 0.f));
             scene->AttachShape(mesh);
 
-            auto refract = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
+            auto refract = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealRefract);
             refract->SetInputValue("albedo", float4(0.7f, 1.f, 0.7f, 1.f));
             refract->SetInputValue("ior", float4(1.5f, 1.5f, 1.5f, 1.f));
-            refract->SetInputValue("roughness", float4(0.02f, 0.02f, 0.02f, 1.f));
+            //refract->SetInputValue("roughness", float4(0.02f, 0.02f, 0.02f, 1.f));
 
 
             auto spec = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetGGX);

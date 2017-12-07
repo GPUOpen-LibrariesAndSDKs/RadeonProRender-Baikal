@@ -56,6 +56,7 @@ namespace Baikal
         // Material input type
         enum class InputType
         {
+            kUint = 0,
             kFloat4,
             kTexture,
             kMaterial
@@ -78,6 +79,7 @@ namespace Baikal
             InputType type;
             
             // Possible values (use based on type)
+            uint32_t uint_value;
             RadeonRays::float4 float_value;
             Texture::Ptr tex_value;
             Material::Ptr mat_value;
@@ -110,6 +112,7 @@ namespace Baikal
 
         // Set input value
         // If specific data type is not supported throws std::runtime_error
+        void SetInputValue(std::string const& name, uint32_t value);
         void SetInputValue(std::string const& name,
                            RadeonRays::float4 const& value);
         void SetInputValue(std::string const& name, Texture::Ptr texture);
@@ -127,6 +130,8 @@ namespace Baikal
         Material& operator = (Material const&) = delete;
 
     protected:
+        Input& GetInput(const std::string& name, InputType type);
+
         Material();
     
         // Register specific input
@@ -227,4 +232,26 @@ namespace Baikal
     protected:
         DisneyBxdf();
     };
+
+    class VolumeMaterial : public Material
+    {
+    public:
+        enum class PhaseFunction
+        {
+            kUniform = 0,
+            kRayleigh,
+            kMieMurky,
+            kMieHazy
+        };
+
+        using Ptr = std::shared_ptr<VolumeMaterial>;
+        static Ptr Create();
+
+        // Check if material has emissive components
+        bool HasEmission() const override;
+
+    protected:
+        VolumeMaterial();
+    };
+
 }

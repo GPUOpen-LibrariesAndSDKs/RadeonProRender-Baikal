@@ -43,23 +43,6 @@ protected:
         m_scene = io->LoadScene("sphere+plane+ibl", "");
     }
 
-    void ApplyMaterialToObject(
-        std::string const& name,
-        Baikal::Material::Ptr material
-    )
-    {
-        for (auto iter = m_scene->CreateShapeIterator();
-            iter->IsValid();
-            iter->Next())
-        {
-            auto mesh = iter->ItemAs<Baikal::Mesh>();
-            if (mesh->GetName() == name)
-            {
-                mesh->SetMaterial(material);
-            }
-        }
-    }
-
     void MaterialTestHelperFunction(
         const std::string& test_name,
         const std::vector<float> &iors,
@@ -130,7 +113,7 @@ TEST_F(MaterialTest, Material_Diffuse)
         ClearOutput();
 
         auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kLambert);
-        material->SetInputValue("albedo", c);
+        material->SetInputValue("albedo", RadeonRays::float4(c));
 
         ApplyMaterialToObject("sphere", material);
 
@@ -217,7 +200,7 @@ TEST_F(MaterialTest, Material_Reflect)
             ClearOutput();
 
             auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealReflect);
-            material->SetInputValue("albedo", c);
+            material->SetInputValue("albedo", RadeonRays::float4(c));
 
             if (ior > 0.f)
             {
@@ -330,7 +313,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
                 ClearOutput();
 
                 auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
-                material->SetInputValue("albedo", c);
+                material->SetInputValue("albedo", RadeonRays::float4(c));
 
                 if (ior > 0.f)
                 {
@@ -338,7 +321,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
                     material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
                 }
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
                 ApplyMaterialToObject("sphere", material);
 
@@ -384,7 +367,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
                     material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
                 }
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
 
                 ApplyMaterialToObject("sphere", material);
@@ -451,7 +434,7 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
                 ClearOutput();
 
                 auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann);
-                material->SetInputValue("albedo", c);
+                material->SetInputValue("albedo", RadeonRays::float4(c));
 
                 if (ior > 0.f)
                 {
@@ -459,7 +442,7 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
                     material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
                 }
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
                 ApplyMaterialToObject("sphere", material);
 
@@ -505,7 +488,7 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
                     material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
                 }
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
 
                 ApplyMaterialToObject("sphere", material);
@@ -565,7 +548,7 @@ TEST_F(MaterialTest, Material_Refract)
             ClearOutput();
 
             auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealRefract);
-            material->SetInputValue("albedo", c);
+            material->SetInputValue("albedo", RadeonRays::float4(c));
             material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
 
@@ -667,11 +650,11 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
                 ClearOutput();
 
                 auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
-                material->SetInputValue("albedo", c);
+                material->SetInputValue("albedo", RadeonRays::float4(c));
 
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
                 ApplyMaterialToObject("sphere", material);
 
@@ -713,7 +696,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
 
                 ApplyMaterialToObject("sphere", material);
@@ -780,11 +763,11 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
                 ClearOutput();
 
                 auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann);
-                material->SetInputValue("albedo", c);
+                material->SetInputValue("albedo", RadeonRays::float4(c));
 
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
                 ApplyMaterialToObject("sphere", material);
 
@@ -826,7 +809,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
                 material->SetInputValue("ior", RadeonRays::float3(ior, ior, ior));
 
 
-                material->SetInputValue("roughness", r);
+                material->SetInputValue("roughness", RadeonRays::float4(r));
 
 
                 ApplyMaterialToObject("sphere", material);
@@ -879,7 +862,7 @@ TEST_F(MaterialTest, Material_Translucent)
         ClearOutput();
 
         auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kTranslucent);
-        material->SetInputValue("albedo", c);
+        material->SetInputValue("albedo", RadeonRays::float4(c));
 
         ApplyMaterialToObject("sphere", material);
 
@@ -1100,7 +1083,7 @@ TEST_F(MaterialTest, Material_MixRefractAndMicrofacet)
 
             auto mix_material = MultiBxdf::Create(MultiBxdf::Type::kMix);
 
-            mix_material->SetInputValue("weight", mix_weight);
+            mix_material->SetInputValue("weight", RadeonRays::float4(mix_weight));
             mix_material->SetInputValue("base_material", base_material);
             mix_material->SetInputValue("top_material", top_material);
 
@@ -1150,7 +1133,7 @@ TEST_F(MaterialTest, Material_MixDiffuseAndMicrofacet)
 
             auto mix_material = MultiBxdf::Create(MultiBxdf::Type::kMix);
 
-            mix_material->SetInputValue("weight", mix_weight);
+            mix_material->SetInputValue("weight", RadeonRays::float4(mix_weight));
             mix_material->SetInputValue("base_material", base_material);
             mix_material->SetInputValue("top_material", top_material);
 
@@ -1215,4 +1198,57 @@ TEST_F(MaterialTest, Material_MixDiffuseAndTransparencyMask)
 
             return mixed_material;
         });
+}
+
+TEST_F(MaterialTest, Material_Volume)
+{
+    using namespace Baikal;
+
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    std::vector<RadeonRays::float3> color =
+    {
+        RadeonRays::float3(0.9f, 0.2f, 0.1f)
+    };
+
+    ClearOutput();
+
+    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
+    auto volume = VolumeMaterial::Create();
+
+    volume->SetInputValue("absorption", RadeonRays::float4(.5f, .2f, .3f, .0f));
+    volume->SetInputValue("scattering", RadeonRays::float4(.7f, .3f, .1f, .0f));
+    volume->SetInputValue("emission", RadeonRays::float4(.8f, .9f, .4f, .0f));
+    volume->SetInputValue("phase function", static_cast<int>(VolumeMaterial::PhaseFunction::kMieHazy));
+
+    for (auto iter = m_scene->CreateShapeIterator();
+        iter->IsValid();
+        iter->Next())
+    {
+        auto mesh = iter->ItemAs<Mesh>();
+        if (mesh->GetName() == "sphere")
+        {
+            mesh->SetMaterial(material);
+            mesh->SetVolumeMaterial(volume);
+        }
+    }
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (auto i = 0u; i < kNumIterations; ++i)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
 }

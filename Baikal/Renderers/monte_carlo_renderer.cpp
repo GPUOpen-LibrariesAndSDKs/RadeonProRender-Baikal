@@ -34,7 +34,7 @@
 #include "Utils/sobol.h"
 #include "math/int2.h"
 
-#ifdef RR_EMBED_KERNELS
+#ifdef BAIKAL_EMBED_KERNELS
 #include "./Kernels/CL/cache/kernels.h"
 #endif
 
@@ -51,7 +51,15 @@ namespace Baikal
         std::unique_ptr<Estimator> estimator,
         std::string const& cache_path
     )
+#ifdef BAIKAL_EMBED_KERNELS
+        : Baikal::ClwClass( context, 
+                            g_monte_carlo_renderer_opencl, 
+                            g_monte_carlo_renderer_opencl_inc, 
+                            sizeof(g_monte_carlo_renderer_opencl_inc)/sizeof(*g_monte_carlo_renderer_opencl_inc),
+                            "", cache_path)
+#else
         : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl", "", cache_path)
+#endif
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
     {
@@ -119,11 +127,26 @@ namespace Baikal
             GenerateTileDomain(output_size, tile_origin, tile_size);
             GeneratePrimaryRays(scene, *output, tile_size);
 
-            m_estimator->Estimate(
-                scene,
-                num_rays,
-                Estimator::QualityLevel::kStandard,
-                output->data());
+            if (scene.background_idx > -1)
+            {
+                m_estimator->Estimate(
+                    scene,
+                    num_rays,
+                    Estimator::QualityLevel::kStandard,
+                    output->data(),
+                    true,
+                    false,
+                    std::bind(&MonteCarloRenderer::HandleMissedRays, this, std::ref(scene), output_size.x, output_size.y,
+                        std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4,
+                        std::placeholders::_5, std::placeholders::_6));
+            }
+            else
+                m_estimator->Estimate(
+                    scene,
+                    num_rays,
+                    Estimator::QualityLevel::kStandard,
+                    output->data());
+
         }
 
         // Check if we have other outputs, than color
@@ -235,7 +258,6 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.uvs);
         fill_kernel.SetArg(argc++, scene.indices);
         fill_kernel.SetArg(argc++, scene.shapes);
-        fill_kernel.SetArg(argc++, scene.materialids);
         fill_kernel.SetArg(argc++, scene.materials);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
@@ -267,7 +289,21 @@ namespace Baikal
             GetContext().Launch1D(0, ((globalsize + 63) / 64) * 64, 64, fill_kernel);
         }
     }
-
+    
+    static std::string GetCameraKernelName(CameraType type)
+    {
+        switch (type) {
+            case CameraType::kPerspective:
+                return "PerspectiveCamera_GeneratePaths";
+            case CameraType::kPhysicalPerspective:
+                return "PerspectiveCameraDof_GeneratePaths";
+            case CameraType::kOrthographic:
+                return "OrthographicCamera_GeneratePaths";
+            default:
+                assert(false);
+                return "none";
+        }
+    }
 
     void MonteCarloRenderer::GeneratePrimaryRays(
         ClwScene const& scene, 
@@ -277,8 +313,7 @@ namespace Baikal
     )
     {
         // Fetch kernel
-        std::string kernel_name = (scene.camera_type == CameraType::kDefault) ? "PerspectiveCamera_GeneratePaths" : "PerspectiveCameraDof_GeneratePaths";
-
+        auto kernel_name = GetCameraKernelName(scene.camera_type);
         auto genkernel = GetKernel(kernel_name, generate_at_pixel_center ? "-D BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER " : "");
 
         // Set kernel parameters
@@ -332,4 +367,31 @@ namespace Baikal
     {
         m_estimator->SetMaxBounces(max_bounces);
     }
+
+    void MonteCarloRenderer::HandleMissedRays(const ClwScene &scene , uint32_t w, uint32_t h,
+        CLWBuffer<ray> rays, CLWBuffer<Intersection> intersections, CLWBuffer<int> pixel_indices,
+        CLWBuffer<int> output_indices, std::size_t size, CLWBuffer<RadeonRays::float3> output)
+    {
+        // Fetch kernel
+        auto misskernel = GetKernel("ShadeBackgroundImage") ;
+
+        // Set kernel parameters
+        int argc = 0;
+        misskernel.SetArg(argc++, rays);
+        misskernel.SetArg(argc++, intersections);
+        misskernel.SetArg(argc++, pixel_indices);
+        misskernel.SetArg(argc++, output_indices);
+        misskernel.SetArg(argc++, (cl_int)size);
+        misskernel.SetArg(argc++, scene.background_idx);
+        misskernel.SetArg(argc++, w);
+        misskernel.SetArg(argc++, h);
+        misskernel.SetArg(argc++, scene.textures);
+        misskernel.SetArg(argc++, scene.texturedata);
+        misskernel.SetArg(argc++, output);
+
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, misskernel);
+        }
+    }
+    
 }

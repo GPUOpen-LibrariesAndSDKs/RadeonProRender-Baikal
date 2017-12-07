@@ -69,6 +69,10 @@ namespace Baikal
             float shadow_throughput;
         };
 
+        using MissedPrimaryRaysHandler = std::function<void(
+            CLWBuffer<ray> rays, CLWBuffer<Intersection> intersections, CLWBuffer<int> pixel_indices,
+            CLWBuffer<int> output_indices, std::size_t size, CLWBuffer<RadeonRays::float3> output)>;
+        
         Estimator(std::shared_ptr<RadeonRays::IntersectionApi> api)
             : m_intersector(api)
             , m_max_bounces(5u)
@@ -211,7 +215,8 @@ namespace Baikal
             QualityLevel quality,
             CLWBuffer<RadeonRays::float3> output,
             bool use_output_indices = true,
-            bool atomic_update = false
+            bool atomic_update = false,
+            MissedPrimaryRaysHandler missedPrimaryRaysHandler = nullptr
         ) = 0;
 
         /**

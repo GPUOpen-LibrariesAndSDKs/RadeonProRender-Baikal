@@ -44,7 +44,7 @@ THE SOFTWARE.
 
 rpr_int rprRegisterPlugin(rpr_char const * path)
 {
-    UNIMLEMENTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprCreateContext(rpr_int api_version, rpr_int * pluginIDs, size_t pluginCount, rpr_creation_flags creation_flags, rpr_context_properties const * props, rpr_char const * cache_path, rpr_context * out_context)
@@ -69,7 +69,7 @@ rpr_int rprCreateContext(rpr_int api_version, rpr_int * pluginIDs, size_t plugin
 
 rpr_int rprContextSetActivePlugin(rpr_context context, rpr_int pluginID)
 {
-    UNIMLEMENTED_FUNCTION
+    UNSUPPORTED_FUNCTION
 }
 
 rpr_int rprContextGetInfo(rpr_context in_context, rpr_context_info in_context_info, size_t in_size, void * out_data, size_t * out_size_ret)
@@ -629,7 +629,7 @@ rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, s
     case RPR_CAMERA_MODE:
     {
         //TODO: only prespective camera supported now
-        rpr_camera_mode value = RPR_CAMERA_MODE_PERSPECTIVE;
+        rpr_camera_mode value = cam->GetMode();
         size_ret = sizeof(value);
         data.resize(size_ret);
         memcpy(&data[0], &value, size_ret);
@@ -685,14 +685,27 @@ rpr_int rprCameraGetInfo(rpr_camera in_camera, rpr_camera_info in_camera_info, s
         memcpy(&data[0], name.c_str(), size_ret);
         break;
     }
+    case RPR_CAMERA_ORTHO_WIDTH:
+    {
+        rpr_float value = cam->GetOrthoWidth();
+        size_ret = sizeof(value);
+        data.resize(size_ret);
+        memcpy(&data[0], &value, size_ret);
+        break;
+    }
+    case RPR_CAMERA_ORTHO_HEIGHT:
+    {
+        rpr_float value = cam->GetOrthoHeight();
+        size_ret = sizeof(value);
+        data.resize(size_ret);
+        memcpy(&data[0], &value, size_ret);
+        break;
+    }
     case RPR_CAMERA_APERTURE_BLADES:
     case RPR_CAMERA_EXPOSURE:
-    case RPR_CAMERA_ORTHO_WIDTH:
     case RPR_CAMERA_FOCAL_TILT:
     case RPR_CAMERA_IPD:
     case RPR_CAMERA_LENS_SHIFT:
-    case RPR_CAMERA_ORTHO_HEIGHT:
-
         UNSUPPORTED_FUNCTION
         break;
     default:
@@ -833,6 +846,8 @@ rpr_int rprCameraSetMode(rpr_camera in_camera, rpr_camera_mode mode)
     switch (mode)
     {
     case RPR_CAMERA_MODE_PERSPECTIVE:
+    case RPR_CAMERA_MODE_ORTHOGRAPHIC:
+        camera->SetMode(mode);
         break;
     default:
         UNIMLEMENTED_FUNCTION
@@ -841,9 +856,16 @@ rpr_int rprCameraSetMode(rpr_camera in_camera, rpr_camera_mode mode)
     return RPR_SUCCESS;
 }
 
-rpr_int rprCameraSetOrthoWidth(rpr_camera camera, rpr_float width)
+rpr_int rprCameraSetOrthoWidth(rpr_camera in_camera, rpr_float width)
 {
-    UNSUPPORTED_FUNCTION
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    camera->SetOrthoWidth(width);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprCameraSetFocalTilt(rpr_camera camera, rpr_float tilt)
@@ -877,9 +899,17 @@ rpr_int rprCameraSetNearPlane(rpr_camera camera, rpr_float near)
     UNSUPPORTED_FUNCTION
 }
 
-rpr_int rprCameraSetOrthoHeight(rpr_camera camera, rpr_float height)
+rpr_int rprCameraSetOrthoHeight(rpr_camera in_camera, rpr_float height)
 {
-    UNSUPPORTED_FUNCTION
+    CameraObject* camera = WrapObject::Cast<CameraObject>(in_camera);
+    if (!camera)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    camera->SetOrthoHeight(height);
+    return RPR_SUCCESS;
+
 }
 
 rpr_int rprImageGetInfo(rpr_image in_image, rpr_image_info in_image_info, size_t in_size, void * in_data, size_t * in_size_ret)
@@ -1872,24 +1902,118 @@ rpr_int rprSceneGetInfo(rpr_scene in_scene, rpr_scene_info in_info, size_t in_si
     return RPR_SUCCESS;
 }
 
-rpr_int rprSceneGetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light * out_light)
+rpr_int rprSceneGetEnvironmentOverride(rpr_scene in_scene, rpr_environment_override overrride, rpr_light * out_light)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    static const std::map<rpr_environment_override, SceneObject::OverrideType> override_type_conversion =
+    {
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, SceneObject::OverrideType::kBackground },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, SceneObject::OverrideType::kReflection },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, SceneObject::OverrideType::kRefraction },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, SceneObject::OverrideType::kTransparency }
+    };
+
+    auto overryde_type = override_type_conversion.find(overrride);
+    if (overryde_type == override_type_conversion.end())
+        return RPR_ERROR_INVALID_PARAMETER;
+
+    try
+    {
+        *out_light = scene->GetEnvironmentOverride(overryde_type->second);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneSetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light light)
+rpr_int rprSceneSetEnvironmentOverride(rpr_scene in_scene, rpr_environment_override overrride, rpr_light in_light)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    LightObject* light = WrapObject::Cast<LightObject>(in_light);
+
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    static const std::map<rpr_environment_override, SceneObject::OverrideType> override_type_conversion =
+    {
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, SceneObject::OverrideType::kBackground },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFLECTION, SceneObject::OverrideType::kReflection },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_REFRACTION, SceneObject::OverrideType::kRefraction },
+        { RPR_SCENE_ENVIRONMENT_OVERRIDE_TRANSPARENCY, SceneObject::OverrideType::kTransparency }
+    };
+
+    auto override_type = override_type_conversion.find(overrride);
+    if (override_type  == override_type_conversion.end())
+        return RPR_ERROR_INVALID_PARAMETER;
+
+    try
+    {
+        if ((overrride == RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND) && light)
+            rprSceneSetBackgroundImage(scene, nullptr);
+
+        scene->SetEnvironmentOverride(override_type->second, light);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneSetBackgroundImage(rpr_scene scene, rpr_image image)
+rpr_int rprSceneSetBackgroundImage(rpr_scene in_scene, rpr_image in_image)
 {
-    UNSUPPORTED_FUNCTION
+    MaterialObject* img = WrapObject::Cast<MaterialObject>(in_image);
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+    if (!scene)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        if (img)
+            rprSceneSetEnvironmentOverride(scene, RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND, nullptr);
+        scene->SetBackgroundImage(img);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+    
+    return RPR_SUCCESS;
 }
 
-rpr_int rprSceneGetBackgroundImage(rpr_scene scene, rpr_image * out_image)
+rpr_int rprSceneGetBackgroundImage(rpr_scene in_scene, rpr_image * out_image)
 {
-    UNSUPPORTED_FUNCTION
+    SceneObject* scene = WrapObject::Cast<SceneObject>(in_scene);
+
+    if (!scene || !out_image)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        *out_image = scene->GetBackgroundImage();
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+
+    return RPR_SUCCESS;
 }
 
 rpr_int rprSceneSetCamera(rpr_scene in_scene, rpr_camera in_camera)

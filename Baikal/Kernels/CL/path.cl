@@ -22,7 +22,9 @@ THE SOFTWARE.
 #ifndef PATH_CL
 #define PATH_CL
 
+#include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
+#include <../Baikal/Kernels/CL/bxdf.cl>
 
 typedef struct _Path
 {
@@ -37,77 +39,109 @@ typedef enum _PathFlags
 {
     kNone = 0x0,
     kKilled = 0x1,
-    kScattered = 0x2,
-    kSpecularBounce = 0x4
+    kScattered = 0x2
 } PathFlags;
 
-bool Path_IsScattered(__global Path const* path)
+INLINE bool Path_IsScattered(__global Path const* path)
 {
     return path->flags & kScattered;
 }
 
-bool Path_IsSpecular(__global Path const* path)
-{
-    return path->flags & kSpecularBounce;
-}
-
-bool Path_IsAlive(__global Path const* path)
+INLINE bool Path_IsAlive(__global Path const* path)
 {
     return ((path->flags & kKilled) == 0);
 }
 
-void Path_ClearScatterFlag(__global Path* path)
+INLINE void Path_ClearScatterFlag(__global Path* path)
 {
     path->flags &= ~kScattered;
 }
 
-void Path_SetScatterFlag(__global Path* path)
+INLINE void Path_SetScatterFlag(__global Path* path)
 {
     path->flags |= kScattered;
 }
 
-
-void Path_ClearSpecularFlag(__global Path* path)
+INLINE void Path_ClearSurfaceInteractionFlags(__global Path* path)
 {
-    path->flags &= ~kSpecularBounce;
+    path->flags &= (kKilled | kScattered);
 }
 
-void Path_SetSpecularFlag(__global Path* path)
+INLINE int Path_GetSurfaceInteractionFlags(__global Path const* path)
 {
-    path->flags |= kSpecularBounce;
+    return path->flags >> 2;
 }
 
-void Path_Restart(__global Path* path)
+INLINE int Path_SetSurfaceInteractionFlags(__global Path* path, int flags)
+{
+    return path->flags |= (flags << 2);
+}
+
+INLINE void Path_Restart(__global Path* path)
 {
     path->flags = 0;
 }
 
-int Path_GetVolumeIdx(__global Path const* path)
+INLINE int Path_GetVolumeIdx(__global Path const* path)
 {
     return path->volume;
 }
 
-float3 Path_GetThroughput(__global Path const* path)
+INLINE void Path_SetVolumeIdx(__global Path* path, int volume_idx)
+{
+    path->volume = volume_idx;
+}
+
+INLINE float3 Path_GetThroughput(__global Path const* path)
 {
     float3 t = path->throughput;
     return t;
 }
 
-void Path_MulThroughput(__global Path* path, float3 mul)
+INLINE void Path_MulThroughput(__global Path* path, float3 mul)
 {
     path->throughput *= mul;
 }
 
-void Path_Kill(__global Path* path)
+INLINE void Path_Kill(__global Path* path)
 {
     path->flags |= kKilled;
 }
 
-void Path_AddContribution(__global Path* path, __global float3* output, int idx, float3 val)
+INLINE void Path_AddContribution(__global Path* path, __global float3* output, int idx, float3 val)
 {
     output[idx] += Path_GetThroughput(path) * val;
 }
 
+INLINE bool Path_IsSpecular(__global Path const* path)
+{
+    int flags = Path_GetSurfaceInteractionFlags(path);
+    return flags & kSpecular;
+}
 
+INLINE void Path_SetFlags(DifferentialGeometry* diffgeo, GLOBAL Path* restrict path)
+{
+    Path_ClearSurfaceInteractionFlags(path);
+
+    if (Bxdf_IsSingular(diffgeo))
+    {
+        Path_SetSurfaceInteractionFlags(path, kSpecular);
+    }
+
+    if (Bxdf_IsRefraction(diffgeo))
+    {
+        Path_SetSurfaceInteractionFlags(path, kTransmission);
+    }
+
+    if (Bxdf_IsReflection(diffgeo))
+    {
+        Path_SetSurfaceInteractionFlags(path, kReflection);
+    }
+
+    if (Bxdf_IsTransparency(diffgeo))
+    {
+        Path_SetSurfaceInteractionFlags(path, kTransparency);
+    }
+}
 
 #endif

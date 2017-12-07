@@ -29,7 +29,6 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/normalmap.cl>
 #include <../Baikal/Kernels/CL/bxdf.cl>
 #include <../Baikal/Kernels/CL/light.cl>
-#include <../Baikal/Kernels/CL/camera.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
 #include <../Baikal/Kernels/CL/material.cl>
 #include <../Baikal/Kernels/CL/volumetrics.cl>
