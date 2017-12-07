@@ -101,7 +101,7 @@ pipeline {
                         {
                             bat '''
                             ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 --gtest_output=xml:../TestWindows_WX9100.xml >> ..\\TestWindows_WX9100.log 2>&1
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 0 --gtest_output=xml:../TestWindows_WX9100.xml >> ..\\TestWindows_WX9100.log 2>&1
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe --gtest_output=xml:../TestWindows_WX9100.xml >> ..\\TestWindows_WX9100.log 2>&1
                             '''
                         }
                     }
@@ -126,7 +126,7 @@ pipeline {
                         {
                             bat '''
                             ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 1 --gtest_output=xml:../TestWindows_WX7100.xml >> ..\\TestWindows_WX7100.log 2>&1
-                            ..\\Bin\\Release\\x64\\BaikalTest64.exe -genref 0 --gtest_output=xml:../TestWindows_WX7100.xml >> ..\\TestWindows_WX7100.log 2>&1
+                            ..\\Bin\\Release\\x64\\BaikalTest64.exe --gtest_output=xml:../TestWindows_WX7100.xml >> ..\\TestWindows_WX7100.log 2>&1
                             '''
                         }
                     }
@@ -151,7 +151,7 @@ pipeline {
                         {
                             sh '''
                             ../Bin/Release/x64/BaikalTest64 -genref 1 --gtest_output=xml:../TestOSX_Iris.xml >> ../TestOSX_Iris.log 2>&1
-                            ../Bin/Release/x64/BaikalTest64 -genref 0 --gtest_output=xml:../TestOSX_Iris.xml >> ../TestOSX_Iris.log 2>&1
+                            ../Bin/Release/x64/BaikalTest64 --gtest_output=xml:../TestOSX_Iris.xml >> ../TestOSX_Iris.log 2>&1
                             '''
                         }
                     }
