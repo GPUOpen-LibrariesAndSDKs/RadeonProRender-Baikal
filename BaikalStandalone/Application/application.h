@@ -44,6 +44,8 @@ namespace Baikal
         bool UpdateGui();
         void CollectSceneStats();
 
+        void SaveToFile(std::chrono::steady_clock::time_point time) const;
+
         //input callbacks
         //Note: use glfwGetWindowUserPointer(window) to get app instance
         static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);

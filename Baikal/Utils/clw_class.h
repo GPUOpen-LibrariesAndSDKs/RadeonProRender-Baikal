@@ -41,6 +41,7 @@ namespace Baikal
         std::string GetFullBuildOpts() const;
         CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
         std::string GetFilenameHash(std::string const& filename, std::string const& opts, CLWContext context) const;
+        static std::uint32_t CheckSum(std::ifstream& file);
 
         bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
         void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
@@ -126,9 +127,9 @@ namespace Baikal
         m_default_opts = opts;
     }
 
-    inline uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
+    inline std::uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
     {
-        uint32_t hash, i;
+        std::uint32_t hash, i;
         for (hash = i = 0; i < len; ++i)
         {
             hash += key[i];
@@ -180,6 +181,22 @@ namespace Baikal
         }
 
         return result;
+    }
+
+    // Computting check sum algo
+    // Copy from here: https://codereview.stackexchange.com/questions/104948/32-bit-checksum-of-a-file
+    inline std::uint32_t ClwClass::CheckSum(std::ifstream& file)
+    {
+        std::uint32_t check_sum = 0;
+        unsigned shift = 0;
+        for (std::uint32_t ch = file.get(); file; ch = file.get()) {
+            check_sum += (ch << shift);
+            shift += 8;
+            if (shift == 32) {
+                shift = 0;
+            }
+        }
+        return check_sum;
     }
 
     inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
@@ -235,6 +252,13 @@ namespace Baikal
 
         name.append("_");
         name.append(oss.str());
+
+        std::ifstream in_stream(filename);
+        std::uint32_t file_hash = CheckSum(in_stream);
+
+        name.append("_");
+        name.append(std::to_string(file_hash));
+
         name.append(BAIKAL_VERSION);
 
         return name;
