@@ -69,6 +69,7 @@ public:
         kStandard = RPR_MATERIAL_NODE_STANDARD,
         kPassthrough = RPR_MATERIAL_NODE_PASSTHROUGH,
         kOrennayar = RPR_MATERIAL_NODE_ORENNAYAR,
+        kUberV2
     };
 
     //initialize methods

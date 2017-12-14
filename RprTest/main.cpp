@@ -4015,8 +4015,6 @@ rprx_material CreateCoatingMaterial(rprx_context context)
     assert(status == RPR_SUCCESS);
     status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_ROUGHNESS, 0.1f, 0.1f, 0.1f, 0.1f);
-    assert(status == RPR_SUCCESS);
     status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
     assert(status == RPR_SUCCESS);
 
@@ -4248,7 +4246,7 @@ void UberV2Test()
 
 int main(int argc, char* argv[])
 {
-    MeshCreationTest();
+    /*MeshCreationTest();
     SimpleRenderTest();
     ComplexRenderTest();
     EnvLightClearTest();
@@ -4269,7 +4267,7 @@ int main(int argc, char* argv[])
     ArithmeticMul();
     OrthoRenderTest();
     BackgroundImageTest();
-    EnvironmentOverrideTest();
+    EnvironmentOverrideTest();*/
     UberV2Test();
 
     return 0;
