@@ -37,6 +37,7 @@ THE SOFTWARE.
 #include "MultiBxdfMaterialObject.h"
 #include "UnsupportedMaterialObject.h"
 #include "ArithmeticMaterialObject.h"
+#include "UberMaterialObject.h"
 
 using namespace RadeonRays;
 using namespace Baikal;
@@ -44,21 +45,58 @@ using namespace Baikal;
 namespace
 {
     //contains pairs <rpr input name, baikal input name> of input names
-    const std::map<std::string, std::string> kInputNamesDictionary = { { "color" , "albedo" },
-                                                                { "normal" , "normal" },
-																{ "roughness" , "roughness" },
-																{ "roughness_x" , "roughness" },
-                                                                { "weight" , "weight" }, 
-                                                                { "ior" , "ior" },
-                                                                { "color0", "base_material" },
-                                                                { "color1", "top_material" }, 
-                                                                { "data", "data" },
-                                                                { "sigmas", "sigmas" },
-                                                                { "sigmaa", "sigmaa" },
-                                                                { "rotation", "rotation" }, 
-                                                                { "anisotropic", "anisotropic" },
-                                                                { "g", "g" }, 
-                                                                { "multiscatter", "multiscatter" }, };
+    const std::map<std::string, std::string> kInputNamesDictionary = { 
+        { "color" , "albedo" },
+        { "normal" , "normal" },
+		{ "roughness" , "roughness" },
+		{ "roughness_x" , "roughness" },
+        { "weight" , "weight" }, 
+        { "ior" , "ior" },
+        { "color0", "base_material" },
+        { "color1", "top_material" }, 
+        { "data", "data" },
+        { "sigmas", "sigmas" },
+        { "sigmaa", "sigmaa" },
+        { "rotation", "rotation" }, 
+        { "anisotropic", "anisotropic" },
+        { "g", "g" }, 
+        { "multiscatter", "multiscatter" },
+        { "uberv2.diffuse.color", "uberv2.diffuse.color" },
+        { "uberv2.diffuse.weight", "uberv2.diffuse.weight" },
+        { "uberv2.reflection.color", "uberv2.reflection.color" },
+        { "uberv2.reflection.weight", "uberv2.reflection.weight" },
+        { "uberv2.reflection.roughness", "uberv2.reflection.roughness" },
+        { "uberv2.reflection.anisotropy", "uberv2.reflection.anisotropy" },
+        { "uberv2.reflection.anisotropy", "uberv2.reflection.anisotropy" },
+        { "uberv2.reflection.mode", "uberv2.reflection.mode" },
+        { "uberv2.reflection.ior", "uberv2.reflection.ior" },
+        { "uberv2.reflection.metalness", "uberv2.reflection.metalness" },
+        { "uberv2.refraction.color", "uberv2.refraction.color" },
+        { "uberv2.refraction.weight", "uberv2.refraction.weight" },
+        { "uberv2.refraction.roughness", "uberv2.refraction.roughness" },
+        { "uberv2.refraction.ior", "uberv2.refraction.ior" },
+        { "uberv2.refraction.ior", "uberv2.refraction.ior" },
+        { "uberv2.refraction.thin", "uberv2.refraction.thin" },
+        { "uberv2.coating.color", "uberv2.coating.color" },
+        { "uberv2.coating.weight", "uberv2.coating.weight" },
+        { "uberv2.coating.mode", "uberv2.coating.mode" },
+        { "uberv2.coating.ior", "uberv2.coating.ior" },
+        { "uberv2.coating.metalness", "uberv2.coating.metalness" },
+        { "uberv2.emission.color", "uberv2.emission.color" },
+        { "uberv2.emission.weight", "uberv2.emission.weight" },
+        { "uberv2.emission.mode", "uberv2.emission.mode" },
+        { "uberv2.transparency", "uberv2.transparency" },
+        { "uberv2.normal", "uberv2.normal" },
+        { "uberv2.bump", "uberv2.bump" },
+        { "uberv2.displacement", "uberv2.displacement" },
+        { "uberv2.sss.absorption", "uberv2.sss.absorption" },
+        { "uberv2.sss.scatter", "uberv2.sss.scatter" },
+        { "uberv2.sss.absorption", "uberv2.sss.absorption" },
+        { "uberv2.sss.scatter", "uberv2.sss.scatter" },
+        { "uberv2.sss.scatter", "uberv2.sss.scatter" },
+        { "uberv2.sss.weight", "uberv2.sss.weight" },
+        { "uberv2.sss.subsurface", "uberv2.sss.subsurface" },
+        { "uberv2.sss.multiscatter", "uberv2.sss.multiscatter" }};
 
     std::map<uint32_t, std::string> kMaterialNodeInputStrings = {
         { RPR_MATERIAL_INPUT_COLOR, "color" },
@@ -193,6 +231,11 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
 
     {
         return new UnsupportedMaterialObject(type);
+    }
+
+    case MaterialObject::kUberV2:
+    {
+        return new UberMaterialObject();
     }
     default:
         throw Exception(RPR_ERROR_INVALID_PARAMETER_TYPE, "MaterialObject: unrecognized material type");

@@ -95,7 +95,7 @@ rpr_int rprxCreateMaterial(rprx_context context, rprx_material_type type, rprx_m
     if (!context || type != RPRX_MATERIAL_UBER)
         return RPR_ERROR_INVALID_PARAMETER;
 
-    return rprMaterialSystemCreateNode((rpr_material_system)(context), type, (rpr_material_node*)out_material);
+    return rprMaterialSystemCreateNode((rpr_material_system)(context), MaterialObject::kUberV2, (rpr_material_node*)out_material);
 }
 
 rpr_int rprxMaterialDelete(rprx_context context, rprx_material material)

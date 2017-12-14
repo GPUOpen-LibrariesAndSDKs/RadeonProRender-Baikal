@@ -254,4 +254,18 @@ namespace Baikal
         VolumeMaterial();
     };
 
+    class UberV2Material : public Material
+    {
+    public:
+
+        using Ptr = std::shared_ptr<UberV2Material>;
+        static Ptr Create();
+
+        // Check if material has emissive components
+        bool HasEmission() const override;
+
+    protected:
+        UberV2Material();
+    };
+
 }
