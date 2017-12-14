@@ -3966,6 +3966,286 @@ void EnvironmentOverrideTest()
 
 }
 
+rprx_material CreateDiffuseMaterial(rprx_context context)
+{
+    rprx_material material;
+    rpr_int status;
+    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+
+    return material;
+}
+
+rprx_material CreateTransparentMaterial(rprx_context context)
+{
+    rprx_material material;
+    rpr_int status;
+    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_TRANSPARENCY, 0.8f, 0.8f, 0.8f, 0.8f);
+    assert(status == RPR_SUCCESS);
+
+    return material;
+}
+
+rprx_material CreateCoatingMaterial(rprx_context context)
+{
+    rprx_material material;
+    rpr_int status;
+    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_ROUGHNESS, 0.1f, 0.1f, 0.1f, 0.1f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    assert(status == RPR_SUCCESS);
+
+    return material;
+}
+
+rprx_material CreateReflectionMaterial(rprx_context context)
+{
+    rprx_material material;
+    rpr_int status;
+    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    assert(status == RPR_SUCCESS);
+
+    return material;
+}
+
+rprx_material CreateRefractionMaterial(rprx_context context)
+{
+    rprx_material material;
+    rpr_int status;
+    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    assert(status == RPR_SUCCESS);
+
+    return material;
+}
+
+rprx_material CreateMetalMaterial(rprx_context context)
+{
+    rprx_material material;
+    rpr_int status;
+    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_METALNESS, 1.0f, 1.0f, 1.0f, 1.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterU(context, material, RPRX_UBER_MATERIAL_REFLECTION_MODE, RPRX_UBER_MATERIAL_REFLECTION_MODE_METALNESS);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
+    assert(status == RPR_SUCCESS);
+    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    assert(status == RPR_SUCCESS);
+
+    return material;
+
+}
+
+void UberV2Test()
+{
+    // Indicates whether the last operation has suceeded or not
+    rpr_int status = RPR_SUCCESS;
+
+    rpr_context	context;
+    status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
+    assert(status == RPR_SUCCESS);
+    rpr_material_system matsys = NULL;
+    status = rprContextCreateMaterialSystem(context, 0, &matsys);
+    assert(status == RPR_SUCCESS);
+
+    rprx_context rprxcontext;
+    status = rprxCreateContext(matsys, 0, &rprxcontext);
+    assert(status == RPR_SUCCESS);
+
+    rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
+    assert(status == RPR_SUCCESS);
+
+    //Materials
+    std::vector<rprx_material> materials; //order: diffuse, transparent, coating, reflection, refraction, metallic
+    materials.push_back(CreateDiffuseMaterial(rprxcontext));
+    materials.push_back(CreateTransparentMaterial(rprxcontext));
+    materials.push_back(CreateCoatingMaterial(rprxcontext));
+    materials.push_back(CreateReflectionMaterial(rprxcontext));
+    materials.push_back(CreateRefractionMaterial(rprxcontext));
+    materials.push_back(CreateMetalMaterial(rprxcontext));
+
+    //Shapes
+    std::vector<rpr_shape> shapes;
+    shapes.push_back(CreateSphere(context, 64, 32, 2.f, float3()));
+    shapes.push_back(CreateSphere(context, 64, 32, 2.f, float3()));
+    shapes.push_back(CreateSphere(context, 64, 32, 2.f, float3()));
+    shapes.push_back(CreateSphere(context, 64, 32, 2.f, float3()));
+    shapes.push_back(CreateSphere(context, 64, 32, 2.f, float3()));
+    shapes.push_back(CreateSphere(context, 64, 32, 2.f, float3()));
+
+    matrix m;
+    int id = 0;
+    //Place spheres and assign materials
+    for (int y = 0; y < 2; ++y)
+    {
+        for (int x = 0; x < 3; ++x)
+        {
+            float ypos = (y == 0) ? -2.5f : 2.5f;
+            m = translation({ 5.0f * (float)x - 5.0f, ypos, 0.0f });
+            status = rprxShapeAttachMaterial(rprxcontext, shapes[id], materials[id]);
+            assert(status == RPR_SUCCESS);
+            status = rprShapeSetTransform(shapes[id], true, &m.m00);
+            assert(status == RPR_SUCCESS);
+            status = rprxMaterialCommit(rprxcontext, materials[id]);
+            assert(status == RPR_SUCCESS);
+            status = rprSceneAttachShape(scene, shapes[id]);
+            assert(status == RPR_SUCCESS);
+            ++id;
+        }
+    }
+
+    rpr_light light = NULL; status = rprContextCreateEnvironmentLight(context, &light);
+    assert(status == RPR_SUCCESS);
+    rpr_image imageInput = NULL; status = rprContextCreateImageFromFile(context, "../Resources/Textures/studio015.hdr", &imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprEnvironmentLightSetImage(light, imageInput);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneAttachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+
+    //camera
+    rpr_camera camera = NULL; status = rprContextCreateCamera(context, &camera);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraLookAt(camera, 0, 0, 10, 0, 0, 0, 0, 1, 0);
+    assert(status == RPR_SUCCESS);
+    status = rprCameraSetFocalLength(camera, 23.f);
+    assert(status == RPR_SUCCESS);
+    //status = rprCameraSetFStop(camera, 5.4f);
+    assert(status == RPR_SUCCESS);
+    status = rprSceneSetCamera(scene, camera);
+    assert(status == RPR_SUCCESS);
+
+    status = rprContextSetScene(context, scene);
+    assert(status == RPR_SUCCESS);
+
+    //light
+
+    //setup out
+    rpr_framebuffer_desc desc;
+    desc.fb_width = 900;
+    desc.fb_height = 600;
+
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer frame_buffer = NULL; status = rprContextCreateFrameBuffer(context, fmt, &desc, &frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprContextSetAOV(context, RPR_AOV_COLOR, frame_buffer);
+    assert(status == RPR_SUCCESS);
+    status = rprFrameBufferClear(frame_buffer);
+    assert(status == RPR_SUCCESS);
+
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        status = rprContextRender(context);
+        assert(status == RPR_SUCCESS);
+    }
+
+    status = rprFrameBufferSaveToFile(frame_buffer, "uberv2.png");
+    assert(status == RPR_SUCCESS);
+
+
+    rpr_render_statistics rs;
+    status = rprContextGetInfo(context, RPR_CONTEXT_RENDER_STATISTICS, sizeof(rpr_render_statistics), &rs, NULL);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneDetachLight(scene, light);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(light); light = NULL;
+    assert(status == RPR_SUCCESS);
+
+    for (int a = 0; a < shapes.size(); ++a)
+    {
+        status = rprSceneDetachShape(scene, shapes[a]);
+        assert(status == RPR_SUCCESS);
+        status = rprObjectDelete(shapes[a]);
+        assert(status == RPR_SUCCESS);
+    }
+
+    for (int a = 0; a < materials.size(); ++a)
+    {
+        status = rprxMaterialDelete(rprxcontext, materials[a]);
+        assert(status == RPR_SUCCESS);
+    }
+
+    status = rprxDeleteContext(rprxcontext);
+    assert(status == RPR_SUCCESS);
+
+    status = rprSceneSetCamera(scene, NULL);
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(scene); scene = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(camera); camera = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(frame_buffer); frame_buffer = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(matsys); matsys = NULL;
+    assert(status == RPR_SUCCESS);
+    status = rprObjectDelete(context); context = NULL;
+    assert(status == RPR_SUCCESS);
+}
+
+
 int main(int argc, char* argv[])
 {
     MeshCreationTest();
@@ -3990,6 +4270,7 @@ int main(int argc, char* argv[])
     OrthoRenderTest();
     BackgroundImageTest();
     EnvironmentOverrideTest();
+    UberV2Test();
 
     return 0;
 }
