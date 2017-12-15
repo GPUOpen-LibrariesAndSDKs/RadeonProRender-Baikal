@@ -4199,7 +4199,7 @@ void UberV2Test()
         assert(status == RPR_SUCCESS);
     }
 
-    status = rprFrameBufferSaveToFile(frame_buffer, "uberv2.png");
+    status = rprFrameBufferSaveToFile(frame_buffer, "Output/UberMaterialTest.jpg");
     assert(status == RPR_SUCCESS);
 
 
