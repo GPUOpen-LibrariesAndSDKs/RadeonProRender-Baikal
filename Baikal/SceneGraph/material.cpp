@@ -399,12 +399,12 @@ namespace Baikal
         RegisterInput("uberv2.transparency", "level of transparency", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.transparency", float4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        /*
-        RegisterInput("uberv2.normal", "uberv2.normal", );
-        SetInputValue("uberv2.normal", );
-        RegisterInput("uberv2.bump", "uberv2.bump", );
-        SetInputValue("uberv2.bump", );
-        RegisterInput("uberv2.displacement", "uberv2.displacement", );
+        
+        RegisterInput("uberv2.normal", "normal map texture", { InputType::kTexture });
+        SetInputValue("uberv2.normal", Texture::Ptr{ nullptr });
+        RegisterInput("uberv2.bump", "bump map texture", { InputType::kTexture });
+        SetInputValue("uberv2.bump", Texture::Ptr{ nullptr });
+/*        RegisterInput("uberv2.displacement", "uberv2.displacement", );
         SetInputValue("uberv2.displacement", );*/
     }
 
