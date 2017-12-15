@@ -336,68 +336,76 @@ namespace Baikal
         SetInputValue("uberv2.reflection.anisotropy", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.reflection.anisotropy_rotation", "orientation of anisotropic component", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.anisotropy_rotation", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.reflection.mode", "orientation of anisotropic component", {InputType::kUint});
-        SetInputValue("uberv2.reflection.mode", 0);
+        RegisterInput("uberv2.reflection.mode", "determines reflection workflow: PBR or metalness", {InputType::kUint});
+        SetInputValue("uberv2.reflection.mode", kReflectionPbr);
         RegisterInput("uberv2.reflection.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
         RegisterInput("uberv2.reflection.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.metalness", float4(1.0f, 1.0f, 1.0f, 1.0f));
 
+        //Coating
+        RegisterInput("uberv2.coating.color", "base coating albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.coating.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
+        RegisterInput("uberv2.coating.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.coating.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.coating.mode", "determines coating workflow: PBR or metalness", { InputType::kUint });
+        SetInputValue("uberv2.coating.mode", kCoatingPbr);
+        RegisterInput("uberv2.coating.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.coating.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
+        RegisterInput("uberv2.coating.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.coating.metalness", float4(1.0f, 1.0f, 1.0f, 1.0f));
+
         //Refraction
-/*        RegisterInput("uberv2.refraction.color", "uberv2.refraction.color", );
-        SetInputValue("uberv2.refraction.color", );
-        RegisterInput("uberv2.refraction.weight", "uberv2.refraction.weight", );
-        SetInputValue("uberv2.refraction.weight", );
-        RegisterInput("uberv2.refraction.roughness", "uberv2.refraction.roughness", );
-        SetInputValue("uberv2.refraction.roughness", );
-        RegisterInput("uberv2.refraction.ior", "uberv2.refraction.ior", );
-        SetInputValue("uberv2.refraction.ior", );
-        RegisterInput("uberv2.refraction.ior_mode", "uberv2.refraction.ior_mode", );
-        SetInputValue("uberv2.refraction.ior_mode", );
-        RegisterInput("uberv2.refraction.thin_surface", "uberv2.refraction.thin_surface", );
-        SetInputValue("uberv2.refraction.thin_surface", );
-        RegisterInput("uberv2.coating.color", "uberv2.coating.color", );
-        SetInputValue("uberv2.coating.color", );
-        RegisterInput("uberv2.coating.weight", "uberv2.coating.weight", );
-        SetInputValue("uberv2.coating.weight", );
-        RegisterInput("uberv2.coating.mode", "uberv2.coating.mode", );
-        SetInputValue("uberv2.coating.mode", );
-        RegisterInput("uberv2.coating.ior", "uberv2.coating.ior", );
-        SetInputValue("uberv2.coating.ior", );
-        RegisterInput("uberv2.coating.metalness", "uberv2.coating.metalness", );
-        SetInputValue("uberv2.coating.metalness", );
-        RegisterInput("uberv2.emission.color", "uberv2.emission.color", );
-        SetInputValue("uberv2.emission.color", );
-        RegisterInput("uberv2.emission.weight", "uberv2.emission.weight", );
-        SetInputValue("uberv2.emission.weight", );
-        RegisterInput("uberv2.emission.mode", "uberv2.emission.mode", );
-        SetInputValue("uberv2.emission.mode", );
-        RegisterInput("uberv2.transparency", "uberv2.transparency", );
-        SetInputValue("uberv2.transparency", );
+        RegisterInput("uberv2.refraction.color", "base refraction albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.refraction.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
+        RegisterInput("uberv2.refraction.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.refraction.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.refraction.roughness", "refraction roughness", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.refraction.roughness", float4(0.5f, 0.5f, 0.5f, 0.5f));
+        RegisterInput("uberv2.refraction.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.refraction.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
+        RegisterInput("uberv2.refraction.ior_mode", "separate or linked to reflection IOR", { InputType::kUint });
+        SetInputValue("uberv2.refraction.ior_mode", kRefractionSeparate);
+        RegisterInput("uberv2.refraction.thin_surface", "replace refraction with transparency or not", { InputType::kUint });
+        SetInputValue("uberv2.refraction.thin_surface", 0);
+
+        //Emission
+        RegisterInput("uberv2.emission.color", "emission albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.emission.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
+        RegisterInput("uberv2.emission.weight", "emission albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.emission.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.emission.mode", "single or double sided", { InputType::kUint });
+        SetInputValue("uberv2.emission.mode", kEmissionSinglesided);
+
+        //SSS
+        RegisterInput("uberv2.sss.absorption_color", "volume absorption color", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.absorption_color", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.sss.scatter_color", "volume scattering color", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.scatter_color", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.sss.absorption_distance", "maximum distance the light can travel before absorbed in meters", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.absorption_distance", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.sss.scatter_distance", "maximum distance the light can travel before scattered", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.scatter_distance", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.sss.scatter_direction", "scattering direction (G parameter of Henyey-Grenstein scattering function)", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.scatter_direction", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.sss.weight", "SSS multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
+        RegisterInput("uberv2.sss.subsurface_color", "color of diffuse refraction BRDF", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.sss.subsurface_color", float4(1.0f, 1.0f, 1.0f, 1.0f));
+        RegisterInput("uberv2.sss.multiscatter", "multiple or single scattering", { InputType::kUint });
+        SetInputValue("uberv2.sss.multiscatter", 1);
+
+        //Transparency
+        RegisterInput("uberv2.transparency", "level of transparency", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
+        SetInputValue("uberv2.transparency", float4(0.0f, 0.0f, 0.0f, 0.0f));
+
+        /*
         RegisterInput("uberv2.normal", "uberv2.normal", );
         SetInputValue("uberv2.normal", );
         RegisterInput("uberv2.bump", "uberv2.bump", );
         SetInputValue("uberv2.bump", );
         RegisterInput("uberv2.displacement", "uberv2.displacement", );
-        SetInputValue("uberv2.displacement", );
-        RegisterInput("uberv2.sss.absorption_color", "uberv2.sss.absorption_color", );
-        SetInputValue("uberv2.sss.absorption_color", );
-        RegisterInput("uberv2.sss.scatter_color", "uberv2.sss.scatter_color", );
-        SetInputValue("uberv2.sss.scatter_color", );
-        RegisterInput("uberv2.sss.absorption_distance", "uberv2.sss.absorption_distance", );
-        SetInputValue("uberv2.sss.absorption_distance", );
-        RegisterInput("uberv2.sss.scatter_distance", "uberv2.sss.scatter_distance", );
-        SetInputValue("uberv2.sss.scatter_distance", );
-        RegisterInput("uberv2.sss.scatter_direction", "uberv2.sss.scatter_direction", );
-        SetInputValue("uberv2.sss.scatter_direction", );
-        RegisterInput("uberv2.sss.weight", "uberv2.sss.weight", );
-        SetInputValue("uberv2.sss.weight", );
-        RegisterInput("uberv2.sss.subsurface_color", "uberv2.sss.subsurface_color", );
-        SetInputValue("uberv2.sss.subsurface_color", );
-        RegisterInput("uberv2.sss.multiscatter", "uberv2.sss.multiscatter", );
-        SetInputValue("uberv2.sss.multiscatter", );
-        
-        SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));*/
+        SetInputValue("uberv2.displacement", );*/
     }
 
     bool UberV2Material::HasEmission() const

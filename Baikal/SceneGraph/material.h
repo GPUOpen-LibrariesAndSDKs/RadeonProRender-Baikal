@@ -257,6 +257,26 @@ namespace Baikal
     class UberV2Material : public Material
     {
     public:
+        enum ReflectionMode
+        {
+            kReflectionPbr = 1U,
+            kReflectionMetalness = 2U
+        };
+        enum CoatingMode
+        {
+            kCoatingPbr = 1U,
+            kCoatingMetalness = 2U
+        };
+        enum RefractionMode
+        {
+            kRefractionSeparate = 1U,
+            kRefractionLinked = 2U
+        };
+        enum EmissionMode
+        {
+            kEmissionSinglesided = 1U,
+            kEmissionDoublesided = 2U
+        };
 
         using Ptr = std::shared_ptr<UberV2Material>;
         static Ptr Create();
