@@ -57,6 +57,8 @@ namespace Baikal
         std::string m_default_opts;
         // Name of program CL file
         std::string m_cl_file;
+        // stored program CL file
+        std::string m_cl_file_src;
         // Binary cache path
         std::string m_cache_path;
     };
@@ -91,6 +93,7 @@ namespace Baikal
         std::string const& cache_path)
     : m_context(context)
     , m_cl_file(cl_file)
+    , m_cl_file_src("")
     , m_default_opts(opts)
     , m_cache_path(cache_path)
     {
@@ -112,14 +115,13 @@ namespace Baikal
         auto options = opts;
         AddCommonOptions(options);
 
-        std::string src("");
         //append all includes and data
         for (int i = 0; i < inc_num; ++i)
         {
-            src += includes[i];
+            m_cl_file_src += includes[i];
         }
-        src += data;
-        auto program = CLWProgram::CreateFromSource(src.data(), src.length(), m_default_opts.c_str(), m_context);
+        m_cl_file_src += data;
+        auto program = CLWProgram::CreateFromSource(m_cl_file_src.data(), m_cl_file_src.length(), m_default_opts.c_str(), m_context);
         m_programs.emplace(std::make_pair(m_default_opts, program));
     }
 
@@ -208,7 +210,8 @@ namespace Baikal
         if (iter != m_programs.cend()) {
             return iter->second.GetKernel(name);
         } else {
-            auto program = CreateProgram(m_cl_file, options, m_context);
+            CLWProgram program = !m_cl_file.empty() ? CreateProgram(m_cl_file, options, m_context)
+                                                    : CLWProgram::CreateFromSource(m_cl_file_src.data(), m_cl_file_src.length(), options.c_str(), m_context);
             m_programs.emplace(std::make_pair(options, program));
             return program.GetKernel(name);
         }

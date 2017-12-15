@@ -26,6 +26,10 @@ THE SOFTWARE.
 
 #include <limits>
 
+#ifdef BAIKAL_EMBED_KERNELS
+#include "./Kernels/CL/cache/kernels.h"
+#endif
+
 namespace Baikal
 {
     /**
@@ -97,7 +101,14 @@ namespace Baikal
     };
 
     inline WaveletDenoiser::WaveletDenoiser(CLWContext context)
+#ifdef BAIKAL_EMBED_KERNELS
+        : ClwPostEffect(context,
+            g_wavelet_denoise_opencl,
+            g_wavelet_denoise_opencl_inc,
+            sizeof(g_wavelet_denoise_opencl_inc) / sizeof(*g_wavelet_denoise_opencl_inc))
+#else
         : ClwPostEffect(context, "../Baikal/Kernels/CL/wavelet_denoise.cl")
+#endif
         , m_max_wavelet_passes(5)
         , m_buffers_width(0)
         , m_buffers_height(0)
