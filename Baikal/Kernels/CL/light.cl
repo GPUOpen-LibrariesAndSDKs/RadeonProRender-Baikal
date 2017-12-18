@@ -266,7 +266,7 @@ float3 AreaLight_Sample(// Emissive object
         float dist2 = dot(*wo, *wo);
         float denom = fabs(ndotv) * area;
         *pdf = denom > 0.f ? dist2 / denom : 0.f;
-        return dist2 > 0.f ? ke * ndotv / dist2 : 0.f;
+        return dist2 > 0.f ? ke * area * ndotv / dist2 : 0.f;
     }
     else
     {
