@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/light.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
 #include <../Baikal/Kernels/CL/material.cl>
-#include <../Baikal/Kernels/CL/volumetrics.cl>
+#include <../Baikal/Kernels/CL/volumetrics.cl> 
 #include <../Baikal/Kernels/CL/path.cl>
 
 
@@ -384,7 +384,7 @@ KERNEL void ShadeSurface(
 
                 // In this case we hit after an application of MIS process at previous step.
                 // That means BRDF weight has been already applied.
-                float3 v = Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight;
+                float3 v = REASONABLE_RADIANCE(Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight);
                 int output_index = output_indices[pixel_idx];
                 ADD_FLOAT3(&output[output_index], v);
             }
@@ -723,11 +723,11 @@ KERNEL void FilterPathStream(
 
         if (Path_IsAlive(path))
         {
-            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT);
+            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT);  
 
             if (!kill)
             {
-                predicate[global_id] = isects[global_id].shapeid >= 0 ? 1 : 0;
+                predicate[global_id] = isects[global_id].shapeid >= 0 ? 1 : 0; 
             }
             else
             {
@@ -737,7 +737,7 @@ KERNEL void FilterPathStream(
         }
         else
         {
-            predicate[global_id] = 0;
+            predicate[global_id] = 0; 
         }
     }
 }
@@ -792,7 +792,7 @@ KERNEL void ShadeMiss(
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;
 
-            int tex = EnvironmentLight_GetTexture(&light, surface_interaction_flags);
+            int tex = EnvironmentLight_GetTexture(&light, surface_interaction_flags); 
             if (tex != -1)
             {
                 v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
@@ -816,7 +816,7 @@ KERNEL void AdvanceIterationCount(
 )
 {
     int global_id = get_global_id(0);
-    if (global_id < num_rays)
+    if (global_id < num_rays) 
     {
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];
