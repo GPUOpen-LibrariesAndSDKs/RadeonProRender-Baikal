@@ -81,6 +81,25 @@ pipeline {
                         }
                     }
                 }
+                stage('Build On Ubunty') {
+                    agent {
+                        label "Ubuntu"
+                    }
+                    steps {
+                        sh '''
+                        uname -a > Build_Ubuntu.log                                                
+                        chmod +x Tools/premake/linux64/premake5
+                        Tools/premake/linux64/premake5 gmake      >> Build_Ubuntu.log 2>&1
+                        make config=release_x64                   >> Build_Ubuntu.log 2>&1     
+                        '''
+                        stash includes: 'Bin/**/*', name: 'appUbuntu'
+                    }
+                    post {
+                        always {
+                            archiveArtifacts 'Build_Ubuntu.log'
+                        }
+                    }
+                }                
             }
         }
         stage('Test') {
