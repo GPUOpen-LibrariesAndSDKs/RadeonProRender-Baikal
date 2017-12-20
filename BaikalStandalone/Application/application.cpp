@@ -257,7 +257,7 @@ namespace Baikal
         m_cl->Update(m_settings);
     }
 
-    void Application::SaveToFile(std::chrono::steady_clock::time_point time) const
+    void Application::SaveToFile(std::chrono::high_resolution_clock::time_point time) const
     {
         using namespace OIIO;
         int w, h;
@@ -266,7 +266,7 @@ namespace Baikal
         const auto channels = 3;
         auto *data = new GLubyte[channels * w * h];
         glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
-        
+
         //opengl coordinates to oiio coordinates
         for (auto i = 0; i <= h / 2; ++i)
         {
