@@ -840,7 +840,11 @@ namespace Baikal
     static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
         // Distinguish between single bxdf materials and compound ones
-        if (auto bxdf = dynamic_cast<SingleBxdf const*>(&material))
+        if (auto bxdf = dynamic_cast<UberV2Material const*>(&material))
+        {
+            return ClwScene::Bxdf::kUberV2;
+        }
+        else if (auto bxdf = dynamic_cast<SingleBxdf const*>(&material))
         {
             switch (bxdf->GetBxdfType())
             {
