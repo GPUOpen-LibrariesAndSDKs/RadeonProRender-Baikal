@@ -444,7 +444,7 @@ KERNEL void ShadeSurface(
         float3 throughput = Path_GetThroughput(path);
 
         // Sample bxdf
-        float3 bxdf = 1.0f;// Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdf_pdf);
+        float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdf_pdf);
 
         // If we have light to sample we can hopefully do mis 
         if (light_idx > -1) 
