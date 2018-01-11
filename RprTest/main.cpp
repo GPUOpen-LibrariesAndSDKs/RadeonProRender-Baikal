@@ -4085,8 +4085,6 @@ rprx_material CreateMetalMaterial(rprx_context context)
     assert(status == RPR_SUCCESS);
     status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_METALNESS, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterU(context, material, RPRX_UBER_MATERIAL_REFLECTION_MODE, RPRX_UBER_MATERIAL_REFLECTION_MODE_METALNESS);
-    assert(status == RPR_SUCCESS);
     status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
     status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);

@@ -1300,7 +1300,6 @@ namespace Baikal
                 fillInput("uberv2.reflection.roughness", nullptr, &(clw_material->uberv2.reflection_roughness), nullptr, &(clw_material->uberv2.reflection_roughness_idx));
                 fillInput("uberv2.reflection.anisotropy", nullptr, &(clw_material->uberv2.reflection_anisotropy), nullptr, &(clw_material->uberv2.reflection_anisotropy_idx));
                 fillInput("uberv2.reflection.anisotropy_rotation", nullptr, &(clw_material->uberv2.reflection_anisotropy_rotation), nullptr, &(clw_material->uberv2.reflection_anisotropy_rotation_idx));
-                fillInput("uberv2.reflection.mode", &(clw_material->uberv2.reflection_mode), nullptr, nullptr, nullptr);
                 fillInput("uberv2.reflection.ior", nullptr, &(clw_material->uberv2.reflection_ior), nullptr, &(clw_material->uberv2.reflection_ior_idx));
                 fillInput("uberv2.reflection.metalness", nullptr, &(clw_material->uberv2.reflection_metalness), nullptr, &(clw_material->uberv2.reflection_metalness_idx));
 
@@ -1313,7 +1312,6 @@ namespace Baikal
 
                 fillInput("uberv2.coating.color", nullptr, nullptr, &(clw_material->uberv2.coating_color), &(clw_material->uberv2.coating_color_idx));
                 fillInput("uberv2.coating.weight", nullptr, &(clw_material->uberv2.coating_weight), nullptr, &(clw_material->uberv2.coating_weight_idx));
-                fillInput("uberv2.coating.mode", &(clw_material->uberv2.coating_mode), nullptr, nullptr, nullptr);
                 fillInput("uberv2.coating.ior", nullptr, &(clw_material->uberv2.coating_ior), nullptr, &(clw_material->uberv2.coating_ior_idx));
                 fillInput("uberv2.coating.metalness", nullptr, &(clw_material->uberv2.coating_metalness), nullptr, &(clw_material->uberv2.coating_metalness_idx));
 

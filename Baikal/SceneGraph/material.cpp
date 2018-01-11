@@ -336,8 +336,6 @@ namespace Baikal
         SetInputValue("uberv2.reflection.anisotropy", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.reflection.anisotropy_rotation", "orientation of anisotropic component", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.anisotropy_rotation", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.reflection.mode", "determines reflection workflow: PBR or metalness", {InputType::kUint});
-        SetInputValue("uberv2.reflection.mode", kReflectionPbr);
         RegisterInput("uberv2.reflection.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
         RegisterInput("uberv2.reflection.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
@@ -348,8 +346,6 @@ namespace Baikal
         SetInputValue("uberv2.coating.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
         RegisterInput("uberv2.coating.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.coating.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.coating.mode", "determines coating workflow: PBR or metalness", { InputType::kUint });
-        SetInputValue("uberv2.coating.mode", kCoatingPbr);
         RegisterInput("uberv2.coating.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.coating.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
         RegisterInput("uberv2.coating.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });

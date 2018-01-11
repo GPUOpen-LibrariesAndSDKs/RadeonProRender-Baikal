@@ -170,13 +170,12 @@ typedef struct _Material
             float reflection_anisotropy_rotation;
 
             int reflection_anisotropy_rotation_idx;
-            int reflection_mode;
             float reflection_ior;
             int reflection_ior_idx;
-
             float reflection_metalness;
+
             int reflection_metalness_idx;
-            int padding2[2];
+            int padding2[3];
 
             float4 refraction_color;
 
@@ -198,22 +197,21 @@ typedef struct _Material
             int coating_color_idx;
             float coating_weight;
             int coating_weight_idx;
-            int coating_mode;
-
             float coating_ior;
+
             int coating_ior_idx;
             float coating_metalness;
             int coating_metalness_idx;
-
             float emission_color;
+
             int emission_color_idx;
             float emission_weight;
             int emission_weight_idx;
-
             int emission_mode;
+
             float transparency;
             int transparency_idx;
-            int padding4;
+            int padding4[2];
 
 /*            float displacement;
             int displacement_idx;*/
