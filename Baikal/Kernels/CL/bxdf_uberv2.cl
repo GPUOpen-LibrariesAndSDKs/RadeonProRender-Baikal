@@ -281,7 +281,7 @@ float3 UberV2_IdealReflect_Sample(
 Ideal refraction BTDF
 */
 
-/*float3 IdealRefract_Evaluate(
+float3 UberV2_IdealRefract_Evaluate(
     // Geometry
     DifferentialGeometry const* dg,
     // Incoming direction
@@ -295,7 +295,7 @@ Ideal refraction BTDF
     return 0.f;
 }
 
-float IdealRefract_GetPdf(
+float UberV2_IdealRefract_GetPdf(
     // Geometry
     DifferentialGeometry const* dg,
     // Incoming direction
@@ -309,7 +309,7 @@ float IdealRefract_GetPdf(
     return 0.f;
 }
 
-float3 IdealRefract_Sample(
+float3 UberV2_IdealRefract_Sample(
     // Geometry
     DifferentialGeometry const* dg,
     // Incoming direction
@@ -324,10 +324,10 @@ float3 IdealRefract_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_idx));
 
     float etai = 1.f;
-    float etat = dg->mat.simple.ni;
+    float etat = dg->mat.uberv2.refraction_ior;
     float cosi = wi.y;
 
     bool entering = cosi > 0.f;
@@ -353,17 +353,15 @@ float3 IdealRefract_Sample(
     float cost = native_sqrt(max(0.f, 1.f - sint2));
 
     // Transmitted ray
-    float F = dg->mat.simple.fresnel;
-
     *wo = normalize(make_float3(eta * -wi.x, entering ? -cost : cost, eta * -wi.z));
 
     *pdf = 1.f;
 
-    return cost > DENOM_EPS ? (F * eta * eta * ks / cost) : 0.f;
+    return cost > DENOM_EPS ? (eta * eta * ks / cost) : 0.f;
 }
 
 
-float3 MicrofacetRefractionGGX_Evaluate(
+float3 UberV2_MicrofacetRefractionGGX_Evaluate(
     // Geometry
     DifferentialGeometry const* dg,
     // Incoming direction
@@ -374,8 +372,8 @@ float3 MicrofacetRefractionGGX_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_idx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_idx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -386,7 +384,7 @@ float3 MicrofacetRefractionGGX_Evaluate(
     }
 
     float etai = 1.f;
-    float etat = dg->mat.simple.ni;
+    float etat = dg->mat.uberv2.refraction_ior;
 
     // Revert normal and eta if needed
     if (ndotwi < 0.f)
@@ -403,18 +401,14 @@ float3 MicrofacetRefractionGGX_Evaluate(
     float widotwh = fabs(dot(wh, wi));
     float wodotwh = fabs(dot(wh, wo));
 
-    float F = dg->mat.simple.fresnel;
-
     float denom = dot(ht, ht);
     denom *= (fabs(ndotwi) * fabs(ndotwo));
 
-    return denom > DENOM_EPS ? (F * ks * (widotwh * wodotwh)  * (etat)* (etat)*
-        MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * MicrofacetDistribution_GGX_D(roughness, wh) / denom) : 0.f;
+    return denom > DENOM_EPS ? (ks * (widotwh * wodotwh)  * (etat)* (etat)*
+        UberV2_MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * UberV2_MicrofacetDistribution_GGX_D(roughness, wh) / denom) : 0.f;
 }
 
-
-
-float MicrofacetRefractionGGX_GetPdf(
+float UberV2_MicrofacetRefractionGGX_GetPdf(
     // Geometry
     DifferentialGeometry const* dg,
     // Incoming direction
@@ -425,17 +419,18 @@ float MicrofacetRefractionGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_idx)), ROUGHNESS_EPS);
+    
     float ndotwi = wi.y;
     float ndotwo = wo.y;
-
-    float etai = 1.f;
-    float etat = dg->mat.simple.ni;
-
+    
     if (ndotwi * ndotwo >= 0.f)
     {
         return 0.f;
     }
+
+    float etai = 1.f;
+    float etat = dg->mat.uberv2.refraction_ior;
 
     // Revert normal and eta if needed
     if (ndotwi < 0.f)
@@ -452,7 +447,7 @@ float MicrofacetRefractionGGX_GetPdf(
 
     float wodotwh = fabs(dot(wo, wh));
 
-    float whpdf = MicrofacetDistribution_GGX_D(roughness, wh) * fabs(wh.y);
+    float whpdf = UberV2_MicrofacetDistribution_GGX_D(roughness, wh) * fabs(wh.y);
 
     float whwo = wodotwh * etat * etat;
 
@@ -461,7 +456,7 @@ float MicrofacetRefractionGGX_GetPdf(
     return denom > DENOM_EPS ? whpdf * whwo / denom : 0.f;
 }
 
-float3 MicrofacetRefractionGGX_Sample(
+float3 UberV2_MicrofacetRefractionGGX_Sample(
     // Geometry
     DifferentialGeometry const* dg,
     // Incoming direction
@@ -476,8 +471,8 @@ float3 MicrofacetRefractionGGX_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_idx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_idx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
 
@@ -488,7 +483,7 @@ float3 MicrofacetRefractionGGX_Sample(
     }
 
     float etai = 1.f;
-    float etat = dg->mat.simple.ni;
+    float etat = dg->mat.uberv2.refraction_ior;
     float s = 1.f;
 
     // Revert normal and eta if needed
@@ -501,7 +496,7 @@ float3 MicrofacetRefractionGGX_Sample(
     }
 
     float3 wh;
-    MicrofacetDistribution_GGX_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
+    UberV2_MicrofacetDistribution_GGX_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
 
     float c = dot(wi, wh);
     float eta = etai / etat;
@@ -516,11 +511,11 @@ float3 MicrofacetRefractionGGX_Sample(
 
     *wo = normalize((eta * c - s * native_sqrt(d)) * wh - eta * wi);
 
-    *pdf = MicrofacetRefractionGGX_GetPdf(dg, wi, *wo, TEXTURE_ARGS);
+    *pdf = UberV2_MicrofacetRefractionGGX_GetPdf(dg, wi, *wo, TEXTURE_ARGS);
 
-    return MicrofacetRefractionGGX_Evaluate(dg, wi, *wo, TEXTURE_ARGS);
+    return UberV2_MicrofacetRefractionGGX_Evaluate(dg, wi, *wo, TEXTURE_ARGS);
 }
-*/
+
 
 float3 UberV2_Evaluate(
     // Geometry
@@ -533,7 +528,15 @@ float3 UberV2_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    return UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+    const float reflection_weight = Texture_GetValue1f(dg->mat.uberv2.reflection_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_weight_idx));
+    const float refraction_weight = Texture_GetValue1f(dg->mat.uberv2.refraction_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_weight_idx));
+
+    if (reflection_weight > 0.0f)
+        return UberV2_MicrofacetGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+    if (refraction_weight > 0.0f)
+        return UberV2_MicrofacetRefractionGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+    else
+        return UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
 }
 
 /// Lambert BRDF PDF
@@ -548,7 +551,15 @@ float UberV2_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    return UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+    const float reflection_weight = Texture_GetValue1f(dg->mat.uberv2.reflection_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_weight_idx));
+    const float refraction_weight = Texture_GetValue1f(dg->mat.uberv2.refraction_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_weight_idx));
+
+    if (reflection_weight > 0.0f)
+        return UberV2_MicrofacetGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+    if (refraction_weight > 0.0f)
+        return UberV2_MicrofacetRefractionGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+    else
+        return UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
 }
 
 /// Lambert BRDF sampling
@@ -567,5 +578,13 @@ float3 UberV2_Sample(
     float* pdf
 )
 {
-    return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    const float reflection_weight = Texture_GetValue1f(dg->mat.uberv2.reflection_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_weight_idx));
+    const float refraction_weight = Texture_GetValue1f(dg->mat.uberv2.refraction_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_weight_idx));
+
+    if (reflection_weight > 0.0f)
+        return UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    if (refraction_weight > 0.0f)
+        return UberV2_MicrofacetRefractionGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    else
+        return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
 }
