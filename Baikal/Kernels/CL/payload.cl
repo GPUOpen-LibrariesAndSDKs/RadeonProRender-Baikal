@@ -153,60 +153,47 @@ typedef struct _Material
             float4 diffuse_color;
 
             int diffuse_color_idx;
-            float diffuse_weight;
-            int diffuse_weight_idx;
-            int padding1;
+            int padding1[3];
 
             float4 reflection_color;
 
             int reflection_color_idx;
-            float reflection_weight;
-            int reflection_weight_idx;
             float reflection_roughness;
-
             int reflection_roughness_idx;
             float reflection_anisotropy;
+
             int reflection_anisotropy_idx;
             float reflection_anisotropy_rotation;
-
             int reflection_anisotropy_rotation_idx;
             float reflection_ior;
+
             int reflection_ior_idx;
             float reflection_metalness;
-
             int reflection_metalness_idx;
-            int padding2[3];
+            int padding2;
 
             float4 refraction_color;
 
             int refraction_color_idx;
-            float refraction_weight;
-            int refraction_weight_idx;
             float refraction_roughness;
-
             int refraction_roughness_idx;
             float refraction_ior;
+
             int refraction_ior_idx;
             int refraction_ior_mode;
-
             int refraction_thin_surface;
-            int padding3[3];
+            int padding3;
 
             float4 coating_color;
 
             int coating_color_idx;
-            float coating_weight;
-            int coating_weight_idx;
             float coating_ior;
-
             int coating_ior_idx;
             float coating_metalness;
+
             int coating_metalness_idx;
             float emission_color;
-
             int emission_color_idx;
-            float emission_weight;
-            int emission_weight_idx;
             int emission_mode;
 
             float transparency;
@@ -229,10 +216,9 @@ typedef struct _Material
             float sss_scatter_direction;
             int sss_scatter_direction_idx;
 
-            float sss_weight;
-            int sss_weight_idx;
             int sss_subsurface_color_idx;
             int sss_multiscatter;
+            int padding[2];
 
             float4 sss_subsurface_color;
 

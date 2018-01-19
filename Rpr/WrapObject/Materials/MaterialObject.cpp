@@ -233,7 +233,7 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
         return new UnsupportedMaterialObject(type);
     }
 
-    case MaterialObject::kUberV2:
+    case RPR_MATERIAL_NODE_UBERV2:
     {
         return new UberMaterialObject();
     }

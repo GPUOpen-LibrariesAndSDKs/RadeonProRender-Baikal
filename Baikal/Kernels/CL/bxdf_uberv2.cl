@@ -252,17 +252,12 @@ float3 UberV2_IdealReflect_Sample(
     float3 wi,
     // Texture args
     TEXTURE_ARG_LIST,
-    // Sample
-    float2 sample,
     // Outgoing  direction
     float3* wo,
     // PDF at wo
-    float* pdf
-)
+    float* pdf,
+    float3 ks)
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_idx));
-    const float eta = dg->mat.uberv2.reflection_roughness;
-
     // Mirror reflect wi
     *wo = normalize(make_float3(-wi.x, wi.y, -wi.z));
 
@@ -516,6 +511,51 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
     return UberV2_MicrofacetRefractionGGX_Evaluate(dg, wi, *wo, TEXTURE_ARGS);
 }
 
+float CalculateFresnel(
+    // Incoming direction
+    float3 wi,
+    // Sample
+    float sample,
+    // Geometry
+    DifferentialGeometry const* dg,
+    float top_ior,
+    float bottom_ior
+)
+{
+    float ndotwi = wi.y;
+
+    if (ndotwi < 0.f && dg->mat.thin)
+    {
+        ndotwi = -ndotwi;
+    }
+
+    float etai =  top_ior;
+    float etat =  bottom_ior;
+    float cosi = ndotwi;
+
+    // Revert normal and eta if needed
+    if (cosi < 0.f)
+    {
+        float tmp = etai;
+        etai = etat;
+        etat = tmp;
+        cosi = -cosi;
+    }
+
+    float eta = etai / etat;
+    float sini2 = 1.f - cosi * cosi;
+    float sint2 = eta * eta * sini2;
+    float fresnel = 1.f;
+
+    if (sint2 < 1.f)
+    {
+        float cost = native_sqrt(max(0.f, 1.f - sint2));
+        fresnel = FresnelDielectric(etai, etat, cosi, cost);
+    }
+
+    return fresnel;
+}
+
 
 float3 UberV2_Evaluate(
     // Geometry
@@ -525,18 +565,28 @@ float3 UberV2_Evaluate(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST
+    TEXTURE_ARG_LIST,
+    float2 sample
 )
 {
-    const float reflection_weight = Texture_GetValue1f(dg->mat.uberv2.reflection_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_weight_idx));
-    const float refraction_weight = Texture_GetValue1f(dg->mat.uberv2.refraction_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_weight_idx));
+    float fresnel = CalculateFresnel(wi, sample.x, dg, 1.0f, 2.0f);
 
+/*    if (coating_weight > 0.0f)
+    {
+        return UberV2_IdealReflect_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+    }
     if (reflection_weight > 0.0f)
-        return UberV2_MicrofacetGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+    {*/
+        const float3 lambert = UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        const float3 reflection = UberV2_MicrofacetGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        return reflection * fresnel + (1.0f - fresnel) * lambert;
+/*    }
+        //return UberV2_MicrofacetGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
     if (refraction_weight > 0.0f)
         return UberV2_MicrofacetRefractionGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
-    else
-        return UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+    //else
+        //return UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS) * diffuse_weight;
+    return UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS) * diffuse_weight;*/
 }
 
 /// Lambert BRDF PDF
@@ -548,18 +598,24 @@ float UberV2_GetPdf(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST
+    TEXTURE_ARG_LIST,
+    float2 sample
 )
 {
-    const float reflection_weight = Texture_GetValue1f(dg->mat.uberv2.reflection_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_weight_idx));
-    const float refraction_weight = Texture_GetValue1f(dg->mat.uberv2.refraction_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_weight_idx));
+    float fresnel = CalculateFresnel(wi, sample.x, dg, 1.0f, 2.0f);
 
+/*    if (coating_weight > 0.0f)
+            return UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS);
     if (reflection_weight > 0.0f)
-        return UberV2_MicrofacetGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+    {*/
+        float reflect_pdf = UberV2_MicrofacetRefractionGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        float lambert_pdf = UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        return fresnel * reflect_pdf + (1.0f - fresnel) * lambert_pdf;
+/*    }
     if (refraction_weight > 0.0f)
         return UberV2_MicrofacetRefractionGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
-    else
-        return UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+    //else
+    return UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);*/
 }
 
 /// Lambert BRDF sampling
@@ -578,13 +634,49 @@ float3 UberV2_Sample(
     float* pdf
 )
 {
-    const float reflection_weight = Texture_GetValue1f(dg->mat.uberv2.reflection_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_weight_idx));
-    const float refraction_weight = Texture_GetValue1f(dg->mat.uberv2.refraction_weight, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_weight_idx));
+    float fresnel = CalculateFresnel(wi, sample.x, dg, 1.0f, 2.0f);
+/*    if (reflection_weight > 0.0f)
+    {*/
+        //lambert = UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, &lambert_wo, &lambert_pdf) * diffuse_weight;
+        //reflection = UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, sample, &reflection_wo, &reflection_pdf) * reflection_weight;
 
-    if (reflection_weight > 0.0f)
-        return UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        if (sample.x > fresnel)
+        {
+            sample.x /= (1.f - fresnel);
+
+            return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        //    //reflection = UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf) * reflection_weight;
+        //    //reflection = UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, sample, wo, &reflection_pdf) * reflection_weight;
+
+        }
+        else
+        {
+            sample.x /= (fresnel);
+            return UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+            //lambert = UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, &lambert_pdf) * diffuse_weight;
+        }
+        //*pdf = fresnel * reflection_pdf + (1.0f - fresnel) * lambert_pdf;
+        //*wo = (lambert_wo + reflection_wo) * *pdf;
+        //return fresnel * reflection + (1.0f - fresnel) * lambert;
+/*        if (sample.x < fresnel)
+        {
+            return UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf) * fresnel;
+        }
+        else
+        {
+            return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf) * fresnel;
+        }*/
+    /*}
+    if (coating_weight > 0.0f)
+    {
+        const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_idx));
+
+        return UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, wo, pdf, ks);
+    }
     if (refraction_weight > 0.0f)
+    {
         return UberV2_MicrofacetRefractionGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    }
     else
-        return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);*/
 }

@@ -296,3 +296,9 @@ frContextCreateHeteroVolume
 frShapeSetHeteroVolume
 frHeteroVolumeSetTransform
 frContextCreateFramebufferFromGLTexture2D
+
+rprMaterialNodeSetInputNI
+rprMaterialNodeSetInputFI
+rprMaterialNodeSetInputUI
+rprMaterialNodeSetInputImageDataI
+rprMaterialNodeSetInputBufferDataI

@@ -207,7 +207,19 @@ namespace Baikal
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
+
+            auto spec = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealReflect);
+            auto uber = UberV2Material::Create();
+            uber->SetInputValue("uberv2.diffuse.color", float4(0.9f, 0.0f, 0.0f, 1.f));
+            uber->SetInputValue("uberv2.reflection.color", float4(0.9f, 0.9f, 0.9f, 1.f));
+            uber->SetInputValue("uberv2.reflection.weight", float4(1.f));
+            uber->SetInputValue("uberv2.reflection.roughness", float4(0.05f));
+
+            spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
+            //spec->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
             
+            mesh->SetMaterial(uber);
+
             auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
             
             auto ibl = ImageBasedLight::Create();

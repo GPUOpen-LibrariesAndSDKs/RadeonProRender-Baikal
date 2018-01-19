@@ -22,6 +22,25 @@ THE SOFTWARE.
 #ifndef BXDF_CL
 #define BXDF_CL
 
+/// Schlick's approximation of Fresnel equtions
+float SchlickFresnel(float eta, float ndotw)
+{
+    const float f = ((1.f - eta) / (1.f + eta)) * ((1.f - eta) / (1.f + eta));
+    const float m = 1.f - fabs(ndotw);
+    const float m2 = m*m;
+    return f + (1.f - f) * m2 * m2 * m;
+}
+
+/// Full Fresnel equations
+float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
+{
+    // Parallel and perpendicular polarization
+    float rparl = ((etat * ndotwi) - (etai * ndotwt)) / ((etat * ndotwi) + (etai * ndotwt));
+    float rperp = ((etai * ndotwi) - (etat * ndotwt)) / ((etai * ndotwi) + (etat * ndotwt));
+    return (rparl*rparl + rperp*rperp) * 0.5f;
+}
+
+
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
@@ -50,25 +69,6 @@ enum BxdfFlags
     kAll = kReflection | kTransmission | kDiffuse | kSpecular | kGlossy
 };
 
-/// Schlick's approximation of Fresnel equtions
-float SchlickFresnel(float eta, float ndotw)
-{
-    const float f = ((1.f - eta) / (1.f + eta)) * ((1.f - eta) / (1.f + eta));
-    const float m = 1.f - fabs(ndotw);
-    const float m2 = m*m;
-    return f + (1.f - f) * m2 * m2 * m;
-}
-
-/// Full Fresnel equations
-float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
-{
-    // Parallel and perpendicular polarization
-    float rparl = ((etat * ndotwi) - (etai * ndotwt)) / ((etat * ndotwi) + (etai * ndotwt));
-    float rperp = ((etai * ndotwi) - (etat * ndotwt)) / ((etai * ndotwi) + (etat * ndotwt));
-    return (rparl*rparl + rperp*rperp) * 0.5f;
-}
-
-
 /*
  Dispatch functions
  */
@@ -80,7 +80,9 @@ float3 Bxdf_Evaluate(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST
+    TEXTURE_ARG_LIST,
+    // RNG
+    float2 sample
     )
 {
     // Transform vectors into tangent space
@@ -113,7 +115,7 @@ float3 Bxdf_Evaluate(
         return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
     case kUberV2:
-        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS, sample);
     }
 
     return 0.f;
@@ -197,7 +199,9 @@ float Bxdf_GetPdf(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST
+    TEXTURE_ARG_LIST,
+    // RNG
+    float2 sample
     )
 {
     // Transform vectors into tangent space
@@ -230,7 +234,7 @@ float Bxdf_GetPdf(
         return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
     case kUberV2:
-        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS, sample);
     }
 
     return 0.f;
@@ -264,24 +268,22 @@ bool Bxdf_IsEmissive(DifferentialGeometry const* dg)
 bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
     return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
-        dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann || dg->mat.type == kUberV2;
+        dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann ;
 }
 
 bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann ||
-        dg->mat.type == kUberV2;
+    return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
 }
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann ||
-        dg->mat.type == kUberV2;
+    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann|| dg->mat.type == kUberV2;
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kPassthrough || dg->mat.type == kUberV2;
+    return dg->mat.type == kPassthrough;
 }
 
 #endif // BXDF_CL

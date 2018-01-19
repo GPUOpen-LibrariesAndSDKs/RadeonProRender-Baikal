@@ -322,14 +322,10 @@ namespace Baikal
         //Diffuse
         RegisterInput("uberv2.diffuse.color", "base diffuse albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.diffuse.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.diffuse.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.diffuse.weight", float4(1.0f, 1.0f, 1.0f, 1.0f));
 
         //Reflection
         RegisterInput("uberv2.reflection.color", "base reflection albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.color", float4(1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.reflection.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.weight", float4(0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.reflection.roughness", "reflection roughness", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.roughness", float4(0.5f, 0.5f, 0.5f, 0.5f));
         RegisterInput("uberv2.reflection.anisotropy", "level of anisotropy", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
@@ -344,8 +340,6 @@ namespace Baikal
         //Coating
         RegisterInput("uberv2.coating.color", "base coating albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.coating.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.coating.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.coating.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.coating.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.coating.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
         RegisterInput("uberv2.coating.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
@@ -354,8 +348,6 @@ namespace Baikal
         //Refraction
         RegisterInput("uberv2.refraction.color", "base refraction albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.refraction.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.refraction.weight", "albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.refraction.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.refraction.roughness", "refraction roughness", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.refraction.roughness", float4(0.5f, 0.5f, 0.5f, 0.5f));
         RegisterInput("uberv2.refraction.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
@@ -368,8 +360,6 @@ namespace Baikal
         //Emission
         RegisterInput("uberv2.emission.color", "emission albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.emission.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.emission.weight", "emission albedo multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.emission.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.emission.mode", "single or double sided", { InputType::kUint });
         SetInputValue("uberv2.emission.mode", kEmissionSinglesided);
 
@@ -384,8 +374,6 @@ namespace Baikal
         SetInputValue("uberv2.sss.scatter_distance", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.sss.scatter_direction", "scattering direction (G parameter of Henyey-Grenstein scattering function)", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.sss.scatter_direction", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.sss.weight", "SSS multiplier", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.weight", float4(0.0f, 0.0f, 0.0f, 0.0f));
         RegisterInput("uberv2.sss.subsurface_color", "color of diffuse refraction BRDF", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.sss.subsurface_color", float4(1.0f, 1.0f, 1.0f, 1.0f));
         RegisterInput("uberv2.sss.multiscatter", "multiple or single scattering", { InputType::kUint });
@@ -406,6 +394,6 @@ namespace Baikal
 
     bool UberV2Material::HasEmission() const
     {
-        return (GetInputValue("uberv2.emission.weight").float_value.sqnorm() != 0);
+        return false;// (GetInputValue("uberv2.emission.weight").float_value.sqnorm() != 0);
     }
 }

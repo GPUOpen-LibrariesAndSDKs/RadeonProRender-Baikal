@@ -3966,128 +3966,108 @@ void EnvironmentOverrideTest()
 
 }
 
-rprx_material CreateDiffuseMaterial(rprx_context context)
+rpr_material_node CreateDiffuseMaterial(rpr_material_system matsys)
 {
-    rprx_material material;
+    rpr_material_node material;
     rpr_int status;
-    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_UBERV2, &material);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
     return material;
 }
 
-rprx_material CreateTransparentMaterial(rprx_context context)
+rpr_material_node CreateTransparentMaterial(rpr_material_system matsys)
 {
-    rprx_material material;
+    rpr_material_node material;
     rpr_int status;
-    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_UBERV2, &material);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_TRANSPARENCY, 0.8f, 0.8f, 0.8f, 0.8f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_TRANSPARENCY, 0.8f, 0.8f, 0.8f, 0.8f);
     assert(status == RPR_SUCCESS);
 
     return material;
 }
 
-rprx_material CreateCoatingMaterial(rprx_context context)
+rpr_material_node CreateCoatingMaterial(rpr_material_system matsys)
 {
-    rprx_material material;
+    rpr_material_node material;
     rpr_int status;
-    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_UBERV2, &material);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_COATING_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_COATING_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_COATING_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
 
     return material;
 }
 
-rprx_material CreateReflectionMaterial(rprx_context context)
+rpr_material_node CreateReflectionMaterial(rpr_material_system matsys)
 {
-    rprx_material material;
+    rpr_material_node material;
     rpr_int status;
-    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_UBERV2, &material);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
     return material;
 }
 
-rprx_material CreateRefractionMaterial(rprx_context context)
+rpr_material_node CreateRefractionMaterial(rpr_material_system matsys)
 {
-    rprx_material material;
+    rpr_material_node material;
     rpr_int status;
-    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_UBERV2, &material);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFRACTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFRACTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
     return material;
 }
 
-rprx_material CreateMetalMaterial(rprx_context context)
+rpr_material_node CreateMetalMaterial(rpr_material_system matsys)
 {
-    rprx_material material;
+    rpr_material_node material;
     rpr_int status;
-    status = rprxCreateMaterial(context, RPRX_MATERIAL_UBER, &material);
+    status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_UBERV2, &material);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_METALNESS, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFLECTION_METALNESS, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
-    assert(status == RPR_SUCCESS);
-    status = rprxMaterialSetParameterF(context, material, RPRX_UBER_MATERIAL_REFLECTION_WEIGHT, 0.8f, 0.8f, 0.8f, 0.8f);
+    status = rprMaterialNodeSetInputFI(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.1f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
     return material;
@@ -4106,21 +4086,17 @@ void UberV2Test()
     status = rprContextCreateMaterialSystem(context, 0, &matsys);
     assert(status == RPR_SUCCESS);
 
-    rprx_context rprxcontext;
-    status = rprxCreateContext(matsys, 0, &rprxcontext);
-    assert(status == RPR_SUCCESS);
-
     rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
     assert(status == RPR_SUCCESS);
 
     //Materials
-    std::vector<rprx_material> materials; //order: diffuse, transparent, coating, reflection, refraction, metallic
-    materials.push_back(CreateDiffuseMaterial(rprxcontext));
-    materials.push_back(CreateTransparentMaterial(rprxcontext));
-    materials.push_back(CreateCoatingMaterial(rprxcontext));
-    materials.push_back(CreateReflectionMaterial(rprxcontext));
-    materials.push_back(CreateRefractionMaterial(rprxcontext));
-    materials.push_back(CreateMetalMaterial(rprxcontext));
+    std::vector<rpr_material_node> materials; //order: diffuse, transparent, coating, reflection, refraction, metallic
+    materials.push_back(CreateDiffuseMaterial(matsys));
+    materials.push_back(CreateTransparentMaterial(matsys));
+    materials.push_back(CreateCoatingMaterial(matsys));
+    materials.push_back(CreateReflectionMaterial(matsys));
+    materials.push_back(CreateRefractionMaterial(matsys));
+    materials.push_back(CreateMetalMaterial(matsys));
 
     //Shapes
     std::vector<rpr_shape> shapes;
@@ -4140,11 +4116,9 @@ void UberV2Test()
         {
             float ypos = (y == 0) ? -2.5f : 2.5f;
             m = translation({ 5.0f * (float)x - 5.0f, ypos, 0.0f });
-            status = rprxShapeAttachMaterial(rprxcontext, shapes[id], materials[id]);
+            status = rprShapeSetMaterial(shapes[id], materials[id]);
             assert(status == RPR_SUCCESS);
             status = rprShapeSetTransform(shapes[id], true, &m.m00);
-            assert(status == RPR_SUCCESS);
-            status = rprxMaterialCommit(rprxcontext, materials[id]);
             assert(status == RPR_SUCCESS);
             status = rprSceneAttachShape(scene, shapes[id]);
             assert(status == RPR_SUCCESS);
@@ -4220,12 +4194,9 @@ void UberV2Test()
 
     for (int a = 0; a < materials.size(); ++a)
     {
-        status = rprxMaterialDelete(rprxcontext, materials[a]);
+        status = rprObjectDelete(materials[a]);
         assert(status == RPR_SUCCESS);
     }
-
-    status = rprxDeleteContext(rprxcontext);
-    assert(status == RPR_SUCCESS);
 
     status = rprSceneSetCamera(scene, NULL);
     assert(status == RPR_SUCCESS);

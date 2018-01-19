@@ -42,6 +42,41 @@ THE SOFTWARE.
 #define UNSUPPORTED_FUNCTION return RPR_SUCCESS;
 //#define UNSUPPORTED_FUNCTION return RPR_ERROR_UNSUPPORTED;
 
+static const std::map<rpr_material_node_input, std::string> kRPRInputStrings =
+{
+    { RPR_UBER_MATERIAL_DIFFUSE_COLOR, "uberv2.diffuse.color" },
+    { RPR_UBER_MATERIAL_LAYERS, "uberv2.layers" },
+    { RPR_UBER_MATERIAL_REFLECTION_COLOR, "uberv2.reflection.color" },
+    { RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, "uberv2.reflection.roughness" },
+    { RPR_UBER_MATERIAL_REFLECTION_ANISOTROPY, "uberv2.reflection.anisotropy" },
+    { RPR_UBER_MATERIAL_REFLECTION_ANISOTROPY_ROTATION, "uberv2.reflection.anisotropy_rotation" },
+    { RPR_UBER_MATERIAL_REFLECTION_IOR, "uberv2.reflection.ior" },
+    { RPR_UBER_MATERIAL_REFLECTION_METALNESS, "uberv2.reflection.metalness" },
+    { RPR_UBER_MATERIAL_REFRACTION_COLOR, "uberv2.refraction.color" },
+    { RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, "uberv2.refraction.roughness" },
+    { RPR_UBER_MATERIAL_REFRACTION_IOR, "uberv2.refraction.ior" },
+    { RPR_UBER_MATERIAL_REFRACTION_IOR_MODE, "uberv2.refraction.ior_mode" },
+    { RPR_UBER_MATERIAL_REFRACTION_THIN_SURFACE, "uberv2.refraction.thin_surface" },
+    { RPR_UBER_MATERIAL_COATING_COLOR, "uberv2.coating.color" },
+    { RPR_UBER_MATERIAL_COATING_IOR, "uberv2.coating.ior" },
+    { RPR_UBER_MATERIAL_COATING_METALNESS, "uberv2.coating.metalness" },
+    { RPR_UBER_MATERIAL_EMISSION_COLOR, "uberv2.emission.color" },
+    { RPR_UBER_MATERIAL_EMISSION_WEIGHT, "uberv2.emission.weight" },
+    { RPR_UBER_MATERIAL_EMISSION_MODE, "uberv2.emission.mode" },
+    { RPR_UBER_MATERIAL_TRANSPARENCY, "uberv2.transparency" },
+    { RPR_UBER_MATERIAL_NORMAL, "uberv2.normal" },
+    { RPR_UBER_MATERIAL_BUMP, "uberv2.bump" },
+    { RPR_UBER_MATERIAL_DISPLACEMENT, "uberv2.displacement" },
+    { RPR_UBER_MATERIAL_SSS_ABSORPTION_COLOR, "uberv2.sss.absorption_color" },
+    { RPR_UBER_MATERIAL_SSS_SCATTER_COLOR, "uberv2.sss.scatter_color" },
+    { RPR_UBER_MATERIAL_SSS_ABSORPTION_DISTANCE, "uberv2.sss.absorption_distance" },
+    { RPR_UBER_MATERIAL_SSS_SCATTER_DISTANCE, "uberv2.sss.scatter_distance" },
+    { RPR_UBER_MATERIAL_SSS_SCATTER_DIRECTION, "uberv2.sss.scatter_direction" },
+    { RPR_UBER_MATERIAL_SSS_SUBSURFACE_COLOR, "uberv2.sss.subsurface_color" },
+    { RPR_UBER_MATERIAL_SSS_MULTISCATTER, "uberv2.sss.multiscatter" }
+};
+
+
 rpr_int rprRegisterPlugin(rpr_char const * path)
 {
     UNSUPPORTED_FUNCTION
@@ -2464,4 +2499,40 @@ rpr_int rprShapeSetHeteroVolume(rpr_shape shape, rpr_hetero_volume heteroVolume)
 rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_heteroVolume, rpr_bool transpose, rpr_float const * transform)
 {
     UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprMaterialNodeSetInputNI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_material_node in_input_node)
+{
+    auto name_it  = kRPRInputStrings.find(in_input);
+    return name_it != kRPRInputStrings.end() ?
+        rprMaterialNodeSetInputN(in_node, name_it->second.c_str(), in_input_node)
+        : RPR_ERROR_UNSUPPORTED;
+}
+rpr_int rprMaterialNodeSetInputFI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w)
+{
+    auto name_it = kRPRInputStrings.find(in_input);
+    return name_it != kRPRInputStrings.end() ? 
+        rprMaterialNodeSetInputF(in_node, name_it->second.c_str(), in_value_x, in_value_y, in_value_z, in_value_w)
+        : RPR_ERROR_UNSUPPORTED;
+}
+rpr_int rprMaterialNodeSetInputUI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_uint in_value)
+{
+    auto name_it = kRPRInputStrings.find(in_input);
+    return name_it != kRPRInputStrings.end() ?
+        rprMaterialNodeSetInputU(in_node, name_it->second.c_str(), in_value)
+        : RPR_ERROR_UNSUPPORTED;
+}
+rpr_int rprMaterialNodeSetInputImageDataI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_image image)
+{
+    auto name_it = kRPRInputStrings.find(in_input);
+    return name_it != kRPRInputStrings.end() ?
+        rprMaterialNodeSetInputImageData(in_node, name_it->second.c_str(), image)
+        : RPR_ERROR_UNSUPPORTED;
+}
+rpr_int rprMaterialNodeSetInputBufferDataI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_buffer buffer)
+{
+    auto name_it = kRPRInputStrings.find(in_input);
+    return name_it != kRPRInputStrings.end() ?
+        rprMaterialNodeSetInputBufferData(in_node, name_it->second.c_str(), buffer)
+        : RPR_ERROR_UNSUPPORTED;
 }
