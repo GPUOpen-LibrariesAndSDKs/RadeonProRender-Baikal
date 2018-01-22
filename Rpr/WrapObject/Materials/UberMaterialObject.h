@@ -29,6 +29,7 @@ public:
     UberMaterialObject();
 
     void SetInputF(const std::string& input_name, const RadeonRays::float4& val) override;
+    void SetInputU(const std::string& input_name, rpr_uint val) override;
 
     Baikal::Material::Ptr GetMaterial() override;
 

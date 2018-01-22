@@ -62,28 +62,21 @@ namespace
         { "g", "g" }, 
         { "multiscatter", "multiscatter" },
         { "uberv2.diffuse.color", "uberv2.diffuse.color" },
-        { "uberv2.diffuse.weight", "uberv2.diffuse.weight" },
+        { "uberv2.layers", "uberv2.layers" },
         { "uberv2.reflection.color", "uberv2.reflection.color" },
-        { "uberv2.reflection.weight", "uberv2.reflection.weight" },
         { "uberv2.reflection.roughness", "uberv2.reflection.roughness" },
         { "uberv2.reflection.anisotropy", "uberv2.reflection.anisotropy" },
         { "uberv2.reflection.anisotropy", "uberv2.reflection.anisotropy" },
-        { "uberv2.reflection.mode", "uberv2.reflection.mode" },
         { "uberv2.reflection.ior", "uberv2.reflection.ior" },
         { "uberv2.reflection.metalness", "uberv2.reflection.metalness" },
         { "uberv2.refraction.color", "uberv2.refraction.color" },
-        { "uberv2.refraction.weight", "uberv2.refraction.weight" },
         { "uberv2.refraction.roughness", "uberv2.refraction.roughness" },
-        { "uberv2.refraction.ior", "uberv2.refraction.ior" },
         { "uberv2.refraction.ior", "uberv2.refraction.ior" },
         { "uberv2.refraction.thin", "uberv2.refraction.thin" },
         { "uberv2.coating.color", "uberv2.coating.color" },
-        { "uberv2.coating.weight", "uberv2.coating.weight" },
-        { "uberv2.coating.mode", "uberv2.coating.mode" },
         { "uberv2.coating.ior", "uberv2.coating.ior" },
         { "uberv2.coating.metalness", "uberv2.coating.metalness" },
         { "uberv2.emission.color", "uberv2.emission.color" },
-        { "uberv2.emission.weight", "uberv2.emission.weight" },
         { "uberv2.emission.mode", "uberv2.emission.mode" },
         { "uberv2.transparency", "uberv2.transparency" },
         { "uberv2.normal", "uberv2.normal" },
@@ -93,8 +86,6 @@ namespace
         { "uberv2.sss.scatter", "uberv2.sss.scatter" },
         { "uberv2.sss.absorption", "uberv2.sss.absorption" },
         { "uberv2.sss.scatter", "uberv2.sss.scatter" },
-        { "uberv2.sss.scatter", "uberv2.sss.scatter" },
-        { "uberv2.sss.weight", "uberv2.sss.weight" },
         { "uberv2.sss.subsurface", "uberv2.sss.subsurface" },
         { "uberv2.sss.multiscatter", "uberv2.sss.multiscatter" }};
 
@@ -310,6 +301,15 @@ void MaterialObject::SetInputValue(const std::string& input_name, const RadeonRa
     Notify();
 }
 
+void MaterialObject::SetInputValue(const std::string& input_name, rpr_uint val)
+{
+    std::string name = TranslatePropName(input_name, GetType());
+    SetInputU(name, val);
+
+    SetInput(nullptr, input_name);
+    Notify();
+}
+
 void MaterialObject::SetInput(MaterialObject* input_mat, const std::string& input_name)
 {
     //remove link with previous input
@@ -452,6 +452,11 @@ void MaterialObject::SetInputImage(const std::string& input_name, ImageMaterialO
 void MaterialObject::SetInputF(const std::string& input_name, const RadeonRays::float4& val)
 {
     throw Exception(RPR_ERROR_INVALID_OBJECT, "Float4 input not supported for the object.");
+}
+
+void MaterialObject::SetInputU(const std::string& input_name, rpr_uint val)
+{
+    throw Exception(RPR_ERROR_INVALID_OBJECT, "rpr_uint input not supported for the object.");
 }
 
 Baikal::Texture::Ptr MaterialObject::GetTexture()

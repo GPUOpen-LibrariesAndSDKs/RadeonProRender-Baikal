@@ -89,6 +89,7 @@ public:
     //inputs
     void SetInputValue(const std::string& input_name, MaterialObject* input);
     void SetInputValue(const std::string& input_name, const RadeonRays::float4& val);
+    void SetInputValue(const std::string& input_name, rpr_uint val);
 
     //Get*
     Type GetType() { return m_type; }
@@ -120,6 +121,7 @@ protected:
     virtual void SetInputTexture(const std::string& input_name, TextureMaterialObject* input);
     virtual void SetInputImage(const std::string& input_name, ImageMaterialObject* input);
     virtual void SetInputF(const std::string& input_name, const RadeonRays::float4& val);
+    virtual void SetInputU(const std::string& input_name, rpr_uint val);
 private:
 
     //handle input materials, it need for correct rprMaterialGet* methods.

@@ -533,6 +533,15 @@ extern "C" {
 #define RPR_UBER_MATERIAL_EMISSION_MODE_SINGLESIDED 0x1U
 #define RPR_UBER_MATERIAL_EMISSION_MODE_DOUBLESIDED 0x2U
 
+/* rpr uber material layers */
+#define RPR_UBER_MATERIAL_LAYER_EMISSION 0x1
+#define RPR_UBER_MATERIAL_LAYER_TRANSPARENCY 0x2
+#define RPR_UBER_MATERIAL_LAYER_COATING 0x4
+#define RPR_UBER_MATERIAL_LAYER_REFLECTION 0x8
+#define RPR_UBER_MATERIAL_LAYER_DIFFUSE 0x10
+#define RPR_UBER_MATERIAL_LAYER_REFRACTION 0x20
+#define RPR_UBER_MATERIAL_LAYER_SSS 0x40
+
 /* rpr_material_node_arithmetic_operation */
 #define RPR_MATERIAL_NODE_OP_ADD 0x00 
 #define RPR_MATERIAL_NODE_OP_SUB 0x01 
@@ -2946,11 +2955,12 @@ extern RPR_API_ENTRY fr_int frHeteroVolumeSetTransform(fr_hetero_volume out_hete
 *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
 *
 */
-extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputNI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_material_node in_input_node);
-extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputFI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w);
-extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputUI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_uint in_value);
-extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputImageDataI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_image image);
-extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputBufferDataI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_buffer buffer);
+//rprMaterialNodeSetInput*_ext
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputN_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_material_node in_input_node);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputF_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputU_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_uint in_value);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputImageData_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_image image);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputBufferData_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_buffer buffer);
 
 
 #ifdef __cplusplus

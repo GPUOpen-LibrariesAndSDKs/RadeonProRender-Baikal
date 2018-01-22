@@ -2238,7 +2238,22 @@ rpr_int rprMaterialNodeSetInputF(rpr_material_node in_node, rpr_char const * in_
 
 rpr_int rprMaterialNodeSetInputU(rpr_material_node in_node, rpr_char const * in_input, rpr_uint in_value)
 {
-    UNSUPPORTED_FUNCTION
+    //cast
+    MaterialObject* mat = WrapObject::Cast<MaterialObject>(in_node);
+    if (!mat)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    try
+    {
+        mat->SetInputValue(in_input, in_value);
+    }
+    catch (Exception& e)
+    {
+        return e.m_error;
+    }
+    return RPR_SUCCESS;
 }
 
 rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char const * in_input, rpr_image in_image)
@@ -2501,35 +2516,35 @@ rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_heteroVolume, rpr_bool
     UNIMLEMENTED_FUNCTION
 }
 
-rpr_int rprMaterialNodeSetInputNI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_material_node in_input_node)
+rpr_int rprMaterialNodeSetInputN_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_material_node in_input_node)
 {
     auto name_it  = kRPRInputStrings.find(in_input);
     return name_it != kRPRInputStrings.end() ?
         rprMaterialNodeSetInputN(in_node, name_it->second.c_str(), in_input_node)
         : RPR_ERROR_UNSUPPORTED;
 }
-rpr_int rprMaterialNodeSetInputFI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w)
+rpr_int rprMaterialNodeSetInputF_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w)
 {
     auto name_it = kRPRInputStrings.find(in_input);
     return name_it != kRPRInputStrings.end() ? 
         rprMaterialNodeSetInputF(in_node, name_it->second.c_str(), in_value_x, in_value_y, in_value_z, in_value_w)
         : RPR_ERROR_UNSUPPORTED;
 }
-rpr_int rprMaterialNodeSetInputUI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_uint in_value)
+rpr_int rprMaterialNodeSetInputU_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_uint in_value)
 {
     auto name_it = kRPRInputStrings.find(in_input);
     return name_it != kRPRInputStrings.end() ?
         rprMaterialNodeSetInputU(in_node, name_it->second.c_str(), in_value)
         : RPR_ERROR_UNSUPPORTED;
 }
-rpr_int rprMaterialNodeSetInputImageDataI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_image image)
+rpr_int rprMaterialNodeSetInputImageData_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_image image)
 {
     auto name_it = kRPRInputStrings.find(in_input);
     return name_it != kRPRInputStrings.end() ?
         rprMaterialNodeSetInputImageData(in_node, name_it->second.c_str(), image)
         : RPR_ERROR_UNSUPPORTED;
 }
-rpr_int rprMaterialNodeSetInputBufferDataI(rpr_material_node in_node, rpr_material_node_input in_input, rpr_buffer buffer)
+rpr_int rprMaterialNodeSetInputBufferData_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_buffer buffer)
 {
     auto name_it = kRPRInputStrings.find(in_input);
     return name_it != kRPRInputStrings.end() ?

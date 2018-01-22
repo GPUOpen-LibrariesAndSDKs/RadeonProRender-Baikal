@@ -212,8 +212,8 @@ namespace Baikal
             auto uber = UberV2Material::Create();
             uber->SetInputValue("uberv2.diffuse.color", float4(0.9f, 0.0f, 0.0f, 1.f));
             uber->SetInputValue("uberv2.reflection.color", float4(0.9f, 0.9f, 0.9f, 1.f));
-            uber->SetInputValue("uberv2.reflection.weight", float4(1.f));
-            uber->SetInputValue("uberv2.reflection.roughness", float4(0.05f));
+            uber->SetInputValue("uberv2.reflection.roughness", float4(0.f));
+            uber->SetInputValue("uberv2.layers", UberV2Material::kDiffuseLayer | UberV2Material::kReflectionLayer);
 
             spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
             //spec->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));

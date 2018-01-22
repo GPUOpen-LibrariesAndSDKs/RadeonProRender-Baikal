@@ -319,6 +319,11 @@ namespace Baikal
     UberV2Material::UberV2Material()
     {
         using namespace RadeonRays;
+
+        //Layers
+        RegisterInput("uberv2.layers", "base diffuse albedo", { InputType::kUint });
+        SetInputValue("uberv2.layers", 0U);
+
         //Diffuse
         RegisterInput("uberv2.diffuse.color", "base diffuse albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.diffuse.color", float4(1.0f, 1.0f, 1.0f, 1.0f));

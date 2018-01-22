@@ -16,6 +16,11 @@ void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonR
     m_mat->SetInputValue(input_name, val);
 }
 
+void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val) 
+{
+    m_mat->SetInputValue(input_name, val);
+}
+
 Baikal::Material::Ptr UberMaterialObject::GetMaterial()
 {
     return m_mat;

@@ -1294,6 +1294,8 @@ namespace Baikal
 
                 fillInput("uberv2.diffuse.color", nullptr, nullptr, &(clw_material->uberv2.diffuse_color), &(clw_material->uberv2.diffuse_color_idx));
 
+                fillInput("uberv2.layers", &(clw_material->uberv2.layers), nullptr, nullptr, nullptr);
+
                 fillInput("uberv2.reflection.color", nullptr, nullptr, &(clw_material->uberv2.reflection_color), &(clw_material->uberv2.reflection_color_idx));
                 fillInput("uberv2.reflection.roughness", nullptr, &(clw_material->uberv2.reflection_roughness), nullptr, &(clw_material->uberv2.reflection_roughness_idx));
                 fillInput("uberv2.reflection.anisotropy", nullptr, &(clw_material->uberv2.reflection_anisotropy), nullptr, &(clw_material->uberv2.reflection_anisotropy_idx));

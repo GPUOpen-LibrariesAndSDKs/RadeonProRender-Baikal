@@ -93,6 +93,17 @@ enum Bxdf
     kUberV2
 };
 
+enum UberMaterialLayers
+{
+    kEmissionLayer = 0x1,
+    kTransparencyLayer = 0x2,
+    kCoatingLayer = 0x4,
+    kReflectionLayer = 0x8,
+    kDiffuseLayer = 0x10,
+    kRefractionLayer = 0x20,
+    kSSSLayer = 0x40
+};
+
 // Material description
 typedef struct _Material
 {
@@ -153,7 +164,8 @@ typedef struct _Material
             float4 diffuse_color;
 
             int diffuse_color_idx;
-            int padding1[3];
+            int layers;
+            int padding1[2];
 
             float4 reflection_color;
 
@@ -229,6 +241,8 @@ typedef struct _Material
     int bump_flag;
     int thin;
     int nmapidx;
+    int bxdf_flags;
+    int padding5[3];
 } Material;
 
 enum LightType

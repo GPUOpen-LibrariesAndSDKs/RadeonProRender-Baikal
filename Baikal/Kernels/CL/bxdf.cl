@@ -40,6 +40,18 @@ float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
     return (rparl*rparl + rperp*rperp) * 0.5f;
 }
 
+#define DENOM_EPS 1e-8f
+#define ROUGHNESS_EPS 0.0001f
+
+
+enum BxdfFlags
+{
+    kBxdfSingular = (1 << 0),
+    kBxdfBrdf = (1 << 1),
+    kBxdfEmissive = (1 << 2),
+    kBxdfTransparency = (1 << 3)
+};
+
 
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
@@ -47,27 +59,6 @@ float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
 #include <../Baikal/Kernels/CL/disney.cl>
 #include <../Baikal/Kernels/CL/bxdf_basic.cl>
 #include <../Baikal/Kernels/CL/bxdf_uberv2.cl>
-
-#define DENOM_EPS 1e-8f
-#define ROUGHNESS_EPS 0.0001f
-
-
-enum BxdfFlags
-{
-    kReflection = (1 << 0),
-    kTransmission = (1 << 1),
-    kDiffuse = (1 << 2),
-    kSpecular = (1 << 3),
-    kGlossy = (1 << 4),
-    kTransparency = (1 << 5),
-    kAllReflection = kReflection | kDiffuse | kSpecular | kGlossy,
-    kGlossyReflection = kReflection | kSpecular | kGlossy,
-    kSpecularReflection = kReflection | kSpecular,
-    kAllTransmission = kTransmission | kDiffuse | kSpecular | kGlossy,
-    kGlossyTransmission = kTransmission | kSpecular | kGlossy,
-    kSpecularTransmission = kTransmission | kSpecular,
-    kAll = kReflection | kTransmission | kDiffuse | kSpecular | kGlossy
-};
 
 /*
  Dispatch functions
@@ -80,9 +71,7 @@ float3 Bxdf_Evaluate(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST,
-    // RNG
-    float2 sample
+    TEXTURE_ARG_LIST
     )
 {
     // Transform vectors into tangent space
@@ -115,7 +104,7 @@ float3 Bxdf_Evaluate(
         return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
     case kUberV2:
-        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS, sample);
+        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
     }
 
     return 0.f;
@@ -199,9 +188,7 @@ float Bxdf_GetPdf(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST,
-    // RNG
-    float2 sample
+    TEXTURE_ARG_LIST
     )
 {
     // Transform vectors into tangent space
@@ -234,7 +221,7 @@ float Bxdf_GetPdf(
         return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
     case kUberV2:
-        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS, sample);
+        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
     }
 
     return 0.f;
@@ -251,39 +238,37 @@ float3 Emissive_GetLe(
     return kd;
 }
 
-
 /// BxDF singularity check
 bool Bxdf_IsSingular(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough;
+    return (dg->mat.bxdf_flags & kBxdfSingular) == kBxdfSingular;
 }
 
 /// BxDF emission check
 bool Bxdf_IsEmissive(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kEmissive;
+    return (dg->mat.bxdf_flags & kBxdfEmissive) == kBxdfEmissive;
 }
 
 /// BxDF singularity check
 bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
-        dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann ;
+    return (dg->mat.bxdf_flags & kBxdfBrdf) == 0;
 }
 
 bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+    return Bxdf_IsBtdf(dg);
 }
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann|| dg->mat.type == kUberV2;
+    return (dg->mat.bxdf_flags & kBxdfBrdf) == kBxdfBrdf;
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)
 {
-    return dg->mat.type == kPassthrough;
+    return (dg->mat.bxdf_flags & kBxdfTransparency) == kBxdfTransparency;
 }
 
 #endif // BXDF_CL

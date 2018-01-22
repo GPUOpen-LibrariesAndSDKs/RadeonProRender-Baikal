@@ -361,7 +361,10 @@ KERNEL void ShadeSurface(
         bool backfacing = ngdotwi < 0.f;
 
         // Select BxDF 
-        //Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+        // Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+        float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+        GetMaterialBxDFType(wi, sample, &diffgeo);
+                    
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);
 
@@ -443,7 +446,6 @@ KERNEL void ShadeSurface(
 
         float3 throughput = Path_GetThroughput(path);
 
-        float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
         // Sample bxdf
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf);
 
@@ -453,7 +455,7 @@ KERNEL void ShadeSurface(
             // Sample light
             int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &lightwo, &light_pdf);
-            light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS, sample);
+            light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
 
             // Apply MIS to account for both
@@ -461,7 +463,7 @@ KERNEL void ShadeSurface(
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
-                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS, sample) * throughput * light_weight / light_pdf / selection_pdf;
+                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * light_weight / light_pdf / selection_pdf;
             }
         }
 
