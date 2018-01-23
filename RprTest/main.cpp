@@ -4062,7 +4062,7 @@ rpr_material_node CreateRefractionMaterial(rpr_material_system matsys)
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.1f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
     return material;

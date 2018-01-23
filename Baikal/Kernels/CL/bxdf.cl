@@ -258,7 +258,7 @@ bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 
 bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
 {
-    return Bxdf_IsBtdf(dg);
+    return Bxdf_IsBtdf(dg) && ((dg->mat.uberv2.layers & kRefractionLayer) == kRefractionLayer);
 }
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)

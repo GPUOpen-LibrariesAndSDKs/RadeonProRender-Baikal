@@ -401,15 +401,15 @@ KERNEL void ShadeSurface(
         }
 
         float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
-        if (backfacing)
+        if (backfacing && !Bxdf_IsBtdf(&diffgeo))
         {
             //Reverse normal and tangents in this case
             //but not for BTDFs, since BTDFs rely
             //on normal direction in order to arrange   
             //indices of refraction
             diffgeo.n = -diffgeo.n;
-            //diffgeo.dpdu = -diffgeo.dpdu;
-            //diffgeo.dpdv = -diffgeo.dpdv;
+            diffgeo.dpdu = -diffgeo.dpdu;
+            diffgeo.dpdv = -diffgeo.dpdv;
             s = -s;
         }
 
