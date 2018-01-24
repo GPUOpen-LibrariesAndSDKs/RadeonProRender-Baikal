@@ -28,12 +28,11 @@ project "RadeonRays"
         filter { "kind:SharedLib", "system:macosx" }
         linkoptions { '-Wl,-install_name', '-Wl,@loader_path/%{cfg.linktarget.name}' }
     elseif os.is("linux") then
-        buildoptions "-std=c++14 -msse4.2 -fPIC"
+        buildoptions "-std=c++11 -fPIC"
         linkoptions {"-Wl,--no-undefined"}
-	links {"pthread"}
 
         --get API version from header.
-        local handle = io.popen("grep -r RADEONRAYS_API_VERSION ../RadeonRays/RadeonRays/include/radeon_rays.h | cut -d \" \" -f 3")
+        local handle = io.popen("grep -r RADEONRAYS_API_VERSION ../RadeonRays/include/radeon_rays.h | cut -d \" \" -f 3")
         local lib_version = (handle:read("*a")):gsub("\n", "")
         handle:close()
 
