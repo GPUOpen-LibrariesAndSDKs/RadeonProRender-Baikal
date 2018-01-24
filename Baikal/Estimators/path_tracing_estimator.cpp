@@ -656,6 +656,11 @@ namespace Baikal
     {
         auto temporary = GetContext().CreateBuffer<float3>(num_estimates, CL_MEM_WRITE_ONLY);
 
+        InitPathData(num_estimates);
+
+        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
+        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, num_estimates);
+
         auto num_passes = 100u;
         // Clear ray hits buffer
         GetContext().FillBuffer(0, m_render_data->hits, 0, num_estimates);
@@ -678,11 +683,9 @@ namespace Baikal
         GetContext().Finish(0);
 
         auto delta = std::chrono::high_resolution_clock::now() - start;
+        auto time_in_ms = (float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() / num_passes;
 
-        stats.primary_throughput = 
-            num_estimates / (((float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() 
-                / num_passes) 
-                / 1000.f);
+        stats.primary_throughput = num_estimates / (time_in_ms / 1000.f);
 
         // Convert intersections to predicates
         FilterPathStream(0, num_estimates);
@@ -723,10 +726,9 @@ namespace Baikal
 
         delta = std::chrono::high_resolution_clock::now() - start;
 
-        stats.shadow_throughput =
-            num_estimates / (((float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
-                / num_passes)
-                / 1000.f);
+        time_in_ms = (float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() / num_passes;
+
+        stats.shadow_throughput = num_estimates / (time_in_ms / 1000.f);
 
         // Gather light samples and account for visibility
         GatherLightSamples(scene, 0, num_estimates, temporary, false);
@@ -756,10 +758,9 @@ namespace Baikal
 
         delta = std::chrono::high_resolution_clock::now() - start;
 
-        stats.secondary_throughput =
-            num_estimates / (((float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
-                / num_passes)
-                / 1000.f);
+        time_in_ms = (float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() / num_passes;
+
+        stats.secondary_throughput = num_estimates / (time_in_ms / 1000.f);
     }
 
     bool PathTracingEstimator::SupportsIntermediateValue(IntermediateValue value) const
