@@ -59,7 +59,6 @@ static const std::map<rpr_material_node_input, std::string> kRPRInputStrings =
     { RPR_UBER_MATERIAL_REFRACTION_THIN_SURFACE, "uberv2.refraction.thin_surface" },
     { RPR_UBER_MATERIAL_COATING_COLOR, "uberv2.coating.color" },
     { RPR_UBER_MATERIAL_COATING_IOR, "uberv2.coating.ior" },
-    { RPR_UBER_MATERIAL_COATING_METALNESS, "uberv2.coating.metalness" },
     { RPR_UBER_MATERIAL_EMISSION_COLOR, "uberv2.emission.color" },
     { RPR_UBER_MATERIAL_EMISSION_WEIGHT, "uberv2.emission.weight" },
     { RPR_UBER_MATERIAL_EMISSION_MODE, "uberv2.emission.mode" },

@@ -201,16 +201,12 @@ typedef struct _Material
             int coating_color_idx;
             float coating_ior;
             int coating_ior_idx;
-            float coating_metalness;
-
-            int coating_metalness_idx;
             float emission_color;
+
             int emission_color_idx;
             int emission_mode;
-
             float transparency;
             int transparency_idx;
-            int padding4[2];
 
 /*            float displacement;
             int displacement_idx;*/

@@ -10,11 +10,6 @@ float CalculateFresnel(
     float bottom_ior
 )
 {
-/*    if (ndotwi < 0.f && dg->mat.thin)
-    {
-        ndotwi = -ndotwi;
-    }*/
-
     float etai =  top_ior;
     float etat =  bottom_ior;
     float cosi = ndotwi;

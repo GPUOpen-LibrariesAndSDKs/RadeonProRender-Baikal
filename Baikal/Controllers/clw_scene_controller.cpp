@@ -1311,7 +1311,6 @@ namespace Baikal
 
                 fillInput("uberv2.coating.color", nullptr, nullptr, &(clw_material->uberv2.coating_color), &(clw_material->uberv2.coating_color_idx));
                 fillInput("uberv2.coating.ior", nullptr, &(clw_material->uberv2.coating_ior), nullptr, &(clw_material->uberv2.coating_ior_idx));
-                fillInput("uberv2.coating.metalness", nullptr, &(clw_material->uberv2.coating_metalness), nullptr, &(clw_material->uberv2.coating_metalness_idx));
 
                 fillInput("uberv2.emission.color", nullptr, &(clw_material->uberv2.emission_color), nullptr, &(clw_material->uberv2.emission_color_idx));
                 fillInput("uberv2.emission.mode", &(clw_material->uberv2.emission_mode), nullptr, nullptr, nullptr);

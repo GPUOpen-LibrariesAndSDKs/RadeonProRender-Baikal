@@ -549,7 +549,7 @@ float3 UberV2_Reflection_Evaluate(
 )
 {
     const bool is_singular = (dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
-    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness));
+    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_idx));
 
     const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_idx));
 
@@ -631,13 +631,13 @@ float3 UberV2_Reflection_Sample(
 {
     const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_idx));
     const bool is_singular = (dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
-    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness));
+    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_idx));
 
     float3 color = mix((float3)(1.0f, 1.0f, 1.0f), ks, metalness);
     
-    return /*mix((float3)(1.0f, 1.0f, 1.0f),*/ is_singular ?
-        UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, wo, pdf, ks) :
-        UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf, ks);//, metalness);
+    return is_singular ?
+        UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, wo, pdf, color) :
+        UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf, color);
 }
 
 float3 UberV2_Refraction_Sample(
