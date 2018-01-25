@@ -10,10 +10,10 @@ float CalculateFresnel(
     float bottom_ior
 )
 {
-    if (ndotwi < 0.f && dg->mat.thin)
+/*    if (ndotwi < 0.f && dg->mat.thin)
     {
         ndotwi = -ndotwi;
-    }
+    }*/
 
     float etai =  top_ior;
     float etat =  bottom_ior;
@@ -45,24 +45,28 @@ float CalculateFresnel(
 void GetMaterialBxDFType(
     // Incoming direction
     float3 wi,
-    // RNG
-    float2 sample,
+    // Sampler
+    Sampler* sampler,
+    // Sampler args
+    SAMPLER_ARG_LIST,
     // Geometry
     DifferentialGeometry* dg
 )
 {
     dg->mat.bxdf_flags = 0;
     if ((dg->mat.uberv2.layers & kEmissionLayer) == kEmissionLayer) dg->mat.bxdf_flags = kBxdfEmissive;
+
     if ((dg->mat.uberv2.layers & kTransparencyLayer) == kTransparencyLayer)
     {
-        if (sample.x < dg->mat.uberv2.transparency)
+        float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+        if (sample < dg->mat.uberv2.transparency)
         {
             dg->mat.bxdf_flags |= (kBxdfTransparency | kBxdfSingular);
             return;
         }
     }
     
-    const bxdf_type = (dg->mat.uberv2.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer));
+    const bxdf_type = (dg->mat.uberv2.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer | kDiffuseLayer));
     const float ndotwi = dot(dg->n, wi);
 
     //No refraction
@@ -72,10 +76,12 @@ void GetMaterialBxDFType(
         float top_ior = 1.0f;
         if ((bxdf_type & kCoatingLayer) == kCoatingLayer)
         {
+            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
             const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.coating_ior);
-            if (sample.x < fresnel) //Will sample coating layer 
+            if (sample < fresnel) //Will sample coating layer 
             {
                 dg->mat.bxdf_flags |= kBxdfSingular;
+                dg->mat.bxdf_flags |= kBxdfSampleCoating;
                 return;
             }
             top_ior = dg->mat.uberv2.coating_ior;
@@ -84,53 +90,63 @@ void GetMaterialBxDFType(
         if ((bxdf_type & kReflectionLayer) == kReflectionLayer)
         {
             const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.reflection_ior);
-            if (sample.y < fresnel) //Will sample reflection layer 
+            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+            if (sample < fresnel) //Will sample reflection layer 
             {
                 if ((dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
                     dg->mat.bxdf_flags |= kBxdfSingular;
+                dg->mat.bxdf_flags |= kBxdfSampleReflection;
                 return;
             }
         }
+        dg->mat.bxdf_flags |= kBxdfSampleDiffuse;
+        return;
     }
     else
     {
-        float ref_sample = sample.x;
         float top_ior = 1.0f;
         if ((bxdf_type & kCoatingLayer) == kCoatingLayer)
         {
             const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.coating_ior);
-            if (sample.x < fresnel) //Will sample coating layer 
+            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+            if (sample < fresnel) //Will sample coating layer 
             {
                 dg->mat.bxdf_flags |= kBxdfBrdf;
                 dg->mat.bxdf_flags |= kBxdfSingular;
+                dg->mat.bxdf_flags |= kBxdfSampleCoating;
                 return;
             }
             top_ior = dg->mat.uberv2.coating_ior;
-            ref_sample = sample.x / fresnel;
         }
 
         if ((bxdf_type & kReflectionLayer) == kReflectionLayer)
         {
             const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.reflection_ior);
-            if (sample.y < fresnel) //Will sample reflection layer 
+            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+            if (sample < fresnel) //Will sample reflection layer 
             {
                 dg->mat.bxdf_flags |= kBxdfBrdf;
+                dg->mat.bxdf_flags |= kBxdfSampleReflection;
                 if ((dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
                     dg->mat.bxdf_flags |= kBxdfSingular;
                 return;
             }
+            top_ior = dg->mat.uberv2.reflection_ior;
         }
 
         //If we come here - we need to check if we sample lambert or refraction
-        float refraction_fresnel = CalculateFresnel(wi.y, wi, dg, top_ior, dg->mat.uberv2.refraction_ior);
-        if (ref_sample >= refraction_fresnel)
+        float refraction_fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.refraction_ior);
+        float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+        if (sample < refraction_fresnel)
         {
-            if ((dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
-                dg->mat.bxdf_flags |= kBxdfSingular;
+            dg->mat.bxdf_flags |= kBxdfBrdf;
+            dg->mat.bxdf_flags |= kBxdfSampleDiffuse;
         }
         else
         {
-            dg->mat.bxdf_flags |= kBxdfBrdf;
+            dg->mat.bxdf_flags |= kBxdfSampleRefraction;
+            if ((dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
+                dg->mat.bxdf_flags |= kBxdfSingular;
         }
     }
 }
@@ -187,10 +203,14 @@ float3 UberV2_Evaluate(
     //Check if we have single layer material or not
     if (fresnel_blend_layers == 1)
     {
-        if ((layers & kCoatingLayer) == kCoatingLayer) result = UberV2_IdealReflect_Evaluate(dg, wi, wo, TEXTURE_ARGS);
-        else if ((layers & kReflectionLayer) == kReflectionLayer) result = UberV2_Reflection_Evaluate(dg, wi, wo, TEXTURE_ARGS);
-        else if ((layers & kRefractionLayer) == kRefractionLayer) result = UberV2_Refraction_Evaluate(dg, wi, wo, TEXTURE_ARGS);
-        else if ((layers & kDiffuseLayer) == kDiffuseLayer) result = UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        if ((layers & kCoatingLayer) == kCoatingLayer)
+            result = UberV2_IdealReflect_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        else if ((layers & kReflectionLayer) == kReflectionLayer)
+            result = UberV2_Reflection_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        else if ((layers & kRefractionLayer) == kRefractionLayer)
+            result = UberV2_Refraction_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        else if ((layers & kDiffuseLayer) == kDiffuseLayer)
+            result = UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
 
         if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
@@ -271,10 +291,14 @@ float UberV2_GetPdf(
     //Check if we have single layer material or not
     if (fresnel_blend_layers == 1)
     {
-        if ((layers & kCoatingLayer) == kCoatingLayer) result = UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS);
-        else if ((layers & kReflectionLayer) == kReflectionLayer) result = UberV2_Reflection_GetPdf(dg, wi, wo, TEXTURE_ARGS);
-        else if ((layers & kRefractionLayer) == kRefractionLayer) result = UberV2_Refraction_GetPdf(dg, wi, wo, TEXTURE_ARGS);
-        else if ((layers & kDiffuseLayer) == kDiffuseLayer)result = UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        if ((layers & kCoatingLayer) == kCoatingLayer)
+            result = UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        else if ((layers & kReflectionLayer) == kReflectionLayer)
+            result = UberV2_Reflection_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        else if ((layers & kRefractionLayer) == kRefractionLayer)
+            result = UberV2_Refraction_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        else if ((layers & kDiffuseLayer) == kDiffuseLayer)
+            result = UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
 
         if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
@@ -355,70 +379,15 @@ float3 UberV2_Sample(
             return UberV2_Passthrough_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
         }
     }
-    
-    const int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
-    
-    if (fresnel_blend_layers == 0) return 0.0f;
 
-    //Check if we have single layer material or not
-    if (fresnel_blend_layers == 1)
-    {
-        if ((layers & kCoatingLayer) == kCoatingLayer)return UberV2_Coating_Sample(dg, wi, TEXTURE_ARGS, wo, pdf);
-        if ((layers & kReflectionLayer) == kReflectionLayer) return UberV2_Reflection_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-        if ((layers & kRefractionLayer) == kRefractionLayer) return UberV2_Refraction_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-        if ((layers & kDiffuseLayer) == kDiffuseLayer)return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-    }
-    float3 result;
-    float top_ior = 1.0f;
-    //All 3 layers
-    if (dg->mat.bxdf_flags & kBxdfBrdf)
-    {
-        if ((layers & kCoatingLayer) == kCoatingLayer)
-        {
-            float coating_fresnel = CalculateFresnel(wi.y, wi, dg, top_ior, dg->mat.uberv2.coating_ior);
-            if (sample.x < coating_fresnel)
-            {
-                sample.x /= coating_fresnel;
-                return UberV2_Coating_Sample(dg, wi, TEXTURE_ARGS, wo, pdf);
-            }
-
-            top_ior = dg->mat.uberv2.coating_ior;
-            sample.x /= (1.f - coating_fresnel);
-        }
-
-        if ((layers & kReflectionLayer) == kReflectionLayer)
-        {
-            float reflection_fresnel = CalculateFresnel(wi.y, wi, dg, top_ior, dg->mat.uberv2.reflection_ior);
-            if (sample.y < reflection_fresnel)
-            {
-                sample.y /= reflection_fresnel;
-                return UberV2_Reflection_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-            }
-
-            top_ior = dg->mat.uberv2.reflection_ior;
-            sample.y /= (1.f - reflection_fresnel);
-        }
-
-        if ((layers & kRefractionLayer) == kRefractionLayer)
-        {
-            if ((layers & kDiffuseLayer) == kDiffuseLayer)
-            {
-                float refraction_fresnel = CalculateFresnel(wi.y, wi, dg, top_ior, dg->mat.uberv2.refraction_ior);
-                if (sample.x < refraction_fresnel)
-                {
-                    //sample.x /= refraction_fresnel;
-                    return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-                }
-                //sample.x /= (1.f - refraction_fresnel);
-            }
-            return UberV2_Refraction_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-        }
-
-        if ((layers & kDiffuseLayer) == kDiffuseLayer)
-        {
-            return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-        }
-    }
+    if ((dg->mat.bxdf_flags & kBxdfSampleCoating) == kBxdfSampleCoating)
+        return UberV2_Coating_Sample(dg, wi, TEXTURE_ARGS, wo, pdf);
+    else if ((dg->mat.bxdf_flags & kBxdfSampleReflection) == kBxdfSampleReflection)
+        return UberV2_Reflection_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    else if ((dg->mat.bxdf_flags & kBxdfSampleDiffuse) == kBxdfSampleDiffuse)
+        return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+    else if ((dg->mat.bxdf_flags & kBxdfSampleRefraction) == kBxdfSampleRefraction)
+        return UberV2_Refraction_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
 
     return 0.f;
 }

@@ -361,9 +361,8 @@ KERNEL void ShadeSurface(
         bool backfacing = ngdotwi < 0.f;
 
         // Select BxDF 
-        // Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
-        float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
-        GetMaterialBxDFType(wi, sample, &diffgeo);
+        if (diffgeo.mat.type == kUberV2) GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo);
+        else Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
                     
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);
@@ -447,6 +446,7 @@ KERNEL void ShadeSurface(
         float3 throughput = Path_GetThroughput(path);
 
         // Sample bxdf
+        const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf);
 
         // If we have light to sample we can hopefully do mis 

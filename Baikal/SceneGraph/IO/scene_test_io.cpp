@@ -207,19 +207,7 @@ namespace Baikal
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
-
-            auto spec = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealReflect);
-            auto uber = UberV2Material::Create();
-            uber->SetInputValue("uberv2.diffuse.color", float4(0.9f, 0.0f, 0.0f, 1.f));
-            uber->SetInputValue("uberv2.reflection.color", float4(0.9f, 0.9f, 0.9f, 1.f));
-            uber->SetInputValue("uberv2.reflection.roughness", float4(0.f));
-            uber->SetInputValue("uberv2.layers", UberV2Material::kDiffuseLayer | UberV2Material::kReflectionLayer);
-
-            spec->SetInputValue("albedo", float4(0.9f, 0.9f, 0.9f, 1.f));
-            //spec->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
             
-            mesh->SetMaterial(uber);
-
             auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
             
             auto ibl = ImageBasedLight::Create();
@@ -419,6 +407,78 @@ namespace Baikal
             auto ibl = ImageBasedLight::Create();
             ibl->SetTexture(ibl_texture);
             ibl->SetMultiplier(1.f);
+        }
+        else if (filename == "uberv2_test_spheres")
+        {
+            auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
+            scene->AttachShape(mesh);
+            auto uberv2 = UberV2Material::Create();
+            uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 1.0f, 1.0f, 0.0f));
+            uberv2->SetInputValue("uberv2.coating.ior", float4(1.5f));
+            uberv2->SetInputValue("uberv2.coating.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
+            uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.f));
+            uberv2->SetInputValue("uberv2.reflection.color", float4(0.0f, 1.0f, 0.0f, 0.0f));
+            uberv2->SetInputValue("uberv2.reflection.ior", float4(1.7f));
+            uberv2->SetInputValue("uberv2.refraction.color", float4(0.0f, 0.0f, 1.0f, 0.0f));
+            uberv2->SetInputValue("uberv2.refraction.roughness", float4(0.f));
+            uberv2->SetInputValue("uberv2.refraction.ior", float4(1.1f));
+            uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer |
+              UberV2Material::Layers::kRefractionLayer);
+            mesh->SetMaterial(uberv2);
+            matrix t = RadeonRays::translation(float3(0, 0, -10.f));
+            mesh->SetTransform(t);
+
+            /*for (int i = 0; i < 0; ++i)
+            {
+                for (int j = 0; j < 10; ++j)
+                {
+                    uberv2 = UberV2Material::Create();
+                    
+                    switch (i)
+                    {
+                    case 0: 
+                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
+                        uberv2->SetInputValue("uberv2.coating.ior", float4(1.0f + (float)j/5.f));
+                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer);
+                        break;
+                    case 1:
+                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
+                        uberv2->SetInputValue("uberv2.reflection.roughness", float4((float)j/10.f));
+                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+                        break;
+                    case 2:
+                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
+                        uberv2->SetInputValue("uberv2.reflection.ior", float4(1.0f + (float)j / 5.f));
+                        uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.05));
+                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+                        break;
+                    case 3:
+                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
+                        uberv2->SetInputValue("uberv2.refraction.roughness", float4((float)j / 10.f));
+                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kRefractionLayer);
+                        break;
+                    case 4:
+                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
+                        uberv2->SetInputValue("uberv2.transparency", float4((float)j/10.f));
+                        uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.0f));
+                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kTransparencyLayer);
+                        break;
+                    }
+                    auto instance = Instance::Create(mesh);
+                    t = RadeonRays::translation(float3(j * 2.f - 9.f, i * 2.f - 3.f, -10.f));
+                    instance->SetTransform(t);
+                    scene->AttachShape(instance);
+                    instance->SetMaterial(uberv2);
+                }*/
+
+                auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+
+                auto ibl = ImageBasedLight::Create();
+                ibl->SetTexture(ibl_texture);
+                ibl->SetMultiplier(1.f);
+                scene->AttachLight(ibl);
+
+            //}
         }
         
         return scene;

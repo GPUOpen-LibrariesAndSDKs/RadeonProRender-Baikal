@@ -4035,7 +4035,7 @@ rpr_material_node CreateReflectionMaterial(rpr_material_system matsys)
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
@@ -4062,7 +4062,7 @@ rpr_material_node CreateRefractionMaterial(rpr_material_system matsys)
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f);
     assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.1f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
     return material;
@@ -4081,11 +4081,11 @@ rpr_material_node CreateMetalMaterial(rpr_material_system matsys)
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 1.0f, 1.0f, 1.0f);
+    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, 1.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_METALNESS, 1.0f, 1.0f, 1.0f, 1.0f);
     assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.1f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 0.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);

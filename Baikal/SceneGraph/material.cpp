@@ -340,7 +340,7 @@ namespace Baikal
         RegisterInput("uberv2.reflection.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
         SetInputValue("uberv2.reflection.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
         RegisterInput("uberv2.reflection.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.metalness", float4(1.0f, 1.0f, 1.0f, 1.0f));
+        SetInputValue("uberv2.reflection.metalness", float4(0.0f, 0.0f, 0.0f, 0.0f));
 
         //Coating
         RegisterInput("uberv2.coating.color", "base coating albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
