@@ -428,7 +428,7 @@ namespace Baikal
             matrix t = RadeonRays::translation(float3(0, 0, -10.f));
             mesh->SetTransform(t);
 
-            for (int i = 0; i < 0; ++i)
+            for (int i = 0; i < 5; ++i)
             {
                 for (int j = 0; j < 10; ++j)
                 {
