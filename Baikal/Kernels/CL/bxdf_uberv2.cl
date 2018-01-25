@@ -69,86 +69,48 @@ void GetMaterialBxDFType(
     const bxdf_type = (dg->mat.uberv2.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer | kDiffuseLayer));
     const float ndotwi = dot(dg->n, wi);
 
-    //No refraction
-    if ((bxdf_type & kRefractionLayer) != kRefractionLayer)
+    //Refraction
+    if ((bxdf_type & kRefractionLayer) == kRefractionLayer)
     {
-        dg->mat.bxdf_flags |= kBxdfBrdf;
-        float top_ior = 1.0f;
-        if ((bxdf_type & kCoatingLayer) == kCoatingLayer)
-        {
-            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-            const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.coating_ior);
-            if (sample < fresnel) //Will sample coating layer 
-            {
-                dg->mat.bxdf_flags |= kBxdfSingular;
-                dg->mat.bxdf_flags |= kBxdfSampleCoating;
-                return;
-            }
-            top_ior = dg->mat.uberv2.coating_ior;
-        }
-
-        if ((bxdf_type & kReflectionLayer) == kReflectionLayer)
-        {
-            const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.reflection_ior);
-            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-            if (sample < fresnel) //Will sample reflection layer 
-            {
-                if ((dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
-                    dg->mat.bxdf_flags |= kBxdfSingular;
-                dg->mat.bxdf_flags |= kBxdfSampleReflection;
-                return;
-            }
-        }
-        dg->mat.bxdf_flags |= kBxdfSampleDiffuse;
-        return;
-    }
-    else
-    {
-        float top_ior = 1.0f;
-        if ((bxdf_type & kCoatingLayer) == kCoatingLayer)
-        {
-            const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.coating_ior);
-            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-            if (sample < fresnel) //Will sample coating layer 
-            {
-                dg->mat.bxdf_flags |= kBxdfBrdf;
-                dg->mat.bxdf_flags |= kBxdfSingular;
-                dg->mat.bxdf_flags |= kBxdfSampleCoating;
-                return;
-            }
-            top_ior = dg->mat.uberv2.coating_ior;
-        }
-
-        if ((bxdf_type & kReflectionLayer) == kReflectionLayer)
-        {
-            const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.reflection_ior);
-            float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-            if (sample < fresnel) //Will sample reflection layer 
-            {
-                dg->mat.bxdf_flags |= kBxdfBrdf;
-                dg->mat.bxdf_flags |= kBxdfSampleReflection;
-                if ((dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
-                    dg->mat.bxdf_flags |= kBxdfSingular;
-                return;
-            }
-            top_ior = dg->mat.uberv2.reflection_ior;
-        }
-
-        //If we come here - we need to check if we sample lambert or refraction
-        float refraction_fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.refraction_ior);
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-        if (sample < refraction_fresnel)
-        {
-            dg->mat.bxdf_flags |= kBxdfBrdf;
-            dg->mat.bxdf_flags |= kBxdfSampleDiffuse;
-        }
-        else
+        const float fresnel = CalculateFresnel(ndotwi, wi, dg, 1.0f, dg->mat.uberv2.refraction_ior);
+        if (sample >= fresnel)
         {
             dg->mat.bxdf_flags |= kBxdfSampleRefraction;
             if ((dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
                 dg->mat.bxdf_flags |= kBxdfSingular;
+            return;
         }
     }
+    dg->mat.bxdf_flags |= kBxdfBrdf;
+    float top_ior = 1.0f;
+    if ((bxdf_type & kCoatingLayer) == kCoatingLayer)
+    {
+        float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+        const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.coating_ior);
+        if (sample < fresnel) //Will sample coating layer 
+        {
+            dg->mat.bxdf_flags |= kBxdfSingular;
+            dg->mat.bxdf_flags |= kBxdfSampleCoating;
+            return;
+        }
+        top_ior = dg->mat.uberv2.coating_ior;
+    }
+
+    if ((bxdf_type & kReflectionLayer) == kReflectionLayer)
+    {
+        const float fresnel = CalculateFresnel(ndotwi, wi, dg, top_ior, dg->mat.uberv2.reflection_ior);
+        float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
+        if (sample < fresnel) //Will sample reflection layer 
+        {
+            if ((dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
+                dg->mat.bxdf_flags |= kBxdfSingular;
+            dg->mat.bxdf_flags |= kBxdfSampleReflection;
+            return;
+        }
+    }
+    dg->mat.bxdf_flags |= kBxdfSampleDiffuse;
+    return;
 }
 
 float3 Fresnel_Blend(
@@ -197,6 +159,7 @@ float3 UberV2_Evaluate(
     int layers = dg->mat.uberv2.layers;
     
     int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
+    int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
     
     if (fresnel_blend_layers == 0) return 0.0f;
     float3 result;
@@ -220,11 +183,9 @@ float3 UberV2_Evaluate(
         return result;
     }
 
-    float iors[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float3 values[4];
+    float iors[3] = { 1.0f, 1.0f, 1.0f };
+    float3 values[3];
     int id = 0;
-
-    iors[id] = 1.0f;
 
     if ((layers & kCoatingLayer) == kCoatingLayer)
     {
@@ -233,7 +194,7 @@ float3 UberV2_Evaluate(
         ++id;
     }
 
-    if ((layers & kReflectionLayer) == kCoatingLayer)
+    if ((layers & kReflectionLayer) == kReflectionLayer)
     {
         iors[id + 1] = dg->mat.uberv2.reflection_ior;
         values[id] = UberV2_Reflection_Evaluate(dg, wi, wo, TEXTURE_ARGS);
@@ -246,18 +207,18 @@ float3 UberV2_Evaluate(
         ++id;
     }
 
-    if ((layers & kRefractionLayer) == kRefractionLayer)
-    {
-        iors[id] = dg->mat.uberv2.refraction_ior;
-        values[id] = UberV2_Refraction_Evaluate(dg, wi, wo, TEXTURE_ARGS);
-    }
-
-    result = values[fresnel_blend_layers - 1];
-    for (int a = fresnel_blend_layers - 1; a > 0; --a)
+    //Calculate BRDF part
+    result = values[brdf_layers - 1];
+    for (int a = brdf_layers - 1; a > 0; --a)
     {
         result = Fresnel_Blend(iors[a - 1], iors[a], values[a - 1], result, wi, dg);
     }
 
+    if ((layers & kRefractionLayer) == kRefractionLayer)
+    {
+        result = Fresnel_Blend(1.0f, dg->mat.uberv2.refraction_ior, result, UberV2_Refraction_Evaluate(dg, wi, wo, TEXTURE_ARGS), wi, dg);
+    }
+    
     if ((layers & kTransparencyLayer) == kTransparencyLayer)
     {
         result = mix(result, 0.f, dg->mat.uberv2.transparency);
@@ -283,6 +244,7 @@ float UberV2_GetPdf(
     const int layers = dg->mat.uberv2.layers;
 
     const int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
+    int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
 
     if (fresnel_blend_layers == 0) return 0.0f;
 
@@ -308,11 +270,9 @@ float UberV2_GetPdf(
         return result;
     }
 
-    float iors[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    float values[4];
+    float iors[3] = { 1.0f, 1.0f, 1.0f };
+    float values[3];
     int id = 0;
-
-    iors[id] = 1.0f;
 
     if ((layers & kCoatingLayer) == kCoatingLayer)
     {
@@ -321,7 +281,7 @@ float UberV2_GetPdf(
         ++id;
     }
 
-    if ((layers & kReflectionLayer) == kCoatingLayer)
+    if ((layers & kReflectionLayer) == kReflectionLayer)
     {
         iors[id + 1] = dg->mat.uberv2.reflection_ior;
         values[id] = UberV2_Reflection_GetPdf(dg, wi, wo, TEXTURE_ARGS);
@@ -334,16 +294,16 @@ float UberV2_GetPdf(
         ++id;
     }
 
-    if ((layers & kRefractionLayer) == kRefractionLayer)
-    {
-        iors[id] = dg->mat.uberv2.refraction_ior;
-        values[id] = UberV2_Refraction_GetPdf(dg, wi, wo, TEXTURE_ARGS);
-    }
-
-    result = values[fresnel_blend_layers - 1];
-    for (int a = fresnel_blend_layers - 1; a > 0; --a)
+    //Calculate BRDF part
+    result = values[brdf_layers - 1];
+    for (int a = brdf_layers - 1; a > 0; --a)
     {
         result = Fresnel_Blend_F(iors[a - 1], iors[a], values[a - 1], result, wi, dg);
+    }
+
+    if ((layers & kRefractionLayer) == kRefractionLayer)
+    {
+        result = Fresnel_Blend_F(1.0f, dg->mat.uberv2.refraction_ior, result, UberV2_Refraction_GetPdf(dg, wi, wo, TEXTURE_ARGS), wi, dg);
     }
 
     if ((layers & kTransparencyLayer) == kTransparencyLayer)

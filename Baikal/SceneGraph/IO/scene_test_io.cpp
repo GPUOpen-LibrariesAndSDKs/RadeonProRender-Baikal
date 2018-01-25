@@ -418,17 +418,17 @@ namespace Baikal
             uberv2->SetInputValue("uberv2.coating.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
             uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.f));
             uberv2->SetInputValue("uberv2.reflection.color", float4(0.0f, 1.0f, 0.0f, 0.0f));
-            uberv2->SetInputValue("uberv2.reflection.ior", float4(1.7f));
+            uberv2->SetInputValue("uberv2.reflection.ior", float4(1.5f));
             uberv2->SetInputValue("uberv2.refraction.color", float4(0.0f, 0.0f, 1.0f, 0.0f));
             uberv2->SetInputValue("uberv2.refraction.roughness", float4(0.f));
-            uberv2->SetInputValue("uberv2.refraction.ior", float4(1.1f));
+            uberv2->SetInputValue("uberv2.refraction.ior", float4(1.5f));
             uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer |
               UberV2Material::Layers::kRefractionLayer);
             mesh->SetMaterial(uberv2);
             matrix t = RadeonRays::translation(float3(0, 0, -10.f));
             mesh->SetTransform(t);
 
-            /*for (int i = 0; i < 0; ++i)
+            for (int i = 0; i < 0; ++i)
             {
                 for (int j = 0; j < 10; ++j)
                 {
@@ -469,18 +469,16 @@ namespace Baikal
                     instance->SetTransform(t);
                     scene->AttachShape(instance);
                     instance->SetMaterial(uberv2);
-                }*/
-
-                auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
-
-                auto ibl = ImageBasedLight::Create();
-                ibl->SetTexture(ibl_texture);
-                ibl->SetMultiplier(1.f);
-                scene->AttachLight(ibl);
-
-            //}
+                }
+            }
         }
-        
+        auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+
+        auto ibl = ImageBasedLight::Create();
+        ibl->SetTexture(ibl_texture);
+        ibl->SetMultiplier(1.f);
+        scene->AttachLight(ibl);
+
         return scene;
     }
 }
