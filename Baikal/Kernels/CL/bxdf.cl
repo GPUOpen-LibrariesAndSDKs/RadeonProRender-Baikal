@@ -63,7 +63,9 @@ enum BxdfFlags
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/disney.cl>
 #include <../Baikal/Kernels/CL/bxdf_basic.cl>
+#ifdef ENABLE_UBERV2
 #include <../Baikal/Kernels/CL/bxdf_uberv2.cl>
+#endif
 
 /*
  Dispatch functions
@@ -108,8 +110,10 @@ float3 Bxdf_Evaluate(
     case kDisney:
         return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
+#ifdef ENABLE_UBERV2
     case kUberV2:
         return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+#endif
     }
 
     return 0.f;
@@ -171,10 +175,11 @@ float3 Bxdf_Sample(
         res = Disney_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
         break;
 #endif
+#ifdef ENABLE_UBERV2
     case kUberV2:
         res = UberV2_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
         break;
-
+#endif
     default:
         *pdf = 0.f;
         break;
@@ -225,8 +230,10 @@ float Bxdf_GetPdf(
     case kDisney:
         return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
 #endif
+#ifdef ENABLE_UBERV2
     case kUberV2:
         return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+#endif
     }
 
     return 0.f;
@@ -246,53 +253,78 @@ float3 Emissive_GetLe(
 /// BxDF singularity check
 bool Bxdf_IsSingular(DifferentialGeometry const* dg)
 {
+#ifdef ENABLE_UBERV2
     if (dg->mat.type == kUberV2)
         return (dg->mat.bxdf_flags & kBxdfSingular) == kBxdfSingular;
     else
         return dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough;
+#else
+    return dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough;
+#endif
 }
 
 /// BxDF emission check
 bool Bxdf_IsEmissive(DifferentialGeometry const* dg)
 {
+#ifdef ENABLE_UBERV2
     if (dg->mat.type == kUberV2)
         return (dg->mat.bxdf_flags & kBxdfEmissive) == kBxdfEmissive;
     else
         return dg->mat.type == kEmissive;
+#else
+    return dg->mat.type == kEmissive;
+#endif
 }
 
 /// BxDF singularity check
 bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
+#ifdef ENABLE_UBERV2
     if (dg->mat.type == kUberV2)
         return (dg->mat.bxdf_flags & kBxdfBrdf) == 0;
     else
         return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
+            dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+#else
+    return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
         dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+#endif
 }
 
 bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
 {
+#ifdef ENABLE_UBERV2
     if (dg->mat.type == kUberV2)
         return Bxdf_IsBtdf(dg) && ((dg->mat.uberv2.layers & kRefractionLayer) == kRefractionLayer);
     else
         return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+#else
+    return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
+#endif
 }
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
+#ifdef ENABLE_UBERV2
     if (dg->mat.type == kUberV2)
         return (dg->mat.bxdf_flags & kBxdfBrdf) == kBxdfBrdf;
     else
         return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann;
+#else
+    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann;
+#endif
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)
 {
+#ifdef ENABLE_UBERV2
     if (dg->mat.type == kUberV2)
         return (dg->mat.bxdf_flags & kBxdfTransparency) == kBxdfTransparency;
     else
         return dg->mat.type == kPassthrough;
+#else
+    return dg->mat.type == kPassthrough;
+#endif
 }
 
 #endif // BXDF_CL

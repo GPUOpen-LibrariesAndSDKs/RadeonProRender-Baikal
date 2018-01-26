@@ -361,8 +361,12 @@ KERNEL void ShadeSurface(
         bool backfacing = ngdotwi < 0.f;
 
         // Select BxDF 
+#ifdef ENABLE_UBERV2
         if (diffgeo.mat.type == kUberV2) GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo);
         else Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+#else
+        Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+#endif
                     
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);

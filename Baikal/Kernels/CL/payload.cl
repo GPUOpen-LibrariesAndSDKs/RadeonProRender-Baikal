@@ -158,43 +158,39 @@ typedef struct _Material
             int clearcoat_map_idx;
             int clearcoat_gloss_map_idx;
         } disney;
-    };
+#ifdef ENABLE_UBERV2
     struct
         {
             float4 diffuse_color;
 
             int diffuse_color_idx;
             int layers;
-            int padding1[2];
+            int reflection_color_idx;
+            float reflection_roughness;
 
             float4 reflection_color;
 
-            int reflection_color_idx;
-            float reflection_roughness;
             int reflection_roughness_idx;
             float reflection_anisotropy;
-
             int reflection_anisotropy_idx;
             float reflection_anisotropy_rotation;
+
             int reflection_anisotropy_rotation_idx;
             float reflection_ior;
-
             int reflection_ior_idx;
             float reflection_metalness;
+
             int reflection_metalness_idx;
-            int padding2;
-
-            float4 refraction_color;
-
             int refraction_color_idx;
             float refraction_roughness;
             int refraction_roughness_idx;
-            float refraction_ior;
 
+            float4 refraction_color;
+
+            float refraction_ior;
             int refraction_ior_idx;
             int refraction_ior_mode;
             int refraction_thin_surface;
-            int padding3;
 
             float4 coating_color;
 
@@ -232,13 +228,15 @@ typedef struct _Material
 
 //            int padding3[3];
         } uberv2;
+#endif
+    };
 
     int type;
     int bump_flag;
     int thin;
     int nmapidx;
     int bxdf_flags;
-    int padding5[3];
+    int padding[3];
 } Material;
 
 enum LightType

@@ -1260,7 +1260,7 @@ namespace Baikal
                 // Intentionally missing break here
                 break;
             }
-            
+#ifdef ENABLE_UBERV2            
             case ClwScene::Bxdf::kUberV2:
             {
                 auto fillInput = [&](const std::string &name, int *int_value, float *float_value, float4 *float4_value, int *texture_idx)
@@ -1351,7 +1351,7 @@ namespace Baikal
 
                 break;
             }
-            
+#endif
             
             default:
             break;
