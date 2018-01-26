@@ -41,6 +41,7 @@ namespace Baikal
         std::string GetFullBuildOpts() const;
         CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
         std::string GetFilenameHash(std::string const& filename, std::string const& opts, CLWContext context) const;
+        static std::uint32_t CheckSum(std::ifstream& file);
 
         bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
         void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
@@ -56,6 +57,8 @@ namespace Baikal
         std::string m_default_opts;
         // Name of program CL file
         std::string m_cl_file;
+        // stored program CL file
+        std::string m_cl_file_src;
         // Binary cache path
         std::string m_cache_path;
     };
@@ -90,6 +93,7 @@ namespace Baikal
         std::string const& cache_path)
     : m_context(context)
     , m_cl_file(cl_file)
+    , m_cl_file_src("")
     , m_default_opts(opts)
     , m_cache_path(cache_path)
     {
@@ -111,14 +115,13 @@ namespace Baikal
         auto options = opts;
         AddCommonOptions(options);
 
-        std::string src("");
         //append all includes and data
         for (int i = 0; i < inc_num; ++i)
         {
-            src += includes[i];
+            m_cl_file_src += includes[i];
         }
-        src += data;
-        auto program = CLWProgram::CreateFromSource(src.data(), src.length(), m_default_opts.c_str(), m_context);
+        m_cl_file_src += data;
+        auto program = CLWProgram::CreateFromSource(m_cl_file_src.data(), m_cl_file_src.length(), m_default_opts.c_str(), m_context);
         m_programs.emplace(std::make_pair(m_default_opts, program));
     }
 
@@ -126,9 +129,9 @@ namespace Baikal
         m_default_opts = opts;
     }
 
-    inline uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
+    inline std::uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
     {
-        uint32_t hash, i;
+        std::uint32_t hash, i;
         for (hash = i = 0; i < len; ++i)
         {
             hash += key[i];
@@ -182,6 +185,22 @@ namespace Baikal
         return result;
     }
 
+    // Computting check sum algo
+    // Copy from here: https://codereview.stackexchange.com/questions/104948/32-bit-checksum-of-a-file
+    inline std::uint32_t ClwClass::CheckSum(std::ifstream& file)
+    {
+        std::uint32_t check_sum = 0;
+        unsigned shift = 0;
+        for (std::uint32_t ch = file.get(); file; ch = file.get()) {
+            check_sum += (ch << shift);
+            shift += 8;
+            if (shift == 32) {
+                shift = 0;
+            }
+        }
+        return check_sum;
+    }
+
     inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
     {
         std::string options = opts.empty() ? m_default_opts : opts;
@@ -191,7 +210,8 @@ namespace Baikal
         if (iter != m_programs.cend()) {
             return iter->second.GetKernel(name);
         } else {
-            auto program = CreateProgram(m_cl_file, options, m_context);
+            CLWProgram program = !m_cl_file.empty() ? CreateProgram(m_cl_file, options, m_context)
+                                                    : CLWProgram::CreateFromSource(m_cl_file_src.data(), m_cl_file_src.length(), options.c_str(), m_context);
             m_programs.emplace(std::make_pair(options, program));
             return program.GetKernel(name);
         }
@@ -235,6 +255,13 @@ namespace Baikal
 
         name.append("_");
         name.append(oss.str());
+
+        std::ifstream in_stream(filename);
+        std::uint32_t file_hash = CheckSum(in_stream);
+
+        name.append("_");
+        name.append(std::to_string(file_hash));
+
         name.append(BAIKAL_VERSION);
 
         return name;

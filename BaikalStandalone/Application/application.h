@@ -27,6 +27,7 @@
 #include "Application/gl_render.h"
 
 #include <memory>
+#include <chrono>
 
 namespace Baikal
 {
@@ -43,6 +44,8 @@ namespace Baikal
         // return: true if scene update required
         bool UpdateGui();
         void CollectSceneStats();
+
+        void SaveToFile(std::chrono::high_resolution_clock::time_point time) const;
 
         //input callbacks
         //Note: use glfwGetWindowUserPointer(window) to get app instance
