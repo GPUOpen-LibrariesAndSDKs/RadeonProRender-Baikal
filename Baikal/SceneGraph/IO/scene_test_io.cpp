@@ -471,13 +471,13 @@ namespace Baikal
                     instance->SetMaterial(uberv2);
                 }
             }
-        }
-        auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
 
-        auto ibl = ImageBasedLight::Create();
-        ibl->SetTexture(ibl_texture);
-        ibl->SetMultiplier(1.f);
-        scene->AttachLight(ibl);
+            auto ibl = ImageBasedLight::Create();
+            ibl->SetTexture(ibl_texture);
+            ibl->SetMultiplier(1.f);
+            scene->AttachLight(ibl);
+        }
 
         return scene;
     }
