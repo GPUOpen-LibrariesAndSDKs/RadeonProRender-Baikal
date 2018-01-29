@@ -3162,8 +3162,8 @@ void ArithmeticMul()
     assert(status == RPR_SUCCESS);
     rpr_material_node mul = NULL; status = rprMaterialSystemCreateNode(matsys, RPR_MATERIAL_NODE_ARITHMETIC, &mul);
     assert(status == RPR_SUCCESS);
-    status = rprMaterialNodeSetInputU(mul, "op", RPR_MATERIAL_NODE_OP_MUL);
-    assert(status == RPR_SUCCESS);
+    /*status = rprMaterialNodeSetInputU(mul, "op", RPR_MATERIAL_NODE_OP_MUL);
+    assert(status == RPR_SUCCESS);*/
     status = rprMaterialNodeSetInputN(mul, "color0", col);
     assert(status == RPR_SUCCESS);
     status = rprMaterialNodeSetInputF(mul, "color1", 0.5f, 0.5f, 0.5f, 0.5f);

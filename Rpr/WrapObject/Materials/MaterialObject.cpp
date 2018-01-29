@@ -60,6 +60,7 @@ namespace
         { "rotation", "rotation" }, 
         { "anisotropic", "anisotropic" },
         { "g", "g" }, 
+        { "op", "op"},
         { "multiscatter", "multiscatter" },
         { "uberv2.diffuse.color", "uberv2.diffuse.color" },
         { "uberv2.layers", "uberv2.layers" },
