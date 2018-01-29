@@ -49,7 +49,7 @@ static const std::map<rprx_parameter, std::string> kRPRXInputStrings =
     { RPRX_UBER_MATERIAL_REFLECTION_ANISOTROPY, "uberv2.reflection.anisotropy" },
     { RPRX_UBER_MATERIAL_REFLECTION_ANISOTROPY_ROTATION, "uberv2.reflection.anisotropy_rotation" },
     { RPRX_UBER_MATERIAL_REFLECTION_IOR, "uberv2.reflection.ior" },
-    { RPRX_UBER_MATERIAL_REFLECTION_METALNESS, "uberv2.reflection.metalness" },
+    //{ RPRX_UBER_MATERIAL_REFLECTION_METALNESS, "uberv2.reflection.metalness" },
     { RPRX_UBER_MATERIAL_REFRACTION_COLOR, "uberv2.refraction.color" },
     { RPRX_UBER_MATERIAL_REFRACTION_WEIGHT, "uberv2.refraction.weight" },
     { RPRX_UBER_MATERIAL_REFRACTION_ROUGHNESS, "uberv2.refraction.roughness" },
@@ -59,7 +59,6 @@ static const std::map<rprx_parameter, std::string> kRPRXInputStrings =
     { RPRX_UBER_MATERIAL_COATING_COLOR, "uberv2.coating.color" },
     { RPRX_UBER_MATERIAL_COATING_WEIGHT, "uberv2.coating.weight" },
     { RPRX_UBER_MATERIAL_COATING_IOR, "uberv2.coating.ior" },
-    { RPRX_UBER_MATERIAL_COATING_METALNESS, "uberv2.coating.metalness" },
     { RPRX_UBER_MATERIAL_EMISSION_COLOR, "uberv2.emission.color" },
     { RPRX_UBER_MATERIAL_EMISSION_WEIGHT, "uberv2.emission.weight" },
     { RPRX_UBER_MATERIAL_EMISSION_MODE, "uberv2.emission.mode" },
@@ -93,7 +92,7 @@ rpr_int rprxCreateMaterial(rprx_context context, rprx_material_type type, rprx_m
     if (!context || type != RPRX_MATERIAL_UBER)
         return RPR_ERROR_INVALID_PARAMETER;
 
-    return rprMaterialSystemCreateNode((rpr_material_system)(context), MaterialObject::kUberV2, (rpr_material_node*)out_material);
+    return rprMaterialSystemCreateNode((rpr_material_system)(context), RPR_MATERIAL_NODE_UBERV2, (rpr_material_node*)out_material);
 }
 
 rpr_int rprxMaterialDelete(rprx_context context, rprx_material material)
@@ -132,6 +131,42 @@ rpr_int rprxMaterialSetParameterF(rprx_context context, rprx_material material, 
 {
     if (!material)
         return RPR_ERROR_INVALID_PARAMETER;
+
+    rpr_uint layers = 0;
+    rpr_uint status;
+
+     rprMaterialNodeGetInputInfo((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, RPR_MATERIAL_NODE_INPUT_VALUE, 4, &layers, 0);
+
+    switch (parameter)
+    {
+        case RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT:
+            if (x > 0.f) layers |= RPR_UBER_MATERIAL_LAYER_DIFFUSE;
+            else layers &= ~RPR_UBER_MATERIAL_LAYER_DIFFUSE;
+            return rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
+
+        case RPRX_UBER_MATERIAL_COATING_WEIGHT:
+            if (x > 0.f) layers |= RPR_UBER_MATERIAL_LAYER_COATING;
+            else layers &= ~RPR_UBER_MATERIAL_LAYER_COATING;
+            return rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
+
+        case RPRX_UBER_MATERIAL_REFLECTION_WEIGHT:
+            if (x > 0.f) layers |= RPR_UBER_MATERIAL_LAYER_REFLECTION;
+            else layers &= ~RPR_UBER_MATERIAL_LAYER_REFLECTION;
+            return rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
+
+        case RPRX_UBER_MATERIAL_REFRACTION_WEIGHT:
+            if (x > 0.f) layers |= RPR_UBER_MATERIAL_LAYER_REFRACTION;
+            else layers &= ~RPR_UBER_MATERIAL_LAYER_REFRACTION;
+            return rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
+
+        case RPRX_UBER_MATERIAL_TRANSPARENCY:
+            if (x > 0.f) layers |= RPR_UBER_MATERIAL_LAYER_TRANSPARENCY;
+            else layers &= ~RPR_UBER_MATERIAL_LAYER_TRANSPARENCY;
+            status = rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
+            if (status != RPR_SUCCESS) return status;
+        
+    }
+
 
     auto it = kRPRXInputStrings.find(parameter);
 

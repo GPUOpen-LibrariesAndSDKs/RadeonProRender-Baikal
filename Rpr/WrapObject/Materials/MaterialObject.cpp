@@ -66,7 +66,7 @@ namespace
         { "uberv2.reflection.color", "uberv2.reflection.color" },
         { "uberv2.reflection.roughness", "uberv2.reflection.roughness" },
         { "uberv2.reflection.anisotropy", "uberv2.reflection.anisotropy" },
-        { "uberv2.reflection.anisotropy", "uberv2.reflection.anisotropy" },
+        { "uberv2.reflection.anisotropy_rotation", "uberv2.reflection.anisotropy_rotation" },
         { "uberv2.reflection.ior", "uberv2.reflection.ior" },
         { "uberv2.reflection.metalness", "uberv2.reflection.metalness" },
         { "uberv2.refraction.color", "uberv2.refraction.color" },
@@ -82,11 +82,12 @@ namespace
         { "uberv2.normal", "uberv2.normal" },
         { "uberv2.bump", "uberv2.bump" },
         { "uberv2.displacement", "uberv2.displacement" },
-        { "uberv2.sss.absorption", "uberv2.sss.absorption" },
-        { "uberv2.sss.scatter", "uberv2.sss.scatter" },
-        { "uberv2.sss.absorption", "uberv2.sss.absorption" },
-        { "uberv2.sss.scatter", "uberv2.sss.scatter" },
-        { "uberv2.sss.subsurface", "uberv2.sss.subsurface" },
+        { "uberv2.sss.absorption_color", "uberv2.sss.absorption_color" },
+        { "uberv2.sss.scatter_color", "uberv2.sss.scatter_color" },
+        { "uberv2.sss.absorption_distance", "uberv2.sss.absorption_distance" },
+        { "uberv2.sss.scatter_distance", "uberv2.sss.scatter_distance" },
+        { "uberv2.sss.scatter_direction", "uberv2.sss.scatter_direction" },
+        { "uberv2.sss.subsurface_color", "uberv2.sss.subsurface_color" },
         { "uberv2.sss.multiscatter", "uberv2.sss.multiscatter" }};
 
     std::map<uint32_t, std::string> kMaterialNodeInputStrings = {
@@ -410,6 +411,7 @@ void MaterialObject::GetInput(int i, void* out, size_t* out_size)
             break;
         }
 
+    if (it == m_inputs.end()) return;
     //translated name
     std::string trans_name = TranslatePropName(it->first);
     //means no MaterialObject connected
