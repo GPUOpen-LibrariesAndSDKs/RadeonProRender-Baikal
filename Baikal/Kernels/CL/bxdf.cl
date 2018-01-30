@@ -43,20 +43,51 @@ float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
 #define DENOM_EPS 1e-8f
 #define ROUGHNESS_EPS 0.0001f
 
-
 enum BxdfFlags
 {
-    kBxdfSingular = (1 << 0),
-    kBxdfBrdf = (1 << 1),
-    kBxdfEmissive = (1 << 2),
-    kBxdfTransparency = (1 << 3),
+    kBxdfFlagsSingular = (1 << 0),
+    kBxdfFlagsBrdf = (1 << 1),
+    kBxdfFlagsEmissive = (1 << 2),
+    kBxdfFlagsTransparency = (1 << 3),
 
-    kBxdfSampleCoating = (1 << 4),
-    kBxdfSampleReflection = (1 << 5),
-    kBxdfSampleRefraction = (1 << 6),
-    kBxdfSampleDiffuse = (1 << 7)
+    //Used to mask value from bxdf_flags
+    kBxdfFlagsAll = kBxdfFlagsSingular | kBxdfFlagsBrdf | kBxdfFlagsEmissive | kBxdfFlagsTransparency
 };
 
+enum BxdfUberV2SampledComponent
+{
+    kBxdfSampleTransparency = 0,
+    kBxdfSampleCoating = 1,
+    kBxdfSampleReflection = 2,
+    kBxdfSampleRefraction = 3,
+    kBxdfSampleDiffuse = 4
+};
+
+/// Returns BxDF flags. Flags stored in first byte of bxdf_flags
+int Bxdf_GetFlags(DifferentialGeometry const* dg)
+{
+    return (dg->mat.bxdf_flags & kBxdfFlagsAll);
+}
+
+/// Sets BxDF flags. Flags stored in first byte of bxdf_flags
+void Bxdf_SetFlags(DifferentialGeometry *dg, int flags)
+{
+    dg->mat.bxdf_flags &= 0xffffff00; //Reset flags
+    dg->mat.bxdf_flags |= flags; //Set new flags
+}
+
+/// Return BxDF sampled component. Sampled component stored in second byte of bxdf_flags
+int Bxdf_GetSampledComponent(DifferentialGeometry const* dg)
+{
+    return (dg->mat.bxdf_flags >> 8) & 0xff;
+}
+
+/// Sets BxDF sampled component. Sampled component stored in second byte of bxdf_flags
+int Bxdf_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
+{
+    dg->mat.bxdf_flags &= 0xffff00ff; //Reset sampled component
+    dg->mat.bxdf_flags |= (sampledComponent << 8); //Set new component
+}
 
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
@@ -253,78 +284,34 @@ float3 Emissive_GetLe(
 /// BxDF singularity check
 bool Bxdf_IsSingular(DifferentialGeometry const* dg)
 {
-#ifdef ENABLE_UBERV2
-    if (dg->mat.type == kUberV2)
-        return (dg->mat.bxdf_flags & kBxdfSingular) == kBxdfSingular;
-    else
-        return dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough;
-#else
-    return dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough;
-#endif
+    return (dg->mat.bxdf_flags & kBxdfFlagsSingular) == kBxdfFlagsSingular;
 }
 
 /// BxDF emission check
 bool Bxdf_IsEmissive(DifferentialGeometry const* dg)
 {
-#ifdef ENABLE_UBERV2
-    if (dg->mat.type == kUberV2)
-        return (dg->mat.bxdf_flags & kBxdfEmissive) == kBxdfEmissive;
-    else
-        return dg->mat.type == kEmissive;
-#else
-    return dg->mat.type == kEmissive;
-#endif
+    return (dg->mat.bxdf_flags & kBxdfFlagsEmissive) == kBxdfFlagsEmissive;
 }
 
 /// BxDF singularity check
 bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
-#ifdef ENABLE_UBERV2
-    if (dg->mat.type == kUberV2)
-        return (dg->mat.bxdf_flags & kBxdfBrdf) == 0;
-    else
-        return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
-            dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
-#else
-    return dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough || dg->mat.type == kTranslucent ||
-        dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
-#endif
-}
-
-bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
-{
-#ifdef ENABLE_UBERV2
-    if (dg->mat.type == kUberV2)
-        return Bxdf_IsBtdf(dg) && ((dg->mat.uberv2.layers & kRefractionLayer) == kRefractionLayer);
-    else
-        return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
-#else
-    return dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann;
-#endif
+    return (dg->mat.bxdf_flags & kBxdfFlagsBrdf) == 0;
 }
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
-#ifdef ENABLE_UBERV2
-    if (dg->mat.type == kUberV2)
-        return (dg->mat.bxdf_flags & kBxdfBrdf) == kBxdfBrdf;
-    else
-        return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann;
-#else
-    return dg->mat.type == kIdealReflect || dg->mat.type == kMicrofacetGGX || dg->mat.type == kMicrofacetBeckmann;
-#endif
+    return (dg->mat.bxdf_flags & kBxdfFlagsBrdf) == kBxdfFlagsBrdf;
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)
 {
-#ifdef ENABLE_UBERV2
-    if (dg->mat.type == kUberV2)
-        return (dg->mat.bxdf_flags & kBxdfTransparency) == kBxdfTransparency;
-    else
-        return dg->mat.type == kPassthrough;
-#else
-    return dg->mat.type == kPassthrough;
-#endif
+    return (dg->mat.bxdf_flags & kBxdfFlagsTransparency) == kBxdfFlagsTransparency;
+}
+
+bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
+{
+    return Bxdf_IsBtdf(dg) && !Bxdf_IsTransparency(dg);
 }
 
 #endif // BXDF_CL

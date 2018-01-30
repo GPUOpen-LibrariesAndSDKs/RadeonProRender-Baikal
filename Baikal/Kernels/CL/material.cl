@@ -176,6 +176,26 @@ void Material_Select(
         dg->material_index = idx;
         dg->mat = mat;
     }
+
+    int flags = 0;
+    if (dg->mat.type == kEmissive)
+    {
+        flags |= kBxdfFlagsEmissive;
+    }
+    if (dg->mat.type == kPassthrough)
+    {
+        flags |= kBxdfFlagsTransparency;
+    }
+    if (dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann)
+    {
+        flags |= kBxdfFlagsBrdf;
+    }
+    if (dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough)
+    {
+        flags |= kBxdfFlagsSingular;
+    }
+
+    Bxdf_SetFlags(dg, flags);
 }
 
 
