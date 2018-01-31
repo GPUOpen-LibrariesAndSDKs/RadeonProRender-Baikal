@@ -10,7 +10,7 @@ float3 UberV2_Lambert_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.uberv2.diffuse_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.diffuse_color_idx));
+    const float3 kd = Texture_GetValue3f(dg->mat.uberv2.diffuse_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.diffuse_color_map_idx));
 
     return kd / PI;
 }
@@ -154,7 +154,7 @@ float3 UberV2_MicrofacetGGX_Evaluate(
     float3 ks
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_idx));
+    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_map_idx));
 
     // Incident and reflected zenith angles
     float costhetao = fabs(wo.y);
@@ -180,7 +180,7 @@ float UberV2_MicrofacetGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_idx));
+    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_map_idx));
 
     float3 wh = normalize(wo + wi);
 
@@ -203,7 +203,7 @@ float3 UberV2_MicrofacetGGX_Sample(
     float3 ks
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_idx));
+    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_map_idx));
 
     float3 wh;
     UberV2_MicrofacetDistribution_GGX_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
@@ -320,7 +320,7 @@ float3 UberV2_IdealRefract_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_idx));
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_map_idx));
 
     float etai = 1.f;
     float etat = dg->mat.uberv2.refraction_ior;
@@ -368,8 +368,8 @@ float3 UberV2_MicrofacetRefractionGGX_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_idx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_idx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_map_idx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_map_idx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -415,7 +415,7 @@ float UberV2_MicrofacetRefractionGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_idx)), ROUGHNESS_EPS);
+    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_map_idx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -467,8 +467,8 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_idx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_idx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_map_idx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_map_idx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
 
@@ -548,10 +548,10 @@ float3 UberV2_Reflection_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
-    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_idx));
+    const bool is_singular = (dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
+    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_map_idx));
 
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_idx));
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_map_idx));
 
     float3 color = mix((float3)(1.0f, 1.0f, 1.0f), ks, metalness);
 
@@ -571,7 +571,7 @@ float3 UberV2_Refraction_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
         UberV2_IdealRefract_Evaluate(dg, wi, wo, TEXTURE_ARGS) :
@@ -589,7 +589,7 @@ float UberV2_Reflection_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
         UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS) :
@@ -607,7 +607,7 @@ float UberV2_Refraction_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
         UberV2_IdealRefract_GetPdf(dg, wi, wo, TEXTURE_ARGS) :
@@ -629,9 +629,9 @@ float3 UberV2_Reflection_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_idx));
-    const bool is_singular = (dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
-    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_idx));
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_map_idx));
+    const bool is_singular = (dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
+    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_map_idx));
 
     float3 color = mix((float3)(1.0f, 1.0f, 1.0f), ks, metalness);
     
@@ -655,7 +655,7 @@ float3 UberV2_Refraction_Sample(
     float* pdf
 )
 {
-    const bool is_singular = (dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
         UberV2_IdealRefract_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf) :
@@ -675,7 +675,7 @@ float3 UberV2_Coating_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.coating_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.coating_color_idx));
+    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.coating_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.coating_color_map_idx));
 
     return UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, wo, pdf, ks);
 }

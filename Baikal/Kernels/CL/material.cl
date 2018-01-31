@@ -186,7 +186,11 @@ void Material_Select(
     {
         flags |= kBxdfFlagsTransparency;
     }
-    if (dg->mat.type == kIdealRefract || dg->mat.type == kMicrofacetRefractionGGX || dg->mat.type == kMicrofacetRefractionBeckmann)
+    if ((dg->mat.type != kIdealRefract) && 
+        (dg->mat.type != kPassthrough) && 
+        (dg->mat.type != kTranslucent) &&
+        (dg->mat.type != kMicrofacetRefractionGGX) &&
+        (dg->mat.type != kMicrofacetRefractionBeckmann))
     {
         flags |= kBxdfFlagsBrdf;
     }

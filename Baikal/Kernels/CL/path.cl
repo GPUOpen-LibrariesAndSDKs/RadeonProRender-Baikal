@@ -116,7 +116,7 @@ INLINE void Path_AddContribution(__global Path* path, __global float3* output, i
 INLINE bool Path_IsSpecular(__global Path const* path)
 {
     int flags = Path_GetBxdfFlags(path);
-    return flags & kBxdfFlagsSingular;
+    return (flags & kBxdfFlagsSingular) == kBxdfFlagsSingular;
 }
 
 INLINE void Path_SetFlags(DifferentialGeometry* diffgeo, GLOBAL Path* restrict path)

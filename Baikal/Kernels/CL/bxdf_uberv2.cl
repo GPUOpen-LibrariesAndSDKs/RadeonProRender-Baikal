@@ -78,9 +78,9 @@ void GetMaterialBxDFType(
         if (sample >= fresnel)
         {
             Bxdf_SetSampledComponent(dg, kBxdfSampleRefraction);
-            if ((dg->mat.uberv2.refraction_roughness_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
+            if ((dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
             {
-                dg->mat.bxdf_flags |= kBxdfFlagsSingular;
+                bxdf_flags |= kBxdfFlagsSingular;
             }
             Bxdf_SetFlags(dg, bxdf_flags);
             return;
@@ -115,7 +115,7 @@ void GetMaterialBxDFType(
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
         if (sample < fresnel) // Will sample reflection layer 
         {
-            if ((dg->mat.uberv2.reflection_roughness_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
+            if ((dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
             {
                 bxdf_flags |= kBxdfFlagsSingular;
             }
@@ -209,7 +209,9 @@ float3 UberV2_Evaluate(
         {
             result = UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
         }
-        else if ((layers & kTransparencyLayer) == kTransparencyLayer)
+        
+        // Apply transparency if any
+        if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
             result = mix(result, 0.f, dg->mat.uberv2.transparency);
         }
@@ -294,7 +296,7 @@ float UberV2_GetPdf(
     const int layers = dg->mat.uberv2.layers;
 
     const int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
-    int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
+    const int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
 
     if (fresnel_blend_layers == 0) return 0.0f;
 
@@ -319,7 +321,9 @@ float UberV2_GetPdf(
         {
             result = UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
         }
-        else if ((layers & kTransparencyLayer) == kTransparencyLayer)
+
+        // Apply transparency if any
+        if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
             result = mix(result, 0.f, dg->mat.uberv2.transparency);
         }

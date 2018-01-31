@@ -3888,7 +3888,7 @@ void EnvironmentOverrideTest()
 
 int main(int argc, char* argv[])
 {
-    MeshCreationTest();
+    /*MeshCreationTest();
     SimpleRenderTest();
     ComplexRenderTest();
     EnvLightClearTest();
@@ -3906,7 +3906,7 @@ int main(int argc, char* argv[])
     test_feature_shaderBumpmap();
     test_feature_shaderTypeLayered();
     UpdateMaterial();
-    ArithmeticMul();
+    ArithmeticMul();*/
     OrthoRenderTest();
     BackgroundImageTest();
     EnvironmentOverrideTest();
