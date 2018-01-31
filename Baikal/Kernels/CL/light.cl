@@ -241,7 +241,8 @@ float3 AreaLight_Sample(// Emissive object
 
     // Convert random to barycentric coords
     float2 uv;
-    uv.x = native_sqrt(r0) * (1.f - r1);
+
+    uv.x = 1.f - native_sqrt(r0);
     uv.y = native_sqrt(r0) * r1;
 
     float3 n;
@@ -266,7 +267,7 @@ float3 AreaLight_Sample(// Emissive object
         float dist2 = dot(*wo, *wo);
         float denom = fabs(ndotv) * area;
         *pdf = denom > 0.f ? dist2 / denom : 0.f;
-        return dist2 > 0.f ? ke * ndotv / dist2 : 0.f;
+        return ke;
     }
     else
     {
