@@ -859,11 +859,11 @@ namespace Baikal
         }
         else if (auto mat = dynamic_cast<MultiBxdf const*>(&material))
         {
-            switch (mat->GetType())
+            switch (mat->GetBlendType())
             {
-                case MultiBxdf::Type::kMix: return ClwScene::Bxdf::kMix;
-                case MultiBxdf::Type::kLayered: return ClwScene::Bxdf::kLayered;
-                case MultiBxdf::Type::kFresnelBlend: return ClwScene::Bxdf::kFresnelBlend;
+                case MultiBxdf::BlendType::kMix: return ClwScene::Bxdf::kMix;
+                case MultiBxdf::BlendType::kLayered: return ClwScene::Bxdf::kLayered;
+                case MultiBxdf::BlendType::kFresnelBlend: return ClwScene::Bxdf::kFresnelBlend;
             }
         }
         else if (auto mat = dynamic_cast<DisneyBxdf const*>(&material))
@@ -882,7 +882,6 @@ namespace Baikal
         auto type = GetMaterialType(material);
         
         clw_material->type = type;
-        clw_material->thin = material.IsThin() ? 1 : 0;
         
         switch (type)
         {
