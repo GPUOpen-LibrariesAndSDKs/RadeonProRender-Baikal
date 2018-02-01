@@ -37,7 +37,7 @@ SingleBxdfMaterialObject::SingleBxdfMaterialObject(MaterialObject::Type mat_type
 {
     m_base_mat = SingleBxdf::Create(type);
     
-    m_mmat =  MultiBxdf::Create(MultiBxdf::Type::kMix);
+    m_mmat =  MultiBxdf::Create(MultiBxdf::BlendType::kMix);
     float4 w = { 0.f, 0.f, 0.f, 0.f };
     m_mmat->SetInputValue("weight", w);
     m_mmat->SetInputValue("base_material", m_base_mat);

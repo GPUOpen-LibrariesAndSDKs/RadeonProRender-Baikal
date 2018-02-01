@@ -29,7 +29,7 @@ class MultiBxdfMaterialObject
     : public MaterialObject
 {
 public:
-    MultiBxdfMaterialObject(MaterialObject::Type mat_type, Baikal::MultiBxdf::Type type);
+    MultiBxdfMaterialObject(MaterialObject::Type mat_type, Baikal::MultiBxdf::BlendType type);
 
     void SetInputF(const std::string& input_name, const RadeonRays::float4& val) override;
     Baikal::Material::Ptr GetMaterial() override;
