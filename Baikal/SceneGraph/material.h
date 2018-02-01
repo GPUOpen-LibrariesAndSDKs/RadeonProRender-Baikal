@@ -1,16 +1,16 @@
 /**********************************************************************
  Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -29,6 +29,7 @@
 #pragma once
 
 #include <set>
+#include <tuple>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -42,24 +43,43 @@ namespace Baikal
 {
     class Iterator;
     class Texture;
+    class Map;
 
     /**
-     \brief High level material interface
-     
-     \details Base class for all CPU side material supported by the renderer.
-     */
+    \brief High level material interface
+
+    \details Base class for all CPU side material supported by the renderer.
+    */
     class Material : public SceneObject
     {
     public:
         using Ptr = std::shared_ptr<Material>;
-        
+
         // Material input type
         enum class InputType
         {
             kUint = 0,
             kFloat4,
             kTexture,
+            // this is material options
             kMaterial
+        };
+
+        enum class MaterialSubtype
+        {
+            kNone = 0,
+            kBxdf,
+            kMaterial,
+            kMap
+        };
+
+        struct InputTypeDesc
+        {
+            InputType type;
+            MaterialSubtype material_option;
+
+            InputTypeDesc(InputType input_type);
+            InputTypeDesc(InputType input_type, MaterialSubtype option);
         };
 
         // Input description
@@ -70,20 +90,22 @@ namespace Baikal
             // Desctiption
             std::string desc;
             // Set of supported types
-            std::set<InputType> supported_types;
+            std::set<InputTypeDesc> supported_types;
         };
 
         // Input value description
         struct InputValue {
             // Current type
             InputType type;
-            
+
             // Possible values (use based on type)
             uint32_t uint_value;
             RadeonRays::float4 float_value;
             Texture::Ptr tex_value;
             Material::Ptr mat_value;
-            
+
+            MaterialSubtype material_sub_type;
+
             InputValue()
             : type(InputType::kMaterial)
             , mat_value(nullptr)
@@ -120,24 +142,22 @@ namespace Baikal
 
         InputValue GetInputValue(std::string const& name) const;
 
-        // Check if material is thin (normal is always pointing in ray incidence
-        // direction)
-        bool IsThin() const;
-        // Set thin flag
-        void SetThin(bool thin);
-        
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
 
+        virtual MaterialSubtype GetType() const;
+
     protected:
-        Input& GetInput(const std::string& name, InputType type);
+
+        Input& GetInput(const std::string& name, InputTypeDesc type);
 
         Material();
-    
+
         // Register specific input
-        void RegisterInput(std::string const& name, std::string const& desc,
-                           std::set<InputType>&& supported_types);
-        
+        void RegisterInput(std::string const& name,
+            std::string const& desc,
+            std::set<InputTypeDesc>&& supported_types);
+
         // Wipe out all the inputs
         void ClearInputs();
 
@@ -147,8 +167,6 @@ namespace Baikal
         using InputMap = std::unordered_map<std::string, Input>;
         // Input map
         InputMap m_inputs;
-        // Thin material
-        bool m_thin;
     };
 
     inline Material::~Material()
@@ -160,7 +178,26 @@ namespace Baikal
         return false;
     }
 
-    class SingleBxdf : public Material
+    class Bxdf : public Material
+    {
+    public:
+        using Ptr = std::shared_ptr<Bxdf>;
+
+        // Check if material is thin (normal is always pointing in ray incidence
+        // direction)
+        bool IsThin() const;
+        // Set thin flag
+        void SetThin(bool thin);
+
+        MaterialSubtype GetType() const override;
+    protected:
+        Bxdf();
+
+    private:
+        bool m_thin;
+    };
+
+    class SingleBxdf : public Bxdf
     {
     public:
         enum class BxdfType
@@ -177,7 +214,7 @@ namespace Baikal
             kMicrofacetRefractionGGX,
             kMicrofacetRefractionBeckmann
         };
-        
+
         using Ptr = std::shared_ptr<SingleBxdf>;
         static Ptr Create(BxdfType type);
 
@@ -186,49 +223,49 @@ namespace Baikal
 
         // Check if material has emissive components
         bool HasEmission() const override;
-        
+
     protected:
         SingleBxdf(BxdfType type);
 
     private:
         BxdfType m_type;
     };
-    
-    class MultiBxdf : public Material
+
+    class MultiBxdf : public Bxdf
     {
     public:
-        enum class Type
+        enum class BlendType
         {
             kLayered,
             kFresnelBlend,
             kMix
         };
-        
-        using Ptr = std::shared_ptr<MultiBxdf>;
-        static Ptr Create(Type type);
 
-        Type GetType() const;
-        void SetType(Type type);
+        using Ptr = std::shared_ptr<MultiBxdf>;
+        static Ptr Create(BlendType type);
+
+        BlendType GetBlendType() const;
+        void SetType(BlendType type);
 
         // Check if material has emissive components
         bool HasEmission() const override;
-        
+
     protected:
-        MultiBxdf(Type type);
-        
+        MultiBxdf(BlendType type);
+
     private:
-        Type m_type;
+        BlendType m_type;
     };
-    
-    class DisneyBxdf : public Material
+
+    class DisneyBxdf : public Bxdf
     {
     public:
         using Ptr = std::shared_ptr<DisneyBxdf>;
         static Ptr Create();
-        
+
         // Check if material has emissive components
         bool HasEmission() const override;
-        
+
     protected:
         DisneyBxdf();
     };
@@ -254,4 +291,49 @@ namespace Baikal
         VolumeMaterial();
     };
 
+    class Map : public Material
+    {
+    public:
+        using Ptr = std::shared_ptr<Map>;
+
+        MaterialSubtype GetType() const override;
+    protected:
+
+        Map() = default;
+    };
+
+    class ArithmeticMap : public Map
+    {
+    public:
+        enum class Operation
+        {
+            kAdd = 0,
+            kSub,
+            kMul,
+            kDiv,
+            kNegate
+        };
+
+        using Ptr = std::shared_ptr<ArithmeticMap>;
+        static Ptr Create();
+
+    protected:
+        ArithmeticMap();
+    };
+
+    class TextureMap : public Map
+    {
+    public:
+        using Ptr = std::shared_ptr<TextureMap>;
+        static Ptr Create();
+
+    protected:
+        TextureMap();
+    };
+
+    inline bool operator < (const Material::InputTypeDesc& left, const Material::InputTypeDesc& right)
+    {
+        return std::tie(left.type, left.material_option) <
+               std::tie(right.type, right.material_option);
+    }
 }

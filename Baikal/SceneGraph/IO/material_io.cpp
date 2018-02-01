@@ -70,7 +70,7 @@ namespace Baikal
     static std::string Float4ToString(RadeonRays::float3 const& v)
     {
         std::ostringstream oss;
-        oss << v.x << " " <<  v.y << " " << v.z << " " << v.w;
+        oss << v.x << " " << v.y << " " << v.z << " " << v.w;
         return oss.str();
     }
 
@@ -183,12 +183,12 @@ namespace Baikal
 
         printer.PushAttribute("id", (int)(reinterpret_cast<std::uint64_t>(material.get())));
 
-        printer.PushAttribute("thin", material->IsThin());
-
         auto bxdf = std::dynamic_pointer_cast<SingleBxdf>(material);
 
         if (bxdf)
         {
+            printer.PushAttribute("thin", bxdf->IsThin());
+
             printer.PushAttribute("type", "simple");
 
             SingleBxdf::BxdfType type = bxdf->GetBxdfType();
@@ -197,7 +197,7 @@ namespace Baikal
 
             SingleBxdf::InputValue albedo = bxdf->GetInputValue("albedo");
 
-            WriteInput(io, printer,"albedo", albedo);
+            WriteInput(io, printer, "albedo", albedo);
 
             SingleBxdf::InputValue normal = bxdf->GetInputValue("normal");
 
@@ -217,11 +217,11 @@ namespace Baikal
 
             SingleBxdf::InputValue ior = bxdf->GetInputValue("ior");
 
-            WriteInput(io, printer,"ior", ior);
+            WriteInput(io, printer, "ior", ior);
 
             SingleBxdf::InputValue fresnel = bxdf->GetInputValue("fresnel");
 
-            WriteInput(io, printer,"fresnel", fresnel);
+            WriteInput(io, printer, "fresnel", fresnel);
 
             if (type == SingleBxdf::BxdfType::kMicrofacetGGX ||
                 type == SingleBxdf::BxdfType::kMicrofacetBeckmann ||
@@ -229,7 +229,7 @@ namespace Baikal
                 type == SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann)
             {
                 SingleBxdf::InputValue roughness = bxdf->GetInputValue("roughness");
-                WriteInput(io, printer,"roughness", roughness);
+                WriteInput(io, printer, "roughness", roughness);
             }
         }
         else
@@ -238,7 +238,7 @@ namespace Baikal
 
             printer.PushAttribute("type", "blend");
 
-            MultiBxdf::Type type = blend->GetType();
+            MultiBxdf::BlendType type = blend->GetBlendType();
 
             printer.PushAttribute("blend_type", (int)type);
 
@@ -250,7 +250,7 @@ namespace Baikal
 
             WriteInput(io, printer, "top_material", top);
 
-            if (type == MultiBxdf::Type::kFresnelBlend)
+            if (type == MultiBxdf::BlendType::kFresnelBlend)
             {
                 Material::InputValue ior = material->GetInputValue("ior");
 
@@ -283,9 +283,9 @@ namespace Baikal
 
         auto image_io = ImageIo::CreateImageIo();
 
-        for (mat_iter.Reset();mat_iter.IsValid(); mat_iter.Next())
+        for (mat_iter.Reset(); mat_iter.IsValid(); mat_iter.Next())
         {
-            auto material = mat_iter.ItemAs<Material>();
+            auto material = mat_iter.ItemAs<Bxdf>();
 
             if (material)
             {
@@ -361,7 +361,7 @@ namespace Baikal
         std::string thin(attribute_thin ? attribute_thin : "");
         auto id = static_cast<std::uint64_t>(std::atoi(element.Attribute("id")));
 
-        Material::Ptr material = nullptr;
+        Bxdf::Ptr material = nullptr;
 
         if (type == "simple")
         {
@@ -375,9 +375,9 @@ namespace Baikal
         }
         else if (type == "blend")
         {
-            auto blend = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+            auto blend = MultiBxdf::Create(MultiBxdf::BlendType::kFresnelBlend);
 
-            auto blend_type = static_cast<MultiBxdf::Type>(std::atoi(element.Attribute("blend_type")));
+            auto blend_type = static_cast<MultiBxdf::BlendType>(std::atoi(element.Attribute("blend_type")));
 
             blend->SetType(blend_type);
 
@@ -445,7 +445,7 @@ namespace Baikal
         mat_collector.Collect(*shape_iter,
             // This function adds all materials to resulting map
             // recursively via Material dependency API
-        [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
+            [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
         {
             // Resulting material set
             std::set<SceneObject::Ptr> mats;

@@ -96,7 +96,7 @@ namespace Baikal
                 if ((s.sqnorm() > 0 || !mat.specular_texname.empty()))
                 {
                     // Otherwise create lambert
-                    material = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+                    material = MultiBxdf::Create(MultiBxdf::BlendType::kFresnelBlend);
                     material->SetInputValue("ior", RadeonRays::float4(1.5f, 1.5f, 1.5f, 1.5f));
 
                     auto diffuse = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
