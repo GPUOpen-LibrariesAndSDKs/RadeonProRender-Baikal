@@ -7,6 +7,7 @@
 #include <regex>
 #include <sstream>
 #include <unordered_map>
+#include <queue>
 
 #include "CLW.h"
 #include "version.h"
@@ -41,7 +42,9 @@ namespace Baikal
         std::string GetFullBuildOpts() const;
         CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
         std::string GetFilenameHash(std::string const& filename, std::string const& opts, CLWContext context) const;
-        static std::uint32_t CheckSum(std::ifstream& file);
+
+        static std::uint32_t ComputeHash(const std::string& kernel_file_name);
+        static void GetHeaderNames(const std::string& kernel_file_name, std::vector<std::string>& file_name_vec);
 
         bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
         void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
@@ -185,20 +188,58 @@ namespace Baikal
         return result;
     }
 
-    // Computting check sum algo
-    // Copy from here: https://codereview.stackexchange.com/questions/104948/32-bit-checksum-of-a-file
-    inline std::uint32_t ClwClass::CheckSum(std::ifstream& file)
+    inline void ClwClass::GetHeaderNames(const std::string& kernel_file_name, std::vector<std::string>& file_name_vec)
     {
-        std::uint32_t check_sum = 0;
-        unsigned shift = 0;
-        for (std::uint32_t ch = file.get(); file; ch = file.get()) {
-            check_sum += (ch << shift);
-            shift += 8;
-            if (shift == 32) {
-                shift = 0;
+        std::queue<std::ifstream> queue;
+        std::string line;
+
+        queue.push(std::ifstream(kernel_file_name));
+
+        do {
+            while (std::getline(queue.front(), line))
+            {
+                if (line.find("#include") != std::string::npos)
+                {
+                    auto start = line.find("<");
+                    auto end = line.find(">");
+
+                    if (start == std::string::npos ||
+                        end == std::string::npos ||
+                        end - start <= 2)
+                    {
+                        throw std::runtime_error("ClwClass::ComputeHash(...): incorrect #include format in kernel file");
+                    }
+
+                    auto file_name = line.substr(start + 1, end - (start + 1));
+
+                    if (std::find(file_name_vec.begin(), file_name_vec.end(), file_name) == file_name_vec.end())
+                    {
+                        file_name_vec.push_back(file_name);
+                        queue.push(std::ifstream(file_name));
+                    }
+                }
             }
+            queue.pop();
+        } while (!queue.empty());
+    }
+
+    inline std::uint32_t ClwClass::ComputeHash(const std::string& kernel_file_name)
+    {
+        std::vector<std::string> file_name_vec;
+
+        file_name_vec.push_back(kernel_file_name);
+        GetHeaderNames(kernel_file_name, file_name_vec);
+
+        std::string multiple_kernel_string;
+        for (const auto &item : file_name_vec)
+        {
+            std::ifstream in_stream(item);
+            multiple_kernel_string += std::string(
+                (std::istreambuf_iterator<char>(in_stream)),
+                (std::istreambuf_iterator<char>()));
         }
-        return check_sum;
+
+        return std::hash<std::string>{}(multiple_kernel_string);
     }
 
     inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
@@ -256,8 +297,7 @@ namespace Baikal
         name.append("_");
         name.append(oss.str());
 
-        std::ifstream in_stream(filename);
-        std::uint32_t file_hash = CheckSum(in_stream);
+        std::uint32_t file_hash = ComputeHash(filename);
 
         name.append("_");
         name.append(std::to_string(file_hash));
