@@ -9,6 +9,8 @@
 
 #include <string>
 #include <map>
+#include <set>
+#include <cassert>
 
 #include "Utils/tiny_obj_loader.h"
 #include "Utils/log.h"
@@ -189,7 +191,7 @@ namespace Baikal
         // Try loading file
         LogInfo("Loading a scene from OBJ: ", filename, " ... ");
         std::string err;
-        auto res = LoadObj(objshapes, objmaterials, err, filename.c_str(), basepath.c_str());
+        auto res = LoadObj(objshapes, objmaterials, err, filename.c_str(), basepath.c_str(), triangulation|calculate_normals);
         if (!res)
         {
             throw std::runtime_error(err);
@@ -218,60 +220,100 @@ namespace Baikal
         // Enumerate all shapes in the scene
         for (int s = 0; s < (int)objshapes.size(); ++s)
         {
-            // Create empty mesh
-            auto mesh = Mesh::Create();
+            const auto& shape = objshapes[s];
 
-            // Set vertex and index data
-            auto num_vertices = objshapes[s].mesh.positions.size() / 3;
-            mesh->SetVertices(&objshapes[s].mesh.positions[0], num_vertices);
+            // Find all materials used by this shape.
+            std::set<int> used_materials(std::begin(shape.mesh.material_ids), std::end(shape.mesh.material_ids));
 
-            auto num_normals = objshapes[s].mesh.normals.size() / 3;
-            mesh->SetNormals(&objshapes[s].mesh.normals[0], num_normals);
-
-            auto num_uvs = objshapes[s].mesh.texcoords.size() / 2;
-
-            // If we do not have UVs, generate zeroes
-            if (num_uvs)
+            // Split the mesh into multiple meshes, each with only one material.
+            for (int used_material : used_materials)
             {
-                mesh->SetUVs(&objshapes[s].mesh.texcoords[0], num_uvs);
-            }
-            else
-            {
-                std::vector<RadeonRays::float2> zero(num_vertices);
-                std::fill(zero.begin(), zero.end(), RadeonRays::float2(0, 0));
-                mesh->SetUVs(&zero[0], num_vertices);
-            }
+                // Map from old index to new index.
+                std::map<unsigned int, unsigned int> used_indices;
 
-            // Set indices
-            auto num_indices = objshapes[s].mesh.indices.size();
-            mesh->SetIndices(reinterpret_cast<std::uint32_t const*>(&objshapes[s].mesh.indices[0]), num_indices);
+                // Remapped indices.
+                std::vector<unsigned int> indices;
 
-            // Set material
+                // Collected vertex/normal/texcoord data.
+                std::vector<float> vertices, normals, texcoords;
 
-            for (int i = 0; i < objshapes[s].mesh.material_ids.size() - 1; ++i)
-            {
-                if (objshapes[s].mesh.material_ids[i] != objshapes[s].mesh.material_ids[i + 1])
-                    LogInfo("Warning: Group detected\n");
-            }
-
-            auto idx = objshapes[s].mesh.material_ids[0];
-
-            if (idx >= 0)
-            {
-                mesh->SetMaterial(materials[idx]);
-            }
-
-            // Attach to the scene
-            scene->AttachShape(mesh);
-
-            // If the mesh has emissive material we need to add area light for it
-            if (idx >= 0 && emissives.find(materials[idx]) != emissives.cend())
-            {
-                // Add area light for each polygon of emissive mesh
-                for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
+                // Go through each face in the mesh.
+                for (size_t i = 0; i < shape.mesh.material_ids.size(); ++i)
                 {
-                    auto light = AreaLight::Create(mesh, l);
-                    scene->AttachLight(light);
+                    // Skip faces which don't use the current material.
+                    if (shape.mesh.material_ids[i] != used_material) continue;
+
+                    const int num_face_vertices = shape.mesh.num_vertices[i];
+                    assert(num_face_vertices == 3 && "expected triangles");
+                    // For each vertex index of this face.
+                    for (int j = 0; j < num_face_vertices; ++j)
+                    {
+                        const unsigned int old_index = shape.mesh.indices[num_face_vertices * i + j];
+                        // Collect vertex/normal/texcoord data. Avoid inserting the same data twice.
+                        auto result = used_indices.emplace(old_index, (unsigned int)(vertices.size() / 3));
+                        if (result.second) // Did insert?
+                        {
+                            // Push the new data.
+                            for (int k = 0; k < 3; ++k)
+                                vertices.push_back(shape.mesh.positions[3 * old_index + k]);
+                            for (int k = 0; k < 3; ++k)
+                                normals.push_back(shape.mesh.normals[3 * old_index + k]);
+                            if (!shape.mesh.texcoords.empty())
+                                for (int k = 0; k < 2; ++k)
+                                    texcoords.push_back(shape.mesh.texcoords[2 * old_index + k]);
+                        }
+                        const unsigned int new_index = result.first->second;
+                        indices.push_back(new_index);
+                    }
+                }
+
+                // Create empty mesh
+                auto mesh = Mesh::Create();
+
+                // Set vertex and index data
+                auto num_vertices = vertices.size() / 3;
+                mesh->SetVertices(&vertices[0], num_vertices);
+
+                auto num_normals = normals.size() / 3;
+                mesh->SetNormals(&normals[0], num_normals);
+
+                auto num_uvs = texcoords.size() / 2;
+
+                // If we do not have UVs, generate zeroes
+                if (num_uvs)
+                {
+                    mesh->SetUVs(&texcoords[0], num_uvs);
+                }
+                else
+                {
+                    std::vector<RadeonRays::float2> zero(num_vertices);
+                    std::fill(zero.begin(), zero.end(), RadeonRays::float2(0, 0));
+                    mesh->SetUVs(&zero[0], num_vertices);
+                }
+
+                // Set indices
+                auto num_indices = indices.size();
+                mesh->SetIndices(reinterpret_cast<std::uint32_t const*>(&indices[0]), num_indices);
+
+                // Set material
+
+                if (used_material >= 0)
+                {
+                    mesh->SetMaterial(materials[used_material]);
+                }
+
+                // Attach to the scene
+                scene->AttachShape(mesh);
+
+                // If the mesh has emissive material we need to add area light for it
+                if (used_material >= 0 && emissives.find(materials[used_material]) != emissives.cend())
+                {
+                    // Add area light for each polygon of emissive mesh
+                    for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
+                    {
+                        auto light = AreaLight::Create(mesh, l);
+                        scene->AttachLight(light);
+                    }
                 }
             }
         }
