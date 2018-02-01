@@ -32,10 +32,9 @@ ArithmeticMaterialObject::ArithmeticMaterialObject(MaterialObject::Type mat_type
 {
     auto albedo = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
     albedo->SetInputValue("albedo", { 0.f, 0.f , 0.f , 0.f });
-    m_mat = MultiBxdf::Create(MultiBxdf::Type::kMix);
+    m_mat = MultiBxdf::Create(MultiBxdf::BlendType::kMix);
     m_mat->SetInputValue("weight", { 0.5f, 0.5f, 0.5f, 0.5f });
     m_mat->SetInputValue("base_material", albedo);
-    m_mat->SetThin(false);
 }
 
 void ArithmeticMaterialObject::SetInputMaterial(const std::string& input_name, MaterialObject* input)
