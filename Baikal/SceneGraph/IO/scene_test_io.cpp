@@ -459,7 +459,7 @@ namespace Baikal
                         break;
                     case 4:
                         uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-                        uberv2->SetInputValue("uberv2.transparency", float4((float)j/10.f));
+                        uberv2->SetInputValue("uberv2.transparency", float4((float)j/9.f));
                         uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.0f));
                         uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kTransparencyLayer);
                         break;

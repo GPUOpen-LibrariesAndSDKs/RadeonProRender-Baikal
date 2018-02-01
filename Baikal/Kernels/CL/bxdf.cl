@@ -49,9 +49,10 @@ enum BxdfFlags
     kBxdfFlagsBrdf = (1 << 1),
     kBxdfFlagsEmissive = (1 << 2),
     kBxdfFlagsTransparency = (1 << 3),
+    kBxdfFlagsDiffuse = (1 << 4),
 
     //Used to mask value from bxdf_flags
-    kBxdfFlagsAll = (kBxdfFlagsSingular | kBxdfFlagsBrdf | kBxdfFlagsEmissive | kBxdfFlagsTransparency)
+    kBxdfFlagsAll = (kBxdfFlagsSingular | kBxdfFlagsBrdf | kBxdfFlagsEmissive | kBxdfFlagsTransparency | kBxdfFlagsDiffuse)
 };
 
 enum BxdfUberV2SampledComponent
@@ -301,7 +302,7 @@ bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
-    return ((dg->mat.bxdf_flags & kBxdfFlagsBrdf) == kBxdfFlagsBrdf);
+    return ((dg->mat.bxdf_flags & kBxdfFlagsBrdf) == kBxdfFlagsBrdf) && ((dg->mat.bxdf_flags & kBxdfFlagsDiffuse) == kBxdfFlagsDiffuse);
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)

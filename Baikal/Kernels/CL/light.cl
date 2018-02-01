@@ -58,7 +58,7 @@ INLINE int EnvironmentLight_GetTexture(Light const* light, int bxdf_flags)
 {
     int tex = light->tex;
 
-    if ((bxdf_flags & kBxdfFlagsBrdf) && light->tex_reflection != -1)
+    if ((bxdf_flags & kBxdfFlagsBrdf) && (light->tex_reflection != -1) && ((bxdf_flags & kBxdfFlagsDiffuse) != kBxdfFlagsDiffuse))
         tex = light->tex_reflection;
 
     if (((bxdf_flags & kBxdfFlagsBrdf) == 0) && light->tex_refraction != -1)
