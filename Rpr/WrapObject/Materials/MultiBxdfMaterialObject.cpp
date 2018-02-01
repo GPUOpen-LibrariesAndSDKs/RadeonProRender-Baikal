@@ -27,13 +27,12 @@ THE SOFTWARE.
 using namespace Baikal;
 using namespace RadeonRays;
 
-MultiBxdfMaterialObject::MultiBxdfMaterialObject(MaterialObject::Type mat_type, Baikal::MultiBxdf::Type type)
+MultiBxdfMaterialObject::MultiBxdfMaterialObject(MaterialObject::Type mat_type, Baikal::MultiBxdf::BlendType type)
     : MaterialObject(mat_type)
 {
     m_mat = MultiBxdf::Create(type);
     m_mat->SetInputValue("weight", { 0.1f, 0.1f, 0.1f, 0.1f });
     m_mat->SetInputValue("ior", { 1.0f, 1.0f, 1.0f, 1.0f });
-    m_mat->SetThin(false);
 }
 
 void MultiBxdfMaterialObject::SetInputMaterial(const std::string& input_name, MaterialObject* input)
@@ -46,7 +45,7 @@ void MultiBxdfMaterialObject::SetInputMaterial(const std::string& input_name, Ma
         if (input_type == Type::kFresnel && input_type == Type::kFresnelShlick)
         {
             auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
-            blend_mat->SetType(MultiBxdf::Type::kFresnelBlend);
+            blend_mat->SetType(MultiBxdf::BlendType::kFresnelBlend);
             blend_mat->SetInputValue("ior", input->GetMaterial()->GetInputValue("ior").float_value);
         }
     }
@@ -75,7 +74,7 @@ void MultiBxdfMaterialObject::SetInputTexture(const std::string& input_name, Tex
     if (GetType() == kBlend && input_name == "weight")
     {
         auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
-        blend_mat->SetType(MultiBxdf::Type::kMix);
+        blend_mat->SetType(MultiBxdf::BlendType::kMix);
     }
 }
 
@@ -99,7 +98,7 @@ void MultiBxdfMaterialObject::SetInputF(const std::string& input_name, const Rad
     if (GetType() == kBlend && input_name == "weight")
     {
         auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
-        blend_mat->SetType(MultiBxdf::Type::kMix);
+        blend_mat->SetType(MultiBxdf::BlendType::kMix);
     }
 }
 
@@ -115,7 +114,7 @@ void MultiBxdfMaterialObject::Update(MaterialObject* mat)
             //need to get SingleBxdf::BxdfType::kTranslucent for valid ior value
             auto fresnel_mat = mat->GetMaterial()->GetInputValue("base_material").mat_value;
             auto blend_mat = std::dynamic_pointer_cast<MultiBxdf>(m_mat);
-            blend_mat->SetType(MultiBxdf::Type::kFresnelBlend);
+            blend_mat->SetType(MultiBxdf::BlendType::kFresnelBlend);
             blend_mat->SetInputValue("ior", fresnel_mat->GetInputValue("ior").float_value);
         }
     }

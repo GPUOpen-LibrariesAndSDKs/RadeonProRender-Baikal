@@ -167,7 +167,7 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
         return new ArithmeticMaterialObject(type);
     }
     case RPR_MATERIAL_NODE_BLEND:
-        return new MultiBxdfMaterialObject(type, MultiBxdf::Type::kMix);
+        return new MultiBxdfMaterialObject(type, MultiBxdf::BlendType::kMix);
 
     //Textures
     case RPR_MATERIAL_NODE_NORMAL_MAP:

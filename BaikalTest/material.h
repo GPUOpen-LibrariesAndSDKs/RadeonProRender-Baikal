@@ -1,16 +1,13 @@
 /**********************************************************************
 Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -383,7 +380,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
+                    oss << test_name() << "_" << r << "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -504,7 +501,7 @@ TEST_F(MaterialTest, Material_MicrofacetBeckmann)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
+                    oss << test_name() << "_" << r << "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -600,7 +597,7 @@ TEST_F(MaterialTest, Material_Refract)
 
             {
                 std::ostringstream oss;
-                oss << test_name()  <<  "_" << ior << "_" << t << ".png";
+                oss << test_name() << "_" << ior << "_" << t << ".png";
                 SaveOutput(oss.str());
                 ASSERT_TRUE(CompareToReference(oss.str()));
             }
@@ -712,7 +709,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
+                    oss << test_name() << "_" << r << "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -825,7 +822,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractBeckmann)
 
                 {
                     std::ostringstream oss;
-                    oss << test_name() << "_" << r <<  "_" << ior << "_" << t << ".png";
+                    oss << test_name() << "_" << r << "_" << ior << "_" << t << ".png";
                     SaveOutput(oss.str());
                     ASSERT_TRUE(CompareToReference(oss.str()));
                 }
@@ -937,7 +934,7 @@ TEST_F(MaterialTest, Material_DiffuseAndMicrofacet)
             top_material->SetInputValue("albedo", RadeonRays::float3(0.1f, 0.9f, 0.1f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto blended_material = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+            auto blended_material = MultiBxdf::Create(MultiBxdf::BlendType::kFresnelBlend);
 
             blended_material->SetInputValue("base_material", base_material);
             blended_material->SetInputValue("top_material", top_material);
@@ -971,7 +968,7 @@ TEST_F(MaterialTest, Material_DiffuseAndTransparency)
             top_material->SetInputValue("albedo", RadeonRays::float3(0.1f, 0.9f, 0.1f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto blended_material = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+            auto blended_material = MultiBxdf::Create(MultiBxdf::BlendType::kFresnelBlend);
 
             blended_material->SetInputValue("base_material", base_material);
             blended_material->SetInputValue("top_material", top_material);
@@ -1007,7 +1004,7 @@ TEST_F(MaterialTest, Material_RefractionAndMicrofacet)
             top_material->SetInputValue("albedo", RadeonRays::float3(1.f, 1.f, 1.f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto blended_material = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+            auto blended_material = MultiBxdf::Create(MultiBxdf::BlendType::kFresnelBlend);
 
             blended_material->SetInputValue("base_material", base_material);
             blended_material->SetInputValue("top_material", top_material);
@@ -1040,7 +1037,7 @@ TEST_F(MaterialTest, Material_RefractionAndDoubleMicrofacet)
             top_material->SetInputValue("albedo", RadeonRays::float3(1.f, 1.f, 1.f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto base_blend_material = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+            auto base_blend_material = MultiBxdf::Create(MultiBxdf::BlendType::kFresnelBlend);
 
             base_blend_material->SetInputValue("base_material", base_material);
             base_blend_material->SetInputValue("top_material", top_material);
@@ -1052,7 +1049,7 @@ TEST_F(MaterialTest, Material_RefractionAndDoubleMicrofacet)
             top_material->SetInputValue("albedo", float4(.1f, 1.f, .1f, 1.f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto blended_material = MultiBxdf::Create(Baikal::MultiBxdf::Type::kFresnelBlend);
+            auto blended_material = MultiBxdf::Create(Baikal::MultiBxdf::BlendType::kFresnelBlend);
             blended_material->SetInputValue("base_material", base_blend_material);
             blended_material->SetInputValue("top_material", top_material);
             blended_material->SetInputValue("ior", float3(ior, ior, ior));
@@ -1070,7 +1067,7 @@ TEST_F(MaterialTest, Material_MixRefractAndMicrofacet)
         1.1f, 1.3f, 1.6f, 2.2f, 3.f
     };
 
-    auto compute_mix_material = 
+    auto compute_mix_material =
         [&](float ior, float mix_weight)
         {
             auto base_material = SingleBxdf::Create(SingleBxdf::BxdfType::kIdealRefract);
@@ -1081,7 +1078,7 @@ TEST_F(MaterialTest, Material_MixRefractAndMicrofacet)
             top_material->SetInputValue("albedo", RadeonRays::float3(1.f, .2f, .1f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto mix_material = MultiBxdf::Create(MultiBxdf::Type::kMix);
+            auto mix_material = MultiBxdf::Create(MultiBxdf::BlendType::kMix);
 
             mix_material->SetInputValue("weight", RadeonRays::float4(mix_weight));
             mix_material->SetInputValue("base_material", base_material);
@@ -1131,7 +1128,7 @@ TEST_F(MaterialTest, Material_MixDiffuseAndMicrofacet)
             top_material->SetInputValue("albedo", RadeonRays::float3(1.f, .2f, .1f));
             top_material->SetInputValue("roughness", float4(0.002f, 0.002f, 0.002f, 1.f));
 
-            auto mix_material = MultiBxdf::Create(MultiBxdf::Type::kMix);
+            auto mix_material = MultiBxdf::Create(MultiBxdf::BlendType::kMix);
 
             mix_material->SetInputValue("weight", RadeonRays::float4(mix_weight));
             mix_material->SetInputValue("base_material", base_material);
@@ -1145,7 +1142,7 @@ TEST_F(MaterialTest, Material_MixDiffuseAndMicrofacet)
         iors,
         [&](float ior)
     {
-        (void) ior; //unused
+        (void)ior; //unused
         return compute_mix_material(.2f);
     });
 
@@ -1187,7 +1184,7 @@ TEST_F(MaterialTest, Material_MixDiffuseAndTransparencyMask)
             auto top_material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
             top_material->SetInputValue("albedo", float4(.5f, 1.f, 8.f, 1.f));
 
-            auto mixed_material = MultiBxdf::Create(Baikal::MultiBxdf::Type::kMix);
+            auto mixed_material = MultiBxdf::Create(Baikal::MultiBxdf::BlendType::kMix);
 
             auto image_io(Baikal::ImageIo::CreateImageIo());
             auto texture = image_io->LoadImage("../Resources/Textures/test_albedo3.jpg");
