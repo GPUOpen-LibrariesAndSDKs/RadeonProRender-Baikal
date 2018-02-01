@@ -128,6 +128,7 @@ void GetMaterialBxDFType(
 
     // Sample diffuse
     Bxdf_SetSampledComponent(dg, kBxdfSampleDiffuse);
+    Bxdf_SetFlags(dg, bxdf_flags);
     return;
 }
 
