@@ -816,7 +816,7 @@ KERNEL void AdvanceIterationCount(
 )
 {
     int global_id = get_global_id(0);
-    if (global_id < num_rays) 
+    if (global_id < *num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];
