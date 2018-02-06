@@ -57,11 +57,11 @@ enum BxdfFlags
 
 enum BxdfUberV2SampledComponent
 {
-    kBxdfSampleTransparency = 0,
-    kBxdfSampleCoating = 1,
-    kBxdfSampleReflection = 2,
-    kBxdfSampleRefraction = 3,
-    kBxdfSampleDiffuse = 4
+    kBxdfUberV2SampleTransparency = 0,
+    kBxdfUberV2SampleCoating = 1,
+    kBxdfUberV2SampleReflection = 2,
+    kBxdfUberV2SampleRefraction = 3,
+    kBxdfUberV2SampleDiffuse = 4
 };
 
 /// Returns BxDF flags. Flags stored in first byte of bxdf_flags
@@ -78,13 +78,13 @@ void Bxdf_SetFlags(DifferentialGeometry *dg, int flags)
 }
 
 /// Return BxDF sampled component. Sampled component stored in second byte of bxdf_flags
-int Bxdf_GetSampledComponent(DifferentialGeometry const* dg)
+int Bxdf_UberV2_GetSampledComponent(DifferentialGeometry const* dg)
 {
     return (dg->mat.bxdf_flags >> 8) & 0xff;
 }
 
 /// Sets BxDF sampled component. Sampled component stored in second byte of bxdf_flags
-int Bxdf_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
+int Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
 {
     dg->mat.bxdf_flags &= 0xffff00ff; //Reset sampled component
     dg->mat.bxdf_flags |= (sampledComponent << 8); //Set new component

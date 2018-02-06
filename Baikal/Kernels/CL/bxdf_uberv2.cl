@@ -62,7 +62,7 @@ void GetMaterialBxDFType(
         {
             bxdf_flags |= (kBxdfFlagsTransparency | kBxdfFlagsSingular);
             Bxdf_SetFlags(dg, bxdf_flags);
-            Bxdf_SetSampledComponent(dg, kBxdfSampleTransparency);
+            Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleTransparency);
             return;
         }
     }
@@ -77,7 +77,7 @@ void GetMaterialBxDFType(
         const float fresnel = CalculateFresnel(1.0f, dg->mat.uberv2.refraction_ior, ndotwi);
         if (sample >= fresnel)
         {
-            Bxdf_SetSampledComponent(dg, kBxdfSampleRefraction);
+            Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleRefraction);
             if ((dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
             {
                 bxdf_flags |= kBxdfFlagsSingular;
@@ -102,7 +102,7 @@ void GetMaterialBxDFType(
             bxdf_flags |= kBxdfFlagsSingular; // Coating always singular
             Bxdf_SetFlags(dg, bxdf_flags);
 
-            Bxdf_SetSampledComponent(dg, kBxdfSampleCoating);
+            Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleCoating);
             return;
         }
         top_ior = dg->mat.uberv2.coating_ior; 
@@ -120,14 +120,14 @@ void GetMaterialBxDFType(
                 bxdf_flags |= kBxdfFlagsSingular;
             }
 
-            Bxdf_SetSampledComponent(dg, kBxdfSampleReflection);
+            Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleReflection);
             Bxdf_SetFlags(dg, bxdf_flags);
             return;
         }
     }
 
     // Sample diffuse
-    Bxdf_SetSampledComponent(dg, kBxdfSampleDiffuse);
+    Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleDiffuse);
     Bxdf_SetFlags(dg, bxdf_flags);
     return;
 }
@@ -404,19 +404,19 @@ float3 UberV2_Sample(
     float* pdf
 )
 {
-    const int sampledComponent = Bxdf_GetSampledComponent(dg);
+    const int sampledComponent = Bxdf_UberV2_GetSampledComponent(dg);
 
     switch (sampledComponent)
     {
-    case kBxdfSampleTransparency:
+    case kBxdfUberV2SampleTransparency:
         return UberV2_Passthrough_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-    case kBxdfSampleCoating:
+    case kBxdfUberV2SampleCoating:
         return UberV2_Coating_Sample(dg, wi, TEXTURE_ARGS, wo, pdf);
-    case kBxdfSampleReflection:
+    case kBxdfUberV2SampleReflection:
         return UberV2_Reflection_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-    case kBxdfSampleRefraction:
+    case kBxdfUberV2SampleRefraction:
         return UberV2_Refraction_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
-    case kBxdfSampleDiffuse:
+    case kBxdfUberV2SampleDiffuse:
         return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
     }
 
