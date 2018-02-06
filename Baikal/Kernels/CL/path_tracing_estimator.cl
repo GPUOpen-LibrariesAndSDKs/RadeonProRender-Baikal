@@ -817,13 +817,13 @@ KERNEL void AdvanceIterationCount(
     // Output indices
     GLOBAL int const*  restrict output_indices,
     // Number of rays
-    GLOBAL int* restrict num_rays,
+    int num_rays,
     // Output values
     GLOBAL float4* restrict output
 )
 {
     int global_id = get_global_id(0);
-    if (global_id < num_rays) 
+    if (global_id < num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];

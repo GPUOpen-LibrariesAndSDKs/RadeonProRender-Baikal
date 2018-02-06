@@ -787,7 +787,7 @@ namespace Baikal
         int argc = 0;
         misskernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
         misskernel.SetArg(argc++, output_indices);
-        misskernel.SetArg(argc++, m_render_data->hitcount);
+        misskernel.SetArg(argc++, (cl_int)size);
         misskernel.SetArg(argc++, output);
 
         {
