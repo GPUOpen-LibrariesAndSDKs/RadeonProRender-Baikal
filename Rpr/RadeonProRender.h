@@ -428,6 +428,7 @@ extern "C" {
 #define RPR_MATERIAL_NODE_MICROFACET_BECKMANN 0x22 
 #define RPR_MATERIAL_NODE_PHONG 0x23 
 #define RPR_MATERIAL_NODE_BUFFER_SAMPLER 0x24 
+#define RPR_MATERIAL_NODE_UBERV2 0x25
 
 /* rpr_material_node_input */
 #define RPR_MATERIAL_INPUT_COLOR 0x0 
@@ -494,6 +495,51 @@ extern "C" {
 #define RPR_MATERIAL_INPUT_RASTER_CLEARCOATGLOSS 0x90B 
 #define RPR_MATERIAL_INPUT_RASTER_COLOR 0x90C 
 #define RPR_MATERIAL_INPUT_RASTER_NORMAL 0x90D 
+
+#define RPR_UBER_MATERIAL_DIFFUSE_COLOR 0x200U
+#define RPR_UBER_MATERIAL_LAYERS 0x201U
+#define RPR_UBER_MATERIAL_REFLECTION_COLOR 0x203U
+#define RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS 0x205U
+#define RPR_UBER_MATERIAL_REFLECTION_ANISOTROPY 0x206U
+#define RPR_UBER_MATERIAL_REFLECTION_ANISOTROPY_ROTATION 0x207U
+#define RPR_UBER_MATERIAL_REFLECTION_IOR 0x208U
+#define RPR_UBER_MATERIAL_REFLECTION_METALNESS 0x209U
+#define RPR_UBER_MATERIAL_REFRACTION_COLOR 0x20AU
+#define RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS 0x20CU
+#define RPR_UBER_MATERIAL_REFRACTION_IOR 0x20DU
+#define RPR_UBER_MATERIAL_REFRACTION_IOR_MODE 0x20EU
+#define RPR_UBER_MATERIAL_REFRACTION_THIN_SURFACE 0x20FU
+#define RPR_UBER_MATERIAL_COATING_COLOR 0x210U
+#define RPR_UBER_MATERIAL_COATING_IOR 0x213U
+#define RPR_UBER_MATERIAL_EMISSION_COLOR 0x215U
+#define RPR_UBER_MATERIAL_EMISSION_WEIGHT 0x216U
+#define RPR_UBER_MATERIAL_EMISSION_MODE 0x217U
+#define RPR_UBER_MATERIAL_TRANSPARENCY 0x218U
+#define RPR_UBER_MATERIAL_NORMAL 0x219U
+#define RPR_UBER_MATERIAL_BUMP 0x21AU
+#define RPR_UBER_MATERIAL_DISPLACEMENT 0x21BU
+#define RPR_UBER_MATERIAL_SSS_ABSORPTION_COLOR 0x21CU
+#define RPR_UBER_MATERIAL_SSS_SCATTER_COLOR 0x21DU
+#define RPR_UBER_MATERIAL_SSS_ABSORPTION_DISTANCE 0x21EU
+#define RPR_UBER_MATERIAL_SSS_SCATTER_DISTANCE 0x21FU
+#define RPR_UBER_MATERIAL_SSS_SCATTER_DIRECTION 0x220U
+#define RPR_UBER_MATERIAL_SSS_SUBSURFACE_COLOR 0x222U
+#define RPR_UBER_MATERIAL_SSS_MULTISCATTER 0x223U
+
+#define RPR_UBER_MATERIAL_REFRACTION_MODE_SEPARATE 0x1U
+#define RPR_UBER_MATERIAL_REFRACTION_MODE_LINKED 0x2U
+
+#define RPR_UBER_MATERIAL_EMISSION_MODE_SINGLESIDED 0x1U
+#define RPR_UBER_MATERIAL_EMISSION_MODE_DOUBLESIDED 0x2U
+
+/* rpr uber material layers */
+#define RPR_UBER_MATERIAL_LAYER_EMISSION 0x1
+#define RPR_UBER_MATERIAL_LAYER_TRANSPARENCY 0x2
+#define RPR_UBER_MATERIAL_LAYER_COATING 0x4
+#define RPR_UBER_MATERIAL_LAYER_REFLECTION 0x8
+#define RPR_UBER_MATERIAL_LAYER_DIFFUSE 0x10
+#define RPR_UBER_MATERIAL_LAYER_REFRACTION 0x20
+#define RPR_UBER_MATERIAL_LAYER_SSS 0x40
 
 /* rpr_material_node_arithmetic_operation */
 #define RPR_MATERIAL_NODE_OP_ADD 0x00 
@@ -2900,6 +2946,21 @@ extern RPR_API_ENTRY fr_int frPostEffectGetInfo(fr_post_effect effect, fr_post_e
 extern RPR_API_ENTRY fr_int frContextCreateHeteroVolume(fr_context context, fr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, fr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, fr_uint gridDataTopology___unused);
 extern RPR_API_ENTRY fr_int frShapeSetHeteroVolume(fr_shape shape, fr_hetero_volume heteroVolume);
 extern RPR_API_ENTRY fr_int frHeteroVolumeSetTransform(fr_hetero_volume out_heteroVolume, fr_bool transpose, fr_float const * transform);
+
+/** @brief Connect nodes
+*
+*   Possible error codes:
+*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+*
+*/
+//rprMaterialNodeSetInput*_ext
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputN_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_material_node in_input_node);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputF_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputU_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_uint in_value);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputImageData_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_image image);
+extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputBufferData_ext(rpr_material_node in_node, rpr_material_node_input in_input, rpr_buffer buffer);
+
 
 #ifdef __cplusplus
 }

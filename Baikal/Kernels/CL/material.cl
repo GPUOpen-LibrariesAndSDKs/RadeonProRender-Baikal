@@ -85,7 +85,19 @@ void Material_Select(
                 fresnel = FresnelDielectric(etai, etat, cosi, cost);
             }
 
-            dg->mat.simple.fresnel = Bxdf_IsBtdf(dg) ? (1.f - fresnel) : fresnel;
+            // We need to know if it's btdf or brdf but we can't use Bxdf_IsBtdf here
+            // since bxdf_flags not filled yet.
+            if ((dg->mat.type == kIdealReflect) ||
+                (dg->mat.type == kMicrofacetGGX) ||
+                (dg->mat.type == kMicrofacetBeckmann) ||
+                (dg->mat.type == kLambert))
+            {
+                dg->mat.simple.fresnel = fresnel;
+            }
+            else
+            {
+                dg->mat.simple.fresnel = 1.0f - fresnel;
+            }
         }
         else
         {
@@ -176,6 +188,34 @@ void Material_Select(
         dg->material_index = idx;
         dg->mat = mat;
     }
+
+    int flags = 0;
+    if (dg->mat.type == kEmissive)
+    {
+        flags |= kBxdfFlagsEmissive;
+    }
+    if (dg->mat.type == kPassthrough)
+    {
+        flags |= kBxdfFlagsTransparency;
+    }
+    if ((dg->mat.type == kIdealReflect) || 
+        (dg->mat.type == kMicrofacetGGX) || 
+        (dg->mat.type == kMicrofacetBeckmann) || 
+        (dg->mat.type == kLambert))
+    {
+        flags |= kBxdfFlagsBrdf;
+    }
+    if (dg->mat.type == kIdealReflect || dg->mat.type == kIdealRefract || dg->mat.type == kPassthrough)
+    {
+        flags |= kBxdfFlagsSingular;
+    }
+
+    if (dg->mat.type == kLambert)
+    {
+        flags |= kBxdfFlagsDiffuse;
+    }
+
+    Bxdf_SetFlags(dg, flags);
 }
 
 

@@ -77,8 +77,8 @@ namespace Baikal
     static bool     g_is_right_pressed = false;
     static bool     g_is_fwd_pressed = false;
     static bool     g_is_back_pressed = false;
-    static bool     g_is_home_pressed = false;
-    static bool     g_is_end_pressed = false;
+    static bool     g_is_climb_pressed = false;
+    static bool     g_is_descent_pressed = false;
     static bool     g_is_mouse_tracking = false;
     static bool     g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
@@ -120,23 +120,23 @@ namespace Baikal
         const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
         switch (key)
         {
-        case GLFW_KEY_UP:
+        case GLFW_KEY_W:
             g_is_fwd_pressed = press_or_repeat;
             break;
-        case GLFW_KEY_DOWN:
+        case GLFW_KEY_S:
             g_is_back_pressed = press_or_repeat;
             break;
-        case GLFW_KEY_LEFT:
+        case GLFW_KEY_A:
             g_is_left_pressed = press_or_repeat;
             break;
-        case GLFW_KEY_RIGHT:
+        case GLFW_KEY_D:
             g_is_right_pressed = press_or_repeat;
             break;
-        case GLFW_KEY_HOME:
-            g_is_home_pressed = press_or_repeat;
+        case GLFW_KEY_Q:
+            g_is_climb_pressed = press_or_repeat;
             break;
-        case GLFW_KEY_END:
-            g_is_end_pressed = press_or_repeat;
+        case GLFW_KEY_E:
+            g_is_descent_pressed = press_or_repeat;
             break;
         case GLFW_KEY_F1:
             app->m_settings.gui_visible = action == GLFW_PRESS ? !app->m_settings.gui_visible : app->m_settings.gui_visible;
@@ -212,13 +212,13 @@ namespace Baikal
                 update = true;
             }
 
-            if (g_is_home_pressed)
+            if (g_is_climb_pressed)
             {
                 camera->MoveUp((float)dt.count() * kMovementSpeed);
                 update = true;
             }
 
-            if (g_is_end_pressed)
+            if (g_is_descent_pressed)
             {
                 camera->MoveUp(-(float)dt.count() * kMovementSpeed);
                 update = true;
@@ -494,8 +494,8 @@ namespace Baikal
         {
             ImGui::SetNextWindowSizeConstraints(ImVec2(380, 580), ImVec2(380, 580));
             ImGui::Begin("Baikal settings");
-            ImGui::Text("Use arrow keys to move");
-            ImGui::Text("PgUp/Down to climb/descent");
+            ImGui::Text("Use wsad keys to move");
+            ImGui::Text("Q/E to climb/descent");
             ImGui::Text("Mouse+RMB to look around");
             ImGui::Text("F1 to hide/show GUI");
             ImGui::Separator();

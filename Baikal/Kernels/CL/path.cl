@@ -62,17 +62,17 @@ INLINE void Path_SetScatterFlag(__global Path* path)
     path->flags |= kScattered;
 }
 
-INLINE void Path_ClearSurfaceInteractionFlags(__global Path* path)
+INLINE void Path_ClearBxdfFlags(__global Path* path)
 {
     path->flags &= (kKilled | kScattered);
 }
 
-INLINE int Path_GetSurfaceInteractionFlags(__global Path const* path)
+INLINE int Path_GetBxdfFlags(__global Path const* path)
 {
     return path->flags >> 2;
 }
 
-INLINE int Path_SetSurfaceInteractionFlags(__global Path* path, int flags)
+INLINE int Path_SetBxdfFlags(__global Path* path, int flags)
 {
     return path->flags |= (flags << 2);
 }
@@ -115,33 +115,14 @@ INLINE void Path_AddContribution(__global Path* path, __global float3* output, i
 
 INLINE bool Path_IsSpecular(__global Path const* path)
 {
-    int flags = Path_GetSurfaceInteractionFlags(path);
-    return flags & kSpecular;
+    int flags = Path_GetBxdfFlags(path);
+    return (flags & kBxdfFlagsSingular) == kBxdfFlagsSingular;
 }
 
 INLINE void Path_SetFlags(DifferentialGeometry* diffgeo, GLOBAL Path* restrict path)
 {
-    Path_ClearSurfaceInteractionFlags(path);
-
-    if (Bxdf_IsSingular(diffgeo))
-    {
-        Path_SetSurfaceInteractionFlags(path, kSpecular);
-    }
-
-    if (Bxdf_IsRefraction(diffgeo))
-    {
-        Path_SetSurfaceInteractionFlags(path, kTransmission);
-    }
-
-    if (Bxdf_IsReflection(diffgeo))
-    {
-        Path_SetSurfaceInteractionFlags(path, kReflection);
-    }
-
-    if (Bxdf_IsTransparency(diffgeo))
-    {
-        Path_SetSurfaceInteractionFlags(path, kTransparency);
-    }
+    Path_ClearBxdfFlags(path);
+    Path_SetBxdfFlags(path, Bxdf_GetFlags(diffgeo));
 }
 
 #endif

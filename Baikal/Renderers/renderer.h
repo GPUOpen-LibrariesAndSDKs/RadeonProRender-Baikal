@@ -140,6 +140,7 @@ namespace Baikal
         auto idx = static_cast<std::size_t>(type);
         if (idx >= static_cast<std::size_t>(OutputType::kMax))
             throw std::out_of_range("Output type is out of supported range");
+
         m_outputs[idx] = output;
     }
 

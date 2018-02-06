@@ -89,7 +89,19 @@ enum Bxdf
     kTranslucent,
     kMicrofacetRefractionGGX,
     kMicrofacetRefractionBeckmann,
-    kDisney
+    kDisney,
+    kUberV2
+};
+
+enum UberMaterialLayers
+{
+    kEmissionLayer = 0x1,
+    kTransparencyLayer = 0x2,
+    kCoatingLayer = 0x4,
+    kReflectionLayer = 0x8,
+    kDiffuseLayer = 0x10,
+    kRefractionLayer = 0x20,
+    kSSSLayer = 0x40
 };
 
 // Material description
@@ -120,38 +132,111 @@ typedef struct _Material
         struct
         {
             float4 base_color;
-            
+
             float metallic;
             float subsurface;
             float specular;
             float roughness;
-            
+
             float specular_tint;
             float anisotropy;
             float sheen;
             float sheen_tint;
-            
+
             float clearcoat;
             float clearcoat_gloss;
             int base_color_map_idx;
             int metallic_map_idx;
-            
+
             int specular_map_idx;
             int roughness_map_idx;
             int specular_tint_map_idx;
             int anisotropy_map_idx;
-            
+
             int sheen_map_idx;
             int sheen_tint_map_idx;
             int clearcoat_map_idx;
             int clearcoat_gloss_map_idx;
         } disney;
+#ifdef ENABLE_UBERV2
+    struct
+        {
+            float4 diffuse_color;
+
+            int diffuse_color_map_idx;
+            int layers;
+            int reflection_color_map_idx;
+            float reflection_roughness;
+
+            float4 reflection_color;
+
+            int reflection_roughness_map_idx;
+            float reflection_anisotropy;
+            int reflection_anisotropy_map_idx;
+            float reflection_anisotropy_rotation;
+
+            int reflection_anisotropy_rotation_map_idx;
+            float reflection_ior;
+            int reflection_ior_map_idx;
+            float reflection_metalness;
+
+            int reflection_metalness_map_idx;
+            int refraction_color_map_idx;
+            float refraction_roughness;
+            int refraction_roughness_map_idx;
+
+            float4 refraction_color;
+
+            float refraction_ior;
+            int refraction_ior_map_idx;
+            int refraction_ior_mode;
+            int refraction_thin_surface;
+
+            float4 coating_color;
+
+            int coating_color_map_idx;
+            float coating_ior;
+            int coating_ior_map_idx;
+            float emission_color;
+
+            int emission_color_map_idx;
+            int emission_mode;
+            float transparency;
+            int transparency_map_idx;
+
+/*            float displacement;
+            int displacement_map_idx;*/
+            float4 sss_absorption_color;
+
+            float4 sss_scatter_color;
+
+            int sss_absorption_color_map_idx;
+            int sss_scatter_color_map_idx;
+            float sss_absorption_distance;
+            int sss_absorption_distance_map_idx;
+
+            float sss_scatter_distance;
+            int sss_scatter_distance_map_idx;
+            float sss_scatter_direction;
+            int sss_scatter_direction_map_idx;
+
+            int sss_subsurface_color_map_idx;
+            int sss_multiscatter;
+            int padding[2];
+
+            float4 sss_subsurface_color;
+
+//            int padding3[3];
+        } uberv2;
+#endif
     };
 
     int type;
     int bump_flag;
     int thin;
     int nmapidx;
+    int bxdf_flags;
+    int padding[3];
 } Material;
 
 enum LightType
