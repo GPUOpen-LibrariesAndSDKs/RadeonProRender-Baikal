@@ -52,7 +52,9 @@ namespace Baikal
     {
     public:
         using Ptr = std::shared_ptr<Material>;
-        
+
+        friend class MaterialAccessor;
+
         // Material input type
         enum class InputType
         {
@@ -100,6 +102,8 @@ namespace Baikal
             InputValue value;
         };
 
+        using InputMap = std::unordered_map<std::string, Input>;
+
         // Destructor
         virtual ~Material() = 0;
 
@@ -125,7 +129,10 @@ namespace Baikal
         bool IsThin() const;
         // Set thin flag
         void SetThin(bool thin);
-        
+
+        size_t GetInputNum() const;
+        Input GitInputByIndex(std::uint32_t idx);
+
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
 
@@ -144,7 +151,6 @@ namespace Baikal
     private:
         class InputIterator;
 
-        using InputMap = std::unordered_map<std::string, Input>;
         // Input map
         InputMap m_inputs;
         // Thin material
@@ -165,7 +171,7 @@ namespace Baikal
     public:
         enum class BxdfType
         {
-            kZero,
+            kZero = 0,
             kLambert,
             kIdealReflect,
             kIdealRefract,
@@ -186,7 +192,7 @@ namespace Baikal
 
         // Check if material has emissive components
         bool HasEmission() const override;
-        
+
     protected:
         SingleBxdf(BxdfType type);
 
@@ -199,7 +205,7 @@ namespace Baikal
     public:
         enum class Type
         {
-            kLayered,
+            kLayered = 0,
             kFresnelBlend,
             kMix
         };
@@ -212,7 +218,7 @@ namespace Baikal
 
         // Check if material has emissive components
         bool HasEmission() const override;
-        
+
     protected:
         MultiBxdf(Type type);
         
@@ -228,7 +234,7 @@ namespace Baikal
         
         // Check if material has emissive components
         bool HasEmission() const override;
-        
+
     protected:
         DisneyBxdf();
     };
@@ -254,4 +260,19 @@ namespace Baikal
         VolumeMaterial();
     };
 
+    class MaterialAccessor
+    {
+    public:
+        MaterialAccessor(Material::Ptr material);
+
+        std::vector<std::string> GetTypeInfo() const;
+        void SetType(std::uint32_t type);
+
+        ~MaterialAccessor() = default;
+
+        MaterialAccessor(const MaterialAccessor&) = delete;
+        MaterialAccessor& operator = (const MaterialAccessor&) = delete;
+    private:
+        Material::Ptr m_material;
+    };
 }

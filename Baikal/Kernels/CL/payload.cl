@@ -70,6 +70,10 @@ typedef struct
     float4 angularvelocity;
     // Transform in row major format
     matrix4x4 transform;
+    // unique shape id
+    int id;
+    // Follow fields for 16 byte allign
+    int offset[3];
 } Shape;
 
 
@@ -170,10 +174,13 @@ typedef struct
         // Area light
         struct
         {
+            int id;
             int shapeidx;
             int primidx;
             int matidx;
             int padding0;
+            // offset for 16 byte alligment
+            int offset[3];
         };
 
         // IBL

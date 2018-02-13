@@ -80,9 +80,13 @@ namespace Baikal
     static bool     g_is_home_pressed = false;
     static bool     g_is_end_pressed = false;
     static bool     g_is_mouse_tracking = false;
+    static bool     g_is_double_click = false;
+    static bool     g_is_material_bar_visible = false;
     static bool     g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     void Application::OnMouseMove(GLFWwindow* window, double x, double y)
     {
@@ -111,6 +115,28 @@ namespace Baikal
                 g_is_mouse_tracking = false;
                 g_mouse_delta = float2(0, 0);
             }
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            if (action == GLFW_PRESS)
+            {
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>
+                    (std::chrono::high_resolution_clock::now() - start);
+
+                if (duration.count() < 200)
+                {
+                    double x, y;
+                    glfwGetCursorPos(window, &x, &y);
+                    g_mouse_pos = float2((float)x, (float)y);
+                    g_mouse_delta = float2(0, 0);
+                    g_is_double_click = true;
+                    g_is_material_bar_visible = true;
+                }
+                start = std::chrono::high_resolution_clock::now();
+            }
+            else if (action == GLFW_RELEASE)
+                g_is_double_click = false;
         }
     }
 
@@ -489,6 +515,7 @@ namespace Baikal
             ;
 
         static int output = 0;
+        static int material_output = 0;
         bool update = false;
         if (m_settings.gui_visible)
         {
@@ -656,6 +683,53 @@ namespace Baikal
             }
 #endif
             ImGui::End();
+
+            if (g_is_material_bar_visible)
+            {
+                ImGui::Begin("Material info");
+
+                if (g_is_double_click)
+                {
+                    ImGui::SetWindowPos(ImVec2(g_mouse_pos.x, g_mouse_pos.y));
+                    m_future = m_cl->GetShapeId(g_mouse_pos.x, g_mouse_pos.y);
+                    g_is_double_click = false;
+                }
+                else if (m_future.valid())
+                {
+                    auto shape = m_cl->GetShapeById(m_future.get());
+                    if (shape)
+                    {
+                        m_material = shape->GetMaterial();
+                    }
+                    else
+                    {
+                        m_material = nullptr;
+                    }
+                }
+
+                // draw material props
+                if (m_material)
+                {
+                    MaterialAccessor material_accessor(m_material);
+
+                    std::string material_info;
+                    for (const auto iter : material_accessor.GetTypeInfo())
+                    {
+                        material_info += iter;
+                        material_info.push_back('\0');
+                    }
+                    auto current_output = material_output;
+                    ImGui::Combo("Material type", &material_output, material_info.c_str());
+                    if (current_output != material_output)
+                    {
+                        material_accessor.SetType(material_output);
+                        m_cl->UpdateScene();
+                    }
+                }
+
+                ImGui::End();
+            }
+
             ImGui::Render();
         }
 

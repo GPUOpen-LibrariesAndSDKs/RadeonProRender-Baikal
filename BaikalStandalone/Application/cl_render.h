@@ -25,6 +25,7 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include <future>
 
 #include "RenderFactory/render_factory.h"
 #include "Renderers/monte_carlo_renderer.h"
@@ -94,7 +95,11 @@ namespace Baikal
 
         void SetNumBounces(int num_bounces);
         void SetOutputType(Renderer::OutputType type);
-#ifdef ENABLE_DENOISER        
+
+        std::future<int> GetShapeId(std::uint32_t x, std::uint32_t y);
+        Baikal::Shape::Ptr GetShapeById(int shape_id);
+
+#ifdef ENABLE_DENOISER
         // Denoiser
         void SetDenoiserFloatParam(const std::string& name, const float4& value);
         float4 GetDenoiserFloatParam(const std::string& name);
@@ -107,11 +112,17 @@ namespace Baikal
         Baikal::Scene1::Ptr m_scene;
         Baikal::Camera::Ptr m_camera;
 
+        std::promise<int> m_promise;
+        bool m_shape_id_requested = false;
+        OutputData m_shape_id_data;
+        std::unique_ptr<RadeonRays::float3[]> m_shape_id_buffer;
+        RadeonRays::float2 m_shape_id_pos;
         std::vector<ConfigManager::Config> m_cfgs;
         std::vector<OutputData> m_outputs;
         std::unique_ptr<ControlData[]> m_ctrl;
         std::vector<std::thread> m_renderthreads;
         int m_primary = -1;
+        std::uint32_t m_width, m_height;
 
         //if interop
         CLWImage2D m_cl_interop_image;

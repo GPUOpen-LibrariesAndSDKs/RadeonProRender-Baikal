@@ -51,7 +51,7 @@ namespace Baikal
     public:
         enum class OutputType
         {
-            kColor,
+            kColor = 0,
             kWorldPosition,
             kWorldShadingNormal,
             kWorldGeometricNormal,
@@ -63,6 +63,7 @@ namespace Baikal
             kGloss,
             kMeshID,
             kDepth,
+            kShapeIdMap,
             kVisibility,
             kMax
         };

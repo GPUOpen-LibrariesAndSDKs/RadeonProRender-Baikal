@@ -52,20 +52,35 @@ namespace Baikal
         
         SceneObject(SceneObject const&) = delete;
         SceneObject& operator = (SceneObject const&) = delete;
-        
+
+        inline std::uint32_t GetId() const
+        { return m_id; }
+
     protected:
         // Constructor
         SceneObject();
         
     private:
         mutable bool m_dirty;
-        
+
+        static std::uint32_t NextId()
+        {
+            static std::uint32_t id = 0;
+            return (id++);
+        }
+
         std::string m_name;
+        std::uint32_t m_id;
     };
-    
+
     inline SceneObject::SceneObject()
-    : m_dirty(false)
+    : m_dirty(false), m_id(NextId())
     {
+        if (m_id == 8)
+        {
+            int x = 1;
+            x++;
+        }
     }
     
     inline SceneObject::~SceneObject()

@@ -71,6 +71,8 @@ namespace Baikal
             ConfigManager::CreateConfigs(settings.mode, false, m_cfgs, settings.num_bounces);
         }
 
+        m_width = (std::uint32_t)settings.width;
+        m_height = (std::uint32_t)settings.height;
 
         std::cout << "Running on devices: \n";
 
@@ -123,7 +125,7 @@ namespace Baikal
 #pragma omp parallel for
         for (int i = 0; i < m_cfgs.size(); ++i)
         {
-            m_outputs[i].output = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);
+            m_outputs[i].output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
 
 #ifdef ENABLE_DENOISER
             m_outputs[i].output_denoised = m_cfgs[i].factory->CreateOutput(settings.width, settings.height);
@@ -149,11 +151,14 @@ namespace Baikal
 
             if (m_cfgs[i].type == ConfigManager::kPrimary)
             {
-                m_outputs[i].copybuffer = m_cfgs[i].context.CreateBuffer<RadeonRays::float3>(settings.width * settings.height, CL_MEM_READ_WRITE);
+                m_outputs[i].copybuffer = m_cfgs[i].context.CreateBuffer<RadeonRays::float3>(m_width * m_height, CL_MEM_READ_WRITE);
             }
         }
 
+        m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_outputs[m_primary].output);
+        m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
+        m_shape_id_buffer.reset(new RadeonRays::float3[m_width * m_height]);
     }
 
 
@@ -377,6 +382,18 @@ namespace Baikal
 #endif
         auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
         m_cfgs[m_primary].renderer->Render(scene);
+
+        if (m_shape_id_requested)
+        {
+            // copy shape id map from OpenCl
+            m_shape_id_data.output->GetData(m_shape_id_buffer.get());
+            // get concrete shape id value
+            auto shape_id = ((RadeonRays::float4*)m_shape_id_buffer.get() + (int)(m_width * m_shape_id_pos.y + m_shape_id_pos.x))->x;
+            m_promise.set_value(shape_id);
+            // clear output to stop tracking shape id map in openCl
+            m_cfgs[m_primary].renderer->SetOutput(Renderer::OutputType::kShapeIdMap, nullptr);
+            m_shape_id_requested = false;
+        }
 
 #ifdef ENABLE_DENOISER
         Baikal::PostEffect::InputSet input_set;
@@ -602,6 +619,41 @@ namespace Baikal
             m_cfgs[i].renderer->SetOutput(type, m_outputs[i].output.get());
         }
         m_output_type = type;
+    }
+
+
+    std::future<int> AppClRender::GetShapeId(std::uint32_t x, std::uint32_t y)
+    {
+        m_promise = std::promise<int>();
+        if (x >= m_width || y >= m_height)
+            throw std::logic_error(
+                "AppClRender::GetShapeId(...): x or y cords beyond the size of image");
+
+        if (m_cfgs.empty())
+            throw std::runtime_error("AppClRender::GetShapeId(...): config vector is empty");
+
+        // enable aov shape id output from OpenCl
+        m_cfgs[m_primary].renderer->SetOutput(
+            Renderer::OutputType::kShapeIdMap, m_shape_id_data.output.get());
+        m_shape_id_pos = RadeonRays::float2((float)x, (float)y);
+        // request shape id from render
+        m_shape_id_requested = true;
+        return m_promise.get_future();
+    }
+
+    Baikal::Shape::Ptr AppClRender::GetShapeById(int shape_id)
+    {
+        if (shape_id < 0)
+            return nullptr;
+
+        // find shape in scene by its id
+        for (auto iter = m_scene->CreateShapeIterator(); iter->IsValid(); iter->Next())
+        {
+            auto shape = iter->ItemAs<Shape>();
+            if (shape->GetId() == shape_id)
+                return shape;
+        }
+        return nullptr;
     }
 
 #ifdef ENABLE_DENOISER  
