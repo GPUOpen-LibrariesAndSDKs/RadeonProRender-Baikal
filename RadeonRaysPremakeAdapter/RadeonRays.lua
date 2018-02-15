@@ -24,11 +24,11 @@ project "RadeonRays"
     excludes {"../RadeonRays/RadeonRays/src/device/embree*"}
 
     if os.is("macosx") then
-        buildoptions "-std=c++11 -stdlib=libc++"
+        buildoptions "-std=c++14 -stdlib=libc++"
         filter { "kind:SharedLib", "system:macosx" }
         linkoptions { '-Wl,-install_name', '-Wl,@loader_path/%{cfg.linktarget.name}' }
     elseif os.is("linux") then
-        buildoptions "-std=c++11 -fPIC"
+        buildoptions "-std=c++14 -msse4.2 -fPIC"
         linkoptions {"-Wl,--no-undefined"}
 
         --get API version from header.
