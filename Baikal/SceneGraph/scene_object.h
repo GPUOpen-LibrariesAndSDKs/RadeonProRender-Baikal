@@ -30,6 +30,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace Baikal
 {
@@ -63,24 +64,15 @@ namespace Baikal
     private:
         mutable bool m_dirty;
 
-        static std::uint32_t NextId()
-        {
-            static std::uint32_t id = 0;
-            return (id++);
-        }
-
         std::string m_name;
         std::uint32_t m_id;
+        static std::uint32_t m_next_id;
+        
     };
 
     inline SceneObject::SceneObject()
-    : m_dirty(false), m_id(NextId())
+    : m_dirty(false), m_id(m_next_id++)
     {
-        if (m_id == 8)
-        {
-            int x = 1;
-            x++;
-        }
     }
     
     inline SceneObject::~SceneObject()

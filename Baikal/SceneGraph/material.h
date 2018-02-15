@@ -131,7 +131,8 @@ namespace Baikal
         void SetThin(bool thin);
 
         size_t GetInputNum() const;
-        Input GitInputByIndex(std::uint32_t idx);
+        Input GetInputByIndex(std::uint32_t idx) const;
+        void ChangeInputByIndex(const Input& input, std::uint32_t idx);
 
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
@@ -148,9 +149,9 @@ namespace Baikal
         // Wipe out all the inputs
         void ClearInputs();
 
-    private:
-        class InputIterator;
+        virtual int GetIntType() const;
 
+    private:
         // Input map
         InputMap m_inputs;
         // Thin material
@@ -196,6 +197,7 @@ namespace Baikal
     protected:
         SingleBxdf(BxdfType type);
 
+        int GetIntType() const override;
     private:
         BxdfType m_type;
     };
@@ -221,7 +223,8 @@ namespace Baikal
 
     protected:
         MultiBxdf(Type type);
-        
+
+        int GetIntType() const override;
     private:
         Type m_type;
     };
@@ -267,6 +270,7 @@ namespace Baikal
 
         std::vector<std::string> GetTypeInfo() const;
         void SetType(std::uint32_t type);
+        int GetType() const;
 
         ~MaterialAccessor() = default;
 

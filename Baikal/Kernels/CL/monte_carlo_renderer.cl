@@ -921,7 +921,7 @@ KERNEL void FillAOVs(
                 //    printf("isect.shapeid = %d\n", isect.shapeid);
                 //}
 
-                aov_shape_id_map[idx].x = shapes[isect.shapeid].id;
+                aov_shape_id_map[idx].x = shapes[isect.shapeid - 1].id;
             }
         }
     }

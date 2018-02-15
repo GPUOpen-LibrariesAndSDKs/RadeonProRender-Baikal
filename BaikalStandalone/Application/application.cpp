@@ -81,7 +81,6 @@ namespace Baikal
     static bool     g_is_end_pressed = false;
     static bool     g_is_mouse_tracking = false;
     static bool     g_is_double_click = false;
-    static bool     g_is_material_bar_visible = false;
     static bool     g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
@@ -131,7 +130,6 @@ namespace Baikal
                     g_mouse_pos = float2((float)x, (float)y);
                     g_mouse_delta = float2(0, 0);
                     g_is_double_click = true;
-                    g_is_material_bar_visible = true;
                 }
                 start = std::chrono::high_resolution_clock::now();
             }
@@ -515,7 +513,6 @@ namespace Baikal
             ;
 
         static int output = 0;
-        static int material_output = 0;
         bool update = false;
         if (m_settings.gui_visible)
         {
@@ -684,51 +681,102 @@ namespace Baikal
 #endif
             ImGui::End();
 
-            if (g_is_material_bar_visible)
+            // Get shape/material info from renderer
+            if (m_future.valid())
+            {
+                auto shape = m_cl->GetShapeById(m_future.get());
+                m_material = (shape) ? (shape->GetMaterial()) : (nullptr);
+            }
+
+            // Process double click event if it occured
+            if (g_is_double_click)
+            {
+                m_future = m_cl->GetShapeId((std::uint32_t)g_mouse_pos.x, (std::uint32_t)g_mouse_pos.y);
+            }
+
+            // draw material props
+            if (m_material)
             {
                 ImGui::Begin("Material info");
 
                 if (g_is_double_click)
                 {
                     ImGui::SetWindowPos(ImVec2(g_mouse_pos.x, g_mouse_pos.y));
-                    m_future = m_cl->GetShapeId(g_mouse_pos.x, g_mouse_pos.y);
                     g_is_double_click = false;
                 }
-                else if (m_future.valid())
+
+                bool is_scene_changed = false;
+                MaterialAccessor material_accessor(m_material);
+
+                // process material inputs
+                for (int i = 0; i < m_material->GetInputNum(); i++)
                 {
-                    auto shape = m_cl->GetShapeById(m_future.get());
-                    if (shape)
+                    auto input = m_material->GetInputByIndex(i);
+
+                    const char* name = input.info.name.c_str();
+                    switch (input.value.type)
                     {
-                        m_material = shape->GetMaterial();
+                    case Material::InputType::kFloat4:
+                    {
+                        float color[3] = { 0 };
+                        color[0] = input.value.float_value.x;
+                        color[1] = input.value.float_value.y;
+                        color[2] = input.value.float_value.z;
+                        ImGui::ColorEdit3(name, color);
+
+                        if ((input.value.float_value.x != color[0]) ||
+                            (input.value.float_value.y != color[1]) ||
+                            (input.value.float_value.z != color[2]))
+                        {
+                            input.value.float_value.x = color[0];
+                            input.value.float_value.y = color[1];
+                            input.value.float_value.z = color[2];
+                            m_material->ChangeInputByIndex(input, i);
+                            is_scene_changed = true;
+                        }
+                        break;
                     }
-                    else
+                    case Material::InputType::kUint:
                     {
-                        m_material = nullptr;
+                        std::uint32_t input_value = input.value.uint_value;
+                        ImGui::InputInt(name, (int*)(&input_value));
+                        if (input.value.uint_value != input_value)
+                        {
+                            input.value.uint_value = input_value;
+                            m_material->ChangeInputByIndex(input, i);
+                            is_scene_changed = true;
+                        }
+                        break;
+                    }
+                    case Material::InputType::kTexture:
+                        // do nothing
+                    default: break;
                     }
                 }
 
-                // draw material props
-                if (m_material)
+                // Get material type settings
+                std::string material_info;
+                for (const auto iter : material_accessor.GetTypeInfo())
                 {
-                    MaterialAccessor material_accessor(m_material);
-
-                    std::string material_info;
-                    for (const auto iter : material_accessor.GetTypeInfo())
-                    {
-                        material_info += iter;
-                        material_info.push_back('\0');
-                    }
-                    auto current_output = material_output;
-                    ImGui::Combo("Material type", &material_output, material_info.c_str());
-                    if (current_output != material_output)
-                    {
-                        material_accessor.SetType(material_output);
-                        m_cl->UpdateScene();
-                    }
+                    material_info += iter;
+                    material_info.push_back('\0');
                 }
+
+                int material_type_output = material_accessor.GetType();
+                ImGui::Combo("Material type", &material_type_output, material_info.c_str());
+
+                if (material_accessor.GetType() != material_type_output)
+                {
+                    material_accessor.SetType(material_type_output);
+                    is_scene_changed = true;
+                }
+
+                if (is_scene_changed)
+                    m_cl->UpdateScene();
 
                 ImGui::End();
             }
+
 
             ImGui::Render();
         }

@@ -44,7 +44,9 @@ namespace Baikal
         m_inputs.clear();
     }
 
-    
+    int Material::GetIntType() const
+    { return -1; }
+
     // Iterator of dependent materials (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
@@ -167,18 +169,33 @@ namespace Baikal
         return m_inputs.size();
     }
 
-    Material::Input Material::GitInputByIndex(std::uint32_t idx)
+    Material::Input Material::GetInputByIndex(std::uint32_t idx) const
     {
         if (idx >= GetInputNum())
             throw std::logic_error(
                 "Material::GitInputByIndex(...): idx can not be bigger than number of inputs");
 
         auto iter = m_inputs.begin();
-        for (std::uint32_t i = 0; i < idx; idx++)
+        for (std::uint32_t i = 0; i < idx; i++)
             ++iter;
 
         return iter->second;
     }
+
+    void Material::ChangeInputByIndex(const Input& input, std::uint32_t idx)
+    {
+        if (idx >= GetInputNum())
+            throw std::logic_error(
+                "Material::ChangeInputByIndex(...): idx can not be bigger than number of inputs");
+
+        auto iter = m_inputs.begin();
+        for (std::uint32_t i = 0; i < idx; i++)
+            ++iter;
+
+        iter->second = input;
+        SetDirty(true);
+    }
+
 
     SingleBxdf::SingleBxdf(BxdfType type)
     : m_type(type)
@@ -210,7 +227,13 @@ namespace Baikal
     {
         return m_type == BxdfType::kEmissive;
     }
-    
+
+    int SingleBxdf::GetIntType() const
+    {
+        return static_cast<int>(m_type);
+    }
+
+
     MultiBxdf::MultiBxdf(Type type)
     : m_type(type)
     {
@@ -242,6 +265,11 @@ namespace Baikal
             return true;
 
         return false;
+    }
+
+    int MultiBxdf::GetIntType() const
+    {
+        return static_cast<int>(m_type);
     }
 
     DisneyBxdf::DisneyBxdf()
@@ -343,6 +371,11 @@ namespace Baikal
         {
             multi_bxfd_material->SetType(static_cast<MultiBxdf::Type>(type));
         }
+    }
+
+    int MaterialAccessor::GetType() const
+    {
+        return m_material->GetIntType();
     }
 
     namespace {
