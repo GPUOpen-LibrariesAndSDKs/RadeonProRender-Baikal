@@ -791,16 +791,28 @@ namespace Baikal
                 {
                     const size_t buffer_size = 2048;
                     char text_buffer[buffer_size] = { 0 };
-                    auto name = input.info.name.c_str();
+                    auto name = input.info.name;
 
-                    if (ImGui::InputText(name, text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
+                    if (ImGui::InputText(name.c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
-                        auto texture = m_image_io->LoadImage(text_buffer);
-                        if (texture)
+                        Texture::Ptr texture = nullptr;
+                        if (!strlen(text_buffer))
                         {
-                            m_material->SetInputValue(input.info.name, texture);
-                            is_scene_changed = true;
+                            m_material->SetInputValue(name, texture);
                         }
+                        else
+                        {
+                            try
+                            {
+                                texture = m_image_io->LoadImage(text_buffer);
+                                m_material->SetInputValue(input.info.name, texture);
+                            }
+                            catch (std::exception)
+                            {
+                                printf("WARNING: Can not load texture by specified path\n");
+                            }
+                        }
+                        is_scene_changed = true;
                     }
                     
                 }
