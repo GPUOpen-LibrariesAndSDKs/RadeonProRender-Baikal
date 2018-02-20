@@ -182,21 +182,6 @@ namespace Baikal
         return iter->second;
     }
 
-    void Material::ChangeInputByIndex(const Input& input, std::uint32_t idx)
-    {
-        if (idx >= GetInputNum())
-            throw std::logic_error(
-                "Material::ChangeInputByIndex(...): idx can not be bigger than number of inputs");
-
-        auto iter = m_inputs.begin();
-        for (std::uint32_t i = 0; i < idx; i++)
-            ++iter;
-
-        iter->second = input;
-        SetDirty(true);
-    }
-
-
     SingleBxdf::SingleBxdf(BxdfType type)
     : m_type(type)
     {

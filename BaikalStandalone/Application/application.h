@@ -25,6 +25,7 @@
 #include "Application/app_utils.h"
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
+#include "SceneGraph/IO/image_io.h"
 
 #include <future>
 #include <memory>
@@ -67,5 +68,6 @@ namespace Baikal
         int m_shape_id_val;
         std::future<int> m_future;
         Material::Ptr m_material = nullptr;
+        std::unique_ptr<ImageIo> m_image_io;
     };
 }

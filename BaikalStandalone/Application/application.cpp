@@ -140,8 +140,22 @@ namespace Baikal
 
     void Application::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
+        ImGuiIO& io = ImGui::GetIO();
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        auto map = io.KeyMap;
         const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
+
+        if (action == GLFW_PRESS)
+            io.KeysDown[key] = true;
+        if (action == GLFW_RELEASE)
+            io.KeysDown[key] = false;
+
+        (void)mods; // Modifiers are not reliable across systems
+        io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+        io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+        io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+        io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+
         switch (key)
         {
         case GLFW_KEY_UP:
@@ -356,6 +370,7 @@ namespace Baikal
         : m_window(nullptr)
         , m_num_triangles(0)
         , m_num_instances(0)
+        , m_image_io(ImageIo::CreateImageIo())
     {
         // Command line parsing
         AppCliParser cli;
@@ -494,6 +509,7 @@ namespace Baikal
 
     bool Application::UpdateGui()
     {
+        static bool load_texture = false;
         static float aperture = 0.0f;
         static float focal_length = 35.f;
         static float focus_distance = 1.f;
@@ -709,49 +725,84 @@ namespace Baikal
                 MaterialAccessor material_accessor(m_material);
 
                 // process material inputs
+                std::vector<Material::Input> float_inputs;
+                std::vector<Material::Input> uint_inputs;
+                std::vector<Material::Input> texture_inputs;
+
                 for (int i = 0; i < m_material->GetInputNum(); i++)
                 {
                     auto input = m_material->GetInputByIndex(i);
-
-                    const char* name = input.info.name.c_str();
                     switch (input.value.type)
                     {
                     case Material::InputType::kFloat4:
-                    {
-                        float color[3] = { 0 };
-                        color[0] = input.value.float_value.x;
-                        color[1] = input.value.float_value.y;
-                        color[2] = input.value.float_value.z;
-                        ImGui::ColorEdit3(name, color);
-
-                        if ((input.value.float_value.x != color[0]) ||
-                            (input.value.float_value.y != color[1]) ||
-                            (input.value.float_value.z != color[2]))
-                        {
-                            input.value.float_value.x = color[0];
-                            input.value.float_value.y = color[1];
-                            input.value.float_value.z = color[2];
-                            m_material->ChangeInputByIndex(input, i);
-                            is_scene_changed = true;
-                        }
+                        float_inputs.push_back(input);
                         break;
-                    }
                     case Material::InputType::kUint:
-                    {
-                        std::uint32_t input_value = input.value.uint_value;
-                        ImGui::InputInt(name, (int*)(&input_value));
-                        if (input.value.uint_value != input_value)
-                        {
-                            input.value.uint_value = input_value;
-                            m_material->ChangeInputByIndex(input, i);
-                            is_scene_changed = true;
-                        }
+                        uint_inputs.push_back(input);
+                        break;
+                    case Material::InputType::kTexture:
+                        texture_inputs.push_back(input);
+                        break;
+                    default:
                         break;
                     }
-                    case Material::InputType::kTexture:
-                        // do nothing
-                    default: break;
+                }
+
+                // draw uint inputs
+                for (const auto& input : uint_inputs)
+                {
+                    auto name = input.info.name.c_str();
+                    std::uint32_t input_value = input.value.uint_value;
+                    ImGui::InputInt(name, (int*)(&input_value));
+                    if (input.value.uint_value != input_value)
+                    {
+                        m_material->SetInputValue(input.info.name, input_value);
+                        is_scene_changed = true;
                     }
+                }
+
+                // draw float4 inputs
+                for (const auto& input : float_inputs)
+                {
+                    auto name = input.info.name.c_str();
+
+                    float color[3] = { 0 };
+                    color[0] = input.value.float_value.x;
+                    color[1] = input.value.float_value.y;
+                    color[2] = input.value.float_value.z;
+                    ImGui::ColorEdit3(name, color);
+
+                    if ((input.value.float_value.x != color[0]) ||
+                        (input.value.float_value.y != color[1]) ||
+                        (input.value.float_value.z != color[2]))
+                    {
+                        RadeonRays::float4 value(
+                            color[0],
+                            color[1],
+                            color[2],
+                            0);
+                        m_material->SetInputValue(input.info.name, value);
+                        is_scene_changed = true;
+                    }
+                }
+
+                // draw texture inputs
+                for (const auto& input : texture_inputs)
+                {
+                    const size_t buffer_size = 2048;
+                    char text_buffer[buffer_size] = { 0 };
+                    auto name = input.info.name.c_str();
+
+                    if (ImGui::InputText(name, text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
+                    {
+                        auto texture = m_image_io->LoadImage(text_buffer);
+                        if (texture)
+                        {
+                            m_material->SetInputValue(input.info.name, texture);
+                            is_scene_changed = true;
+                        }
+                    }
+                    
                 }
 
                 // Get material type settings

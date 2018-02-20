@@ -132,7 +132,6 @@ namespace Baikal
 
         size_t GetInputNum() const;
         Input GetInputByIndex(std::uint32_t idx) const;
-        void ChangeInputByIndex(const Input& input, std::uint32_t idx);
 
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
