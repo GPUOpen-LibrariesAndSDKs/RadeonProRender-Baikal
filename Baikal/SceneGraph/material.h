@@ -130,8 +130,8 @@ namespace Baikal
         // Set thin flag
         void SetThin(bool thin);
 
-        size_t GetInputNum() const;
-        Input GetInputByIndex(std::uint32_t idx) const;
+        size_t GetNumInputs() const;
+        Input GetInput(std::uint32_t idx) const;
 
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
@@ -147,8 +147,6 @@ namespace Baikal
         
         // Wipe out all the inputs
         void ClearInputs();
-
-        virtual int GetIntType() const;
 
     private:
         // Input map
@@ -196,7 +194,6 @@ namespace Baikal
     protected:
         SingleBxdf(BxdfType type);
 
-        int GetIntType() const override;
     private:
         BxdfType m_type;
     };
@@ -223,7 +220,6 @@ namespace Baikal
     protected:
         MultiBxdf(Type type);
 
-        int GetIntType() const override;
     private:
         Type m_type;
     };

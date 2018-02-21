@@ -698,16 +698,16 @@ namespace Baikal
             ImGui::End();
 
             // Get shape/material info from renderer
-            if (m_future.valid())
+            if (m_shape_id_future.valid())
             {
-                auto shape = m_cl->GetShapeById(m_future.get());
+                auto shape = m_cl->GetShapeById(m_shape_id_future.get());
                 m_material = (shape) ? (shape->GetMaterial()) : (nullptr);
             }
 
             // Process double click event if it occured
             if (g_is_double_click)
             {
-                m_future = m_cl->GetShapeId((std::uint32_t)g_mouse_pos.x, (std::uint32_t)g_mouse_pos.y);
+                m_shape_id_future = m_cl->GetShapeId((std::uint32_t)g_mouse_pos.x, (std::uint32_t)g_mouse_pos.y);
             }
 
             // draw material props
@@ -729,9 +729,9 @@ namespace Baikal
                 std::vector<Material::Input> uint_inputs;
                 std::vector<Material::Input> texture_inputs;
 
-                for (int i = 0; i < m_material->GetInputNum(); i++)
+                for (int i = 0; i < m_material->GetNumInputs(); i++)
                 {
-                    auto input = m_material->GetInputByIndex(i);
+                    auto input = m_material->GetInput(i);
                     switch (input.value.type)
                     {
                     case Material::InputType::kFloat4:
@@ -747,7 +747,6 @@ namespace Baikal
                         break;
                     }
                 }
-
                 // draw uint inputs
                 for (const auto& input : uint_inputs)
                 {
@@ -796,7 +795,7 @@ namespace Baikal
                     if (ImGui::InputText(name.c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         Texture::Ptr texture = nullptr;
-                        if (!strlen(text_buffer))
+                        if (strlen(text_buffer) != 0)
                         {
                             m_material->SetInputValue(name, texture);
                         }
@@ -807,7 +806,7 @@ namespace Baikal
                                 texture = m_image_io->LoadImage(text_buffer);
                                 m_material->SetInputValue(input.info.name, texture);
                             }
-                            catch (std::exception)
+                            catch (std::exception&)
                             {
                                 printf("WARNING: Can not load texture by specified path\n");
                             }
@@ -819,7 +818,7 @@ namespace Baikal
 
                 // Get material type settings
                 std::string material_info;
-                for (const auto iter : material_accessor.GetTypeInfo())
+                for (const auto& iter : material_accessor.GetTypeInfo())
                 {
                     material_info += iter;
                     material_info.push_back('\0');
@@ -835,7 +834,9 @@ namespace Baikal
                 }
 
                 if (is_scene_changed)
+                {
                     m_cl->UpdateScene();
+                }
 
                 ImGui::End();
             }

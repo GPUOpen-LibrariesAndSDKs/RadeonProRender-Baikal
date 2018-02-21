@@ -115,7 +115,6 @@ namespace Baikal
         std::promise<int> m_promise;
         bool m_shape_id_requested = false;
         OutputData m_shape_id_data;
-        std::unique_ptr<RadeonRays::float4[]> m_shape_id_buffer;
         RadeonRays::float2 m_shape_id_pos;
         std::vector<ConfigManager::Config> m_cfgs;
         std::vector<OutputData> m_outputs;

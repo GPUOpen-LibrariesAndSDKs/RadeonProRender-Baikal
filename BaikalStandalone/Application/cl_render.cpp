@@ -158,7 +158,6 @@ namespace Baikal
         m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_outputs[m_primary].output);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
-        m_shape_id_buffer.reset(new RadeonRays::float4[m_width * m_height]);
     }
 
 
@@ -385,13 +384,14 @@ namespace Baikal
 
         if (m_shape_id_requested)
         {
-            // copy shape id map from OpenCl
-            m_shape_id_data.output->GetData(m_shape_id_buffer.get());
-            // get concrete shape id value
-            auto shape_id = ((RadeonRays::float4*)m_shape_id_buffer.get() + (int)(m_width * (m_height - m_shape_id_pos.y) + m_shape_id_pos.x))->x;
-            m_promise.set_value(shape_id);
+            // offset in OpenCl memory till necessary item
+            auto offset = (std::uint32_t)(m_width * (m_height - m_shape_id_pos.y) + m_shape_id_pos.x);
+            // copy shape id elem from OpenCl
+            float4 shape_id;
+            m_shape_id_data.output->GetData((float3*)&shape_id, offset, 1);
+            m_promise.set_value(shape_id.x);
             // clear output to stop tracking shape id map in openCl
-            m_cfgs[m_primary].renderer->SetOutput(Renderer::OutputType::kShapeIdMap, nullptr);
+            m_cfgs[m_primary].renderer->SetOutput(Renderer::OutputType::kShapeId, nullptr);
             m_shape_id_requested = false;
         }
 
@@ -634,7 +634,7 @@ namespace Baikal
 
         // enable aov shape id output from OpenCl
         m_cfgs[m_primary].renderer->SetOutput(
-            Renderer::OutputType::kShapeIdMap, m_shape_id_data.output.get());
+            Renderer::OutputType::kShapeId, m_shape_id_data.output.get());
         m_shape_id_pos = RadeonRays::float2((float)x, (float)y);
         // request shape id from render
         m_shape_id_requested = true;

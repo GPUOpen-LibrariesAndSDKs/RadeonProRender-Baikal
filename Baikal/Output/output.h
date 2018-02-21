@@ -64,6 +64,7 @@ namespace Baikal
          Represents discrete 2D surface with [0..w]x[0..h] coordinate ranges.
          */
         virtual void GetData(RadeonRays::float3* data) const = 0;
+        virtual void GetData(RadeonRays::float3* data, /* offset in elems */ size_t offset, /* read elems */size_t elems_count) const = 0;
 
         // Get surface width
         std::uint32_t width() const;

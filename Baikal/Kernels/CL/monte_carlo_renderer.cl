@@ -692,10 +692,10 @@ KERNEL void FillAOVs(
     // Depth map
     GLOBAL float4* restrict aov_depth,
     // Shape id map enabled flag
-    int shape_id_map_enabled,
+    int shape_ids_enabled,
     // Shape id map stores shape ud in every pixel
     // And negative number if there is no any shape in the pixel
-    GLOBAL float4* restrict aov_shape_id_map,
+    GLOBAL float4* restrict aov_shape_ids,
     // NOTE: following are fake parameters, handled outside
     int visibility_enabled,
     GLOBAL float4* restrict aov_visibility
@@ -722,8 +722,8 @@ KERNEL void FillAOVs(
         Intersection isect = isects[global_id];
         int idx = pixel_idx[global_id];
 
-        if (shape_id_map_enabled)
-            aov_shape_id_map[idx].x = -1;
+        if (shape_ids_enabled)
+            aov_shape_ids[idx].x = -1;
 
         if (isect.shapeid > -1)
         {
@@ -914,14 +914,9 @@ KERNEL void FillAOVs(
                 }
             }
 
-            if (shape_id_map_enabled)
+            if (shape_ids_enabled)
             {
-                //if (abs((int)shapes[isect.shapeid].id) > 10000)
-                //{
-                //    printf("isect.shapeid = %d\n", isect.shapeid);
-                //}
-
-                aov_shape_id_map[idx].x = shapes[isect.shapeid - 1].id;
+                aov_shape_ids[idx].x = shapes[isect.shapeid - 1].id;
             }
         }
     }

@@ -44,8 +44,6 @@ namespace Baikal
         m_inputs.clear();
     }
 
-    int Material::GetIntType() const
-    { return -1; }
 
     // Iterator of dependent materials (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
@@ -164,14 +162,14 @@ namespace Baikal
         SetDirty(true);
     }
 
-    size_t Material::GetInputNum() const
+    size_t Material::GetNumInputs() const
     {
         return m_inputs.size();
     }
 
-    Material::Input Material::GetInputByIndex(std::uint32_t idx) const
+    Material::Input Material::GetInput(std::uint32_t idx) const
     {
-        if (idx >= GetInputNum())
+        if (idx >= GetNumInputs())
             throw std::logic_error(
                 "Material::GitInputByIndex(...): idx can not be bigger than number of inputs");
 
@@ -213,11 +211,6 @@ namespace Baikal
         return m_type == BxdfType::kEmissive;
     }
 
-    int SingleBxdf::GetIntType() const
-    {
-        return static_cast<int>(m_type);
-    }
-
 
     MultiBxdf::MultiBxdf(Type type)
     : m_type(type)
@@ -250,11 +243,6 @@ namespace Baikal
             return true;
 
         return false;
-    }
-
-    int MultiBxdf::GetIntType() const
-    {
-        return static_cast<int>(m_type);
     }
 
     DisneyBxdf::DisneyBxdf()
@@ -358,9 +346,29 @@ namespace Baikal
         }
     }
 
+    template<typename TEnum>
+    int EnumClassToInt(TEnum value)
+    {
+        return static_cast<int>(value);
+    }
+
     int MaterialAccessor::GetType() const
     {
-        return m_material->GetIntType();
+        // set type for SingleBxdf case
+        auto single_bxfd_material = std::dynamic_pointer_cast<SingleBxdf>(m_material);
+        if (single_bxfd_material)
+        {
+            return EnumClassToInt(single_bxfd_material->GetBxdfType());
+        }
+
+        // set type for SingleBxdf case
+        auto multi_bxfd_material = std::dynamic_pointer_cast<MultiBxdf>(m_material);
+        if (multi_bxfd_material)
+        {
+            return EnumClassToInt(multi_bxfd_material->GetType());
+        }
+
+        return -1;
     }
 
     namespace {
