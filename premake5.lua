@@ -33,6 +33,10 @@ newoption {
     description = "Embed CL kernels into binary module"
 }
 
+newoption {
+    trigger     = "uberv2",
+    description = "Enable UberV2 support"
+}
 
 solution "Baikal"
 platforms {"x64"}
@@ -77,12 +81,19 @@ configuration {"x64", "Release"}
 
 configuration {} -- back to all configurations
 
+if _OPTIONS["uberv2"] then
+	defines { "ENABLE_UBERV2" }
+end
+
 if _OPTIONS["rpr"] then
     if fileExists("./Rpr/Rpr.lua") then
         dofile("./Rpr/Rpr.lua")
     end
     if fileExists("./RprTest/RprTest.lua") then
         dofile("./RprTest/RprTest.lua")
+    end
+    if fileExists("./RprSupport/RprSupport.lua") then
+        dofile("./RprSupport/RprSupport.lua")
     end
 end
 

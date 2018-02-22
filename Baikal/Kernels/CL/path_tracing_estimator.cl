@@ -188,8 +188,8 @@ KERNEL void ShadeVolume(
         // since EvaluateVolume has put it there
         dg.p = o + wi * Intersection_GetDistance(isects + hit_idx);
         // Get light sample intencity
-        int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
-        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &wo, &pdf);
+        int bxdf_flags = Path_GetBxdfFlags(path);
+        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &wo, &pdf);
 
         // Generate shadow ray
         float shadow_ray_length = length(wo);
@@ -361,7 +361,13 @@ KERNEL void ShadeSurface(
         bool backfacing = ngdotwi < 0.f;
 
         // Select BxDF 
+#ifdef ENABLE_UBERV2
+        if (diffgeo.mat.type == kUberV2) GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo);
+        else Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+#else
         Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+#endif
+                    
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);
 
@@ -444,14 +450,15 @@ KERNEL void ShadeSurface(
         float3 throughput = Path_GetThroughput(path);
 
         // Sample bxdf
-        float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &bxdfwo, &bxdf_pdf);
+        const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+        float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf);
 
         // If we have light to sample we can hopefully do mis 
         if (light_idx > -1) 
         {
             // Sample light
-            int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
-            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), surface_interaction_flags, &lightwo, &light_pdf);
+            int bxdf_flags = Path_GetBxdfFlags(path);
+            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &lightwo, &light_pdf);
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
 
@@ -783,16 +790,16 @@ KERNEL void ShadeMiss(
             Light light = lights[env_light_idx];
 
             // Apply MIS
-            int surface_interaction_flags = Path_GetSurfaceInteractionFlags(path);
+            int bxdf_flags = Path_GetBxdfFlags(path);
             float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
-            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, surface_interaction_flags, rays[global_id].d.xyz, TEXTURE_ARGS);
+            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, bxdf_flags, rays[global_id].d.xyz, TEXTURE_ARGS);
             float2 extra = Ray_GetExtra(&rays[global_id]);
             float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
 
             float3 t = Path_GetThroughput(path);
             float4 v = 0.f;
 
-            int tex = EnvironmentLight_GetTexture(&light, surface_interaction_flags); 
+            int tex = EnvironmentLight_GetTexture(&light, bxdf_flags);
             if (tex != -1)
             {
                 v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
@@ -810,13 +817,13 @@ KERNEL void AdvanceIterationCount(
     // Output indices
     GLOBAL int const*  restrict output_indices,
     // Number of rays
-    GLOBAL int* restrict num_rays,
+    int num_rays,
     // Output values
     GLOBAL float4* restrict output
 )
 {
     int global_id = get_global_id(0);
-    if (global_id < num_rays) 
+    if (global_id < num_rays)
     {
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];

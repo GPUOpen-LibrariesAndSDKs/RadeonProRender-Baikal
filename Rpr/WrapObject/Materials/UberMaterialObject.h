@@ -19,29 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include "gtest/gtest.h"
+#pragma once
 
-#include "CLW.h"
+#include "MaterialObject.h"
 
-#include "internal.h"
-#include "basic.h"
-#include "camera.h"
-#include "light.h"
-#include "material.h"
-#include "aov.h"
-#include "test_scenes.h"
-
-#ifdef ENABLE_UBERV2
-#include "uberv2.h"
-#endif
-
-int g_argc;
-char** g_argv;
-
-int main(int argc, char** argv)
+class UberMaterialObject : public MaterialObject
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    g_argc = argc;
-    g_argv = argv;
-    return RUN_ALL_TESTS();
-}
+public:
+    UberMaterialObject();
+
+    void SetInputF(const std::string& input_name, const RadeonRays::float4& val) override;
+    void SetInputU(const std::string& input_name, rpr_uint val) override;
+
+    Baikal::Material::Ptr GetMaterial() override;
+
+protected:
+    void SetInputMaterial(const std::string& input_name, MaterialObject* input) override;
+    void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
+
+private:
+    Baikal::Material::Ptr m_mat; //ubermaterial material
+
+};
+

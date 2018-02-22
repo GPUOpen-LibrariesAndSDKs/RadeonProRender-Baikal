@@ -258,6 +258,40 @@ namespace Baikal
         VolumeMaterial();
     };
 
+    class UberV2Material : public Material
+    {
+    public:
+        enum RefractionMode
+        {
+            kRefractionSeparate = 1U,
+            kRefractionLinked = 2U
+        };
+        enum EmissionMode
+        {
+            kEmissionSinglesided = 1U,
+            kEmissionDoublesided = 2U
+        };
+
+        enum Layers
+        {
+            kEmissionLayer = 0x1,
+            kTransparencyLayer = 0x2,
+            kCoatingLayer = 0x4,
+            kReflectionLayer = 0x8,
+            kDiffuseLayer = 0x10,
+            kRefractionLayer = 0x20,
+            kSSSLayer = 0x40
+        };
+
+        using Ptr = std::shared_ptr<UberV2Material>;
+        static Ptr Create();
+
+        // Check if material has emissive components
+        bool HasEmission() const override;
+
+    protected:
+        UberV2Material();
+    };
     class MaterialAccessor
     {
     public:
@@ -274,4 +308,5 @@ namespace Baikal
     private:
         Material::Ptr m_material;
     };
+
 }

@@ -78,6 +78,9 @@ namespace Baikal
             ""
 #endif
         );
+#ifdef ENABLE_UBERV2
+        opts.append("-D ENABLE_UBERV2");
+#endif
     }
 
     inline std::string ClwClass::GetFullBuildOpts() const {

@@ -6,8 +6,8 @@ project "RprTest"
             "Calc", 
             "RadeonProRender", 
             "ProRenderGLTF", 
-            "RprSupport64", 
-            "RprLoadStore64"}
+            "RprLoadStore64",
+            "RprSupport" }
     files { "../RprTest/**.h", "../RprTest/**.cpp", "../RprTest/**.cl", "../RprTest/**.fsh", "../RprTest/**.vsh" }
 
     includedirs{ "../Rpr",
@@ -32,8 +32,7 @@ project "RprTest"
                     "../3rdparty/embree/lib/%{cfg.platform}", 
                     "../3rdparty/oiio/lib/%{cfg.platform}",
                     "../3rdparty/ProRenderGLTF/lib/%{cfg.platform}",
-                    "../3rdparty/RprLoadStore/lib/%{cfg.platform}",
-                    "../3rdparty/RprSupport/lib/%{cfg.platform}" }
+                    "../3rdparty/RprLoadStore/lib/%{cfg.platform}"}
         configuration {"Debug"}
             links {"OpenImageIOD"}
         configuration {"Release"}
@@ -68,7 +67,6 @@ project "RprTest"
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIO.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\oiio\\bin\\%{cfg.platform}\\OpenImageIOD.dll" "%{cfg.buildtarget.directory}"',
           'copy "..\\3rdparty\\ProRenderGLTF\\bin\\%{cfg.platform}\\ProRenderGLTF.dll" "%{cfg.buildtarget.directory}"',
-          'copy "..\\3rdparty\\RprLoadStore\\bin\\%{cfg.platform}\\RprLoadStore64.dll" "%{cfg.buildtarget.directory}"',
-          'copy "..\\3rdparty\\RprSupport\\bin\\%{cfg.platform}\\RprSupport64.dll" "%{cfg.buildtarget.directory}"'
+          'copy "..\\3rdparty\\RprLoadStore\\bin\\%{cfg.platform}\\RprLoadStore64.dll" "%{cfg.buildtarget.directory}"'
         }
     end

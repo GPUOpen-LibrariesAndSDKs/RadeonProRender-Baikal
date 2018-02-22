@@ -19,29 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include "gtest/gtest.h"
+#pragma once
 
-#include "CLW.h"
-
-#include "internal.h"
 #include "basic.h"
-#include "camera.h"
-#include "light.h"
-#include "material.h"
-#include "aov.h"
-#include "test_scenes.h"
+#include "SceneGraph/light.h"
+#include "SceneGraph/shape.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/IO/image_io.h"
 
-#ifdef ENABLE_UBERV2
-#include "uberv2.h"
-#endif
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-int g_argc;
-char** g_argv;
+using namespace RadeonRays;
 
-int main(int argc, char** argv)
+class UberV2Test : public BasicTest
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    g_argc = argc;
-    g_argv = argv;
-    return RUN_ALL_TESTS();
+
+protected:
+
+    void LoadTestScene() override
+    {
+        auto io = Baikal::SceneIo::CreateSceneIoTest();
+        m_scene = io->LoadScene("uberv2_test_spheres", "");
+    }
+};
+
+TEST_F(UberV2Test, UberV2_Basic)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 0.f, 10.f),
+        RadeonRays::float3(0.f, 0.f, 9.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (auto i = 0u; i < kNumIterations; ++i)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
 }
