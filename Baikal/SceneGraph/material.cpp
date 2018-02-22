@@ -44,7 +44,7 @@ namespace Baikal
         m_inputs.clear();
     }
 
-    
+
     // Iterator of dependent materials (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
@@ -162,6 +162,24 @@ namespace Baikal
         SetDirty(true);
     }
 
+    size_t Material::GetNumInputs() const
+    {
+        return m_inputs.size();
+    }
+
+    Material::Input Material::GetInput(std::uint32_t idx) const
+    {
+        if (idx >= GetNumInputs())
+            throw std::logic_error(
+                "Material::GitInputByIndex(...): idx can not be bigger than number of inputs");
+
+        auto iter = m_inputs.begin();
+        for (std::uint32_t i = 0; i < idx; i++)
+            ++iter;
+
+        return iter->second;
+    }
+
     SingleBxdf::SingleBxdf(BxdfType type)
     : m_type(type)
     {
@@ -192,7 +210,8 @@ namespace Baikal
     {
         return m_type == BxdfType::kEmissive;
     }
-    
+
+
     MultiBxdf::MultiBxdf(Type type)
     : m_type(type)
     {
@@ -225,7 +244,7 @@ namespace Baikal
 
         return false;
     }
-    
+
     DisneyBxdf::DisneyBxdf()
     {
         RegisterInput("albedo", "Base color", {InputType::kFloat4, InputType::kTexture});
@@ -273,6 +292,83 @@ namespace Baikal
     bool VolumeMaterial::HasEmission() const
     {
         return (GetInputValue("emission").float_value.sqnorm() != 0);
+    }
+
+    MaterialAccessor::MaterialAccessor(Material::Ptr material) : m_material(material)
+    {   }
+
+    std::vector<std::string> MaterialAccessor::GetTypeInfo() const
+    {
+        // return types which are fitted to SingleBxdf
+        if (std::dynamic_pointer_cast<SingleBxdf>(m_material))
+            return std::vector<std::string>
+            {
+                "kZero",
+                "kLambert",
+                "kIdealReflect",
+                "kIdealRefract",
+                "kMicrofacetBeckmann",
+                "kMicrofacetGGX",
+                "kEmissive",
+                "kPassthrough",
+                "kTranslucent",
+                "kMicrofacetRefractionGGX",
+                "kMicrofacetRefractionBeckmann"
+            };
+
+        // return types which are fitted to MultiBxdf
+        if (std::dynamic_pointer_cast<MultiBxdf>(m_material))
+            return std::vector<std::string>
+            {
+                "kLayered",
+                "kFresnelBlend",
+                "kMix"
+            };
+
+        // return empty vector
+        return std::vector<std::string>();
+    }
+
+    void MaterialAccessor::SetType(std::uint32_t type)
+    {
+        // set type for SingleBxdf case
+        auto single_bxfd_material = std::dynamic_pointer_cast<SingleBxdf>(m_material);
+        if (single_bxfd_material)
+        {
+            single_bxfd_material->SetBxdfType(static_cast<SingleBxdf::BxdfType>(type));
+        }
+
+        // set type for SingleBxdf case
+        auto multi_bxfd_material = std::dynamic_pointer_cast<MultiBxdf>(m_material);
+        if (multi_bxfd_material)
+        {
+            multi_bxfd_material->SetType(static_cast<MultiBxdf::Type>(type));
+        }
+    }
+
+    template<typename TEnum>
+    int EnumClassToInt(TEnum value)
+    {
+        return static_cast<int>(value);
+    }
+
+    int MaterialAccessor::GetType() const
+    {
+        // set type for SingleBxdf case
+        auto single_bxfd_material = std::dynamic_pointer_cast<SingleBxdf>(m_material);
+        if (single_bxfd_material)
+        {
+            return EnumClassToInt(single_bxfd_material->GetBxdfType());
+        }
+
+        // set type for SingleBxdf case
+        auto multi_bxfd_material = std::dynamic_pointer_cast<MultiBxdf>(m_material);
+        if (multi_bxfd_material)
+        {
+            return EnumClassToInt(multi_bxfd_material->GetType());
+        }
+
+        return -1;
     }
 
     namespace {

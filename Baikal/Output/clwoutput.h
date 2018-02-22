@@ -20,6 +20,16 @@ namespace Baikal
             m_context.ReadBuffer(0, m_data, data, m_data.GetElementCount()).Wait();
         }
 
+        void GetData(RadeonRays::float3* data, /* offset in elems */ size_t offset, /* read elems */size_t elems_count) const
+        {
+            m_context.ReadBuffer(
+                0,
+                m_data,
+                data,
+                offset,
+                elems_count).Wait();
+        }
+
         void Clear(RadeonRays::float3 const& val)
         {
             m_context.FillBuffer(0, m_data, val, m_data.GetElementCount()).Wait();
