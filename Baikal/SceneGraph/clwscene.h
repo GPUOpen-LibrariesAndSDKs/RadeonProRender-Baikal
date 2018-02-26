@@ -28,7 +28,6 @@ namespace Baikal
         CLWBuffer<RadeonRays::float3> normals;
         CLWBuffer<RadeonRays::float2> uvs;
         CLWBuffer<int> indices;
-        CLWBuffer<int> shape_id_map;
 
         CLWBuffer<Shape> shapes;
 
