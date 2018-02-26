@@ -600,6 +600,11 @@ namespace Baikal
     void PathTracingEstimator::SetRandomSeed(std::uint32_t seed)
     {
         std::srand(seed);
+        
+        auto size = m_render_data->random.GetElementCount();
+        std::vector<std::uint32_t> random_buffer(size);
+        std::generate(random_buffer.begin(), random_buffer.end(), []() {return std::rand() + 3; });
+        GetContext().WriteBuffer(0, m_render_data->random, random_buffer.data(), size).Wait();
     }
 
     bool PathTracingEstimator::HasRandomBuffer(RandomBufferType buffer) const
