@@ -80,9 +80,12 @@ namespace Baikal
     static bool     g_is_climb_pressed = false;
     static bool     g_is_descent_pressed = false;
     static bool     g_is_mouse_tracking = false;
+    static bool     g_is_double_click = false;
     static bool     g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     void Application::OnMouseMove(GLFWwindow* window, double x, double y)
     {
@@ -112,12 +115,47 @@ namespace Baikal
                 g_mouse_delta = float2(0, 0);
             }
         }
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+            if (action == GLFW_PRESS)
+            {
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>
+                    (std::chrono::high_resolution_clock::now() - start);
+
+                if (duration.count() < 200)
+                {
+                    double x, y;
+                    glfwGetCursorPos(window, &x, &y);
+                    g_mouse_pos = float2((float)x, (float)y);
+                    g_mouse_delta = float2(0, 0);
+                    g_is_double_click = true;
+                }
+                start = std::chrono::high_resolution_clock::now();
+            }
+            else if (action == GLFW_RELEASE)
+                g_is_double_click = false;
+        }
     }
 
     void Application::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
+        ImGuiIO& io = ImGui::GetIO();
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        auto map = io.KeyMap;
         const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
+
+        if (action == GLFW_PRESS)
+            io.KeysDown[key] = true;
+        if (action == GLFW_RELEASE)
+            io.KeysDown[key] = false;
+
+        (void)mods; // Modifiers are not reliable across systems
+        io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+        io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+        io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+        io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+
         switch (key)
         {
         case GLFW_KEY_W:
@@ -332,6 +370,7 @@ namespace Baikal
         : m_window(nullptr)
         , m_num_triangles(0)
         , m_num_instances(0)
+        , m_image_io(ImageIo::CreateImageIo())
     {
         // Command line parsing
         AppCliParser cli;
@@ -470,6 +509,7 @@ namespace Baikal
 
     bool Application::UpdateGui()
     {
+        static bool load_texture = false;
         static float aperture = 0.0f;
         static float focal_length = 35.f;
         static float focus_distance = 1.f;
@@ -656,6 +696,152 @@ namespace Baikal
             }
 #endif
             ImGui::End();
+
+            // Get shape/material info from renderer
+            if (m_shape_id_future.valid())
+            {
+                auto shape = m_cl->GetShapeById(m_shape_id_future.get());
+                m_material = (shape) ? (shape->GetMaterial()) : (nullptr);
+            }
+
+            // Process double click event if it occured
+            if (g_is_double_click)
+            {
+                m_shape_id_future = m_cl->GetShapeId((std::uint32_t)g_mouse_pos.x, (std::uint32_t)g_mouse_pos.y);
+            }
+
+            // draw material props
+            if (m_material)
+            {
+                ImGui::Begin("Material info");
+
+                if (g_is_double_click)
+                {
+                    ImGui::SetWindowPos(ImVec2(g_mouse_pos.x, g_mouse_pos.y));
+                    g_is_double_click = false;
+                }
+
+                bool is_scene_changed = false;
+                MaterialAccessor material_accessor(m_material);
+
+                // process material inputs
+                std::vector<Material::Input> float_inputs;
+                std::vector<Material::Input> uint_inputs;
+                std::vector<Material::Input> texture_inputs;
+
+                for (int i = 0; i < m_material->GetNumInputs(); i++)
+                {
+                    auto input = m_material->GetInput(i);
+                    switch (input.value.type)
+                    {
+                    case Material::InputType::kFloat4:
+                        float_inputs.push_back(input);
+                        break;
+                    case Material::InputType::kUint:
+                        uint_inputs.push_back(input);
+                        break;
+                    case Material::InputType::kTexture:
+                        texture_inputs.push_back(input);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+                // draw uint inputs
+                for (const auto& input : uint_inputs)
+                {
+                    auto name = input.info.name.c_str();
+                    std::uint32_t input_value = input.value.uint_value;
+                    ImGui::InputInt(name, (int*)(&input_value));
+                    if (input.value.uint_value != input_value)
+                    {
+                        m_material->SetInputValue(input.info.name, input_value);
+                        is_scene_changed = true;
+                    }
+                }
+
+                // draw float4 inputs
+                for (const auto& input : float_inputs)
+                {
+                    auto name = input.info.name.c_str();
+
+                    float color[3] = { 0 };
+                    color[0] = input.value.float_value.x;
+                    color[1] = input.value.float_value.y;
+                    color[2] = input.value.float_value.z;
+                    ImGui::ColorEdit3(name, color);
+
+                    if ((input.value.float_value.x != color[0]) ||
+                        (input.value.float_value.y != color[1]) ||
+                        (input.value.float_value.z != color[2]))
+                    {
+                        RadeonRays::float4 value(
+                            color[0],
+                            color[1],
+                            color[2],
+                            0);
+                        m_material->SetInputValue(input.info.name, value);
+                        is_scene_changed = true;
+                    }
+                }
+
+                // draw texture inputs
+                for (const auto& input : texture_inputs)
+                {
+                    const size_t buffer_size = 2048;
+                    char text_buffer[buffer_size] = { 0 };
+                    auto name = input.info.name;
+
+                    if (ImGui::InputText(name.c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
+                    {
+                        Texture::Ptr texture = nullptr;
+                        if (strlen(text_buffer) != 0)
+                        {
+                            m_material->SetInputValue(name, texture);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                texture = m_image_io->LoadImage(text_buffer);
+                                m_material->SetInputValue(input.info.name, texture);
+                            }
+                            catch (std::exception&)
+                            {
+                                printf("WARNING: Can not load texture by specified path\n");
+                            }
+                        }
+                        is_scene_changed = true;
+                    }
+                    
+                }
+
+                // Get material type settings
+                std::string material_info;
+                for (const auto& iter : material_accessor.GetTypeInfo())
+                {
+                    material_info += iter;
+                    material_info.push_back('\0');
+                }
+
+                int material_type_output = material_accessor.GetType();
+                ImGui::Combo("Material type", &material_type_output, material_info.c_str());
+
+                if (material_accessor.GetType() != material_type_output)
+                {
+                    material_accessor.SetType(material_type_output);
+                    is_scene_changed = true;
+                }
+
+                if (is_scene_changed)
+                {
+                    m_cl->UpdateScene();
+                }
+
+                ImGui::End();
+            }
+
+
             ImGui::Render();
         }
 
