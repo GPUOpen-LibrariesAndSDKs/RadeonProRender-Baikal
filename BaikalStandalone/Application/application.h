@@ -66,8 +66,20 @@ namespace Baikal
         int m_num_instances;
 
         int m_shape_id_val;
+        int m_current_shape_id;
         std::future<int> m_shape_id_future;
         Material::Ptr m_material = nullptr;
         std::unique_ptr<ImageIo> m_image_io;
+
+        // this struct needs to save material parametrs from gui
+        struct MaterialSettings
+        {
+            int id;
+            std::vector<std::string> texture_paths;
+            std::vector<float> multipliers;
+            std::vector<RadeonRays::float3> colors;
+        };
+
+        std::vector<MaterialSettings> m_material_settings;
     };
 }
