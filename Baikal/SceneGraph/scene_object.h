@@ -30,6 +30,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace Baikal
 {
@@ -52,19 +53,25 @@ namespace Baikal
         
         SceneObject(SceneObject const&) = delete;
         SceneObject& operator = (SceneObject const&) = delete;
-        
+
+        inline std::uint32_t GetId() const
+        { return m_id; }
+
     protected:
         // Constructor
         SceneObject();
         
     private:
         mutable bool m_dirty;
-        
+
         std::string m_name;
+        std::uint32_t m_id;
+        static std::uint32_t m_next_id;
+        
     };
-    
+
     inline SceneObject::SceneObject()
-    : m_dirty(false)
+    : m_dirty(false), m_id(m_next_id++)
     {
     }
     

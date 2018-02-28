@@ -456,6 +456,7 @@ namespace Baikal
         std::map<Mesh::Ptr, ClwScene::Shape> shape_data;
         
         // Handle meshes
+        //int shape_id = 0;
         for (auto& iter : meshes)
         {
             auto mesh = iter;
@@ -475,6 +476,9 @@ namespace Baikal
             
             // Prepare shape descriptor
             ClwScene::Shape shape;
+
+            shape.id = iter->GetId();
+
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
             
@@ -527,6 +531,9 @@ namespace Baikal
             
             // Prepare shape descriptor
             ClwScene::Shape shape;
+
+            shape.id = mesh->GetId();
+
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
 
@@ -569,7 +576,9 @@ namespace Baikal
             // info for base_shape since we have serialized it
             // above in a different pass.
             ClwScene::Shape shape = shape_data[base_shape];
-            
+
+            shape.id = iter->GetId();
+
             // Instance has its own transform.
             shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
             shape.transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
@@ -628,6 +637,8 @@ namespace Baikal
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
             current_shape->volume_idx = -1;
 
+            current_shape->id = iter->GetId();
+
             ++current_shape;
         }
 
@@ -645,6 +656,8 @@ namespace Baikal
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
             current_shape->volume_idx = -1;
 
+            current_shape->id = iter->GetId();
+
             ++current_shape;
         }
 
@@ -661,6 +674,8 @@ namespace Baikal
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
             current_shape->volume_idx = -1;
+
+            current_shape->id = iter->GetId();
 
             ++current_shape;
         }
@@ -1450,6 +1465,7 @@ namespace Baikal
 
                 auto idx = GetShapeIdx(*shape_iter, shape);
 
+                clw_light->id = shape->GetId();
                 clw_light->shapeidx = static_cast<int>(idx);
                 clw_light->primidx = static_cast<int>(static_cast<AreaLight const&>(light).GetPrimitiveIdx());
                 break;
