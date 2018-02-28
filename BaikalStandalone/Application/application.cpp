@@ -711,6 +711,7 @@ namespace Baikal
                     settings.id = m_current_shape_id;
                     m_material_settings.push_back(settings);
                     m_material = shape->GetMaterial();
+                    m_object_name = shape->GetName();
                 }
             }
 
@@ -718,6 +719,7 @@ namespace Baikal
             if (g_is_double_click)
             {
                 m_shape_id_future = m_cl->GetShapeId((std::uint32_t)g_mouse_pos.x, (std::uint32_t)g_mouse_pos.y);
+                g_is_double_click = false;
             }
 
             // draw material props
@@ -725,10 +727,9 @@ namespace Baikal
             {
                 ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysAutoResize);
 
-                if (g_is_double_click)
+                if (!m_object_name.empty())
                 {
-                    ImGui::SetWindowPos(ImVec2(g_mouse_pos.x, g_mouse_pos.y));
-                    g_is_double_click = false;
+                    ImGui::Text(m_object_name.c_str());
                 }
 
                 bool is_scene_changed = false;

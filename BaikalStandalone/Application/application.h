@@ -67,6 +67,7 @@ namespace Baikal
 
         int m_shape_id_val;
         int m_current_shape_id;
+        std::string m_object_name;
         std::future<int> m_shape_id_future;
         Material::Ptr m_material = nullptr;
         std::unique_ptr<ImageIo> m_image_io;
