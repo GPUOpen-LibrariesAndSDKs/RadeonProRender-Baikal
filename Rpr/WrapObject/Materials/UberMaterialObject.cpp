@@ -1,6 +1,7 @@
 #include "UberMaterialObject.h"
 
 #include "TextureMaterialObject.h"
+#include "SceneGraph/uberv2material.h"
 
 using namespace RadeonRays;
 using namespace Baikal;

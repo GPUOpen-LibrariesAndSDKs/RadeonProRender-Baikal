@@ -7,8 +7,10 @@
 #include "SceneGraph/texture.h"
 #include "SceneGraph/Collector/collector.h"
 #include "SceneGraph/iterator.h"
+#include "SceneGraph/uberv2material.h"
 #include "Utils/distribution1d.h"
 #include "Utils/log.h"
+#include "Utils/cl_inputmap_generator.h"
 
 
 #include <chrono>
@@ -720,6 +722,9 @@ namespace Baikal
                 WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, materials + num_materials_written);
                 ++num_materials_written;
             }
+
+            CLInputMapGenerator generator;
+            generator.Generate(mat_collector);
         }
         
         // Unmap material buffer
@@ -1278,71 +1283,53 @@ namespace Baikal
 #ifdef ENABLE_UBERV2            
             case ClwScene::Bxdf::kUberV2:
             {
-                auto fillInput = [&](const std::string &name, int *int_value, float *float_value, float4 *float4_value, int *texture_idx)
+                const std::vector<std::pair<std::string, int*>> input_map = 
                 {
-                    auto value = material.GetInputValue(name);
-
-                    if (value.type == Material::InputType::kUint)
-                    {
-                        assert(int_value);
-                        *int_value = (int)value.uint_value;
-                    }
-                    else if (value.type == Material::InputType::kFloat4)
-                    {
-                        assert(float_value || float4_value);
-                        if (float_value)
-                        {
-                            *float_value = value.float_value.x;
-                        }
-                        else
-                        {
-                            *float4_value = value.float_value;
-                        }
-                        *texture_idx = -1;
-                    }
-                    else if (value.type == Material::InputType::kTexture)
-                    {
-                        *texture_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                    }
-                    else
-                    {
-                        // TODO: should not happen
-                        assert(false);
-                    }
+                    { "uberv2.diffuse.color" , &(clw_material->uberv2.diffuse_color_input_id) },
+                    { "uberv2.reflection.color", &(clw_material->uberv2.reflection_color_input_id) },
+                    { "uberv2.reflection.roughness",  &(clw_material->uberv2.reflection_roughness_input_id) },
+                    { "uberv2.reflection.anisotropy",  &(clw_material->uberv2.reflection_anisotropy_input_id) },
+                    { "uberv2.reflection.anisotropy_rotation",  &(clw_material->uberv2.reflection_anisotropy_rotation_input_id) },
+                    { "uberv2.reflection.ior",  &(clw_material->uberv2.reflection_ior_input_id) },
+                    { "uberv2.reflection.metalness",  &(clw_material->uberv2.reflection_metalness_input_id) },
+                    { "uberv2.coating.color",   &(clw_material->uberv2.coating_color_input_id) },
+                    { "uberv2.coating.ior",  &(clw_material->uberv2.coating_ior_input_id) },
+                    { "uberv2.emission.color",  &(clw_material->uberv2.emission_color_input_id) },
+                    { "uberv2.transparency",  &(clw_material->uberv2.transparency_input_id) },
+                    { "uberv2.sss.absorption_color",   &(clw_material->uberv2.sss_absorption_color_input_id) },
+                    { "uberv2.sss.scatter_color",   &(clw_material->uberv2.sss_scatter_color_input_id) },
+                    { "uberv2.sss.absorption_distance",  &(clw_material->uberv2.sss_absorption_distance_input_id) },
+                    { "uberv2.sss.scatter_distance",  &(clw_material->uberv2.sss_scatter_distance_input_id) },
+                    { "uberv2.sss.scatter_direction",  &(clw_material->uberv2.sss_scatter_direction_input_id) },
+                    { "uberv2.sss.subsurface_color",   &(clw_material->uberv2.sss_subsurface_color_input_id) },
+                    { "uberv2.refraction.color",   &(clw_material->uberv2.refraction_color_input_id) },
+                    { "uberv2.refraction.roughness",  &(clw_material->uberv2.refraction_roughness_input_id) },
+                    { "uberv2.refraction.ior",  &(clw_material->uberv2.refraction_ior_input_id) }
                 };
 
-                fillInput("uberv2.diffuse.color", nullptr, nullptr, &(clw_material->uberv2.diffuse_color), &(clw_material->uberv2.diffuse_color_map_idx));
+                for (const auto &entry : input_map)
+                {
+                    auto value = material.GetInputValue(entry.first);
+                    assert(value.type == Material::InputType::kInputMap);
+                    *(entry.second) = value.input_map_value ? value.input_map_value->GetId() : -1;
+                }
 
-                fillInput("uberv2.layers", &(clw_material->uberv2.layers), nullptr, nullptr, nullptr);
+                // fill parameters as integer values
+                const std::vector<std::pair<std::string, int*>> integer_params_map =
+                {
+                    { "uberv2.layers", &(clw_material->uberv2.layers) },
+                    { "uberv2.refraction.ior_mode", &(clw_material->uberv2.refraction_ior_mode) },
+                    { "uberv2.refraction.thin_surface", &(clw_material->uberv2.refraction_thin_surface) },
+                    { "uberv2.emission.mode", &(clw_material->uberv2.emission_mode) },
+                    { "uberv2.sss.multiscatter", &(clw_material->uberv2.sss_multiscatter) }
+                };
 
-                fillInput("uberv2.reflection.color", nullptr, nullptr, &(clw_material->uberv2.reflection_color), &(clw_material->uberv2.reflection_color_map_idx));
-                fillInput("uberv2.reflection.roughness", nullptr, &(clw_material->uberv2.reflection_roughness), nullptr, &(clw_material->uberv2.reflection_roughness_map_idx));
-                fillInput("uberv2.reflection.anisotropy", nullptr, &(clw_material->uberv2.reflection_anisotropy), nullptr, &(clw_material->uberv2.reflection_anisotropy_map_idx));
-                fillInput("uberv2.reflection.anisotropy_rotation", nullptr, &(clw_material->uberv2.reflection_anisotropy_rotation), nullptr, &(clw_material->uberv2.reflection_anisotropy_rotation_map_idx));
-                fillInput("uberv2.reflection.ior", nullptr, &(clw_material->uberv2.reflection_ior), nullptr, &(clw_material->uberv2.reflection_ior_map_idx));
-                fillInput("uberv2.reflection.metalness", nullptr, &(clw_material->uberv2.reflection_metalness), nullptr, &(clw_material->uberv2.reflection_metalness_map_idx));
-
-                fillInput("uberv2.refraction.color", nullptr, nullptr, &(clw_material->uberv2.refraction_color), &(clw_material->uberv2.refraction_color_map_idx));
-                fillInput("uberv2.refraction.roughness", nullptr, &(clw_material->uberv2.refraction_roughness), nullptr, &(clw_material->uberv2.refraction_roughness_map_idx));
-                fillInput("uberv2.refraction.ior", nullptr, &(clw_material->uberv2.refraction_ior), nullptr, &(clw_material->uberv2.refraction_ior_map_idx));
-                fillInput("uberv2.refraction.ior_mode", &(clw_material->uberv2.refraction_ior_mode), nullptr, nullptr, nullptr);
-                fillInput("uberv2.refraction.thin_surface", &(clw_material->uberv2.refraction_thin_surface), nullptr, nullptr, nullptr);
-
-                fillInput("uberv2.coating.color", nullptr, nullptr, &(clw_material->uberv2.coating_color), &(clw_material->uberv2.coating_color_map_idx));
-                fillInput("uberv2.coating.ior", nullptr, &(clw_material->uberv2.coating_ior), nullptr, &(clw_material->uberv2.coating_ior_map_idx));
-
-                fillInput("uberv2.emission.color", nullptr, &(clw_material->uberv2.emission_color), nullptr, &(clw_material->uberv2.emission_color_map_idx));
-                fillInput("uberv2.emission.mode", &(clw_material->uberv2.emission_mode), nullptr, nullptr, nullptr);
-
-                fillInput("uberv2.transparency", nullptr, &(clw_material->uberv2.transparency), nullptr, &(clw_material->uberv2.transparency_map_idx));
-
-                fillInput("uberv2.sss.absorption_color", nullptr, nullptr, &(clw_material->uberv2.sss_absorption_color), &(clw_material->uberv2.sss_absorption_color_map_idx));
-                fillInput("uberv2.sss.scatter_color", nullptr, nullptr, &(clw_material->uberv2.sss_scatter_color), &(clw_material->uberv2.sss_scatter_color_map_idx));
-                fillInput("uberv2.sss.absorption_distance", nullptr, &(clw_material->uberv2.sss_absorption_distance), nullptr, &(clw_material->uberv2.sss_absorption_distance_map_idx));
-                fillInput("uberv2.sss.scatter_distance", nullptr, &(clw_material->uberv2.sss_scatter_distance), nullptr, &(clw_material->uberv2.sss_scatter_distance_map_idx));
-                fillInput("uberv2.sss.scatter_direction", nullptr, &(clw_material->uberv2.sss_scatter_direction), nullptr, &(clw_material->uberv2.sss_scatter_direction_map_idx));
-                fillInput("uberv2.sss.subsurface_color", nullptr, nullptr, &(clw_material->uberv2.sss_subsurface_color), &(clw_material->uberv2.sss_subsurface_color_map_idx));
-                fillInput("uberv2.sss.multiscatter", &(clw_material->uberv2.sss_multiscatter), nullptr, nullptr, nullptr);
+                for (const auto &entry : integer_params_map)
+                {
+                    auto value = material.GetInputValue(entry.first);
+                    assert(value.type == Material::InputType::kUint);
+                    *(entry.second) = value.uint_value;
+                }
 
                 auto value = material.GetInputValue("uberv2.normal");
 

@@ -37,6 +37,7 @@
 
 #include "scene_object.h"
 #include "texture.h"
+#include "inputmap.h"
 
 namespace Baikal
 {
@@ -61,7 +62,8 @@ namespace Baikal
             kUint = 0,
             kFloat4,
             kTexture,
-            kMaterial
+            kMaterial,
+            kInputMap
         };
 
         // Input description
@@ -85,12 +87,15 @@ namespace Baikal
             RadeonRays::float4 float_value;
             Texture::Ptr tex_value;
             Material::Ptr mat_value;
+            InputMap::Ptr input_map_value;
             
             InputValue()
             : type(InputType::kMaterial)
-            , mat_value(nullptr)
-            , tex_value(nullptr)
+            , uint_value()
             , float_value()
+            , tex_value(nullptr)
+            , mat_value(nullptr)
+            , input_map_value(nullptr)
             {
             }
         };
@@ -121,6 +126,7 @@ namespace Baikal
                            RadeonRays::float4 const& value);
         void SetInputValue(std::string const& name, Texture::Ptr texture);
         void SetInputValue(std::string const& name, Material::Ptr material);
+        void SetInputValue(std::string const& name, Baikal::InputMap::Ptr inputMap);
 
         InputValue GetInputValue(std::string const& name) const;
 
@@ -256,41 +262,6 @@ namespace Baikal
 
     protected:
         VolumeMaterial();
-    };
-
-    class UberV2Material : public Material
-    {
-    public:
-        enum RefractionMode
-        {
-            kRefractionSeparate = 1U,
-            kRefractionLinked = 2U
-        };
-        enum EmissionMode
-        {
-            kEmissionSinglesided = 1U,
-            kEmissionDoublesided = 2U
-        };
-
-        enum Layers
-        {
-            kEmissionLayer = 0x1,
-            kTransparencyLayer = 0x2,
-            kCoatingLayer = 0x4,
-            kReflectionLayer = 0x8,
-            kDiffuseLayer = 0x10,
-            kRefractionLayer = 0x20,
-            kSSSLayer = 0x40
-        };
-
-        using Ptr = std::shared_ptr<UberV2Material>;
-        static Ptr Create();
-
-        // Check if material has emissive components
-        bool HasEmission() const override;
-
-    protected:
-        UberV2Material();
     };
 
     class MaterialAccessor

@@ -163,74 +163,45 @@ typedef struct _Material
             int clearcoat_gloss_map_idx;
         } disney;
 #ifdef ENABLE_UBERV2
-    struct
+        struct
         {
-            float4 diffuse_color;
+            //material inputs
+            int diffuse_color_input_id;
+            int reflection_color_input_id;
+            int reflection_roughness_input_id;
+            int reflection_anisotropy_input_id;
 
-            int diffuse_color_map_idx;
+            int reflection_anisotropy_rotation_input_id;
+            int reflection_ior_input_id;
+            int reflection_metalness_input_id;
+            int coating_color_input_id;
+
+            int coating_ior_input_id;
+            int refraction_color_input_id;
+            int refraction_roughness_input_id;
+            int refraction_ior_input_id;
+
+            int emission_color_input_id;
+            int transparency_input_id;
+            int sss_absorption_color_input_id;
+            int sss_scatter_color_input_id;
+
+            int sss_subsurface_color_input_id;
+            int sss_absorption_distance_input_id;
+            int sss_scatter_distance_input_id;
+            int sss_scatter_direction_input_id;
+
+            //Material parameters
             int layers;
-            int reflection_color_map_idx;
-            float reflection_roughness;
-
-            float4 reflection_color;
-
-            int reflection_roughness_map_idx;
-            float reflection_anisotropy;
-            int reflection_anisotropy_map_idx;
-            float reflection_anisotropy_rotation;
-
-            int reflection_anisotropy_rotation_map_idx;
-            float reflection_ior;
-            int reflection_ior_map_idx;
-            float reflection_metalness;
-
-            int reflection_metalness_map_idx;
-            int refraction_color_map_idx;
-            float refraction_roughness;
-            int refraction_roughness_map_idx;
-
-            float4 refraction_color;
-
-            float refraction_ior;
-            int refraction_ior_map_idx;
             int refraction_ior_mode;
             int refraction_thin_surface;
-
-            float4 coating_color;
-
-            int coating_color_map_idx;
-            float coating_ior;
-            int coating_ior_map_idx;
-            float emission_color;
-
-            int emission_color_map_idx;
             int emission_mode;
-            float transparency;
-            int transparency_map_idx;
+
+            int sss_multiscatter;
+            int padding[3];
 
 /*            float displacement;
             int displacement_map_idx;*/
-            float4 sss_absorption_color;
-
-            float4 sss_scatter_color;
-
-            int sss_absorption_color_map_idx;
-            int sss_scatter_color_map_idx;
-            float sss_absorption_distance;
-            int sss_absorption_distance_map_idx;
-
-            float sss_scatter_distance;
-            int sss_scatter_distance_map_idx;
-            float sss_scatter_direction;
-            int sss_scatter_direction_map_idx;
-
-            int sss_subsurface_color_map_idx;
-            int sss_multiscatter;
-            int padding[2];
-
-            float4 sss_subsurface_color;
-
-//            int padding3[3];
         } uberv2;
 #endif
     };

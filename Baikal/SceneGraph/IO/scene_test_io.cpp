@@ -6,6 +6,8 @@
 #include "../light.h"
 #include "../texture.h"
 #include "math/mathutils.h"
+#include "../uberv2material.h"
+#include "../inputmaps.h"
 
 #include <vector>
 #include <memory>
@@ -413,16 +415,16 @@ namespace Baikal
             auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
             scene->AttachShape(mesh);
             auto uberv2 = UberV2Material::Create();
-            uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 1.0f, 1.0f, 0.0f));
-            uberv2->SetInputValue("uberv2.coating.ior", float4(1.5f));
-            uberv2->SetInputValue("uberv2.coating.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-            uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.f));
-            uberv2->SetInputValue("uberv2.reflection.color", float4(0.0f, 1.0f, 0.0f, 0.0f));
-            uberv2->SetInputValue("uberv2.reflection.ior", float4(1.5f));
-            uberv2->SetInputValue("uberv2.refraction.color", float4(0.0f, 0.0f, 1.0f, 0.0f));
-            uberv2->SetInputValue("uberv2.refraction.roughness", float4(0.f));
-            uberv2->SetInputValue("uberv2.refraction.ior", float4(1.5f));
-            uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer |
+            uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.coating.ior", InputMap_ConstantFloat::Create(1.5f));
+            uberv2->SetInputValue("uberv2.coating.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create(0.f));
+            uberv2->SetInputValue("uberv2.reflection.color", InputMap_ConstantFloat4::Create(float4(0.0f, 1.0f, 0.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.reflection.ior", InputMap_ConstantFloat::Create(1.5f));
+            uberv2->SetInputValue("uberv2.refraction.color", InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 1.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.refraction.roughness", InputMap_ConstantFloat::Create(0.f));
+            uberv2->SetInputValue("uberv2.refraction.ior", InputMap_ConstantFloat::Create(1.5f));
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer |
               UberV2Material::Layers::kRefractionLayer);
             mesh->SetMaterial(uberv2);
             matrix t = RadeonRays::translation(float3(0, 0, -10.f));
@@ -437,31 +439,31 @@ namespace Baikal
                     switch (i)
                     {
                     case 0: 
-                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-                        uberv2->SetInputValue("uberv2.coating.ior", float4(1.0f + (float)j/5.f));
-                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer);
+                        uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+                        uberv2->SetInputValue("uberv2.coating.ior", InputMap_ConstantFloat::Create(1.0f + (float)j/5.f));
+                        uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer);
                         break;
                     case 1:
-                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-                        uberv2->SetInputValue("uberv2.reflection.roughness", float4((float)j/10.f));
-                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+                        uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+                        uberv2->SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create((float)j/10.f));
+                        uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
                         break;
                     case 2:
-                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-                        uberv2->SetInputValue("uberv2.reflection.ior", float4(1.0f + (float)j / 5.f));
-                        uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.05));
-                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+                        uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+                        uberv2->SetInputValue("uberv2.reflection.ior", InputMap_ConstantFloat::Create(1.0f + (float)j / 5.f));
+                        uberv2->SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create(0.05));
+                        uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
                         break;
                     case 3:
-                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-                        uberv2->SetInputValue("uberv2.refraction.roughness", float4((float)j / 10.f));
-                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kRefractionLayer);
+                        uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+                        uberv2->SetInputValue("uberv2.refraction.roughness", InputMap_ConstantFloat::Create((float)j / 10.f));
+                        uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kRefractionLayer);
                         break;
                     case 4:
-                        uberv2->SetInputValue("uberv2.diffuse.color", float4(1.0f, 0.0f, 0.0f, 0.0f));
-                        uberv2->SetInputValue("uberv2.transparency", float4((float)j/9.f));
-                        uberv2->SetInputValue("uberv2.reflection.roughness", float4(0.0f));
-                        uberv2->SetInputValue("uberv2.layers", UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kTransparencyLayer);
+                        uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+                        uberv2->SetInputValue("uberv2.transparency", InputMap_ConstantFloat::Create((float)j/9.f));
+                        uberv2->SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create(0.0f));
+                        uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kTransparencyLayer);
                         break;
                     }
                     auto instance = Instance::Create(mesh);
