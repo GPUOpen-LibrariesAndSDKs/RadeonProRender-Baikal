@@ -68,6 +68,7 @@ THE SOFTWARE.
 
 #include "math/mathutils.h"
 #include "Application/application.h"
+#include "SceneGraph/IO/material_io.h"
 
 using namespace RadeonRays;
 
@@ -756,18 +757,6 @@ namespace Baikal
                         break;
                     }
                 }
-                // draw uint inputs
-                //for (const auto& input : uint_inputs)
-                //{
-                //    auto name = input.info.name.c_str();
-                //    std::uint32_t input_value = input.value.uint_value;
-                //    ImGui::InputInt(name, (int*)(&input_value));
-                //    if (input.value.uint_value != input_value)
-                //    {
-                //        m_material->SetInputValue(input.info.name, input_value);
-                //        is_scene_changed = true;
-                //    }
-                //}
 
                 auto settings = std::find_if(m_material_settings.begin(), m_material_settings.end(),
                     [&](const MaterialSettings& settings)
@@ -922,6 +911,13 @@ namespace Baikal
                     is_scene_changed = true;
                 }
 
+                ImGui::Separator();
+                if (ImGui::Button("Save materials"))
+                {
+                    auto material_io{ Baikal::MaterialIo::CreateMaterialIoXML() };
+                    material_io->SaveMaterialsFromScene(m_settings.path + "/materials.xml", *m_cl->GetScene());
+                    material_io->SaveIdentityMapping(m_settings.path + "/mapping.xml", *m_cl->GetScene());
+                }
 
                 if (is_scene_changed)
                 {
