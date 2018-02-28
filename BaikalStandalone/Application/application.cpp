@@ -779,6 +779,7 @@ namespace Baikal
                     throw std::runtime_error(
                         "Application::UpdateGui(...): there is no such shape id in material settings");
 
+                size_t uint_counter = 0;
                 size_t float_counter = 0;
                 size_t texture_counter = 0;
                 for (size_t i = 0; i < m_material->GetNumInputs(); i++)
@@ -821,9 +822,9 @@ namespace Baikal
 
                                 if ((input.value.tex_value == nullptr) &&
                                     ((settings->colors[float_counter].x != color[0]) ||
-                                    (settings->colors[float_counter].y != color[1]) ||
-                                    (settings->colors[float_counter].z != color[2]) ||
-                                    (settings->multipliers[float_counter] != mult)))
+                                     (settings->colors[float_counter].y != color[1]) ||
+                                     (settings->colors[float_counter].z != color[2]) ||
+                                     (settings->multipliers[float_counter] != mult)))
                                 {
                                     RadeonRays::float4 value(
                                         mult * color[0],
@@ -836,8 +837,8 @@ namespace Baikal
                                     is_scene_changed = true;
                                 }
                                 float_counter++;
+                                break;
                             }
-                            break;
                             case Material::InputType::kTexture:
                             {
                                 auto name = input.info.name;
@@ -877,41 +878,25 @@ namespace Baikal
                                     is_scene_changed = true;
                                 }
                                 texture_counter++;
+                                break;
                             }
-                            break;
+                            case Material::InputType::kUint:
+                            {
+                                auto name = input.info.name.c_str();
+                                std::uint32_t input_value = input.value.uint_value;
+                                ImGui::InputInt(name, (int*)(&input_value));
+
+                                if ((input.value.uint_value != input_value) &&
+                                    (input.value.tex_value == nullptr))
+                                {
+                                    m_material->SetInputValue(input.info.name, input_value);
+                                    is_scene_changed = true;
+                                }
+                                break;
+                            }
                         }
                     }
                 }
-                // draw texture inputs
-               /* for (const auto& input : texture_inputs)
-                {
-                    const size_t buffer_size = 2048;
-                    char text_buffer[buffer_size] = { 0 };
-                    auto name = input.info.name;
-
-                    if (ImGui::InputText(name.c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
-                    {
-                        Texture::Ptr texture = nullptr;
-                        if (strlen(text_buffer) != 0)
-                        {
-                            m_material->SetInputValue(name, texture);
-                        }
-                        else
-                        {
-                            try
-                            {
-                                texture = m_image_io->LoadImage(text_buffer);
-                                m_material->SetInputValue(input.info.name, texture);
-                            }
-                            catch (std::exception&)
-                            {
-                                printf("WARNING: Can not load texture by specified path\n");
-                            }
-                        }
-                        is_scene_changed = true;
-                    }
-                    
-                }*/
 
                 // Get material type settings
                 std::string material_info;
@@ -922,6 +907,7 @@ namespace Baikal
                 }
 
                 int material_type_output = material_accessor.GetType();
+                ImGui::Separator();
                 ImGui::Combo("Material type", &material_type_output, material_info.c_str());
 
                 if (material_accessor.GetType() != material_type_output)

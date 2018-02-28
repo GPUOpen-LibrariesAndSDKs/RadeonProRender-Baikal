@@ -78,6 +78,7 @@ namespace Baikal
             std::vector<std::string> texture_paths;
             std::vector<float> multipliers;
             std::vector<RadeonRays::float3> colors;
+            std::vector<std::uint32_t> integer_inputs;
         };
 
         std::vector<MaterialSettings> m_material_settings;
