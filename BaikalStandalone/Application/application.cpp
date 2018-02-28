@@ -886,9 +886,15 @@ namespace Baikal
                                 std::uint32_t input_value = input.value.uint_value;
                                 ImGui::InputInt(name, (int*)(&input_value));
 
+                                if (settings->integer_inputs.size() < uint_counter + 1)
+                                {
+                                    settings->integer_inputs.push_back(0);
+                                }
+
                                 if ((input.value.uint_value != input_value) &&
                                     (input.value.tex_value == nullptr))
                                 {
+                                    uint_counter++;
                                     m_material->SetInputValue(input.info.name, input_value);
                                     is_scene_changed = true;
                                 }
@@ -915,6 +921,7 @@ namespace Baikal
                     material_accessor.SetType(material_type_output);
                     is_scene_changed = true;
                 }
+
 
                 if (is_scene_changed)
                 {
