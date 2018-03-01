@@ -32,22 +32,29 @@ namespace Baikal
     class CLProgram
     {
     public:
-        CLProgram(CLProgramManager *program_manager, uint32_t id) : 
-            m_program_manager(program_manager), m_id(id) {};
+        CLProgram(CLProgramManager *program_manager, uint32_t id, CLWContext context) :
+            m_program_manager(program_manager), m_id(id), m_context(context) {};
         bool IsDirty() const { return m_is_dirty; }
         uint32_t GetId() const { return m_id; }
         void SetSource(const std::string &source, const std::string &compilation_options);
+        CLWProgram GetCLWProgram() const { return m_compiled_program; }
+
+        const std::string& GetFullSource();
+        void Compile();
         
     private:
         void ParseSource(const std::string &source);
+        void BuildSource(const std::string &source);
 
         CLProgramManager *m_program_manager;
+        std::string m_compiled_source;
         std::string m_program_source;
         std::string m_compilation_options;
         std::vector<std::string> m_required_headers;
         CLWProgram m_compiled_program;
         bool m_is_dirty = true;
         uint32_t m_id;
+        CLWContext m_context;
 
     };
 }

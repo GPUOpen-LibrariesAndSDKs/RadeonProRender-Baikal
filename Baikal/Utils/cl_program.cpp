@@ -30,6 +30,7 @@ using namespace Baikal;
 
 void CLProgram::SetSource(const std::string &source, const std::string &compilation_options)
 {
+    m_compiled_source.reserve(1024 * 1024); //Just reserve 1M for now
     m_program_source = source;
     m_compilation_options = compilation_options;
     ParseSource(m_program_source);
@@ -54,4 +55,50 @@ void CLProgram::ParseSource(const std::string &source)
         m_required_headers.push_back(fname);
         ParseSource(m_program_manager->ReadHeader(fname));
     }
+}
+
+void CLProgram::BuildSource(const std::string &source)
+{
+    m_compiled_source.clear();
+    std::string::size_type offset = 0;
+    std::string::size_type position = 0;
+    std::string find_str("#include");
+
+    while ((position = source.find(find_str, offset)) != std::string::npos)
+    {
+        // Append not-include part of source
+        if (position != offset)
+            m_compiled_source += source.substr(offset, position - offset - 1);
+
+        // Get include file name
+        std::string::size_type end_position = source.find(">", position);
+        assert(end_position != std::string::npos);
+        std::string fname = source.substr(position, end_position - position);
+        position = fname.find("<");
+        assert(position != std::string::npos);
+        fname = fname.substr(position + 1, fname.length() - position);
+        offset = end_position + 1;
+
+        // Append included file to source
+        ParseSource(m_program_manager->ReadHeader(fname));
+    }
+
+    // Append rest of the file
+    m_compiled_source += source.substr(offset);
+}
+
+const std::string& CLProgram::GetFullSource()
+{
+    if (m_is_dirty)
+    {
+        BuildSource(m_program_source);
+    }
+
+    return m_compiled_source;
+}
+
+void CLProgram::Compile()
+{
+    const std::string &src = GetFullSource();
+    m_compiled_program.CreateFromSource(src.c_str(), src.size(), m_compilation_options.c_str(), m_context);
 }

@@ -47,7 +47,7 @@ CLProgramManager::CLProgramManager(const std::string &cache_path) :
 
 uint32_t CLProgramManager::CreateProgram(CLWContext context, const std::string &fname, const std::string &options)
 {
-    CLProgram prg(this, m_next_program_id++);
+    CLProgram prg(this, m_next_program_id++, context);
     prg.SetSource(ReadFile(fname), options);
     m_programs.insert(std::make_pair(prg.GetId(), prg));
     return prg.GetId();
@@ -55,13 +55,13 @@ uint32_t CLProgramManager::CreateProgram(CLWContext context, const std::string &
 
 void CLProgramManager::AddHeader(const std::string &header, const std::string &source)
 {
-    m_headers.insert(std::make_pair(header, source));
+    m_headers[header] = source;
 }
 
 void CLProgramManager::LoadHeader(const std::string &header)
 {
     std::string header_source = ReadFile(header);
-    m_headers.insert(std::make_pair(header, header_source));
+    m_headers[header] = header_source;
 }
 
 const std::string& CLProgramManager::ReadHeader(const std::string &header) const
@@ -72,11 +72,19 @@ const std::string& CLProgramManager::ReadHeader(const std::string &header) const
 
 CLWProgram CLProgramManager::GetProgram(uint32_t id)
 {
-    
+    CLProgram &program = m_programs[id];
+    if (program.IsDirty())
+    {
+        CompileProgram(id);
+    }
+
+    return program.GetCLWProgram();
 }
 
 void CLProgramManager::CompileProgram(uint32_t id)
 {
+    CLProgram &program = m_programs[id];
 
+    const std::string &program_source = program.GetFullSource();
+    program.Compile();
 }
-
