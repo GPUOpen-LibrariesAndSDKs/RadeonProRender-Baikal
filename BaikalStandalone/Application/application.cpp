@@ -54,6 +54,7 @@ THE SOFTWARE.
 #include <mutex>
 #include <fstream>
 #include <functional>
+#include <queue>
 
 #include <OpenImageIO/imageio.h>
 
@@ -87,6 +88,63 @@ namespace Baikal
     static float2   g_mouse_delta = float2(0, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
+
+    Application::MaterialSelector::MaterialSelector(Material::Ptr root) : m_root(root), m_current(m_root)
+    {   }
+
+    bool Application::MaterialSelector::IsRoot() const
+    { return (m_root == m_current); }
+
+    Material::Ptr Application::MaterialSelector::Get()
+    {
+        return m_current;
+    }
+
+    void Application::MaterialSelector::SelectMaterial(Material::Ptr material)
+    {
+        m_current = material;
+    }
+
+    void Application::MaterialSelector::GetParent()
+    {
+        if (m_root == m_current)
+        {
+            return;
+        }
+
+        std::queue<Material::Ptr> queue;
+        queue.push(m_root);
+
+        while (!queue.empty())
+        {
+            auto parent = queue.front();
+            for (size_t i = 0; i < queue.front()->GetNumInputs(); i++)
+            {
+                auto input = queue.front()->GetInput(i);
+
+                if (input.value.type == Material::InputType::kMaterial)
+                {
+                    if (input.value.mat_value == m_current)
+                    {
+                        m_current = parent;
+                        return;
+                    }
+                    queue.push(input.value.mat_value);
+                }
+            }
+            queue.pop();
+        }
+
+        return;
+    }
+
+    void Application::MaterialSettings::Clear()
+    {
+        texture_paths.clear();
+        multipliers.clear();
+        colors.clear();
+        integer_inputs.clear();;
+    }
 
     void Application::OnMouseMove(GLFWwindow* window, double x, double y)
     {
@@ -703,14 +761,14 @@ namespace Baikal
             {
                 m_current_shape_id = m_shape_id_future.get();
                 auto shape = m_cl->GetShapeById(m_current_shape_id);
-                m_material = nullptr;  (shape) ? (shape->GetMaterial()) : (nullptr);
+                m_material_selector = nullptr;
 
                 if (shape)
                 {
                     MaterialSettings settings;
                     settings.id = m_current_shape_id;
                     m_material_settings.push_back(settings);
-                    m_material = shape->GetMaterial();
+                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial()));
                     m_object_name = shape->GetName();
                 }
             }
@@ -723,7 +781,7 @@ namespace Baikal
             }
 
             // draw material props
-            if (m_material)
+            if (m_material_selector)
             {
                 ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -733,31 +791,6 @@ namespace Baikal
                 }
 
                 bool is_scene_changed = false;
-                MaterialAccessor material_accessor(m_material);
-
-                // process material inputs
-                std::vector<Material::Input> float_inputs;
-                std::vector<Material::Input> uint_inputs;
-                std::vector<Material::Input> texture_inputs;
-
-                for (int i = 0; i < m_material->GetNumInputs(); i++)
-                {
-                    auto input = m_material->GetInput(i);
-                    switch (input.value.type)
-                    {
-                    case Material::InputType::kFloat4:
-                        float_inputs.push_back(input);
-                        break;
-                    case Material::InputType::kUint:
-                        uint_inputs.push_back(input);
-                        break;
-                    case Material::InputType::kTexture:
-                        texture_inputs.push_back(input);
-                        break;
-                    default:
-                        break;
-                    }
-                }
 
                 auto settings = std::find_if(m_material_settings.begin(), m_material_settings.end(),
                     [&](const MaterialSettings& settings)
@@ -769,21 +802,23 @@ namespace Baikal
                     throw std::runtime_error(
                         "Application::UpdateGui(...): there is no such shape id in material settings");
 
+                settings->Clear();
+
                 size_t uint_counter = 0;
                 size_t float_counter = 0;
                 size_t texture_counter = 0;
-                for (size_t i = 0; i < m_material->GetNumInputs(); i++)
+                auto material = m_material_selector->Get();
+                for (size_t i = 0; i < material->GetNumInputs(); i++)
                 {
                     ImGui::Separator();
-                    auto input = m_material->GetInput(i);
+                    auto input = material->GetInput(i);
                     for (const auto& supported_type : input.info.supported_types)
                     {
+                        auto name = input.info.name;
                         switch (supported_type)
                         {
                             case Material::InputType::kFloat4:
                             {
-                                auto name = input.info.name.c_str();
-
                                 if (settings->multipliers.size() <= float_counter + 1)
                                 {
                                     auto mult = std::max(
@@ -807,8 +842,8 @@ namespace Baikal
                                 color[1] = settings->colors[float_counter].y;
                                 color[2] = settings->colors[float_counter].z;
 
-                                ImGui::InputFloat(name, &mult, .0f, .0f, -1, ImGuiInputTextFlags_EnterReturnsTrue);
-                                ImGui::ColorEdit3(name, color);
+                                ImGui::InputFloat(name.c_str(), &mult, .0f, .0f, -1, ImGuiInputTextFlags_EnterReturnsTrue);
+                                ImGui::ColorEdit3(name.c_str(), color);
 
                                 if ((input.value.tex_value == nullptr) &&
                                     ((settings->colors[float_counter].x != color[0]) ||
@@ -823,7 +858,7 @@ namespace Baikal
                                         0);
                                     settings->colors[float_counter] = RadeonRays::float3(color[0], color[1], color[2]);
                                     settings->multipliers[float_counter] = mult;
-                                    m_material->SetInputValue(input.info.name, value);
+                                    material->SetInputValue(input.info.name, value);
                                     is_scene_changed = true;
                                 }
                                 float_counter++;
@@ -831,7 +866,6 @@ namespace Baikal
                             }
                             case Material::InputType::kTexture:
                             {
-                                auto name = input.info.name;
                                 const size_t buffer_size = 2048;
                                 char text_buffer[buffer_size] = { 0 };
 
@@ -852,7 +886,7 @@ namespace Baikal
                                         try
                                         {
                                             texture = m_image_io->LoadImage(text_buffer);
-                                            m_material->SetInputValue(input.info.name, texture);
+                                            material->SetInputValue(input.info.name, texture);
                                         }
                                         catch (std::exception&)
                                         {
@@ -861,7 +895,7 @@ namespace Baikal
                                     }
                                     else
                                     {
-                                        m_material->SetInputValue(name, texture);
+                                        material->SetInputValue(name, texture);
                                     }
                                     settings->texture_paths[texture_counter] = text_buffer;
 
@@ -872,9 +906,8 @@ namespace Baikal
                             }
                             case Material::InputType::kUint:
                             {
-                                auto name = input.info.name.c_str();
                                 std::uint32_t input_value = input.value.uint_value;
-                                ImGui::InputInt(name, (int*)(&input_value));
+                                ImGui::InputInt(name.c_str(), (int*)(&input_value));
 
                                 if (settings->integer_inputs.size() < uint_counter + 1)
                                 {
@@ -885,8 +918,16 @@ namespace Baikal
                                     (input.value.tex_value == nullptr))
                                 {
                                     uint_counter++;
-                                    m_material->SetInputValue(input.info.name, input_value);
+                                    material->SetInputValue(input.info.name, input_value);
                                     is_scene_changed = true;
+                                }
+                                break;
+                            }
+                            case Material::InputType::kMaterial:
+                            {
+                                if (ImGui::Button((std::string("Into: ") + name).c_str()))
+                                {
+                                    m_material_selector->SelectMaterial(input.value.mat_value);
                                 }
                                 break;
                             }
@@ -894,8 +935,18 @@ namespace Baikal
                     }
                 }
 
+                ImGui::Separator();
+                if (!m_material_selector->IsRoot())
+                {
+                    if (ImGui::Button("Back"))
+                    {
+                        m_material_selector->GetParent();
+                    }
+                }
+
                 // Get material type settings
                 std::string material_info;
+                MaterialAccessor material_accessor(m_material_selector->Get());
                 for (const auto& iter : material_accessor.GetTypeInfo())
                 {
                     material_info += iter;
