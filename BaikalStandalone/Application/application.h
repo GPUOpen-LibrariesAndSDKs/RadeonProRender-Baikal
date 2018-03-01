@@ -75,13 +75,12 @@ namespace Baikal
         public:
             MaterialSelector(Material::Ptr root);
 
-            void MoveToPrev();
-            void MoveToNext();
+            void GetParent();
+            void SelectMaterial(Material::Ptr);
             Material::Ptr Get();
+            bool IsRoot() const;
 
         private:
-            Material::Ptr GetPrev();
-            Material::Ptr GetNext();
 
             Material::Ptr m_root;
             Material::Ptr m_current;
@@ -95,6 +94,8 @@ namespace Baikal
             std::vector<float> multipliers;
             std::vector<RadeonRays::float3> colors;
             std::vector<std::uint32_t> integer_inputs;
+
+            void Clear();
         };
 
         std::unique_ptr<MaterialSelector> m_material_selector;
