@@ -69,8 +69,23 @@ namespace Baikal
         int m_current_shape_id;
         std::string m_object_name;
         std::future<int> m_shape_id_future;
-        Material::Ptr m_material = nullptr;
-        std::unique_ptr<ImageIo> m_image_io;
+
+        class MaterialSelector
+        {
+        public:
+            MaterialSelector(Material::Ptr root);
+
+            void MoveToPrev();
+            void MoveToNext();
+            Material::Ptr Get();
+
+        private:
+            Material::Ptr GetPrev();
+            Material::Ptr GetNext();
+
+            Material::Ptr m_root;
+            Material::Ptr m_current;
+        };
 
         // this struct needs to save material parametrs from gui
         struct MaterialSettings
@@ -82,6 +97,8 @@ namespace Baikal
             std::vector<std::uint32_t> integer_inputs;
         };
 
+        std::unique_ptr<MaterialSelector> m_material_selector;
+        std::unique_ptr<ImageIo> m_image_io;
         std::vector<MaterialSettings> m_material_settings;
     };
 }

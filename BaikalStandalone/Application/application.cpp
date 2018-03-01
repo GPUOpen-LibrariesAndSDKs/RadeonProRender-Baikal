@@ -54,6 +54,7 @@ THE SOFTWARE.
 #include <mutex>
 #include <fstream>
 #include <functional>
+#include <queue>
 
 #include <OpenImageIO/imageio.h>
 
@@ -87,6 +88,93 @@ namespace Baikal
     static float2   g_mouse_delta = float2(0, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
+
+    Application::MaterialSelector::MaterialSelector(Material::Ptr root) : m_root(root), m_current(m_root)
+    {   }
+
+    void Application::MaterialSelector::MoveToPrev()
+    {
+        auto material = GetPrev();
+        m_current = (!material) ? (m_current) : (material);
+    }
+
+    void Application::MaterialSelector::MoveToNext()
+    {
+        auto material = GetNext();
+        m_current = (!material) ? (m_current) : (material);
+    }
+
+    Material::Ptr Application::MaterialSelector::Get()
+    {
+        return m_current;
+    }
+
+    Material::Ptr Application::MaterialSelector::GetPrev()
+    {
+        if (m_root == m_current)
+            return m_root;
+
+        std::queue<Material::Ptr> queue;
+        queue.push(m_root);
+
+        while (!queue.empty())
+        {
+            auto prev_node = queue.front();
+            for (size_t i = 0; i < queue.front()->GetNumInputs(); i++)
+            {
+                auto input = queue.front()->GetInput(i);
+
+                if (input.value.type == Material::InputType::kMaterial)
+                {
+                    if (input.value.mat_value == m_current)
+                    {
+                        return prev_node;
+                    }
+                    prev_node = input.value.mat_value;
+                    queue.push(prev_node);
+                }
+            }
+            queue.pop();
+        }
+
+        return nullptr;
+    }
+
+    Material::Ptr Application::MaterialSelector::GetNext()
+    {
+        bool is_found = false;
+        std::queue<Material::Ptr> queue;
+        queue.push(m_root);
+
+        if (m_root == m_current)
+        {
+            is_found = true;
+        }
+
+        while (!queue.empty())
+        {
+            for (size_t i = 0; i < queue.front()->GetNumInputs(); i++)
+            {
+                auto input = queue.front()->GetInput(i);
+
+                if (input.value.type == Material::InputType::kMaterial)
+                {
+                    if (is_found)
+                    {
+                        return input.value.mat_value;
+                    }
+                    if (input.value.mat_value == m_current)
+                    {
+                        is_found = true;
+                    }
+                    queue.push(input.value.mat_value);
+                }
+            }
+            queue.pop();
+        }
+
+        return nullptr;
+    }
 
     void Application::OnMouseMove(GLFWwindow* window, double x, double y)
     {
@@ -703,14 +791,14 @@ namespace Baikal
             {
                 m_current_shape_id = m_shape_id_future.get();
                 auto shape = m_cl->GetShapeById(m_current_shape_id);
-                m_material = nullptr;  (shape) ? (shape->GetMaterial()) : (nullptr);
+                m_material_selector = nullptr;
 
                 if (shape)
                 {
                     MaterialSettings settings;
                     settings.id = m_current_shape_id;
                     m_material_settings.push_back(settings);
-                    m_material = shape->GetMaterial();
+                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial()));
                     m_object_name = shape->GetName();
                 }
             }
@@ -723,7 +811,7 @@ namespace Baikal
             }
 
             // draw material props
-            if (m_material)
+            if (m_material_selector)
             {
                 ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -733,31 +821,6 @@ namespace Baikal
                 }
 
                 bool is_scene_changed = false;
-                MaterialAccessor material_accessor(m_material);
-
-                // process material inputs
-                std::vector<Material::Input> float_inputs;
-                std::vector<Material::Input> uint_inputs;
-                std::vector<Material::Input> texture_inputs;
-
-                for (int i = 0; i < m_material->GetNumInputs(); i++)
-                {
-                    auto input = m_material->GetInput(i);
-                    switch (input.value.type)
-                    {
-                    case Material::InputType::kFloat4:
-                        float_inputs.push_back(input);
-                        break;
-                    case Material::InputType::kUint:
-                        uint_inputs.push_back(input);
-                        break;
-                    case Material::InputType::kTexture:
-                        texture_inputs.push_back(input);
-                        break;
-                    default:
-                        break;
-                    }
-                }
 
                 auto settings = std::find_if(m_material_settings.begin(), m_material_settings.end(),
                     [&](const MaterialSettings& settings)
@@ -772,10 +835,11 @@ namespace Baikal
                 size_t uint_counter = 0;
                 size_t float_counter = 0;
                 size_t texture_counter = 0;
-                for (size_t i = 0; i < m_material->GetNumInputs(); i++)
+                auto material = m_material_selector->Get();
+                for (size_t i = 0; i < material->GetNumInputs(); i++)
                 {
                     ImGui::Separator();
-                    auto input = m_material->GetInput(i);
+                    auto input = material->GetInput(i);
                     for (const auto& supported_type : input.info.supported_types)
                     {
                         switch (supported_type)
@@ -823,7 +887,7 @@ namespace Baikal
                                         0);
                                     settings->colors[float_counter] = RadeonRays::float3(color[0], color[1], color[2]);
                                     settings->multipliers[float_counter] = mult;
-                                    m_material->SetInputValue(input.info.name, value);
+                                    material->SetInputValue(input.info.name, value);
                                     is_scene_changed = true;
                                 }
                                 float_counter++;
@@ -852,7 +916,7 @@ namespace Baikal
                                         try
                                         {
                                             texture = m_image_io->LoadImage(text_buffer);
-                                            m_material->SetInputValue(input.info.name, texture);
+                                            material->SetInputValue(input.info.name, texture);
                                         }
                                         catch (std::exception&)
                                         {
@@ -861,7 +925,7 @@ namespace Baikal
                                     }
                                     else
                                     {
-                                        m_material->SetInputValue(name, texture);
+                                        material->SetInputValue(name, texture);
                                     }
                                     settings->texture_paths[texture_counter] = text_buffer;
 
@@ -885,7 +949,7 @@ namespace Baikal
                                     (input.value.tex_value == nullptr))
                                 {
                                     uint_counter++;
-                                    m_material->SetInputValue(input.info.name, input_value);
+                                    material->SetInputValue(input.info.name, input_value);
                                     is_scene_changed = true;
                                 }
                                 break;
@@ -894,8 +958,20 @@ namespace Baikal
                     }
                 }
 
+                ImGui::Separator();
+                if (ImGui::Button("Prev material"))
+                {
+                    m_material_selector->MoveToPrev();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Next material"))
+                {
+                    m_material_selector->MoveToNext();
+                }
+
                 // Get material type settings
                 std::string material_info;
+                MaterialAccessor material_accessor(m_material_selector->Get());
                 for (const auto& iter : material_accessor.GetTypeInfo())
                 {
                     material_info += iter;
