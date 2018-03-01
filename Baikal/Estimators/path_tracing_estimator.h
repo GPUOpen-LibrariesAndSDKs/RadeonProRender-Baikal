@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include "estimator.h"
 #include "radeon_rays_cl.h"
+#include "Utils/cl_program_manager.h"
 
 #include <memory>
 
@@ -41,7 +42,7 @@ namespace Baikal
         PathTracingEstimator(
             CLWContext context,
             std::shared_ptr<RadeonRays::IntersectionApi> api,
-            std::string const& cache_path=""
+            CLProgramManager *program_manager
         );
         
         ~PathTracingEstimator() override;

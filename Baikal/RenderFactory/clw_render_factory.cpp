@@ -13,6 +13,8 @@ namespace Baikal
 {
     ClwRenderFactory::ClwRenderFactory(CLWContext context, std::string const& cache_path)
     : m_context(context)
+    , m_cache_path(cache_path)
+    , m_program_manager(cache_path)
     , m_intersector(
         CreateFromOpenClContext(
             context, 
@@ -21,7 +23,7 @@ namespace Baikal
         )
         , RadeonRays::IntersectionApi::Delete
     )
-    , m_cache_path(cache_path)
+    
     {
     }
 

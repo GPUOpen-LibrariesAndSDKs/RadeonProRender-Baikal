@@ -27,6 +27,7 @@
 #include "CLW.h"
 
 #include "SceneGraph/clwscene.h"
+#include "Utils/cl_program_manager.h"
 
 #include <memory>
 #include <string>
@@ -62,6 +63,7 @@ namespace Baikal
     private:
         CLWContext m_context;
         std::string m_cache_path;
+        CLProgramManager m_program_manager;
 
         using RadeonRaysInstanceDelete = decltype(RadeonRays::IntersectionApi::Delete);
 

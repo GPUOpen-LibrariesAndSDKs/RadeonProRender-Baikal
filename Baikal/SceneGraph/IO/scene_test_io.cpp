@@ -424,8 +424,7 @@ namespace Baikal
             uberv2->SetInputValue("uberv2.refraction.color", InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 1.0f, 0.0f)));
             uberv2->SetInputValue("uberv2.refraction.roughness", InputMap_ConstantFloat::Create(0.f));
             uberv2->SetInputValue("uberv2.refraction.ior", InputMap_ConstantFloat::Create(1.5f));
-            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer |
-              UberV2Material::Layers::kRefractionLayer);
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kRefractionLayer);
             mesh->SetMaterial(uberv2);
             matrix t = RadeonRays::translation(float3(0, 0, -10.f));
             mesh->SetTransform(t);
