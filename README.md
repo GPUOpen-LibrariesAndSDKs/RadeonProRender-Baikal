@@ -234,17 +234,7 @@ In addition Baikal is using multiple importance sampling to reduce variance for 
 Baikal is based on split-kernel architecture to avoid VGPR occupancy bottlenecks and broadly uses GPU-optimized parallel primitives to restructure the work to better fit massively parallel GPU architecture. First, the renderer is designed for progressive preview and has synchronous nature. Meaning it has Render function which is getting called by the user in the loop and every call to this function adds a single sample to each pixel refining the image. This model allows to keep the latency under control and manipulate the scene and the camera while doing rendering. 
 Inside the Render function each OpenCL work item is assigned a single pixel, but as iterations(bounces) progress, less and less rays remain alive, so Render function compacts  the work to minimize GPU thread divergence.
 
-Each call to Render function results in the following sequence of kernel calls:
-
-*	Spawn primary rays into ray buffer
-*	Trace ray buffer
-*	Apply potential volumetric scattering events (some ray misses might become hits here)
-*	Compact sparse hits buffer
-*	Evaluate volume material
-*	Evaluate surface material and generate light samples and shadow rays
-*	Trace shadow rays and add contributing light samples
-*	Sample surface and generate extension rays into rays buffer
-*	Go to step 2 (if bounces limits is not reached)
+![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/4.png)
 
 ## Performance
 In terms of latency the renderer is capable of maintaining high FPS while doing progressive rendering for moderately sized scenes. For example on the following “Science Fiction” scene (775K triangles) Baikal is producing 15 FPS in full HD resolution on R9 Nano card. 
