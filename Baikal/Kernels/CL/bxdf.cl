@@ -84,7 +84,7 @@ int Bxdf_UberV2_GetSampledComponent(DifferentialGeometry const* dg)
 }
 
 /// Sets BxDF sampled component. Sampled component stored in second byte of bxdf_flags
-int Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
+void Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
 {
     dg->mat.bxdf_flags &= 0xffff00ff; //Reset sampled component
     dg->mat.bxdf_flags |= (sampledComponent << 8); //Set new component

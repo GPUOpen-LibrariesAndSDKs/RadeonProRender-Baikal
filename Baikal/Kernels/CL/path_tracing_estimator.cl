@@ -36,6 +36,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/material.cl>
 #include <../Baikal/Kernels/CL/volumetrics.cl> 
 #include <../Baikal/Kernels/CL/path.cl>
+#include <inputmaps.cl>
 
 
 KERNEL
@@ -364,7 +365,12 @@ KERNEL void ShadeSurface(
 
         // Select BxDF 
 #ifdef ENABLE_UBERV2
-        if (diffgeo.mat.type == kUberV2) GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo);
+        UberV2ShaderData uber_shader_data;
+        if (diffgeo.mat.type == kUberV2)
+        {
+            uber_shader_data = UberV2PrepareInputs(dg);
+            GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
+        }
         else Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 #else
         Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
@@ -453,7 +459,7 @@ KERNEL void ShadeSurface(
 
         // Sample bxdf
         const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
-        float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf);
+        float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf, &uber_shader_data);
 
         // If we have light to sample we can hopefully do mis 
         if (light_idx > -1) 
@@ -461,7 +467,7 @@ KERNEL void ShadeSurface(
             // Sample light
             int bxdf_flags = Path_GetBxdfFlags(path);
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &lightwo, &light_pdf);
-            light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
+            light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS, &uber_shader_data);
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
 
             // Apply MIS to account for both
@@ -469,7 +475,7 @@ KERNEL void ShadeSurface(
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
-                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * light_weight / light_pdf / selection_pdf;
+                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS, &uber_shader_data) * throughput * light_weight / light_pdf / selection_pdf;
             }
         }
 

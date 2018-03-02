@@ -3,7 +3,7 @@
 // Diffuse layer
 float3 UberV2_Lambert_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -17,13 +17,13 @@ float3 UberV2_Lambert_Evaluate(
 
 float UberV2_Lambert_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST,
+    TEXTURE_ARG_LIST
 )
 {
     return fabs(wo.y) / PI;
@@ -32,7 +32,7 @@ float UberV2_Lambert_GetPdf(
 /// Lambert BRDF sampling
 float3 UberV2_Lambert_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -77,7 +77,7 @@ float UberV2_MicrofacetDistribution_GGX_GetPdf(
     // Rougness
     float roughness,
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -98,7 +98,7 @@ void UberV2_MicrofacetDistribution_GGX_SampleNormal(
     // Roughness
     float roughness,
     // Differential geometry
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Texture args
     TEXTURE_ARG_LIST,
     // Sample
@@ -144,16 +144,14 @@ float UberV2_MicrofacetDistribution_GGX_G(float roughness, float3 wi, float3 wo,
 
 float3 UberV2_MicrofacetGGX_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
     float3 wo,
     // Texture args
     TEXTURE_ARG_LIST,
-    float3 ks,
-    // Shader data
-    ShaderData const* shader_data
+    float3 ks
 )
 {
     // Incident and reflected zenith angles
@@ -165,13 +163,13 @@ float3 UberV2_MicrofacetGGX_Evaluate(
 
     float denom = (4.f * costhetao * costhetai);
 
-    return denom > DENOM_EPS ? ks * UberV2_MicrofacetDistribution_GGX_G(shader_data->reflection_roughness, wi, wo, wh) * UberV2_MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
+    return denom > DENOM_EPS ? ks * UberV2_MicrofacetDistribution_GGX_G(shader_data->reflection_roughness, wi, wo, wh) * UberV2_MicrofacetDistribution_GGX_D(shader_data->reflection_roughness, wh) / denom : 0.f;
 }
 
 
 float UberV2_MicrofacetGGX_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -187,7 +185,7 @@ float UberV2_MicrofacetGGX_GetPdf(
 
 float3 UberV2_MicrofacetGGX_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -216,7 +214,7 @@ Ideal reflection BRDF
 */
 float3 UberV2_IdealReflect_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -230,7 +228,7 @@ float3 UberV2_IdealReflect_Evaluate(
 
 float UberV2_IdealReflect_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -244,7 +242,7 @@ float UberV2_IdealReflect_GetPdf(
 
 float3 UberV2_IdealReflect_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -275,7 +273,7 @@ Ideal refraction BTDF
 
 float3 UberV2_IdealRefract_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -289,7 +287,7 @@ float3 UberV2_IdealRefract_Evaluate(
 
 float UberV2_IdealRefract_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -303,7 +301,7 @@ float UberV2_IdealRefract_GetPdf(
 
 float3 UberV2_IdealRefract_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -355,7 +353,7 @@ float3 UberV2_IdealRefract_Sample(
 
 float3 UberV2_MicrofacetRefractionGGX_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -402,7 +400,7 @@ float3 UberV2_MicrofacetRefractionGGX_Evaluate(
 
 float UberV2_MicrofacetRefractionGGX_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -450,7 +448,7 @@ float UberV2_MicrofacetRefractionGGX_GetPdf(
 
 float3 UberV2_MicrofacetRefractionGGX_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -510,7 +508,7 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
 
 float3 UberV2_Passthrough_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -535,7 +533,7 @@ float3 UberV2_Passthrough_Sample(
 
 float3 UberV2_Reflection_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -558,7 +556,7 @@ float3 UberV2_Reflection_Evaluate(
 
 float3 UberV2_Refraction_Evaluate(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -576,7 +574,7 @@ float3 UberV2_Refraction_Evaluate(
 
 float UberV2_Reflection_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -594,7 +592,7 @@ float UberV2_Reflection_GetPdf(
 
 float UberV2_Refraction_GetPdf(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -612,7 +610,7 @@ float UberV2_Refraction_GetPdf(
 
 float3 UberV2_Reflection_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -638,7 +636,7 @@ float3 UberV2_Reflection_Sample(
 
 float3 UberV2_Refraction_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -660,7 +658,7 @@ float3 UberV2_Refraction_Sample(
 
 float3 UberV2_Coating_Sample(
     // Preprocessed shader input data
-    ShaderData const* shader_data,
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args

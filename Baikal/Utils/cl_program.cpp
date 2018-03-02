@@ -57,7 +57,7 @@ void CLProgram::SetSource(const std::string &source, const std::string &compilat
 {
     m_compiled_source.reserve(1024 * 1024); //Just reserve 1M for now
     m_program_source = source;
-    m_compilation_options = compilation_options;
+    m_compilation_options += compilation_options;
     ParseSource(m_program_source);
 }
 
