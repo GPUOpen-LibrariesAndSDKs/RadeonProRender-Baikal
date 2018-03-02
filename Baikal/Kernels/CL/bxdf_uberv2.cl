@@ -1,6 +1,8 @@
 #ifndef BXDF_UBERV2_CL
 #define BXDF_UBERV2_CL
 
+#include <inputmaps.cl>
+
 typedef struct _UberV2ShaderData
 {
     float4 diffuse_color;
@@ -27,6 +29,40 @@ typedef struct _UberV2ShaderData
     float sss_scatter_distance;
     float sss_scatter_direction;
 } UberV2ShaderData;
+
+//Temorary code. Will be moved to generator later with UberV2 redesign
+UberV2ShaderData UberV2PrepareInputs(
+    // Geometry
+    DifferentialGeometry const* dg
+)
+{
+    UberV2ShaderData shader_data;
+
+    shader_data.diffuse_color = GetInputMapFloat4(dg->mat.uberv2.diffuse_color_input_id);
+    shader_data.reflection_color = GetInputMapFloat4(dg->mat.uberv2.reflection_color_input_id);
+    shader_data.coating_color = GetInputMapFloat4(dg->mat.uberv2.coating_color_input_id);
+    shader_data.refraction_color = GetInputMapFloat4(dg->mat.uberv2.refraction_color_input_id);
+    shader_data.emission_color = GetInputMapFloat4(dg->mat.uberv2.emission_color_input_id);
+    shader_data.sss_absorption_color = GetInputMapFloat4(dg->mat.uberv2.sss_absorption_color_input_id);
+    shader_data.sss_scatter_color = GetInputMapFloat4(dg->mat.uberv2.sss_scatter_color_input_id);
+    shader_data.sss_subsurface_color = GetInputMapFloat4(dg->mat.uberv2.sss_subsurface_color_input_id);
+
+    shader_data.reflection_roughness = GetInputMapFloat(dg->mat.uberv2.reflection_roughness_input_id);
+    shader_data.reflection_anisotropy = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_input_id);
+    shader_data.reflection_anisotropy_rotation = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_rotation_input_id);
+    shader_data.reflection_ior = GetInputMapFloat(dg->mat.uberv2.reflection_ior_input_id);
+
+    shader_data.reflection_metalness = GetInputMapFloat(dg->mat.uberv2.reflection_metalness_input_id);
+    shader_data.coating_ior = GetInputMapFloat(dg->mat.uberv2.coating_ior_input_id);
+    shader_data.refraction_roughness = GetInputMapFloat(dg->mat.uberv2.refraction_roughness_input_id);
+    shader_data.refraction_ior = GetInputMapFloat(dg->mat.uberv2.refraction_ior_input_id);
+
+    shader_data.transparency = GetInputMapFloat(dg->mat.uberv2.transparency_input_id);
+    shader_data.sss_absorption_distance = GetInputMapFloat(dg->mat.uberv2.sss_absorption_distance_input_id);
+    shader_data.sss_scatter_distance = GetInputMapFloat(dg->mat.uberv2.sss_scatter_distance_input_id);
+    shader_data.sss_scatter_direction = GetInputMapFloat(dg->mat.uberv2.sss_scatter_direction_input_id);
+    return shader_data;
+}
 
 #include <../Baikal/Kernels/CL/bxdf_uberv2_bricks.cl>
 

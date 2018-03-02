@@ -34,10 +34,15 @@ namespace Baikal
         void Generate(const Collector& mat_collector);
         const std::string& GetGeneratedSource() const
         {
-            return source_code_;
+            return m_source_code;
         }
 
     private:
-        std::string source_code_;
+        void GenerateSingleMaterial(const UberV2Material *material);
+        void GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input);
+        std::string m_source_code;
+        std::string m_read_functions;
+        std::string m_float4_selector;
+        std::string m_float_selector;
     };
 }

@@ -36,7 +36,6 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/material.cl>
 #include <../Baikal/Kernels/CL/volumetrics.cl> 
 #include <../Baikal/Kernels/CL/path.cl>
-#include <inputmaps.cl>
 
 
 KERNEL

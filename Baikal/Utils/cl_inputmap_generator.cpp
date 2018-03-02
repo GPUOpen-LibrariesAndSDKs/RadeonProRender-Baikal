@@ -22,13 +22,33 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <assert.h>
+
 #include "cl_inputmap_generator.h"
 #include "SceneGraph/uberv2material.h"
 
 using namespace Baikal;
 
+const std::string header = "#ifndef INPUTMAPS_CL\n#define INPUTMAPS_CL\n\n";
+const std::string footer = "#endif\n\n";
+
+const std::string float4_selector_header = 
+    "float4 GetInputMapFloat4(uint input_id)\n{\n"
+    "\tswitch(input_id)\n\t{\n";
+const std::string float4_selector_footer = "\t}\n}\n";
+
+const std::string float_selector_header = 
+    "float GetInputMapFloat(uint input_id)\n{\n"
+    "\tswitch(input_id)\n\t{\n";
+const std::string float_selector_footer = "\t}\n}\n";
+
 void CLInputMapGenerator::Generate(const Collector& mat_collector)
 {
+    m_source_code = header;
+    m_read_functions.clear();
+    m_float4_selector = float4_selector_header;
+    m_float_selector = float_selector_header;
+    
     auto mat_iter = mat_collector.CreateIterator();
     for (; mat_iter->IsValid(); mat_iter->Next())
     {
@@ -39,7 +59,30 @@ void CLInputMapGenerator::Generate(const Collector& mat_collector)
         {
             continue;
         }
-
-
+        GenerateSingleMaterial(uberv2_material);
     }
+
+    m_source_code += m_read_functions;
+    m_source_code += m_float4_selector + float4_selector_footer;
+    m_source_code += m_float_selector + float_selector_footer;
+    m_source_code += footer;
+}
+
+void CLInputMapGenerator::GenerateSingleMaterial(const UberV2Material *material)
+{
+    for (size_t input_id = 0; input_id < material->GetNumInputs(); ++input_id)
+    {
+        Material::Input input = material->GetInput(input_id);
+        assert((!input.info.supported_types.empty()) && 
+            ( *(input.info.supported_types.begin()) == Material::InputType::kInputMap));
+
+        auto input_map = input.value.input_map_value;
+
+        GenerateSingleInput(input_map);
+    }
+}
+
+void CLInputMapGenerator::GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input)
+{
+
 }

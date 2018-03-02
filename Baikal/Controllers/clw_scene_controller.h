@@ -43,6 +43,7 @@ namespace Baikal
     class Material;
     class Light;
     class Texture;
+    class CLProgramManager;
 
 
     /**
@@ -57,7 +58,7 @@ namespace Baikal
     {
     public:
         // Constructor
-        ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api);
+        ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager);
         // Destructor
         virtual ~ClwSceneController();
 
@@ -117,5 +118,7 @@ namespace Baikal
         RadeonRays::IntersectionApi* m_api;
         // Default material
         Material::Ptr m_default_material;
+        // CL Program manager
+        const CLProgramManager *m_program_manager;
     };
 }

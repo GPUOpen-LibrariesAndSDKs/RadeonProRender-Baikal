@@ -70,6 +70,6 @@ namespace Baikal
 
     std::unique_ptr<SceneController<ClwScene>> ClwRenderFactory::CreateSceneController() const
     {
-        return std::make_unique<ClwSceneController>(m_context, m_intersector.get());
+        return std::make_unique<ClwSceneController>(m_context, m_intersector.get(), &m_program_manager);
     }
 }

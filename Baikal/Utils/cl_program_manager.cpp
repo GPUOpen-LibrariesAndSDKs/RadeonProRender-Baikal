@@ -30,6 +30,10 @@ uint32_t CLProgramManager::m_next_program_id = 0;
 std::string ReadFile(const std::string &fname)
 {
     std::ifstream file(fname);
+    if (!file)
+    {
+        return "";
+    }
     std::string str;
 
     file.seekg(0, std::ios::end);

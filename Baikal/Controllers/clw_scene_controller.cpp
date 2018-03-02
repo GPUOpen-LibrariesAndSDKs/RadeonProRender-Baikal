@@ -11,6 +11,7 @@
 #include "Utils/distribution1d.h"
 #include "Utils/log.h"
 #include "Utils/cl_inputmap_generator.h"
+#include "Utils/cl_program_manager.h"
 
 
 #include <chrono>
@@ -48,10 +49,11 @@ namespace Baikal
     }
 
 
-    ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api)
+    ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
     : m_default_material(SingleBxdf::Create(SingleBxdf::BxdfType::kLambert))
     , m_context(context)
     , m_api(api)
+    , m_program_manager(program_manager)
     {
         auto acc_type = "fatbvh";
         auto builder_type = "sah";
@@ -725,6 +727,8 @@ namespace Baikal
 
             CLInputMapGenerator generator;
             generator.Generate(mat_collector);
+            std::string source = generator.GetGeneratedSource();
+            m_program_manager->AddHeader("inputmaps.cl", source);
         }
         
         // Unmap material buffer
