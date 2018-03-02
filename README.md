@@ -8,37 +8,167 @@ Baikal is fast and efficient GPU-based global illumination renderer implemented 
 “Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 # Build
+## System requirements
+The renderer is cross-platform and the following compilers are supported:
 
-Baikal is using git submodules, use the following command line to clone all of them:
+- Visual Studio 2015 and later
 
-```
-git clone https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal.git
+- Xcode 4 and later
 
-git submodule init
+- GCC 4.8 and later
 
-git submodule update
-```
+The following packages are required to build the renderer:
 
-To build the renderer use the following premake command line on Windows:
+- Python 2.7
+- OpenImageIO (for MacOS/Linux builds)
+- GLFW3 (for MacOS/Linux builds)
+- AMD APP SDK or CUDA SDK
 
-```
-Tools\premake\win\premake5 vs2015
-```
+## Build instructions
 
-Linux:
-
-```
-chmod +x Tools/premake/linux64/premake5
-Tools/premake/linux64/premake5 gmake
-make config=release_x64
-```
-
-OSX:
+Baikal is using git submodules, use the following command line to recursively clone the repo including submodules:
 
 ```
-Tools\premake\osx\premake5 xcode4
+git clone --recursive https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal.git
 ```
 
+### Windows
+- Create Visual Studio 2015 Solution
+
+`Tools\premake\win\premake5.exe vs2015`
+
+### OSX
+
+- Install Homebrew
+
+`/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
+
+- Install OpenImageIO
+
+`brew install homebrew/science/openimageio`
+
+- Install GLFW3
+
+`brew install glfw3`
+
+- Create Xcode project
+
+`./Tools/premake/osx/premake5 xcode4`
+
+- Alternatively use gmake version
+
+`./Tools/premake/osx/premake5 gmake`
+
+`make config=release_x64`
+
+### Linux(Ubuntu)
+
+- Install complementary libraries
+
+`sudo apt-get install g++`
+
+- Install build dependencies
+
+`sudo apt-get install libopenimageio-dev libglew-dev libglfw3-dev`
+
+- Create the Makefile and build
+
+`./Tools/premake/linux64/premake5 gmake`
+
+`make config=release_x64`
+
+### Options
+
+Available premake options:
+
+- `--denoiser` enables EAW denoiser in interactive output:
+
+- `--rpr` generates RadeonProRender API implemenatiton C-library and couple of RPR tutorials.
+
+## Run
+
+## Run Baikal standalone app
+ - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/Bin/Release/x64/:${LD_LIBRARY_PATH}`
+ - `cd BaikalStandalone`
+ - `../Bin/Release/x64/BaikalStandalone64`
+
+Possible command line args:
+- `-platform index` select specific OpenCL platform
+- `-device index` select specific OpenCL device
+- `-p path` path to mesh/material files
+- `-f file` mesh file to render
+- `-w` set window width
+- `-h` set window height
+- `-ns num` limit the number of samples per pixel
+- `-cs speed` set camera movement speed
+- `-cpx x -cpy y -cpz z` set camera position
+- `-tpx x -tpy y -tpz z` set camera target
+- `-interop [0|1]` disable | enable OpenGL interop (enabled by default, might be broken on some Linux systems)
+- `-config [gpu|cpu|mgpu|mcpu|all]` set device configuration to run on: single gpu (default) | single cpu | all available gpus | all available cpus | all devices
+
+The list of supported texture formats:
+
+- png
+- bmp
+- jpg
+- gif
+- exr
+- hdr
+- tx
+- dds (limited support)
+- tga
+
+## Run unit tests
+- `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/Bin/Release/x64/:${LD_LIBRARY_PATH}`
+ - `cd BaikalTest`
+ - `../Bin/Release/x64/BaikalTest64`
+
+Unit tests are producing test images into BaikalTest/OutputImages and compare them to reference images expected to be at BaikalTest/ReferenceImages.
+
+Possible command line args:
+- `-genref 1` generate reference images
+
+
+# Hardware  support
+
+The renderer has been tested on the following hardware and OSes:
+
+## Linux
+ - Ubuntu Linux 14.04
+ - AMD FirePro driver 15.201: W9100, W8100, W9000, W7000, W7100, S9300x2, W5100
+ - AMD Radeon driver 15.302: R9 Nano, R9 Fury X, R9 290
+ - NVIDIA driver 352.79: GeForce GTX970, Titan X
+
+## Windows
+ - Windows 7/8.1/10
+ - AMD FirePro driver 15.201: W9100, W8100, W9000, W7000, W7100, S9300x2, W5100
+ - AMD Radeon driver 16.4: R9 Nano, R9 Fury X, R9 290, Pro Duo
+ - NVIDIA driver 364.72: GeForce GTX970, Titan X
+
+## OSX
+ - OSX High Sierra
+ - Mac Pro (Late 2013) AMD FirePro D500 x2
+ - Macbook Pro Retina 13" (Early 2013) Intel HD 4300
+ - Macbook Pro Retina 13" (2017) Intel Iris
+ - Macbook 12" (Early 2015) Intel HD 5300
+
+# Known Issues
+
+## Windows
+ 
+ - BaikalStandalone hangs sometimes on Windows on Nvidia cards. The issue is caused by ImGUI incompatibility with GL/CL interop. Removing ImGUI render call fixes the issue.
+ 
+ ## Linux
+
+ - If <CL/cl.h> is missing try to specify OpenCL SDK location.
+ - If your are experiencing problems creating your CL context with a default config chances are CL-GL interop is broken on your system, try running the sample app with -interop 0 command line option (expect performance drop). 
+ 
+AMD:
+`export $AMDAPPSDKROOT=<SDK_PATH>`
+NVIDIA:
+`export $CUDA_PATH=<SDK_PATH>`
+
+---
 # Features
 Being more of an experimental renderer, than a production rendering solution, Baikal still maintains a good set of features.
 
@@ -166,140 +296,4 @@ We provide an implementation of RPR API with Baikal, which is still in an early 
 * Post-processing
 * Analytic sky system
 
-# Instructions & requirements
-## System requirements
-The renderer is cross-platform and the following compilers are supported:
-
-- Visual Studio 2015 and later
-
-- Xcode 4 and later
-
-- GCC 4.8 and later
-
-The following packages are required to build the renderer:
-
-- Python (for --embed_kernels option only)
-
-- AMD OpenCL APP SDK 2.0+ is also required for the standalone app build.  
-
-## Build                                                                                       
-
-### Windows
-- Create Visual Studio 2015 Solution
-
-`Tools\premake\win\premake5.exe vs2015`
-
-### OSX
-- Install Homebrew
-
-`/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
-
-- Install OpenImageIO
-
-`brew install homebrew/science/openimageio`
-
-- Create Xcode project
-
-`./Tools/premake/osx/premake5 xcode4`
-
-- Alternatively use gmake version
-
-`./Tools/premake/osx/premake5 gmake`
-
-`make config=release_x64`
-
-### Linux
-on Ubuntu:
-install complementary libraries:
-
-`sudo apt-get install g++`
-
-install build dependencies:
-
-`sudo apt-get install libopenimageio-dev libglew-dev libglfw3-dev`
-
-Also make sure you have the `opencl-dev` headers installed. Then create the Makefile:
-
-`./Tools/premake/linux64/premake5 gmake`
-
-`make config=release_x64`
-
-### Options
-Available premake options:
- - `--denoiser` enable simple bilateral denoiser in interactive output:
- `./Tools/premake/win/premake5.exe --package`
-
-- `--rpr` will generate RadeonProRender API implemenatiton C-library and couple of RPR tutorials.
-
-## Run
-
-## Run Baikal standalone app
- - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/Bin/Release/x64/:${LD_LIBRARY_PATH}`
- - `cd Baikal`
- - `../Bin/Release/x64/Baikal64`
-
-Possible command line args:
-
-- `-p path` path to mesh/material files
-- `-f file` mesh file to render
-- `-w` set window width
-- `-h` set window height
-- `-ns num` limit the number of samples per pixel
-- `-cs speed` set camera movement speed
-- `-cpx x -cpy y -cpz z` set camera position
-- `-tpx x -tpy y -tpz z` set camera target
-- `-interop [0|1]` disable | enable OpenGL interop (enabled by default, might be broken on some Linux systems)
-- `-config [gpu|cpu|mgpu|mcpu|all]` set device configuration to run on: single gpu (default) | single cpu | all available gpus | all available cpus | all devices
-
-The app only supports loading of pure triangle .obj meshes. The list of supported texture formats:
-
-- png
-- bmp
-- jpg
-- gif
-- exr
-- hdr
-- tx
-- dds (limited support)
-- tga
-
-
-# Hardware  support
-
-The renderer has been tested on the following hardware and OSes:
-
-## Linux
- - Ubuntu Linux 14.04
- - AMD FirePro driver 15.201: W9100, W8100, W9000, W7000, W7100, S9300x2, W5100
- - AMD Radeon driver 15.302: R9 Nano, R9 Fury X, R9 290
- - NVIDIA driver 352.79: GeForce GTX970, Titan X
-
-## Windows
- - Windows 7/8.1/10
- - AMD FirePro driver 15.201: W9100, W8100, W9000, W7000, W7100, S9300x2, W5100
- - AMD Radeon driver 16.4: R9 Nano, R9 Fury X, R9 290, Pro Duo
- - NVIDIA driver 364.72: GeForce GTX970, Titan X
-
-## OSX
- - OSX El Capitan 10.11.4
- - Mac Pro (Late 2013) AMD FirePro D500 x2
- - Macbook Pro Retina 13" (Early 2013) Intel HD 4300
- - Macbook 12" (Early 2015) Intel HD 5300
-
----
-# Known Issues
-
-## Windows
- 
- - BaikalStandalone hangs sometimes on Windows on Nvidia cards. The issue is caused by ImGUI incompatibility with GL/CL interop. Removing ImGUI render call fixes the issue.
- 
- ## Linux
-
- - If <CL/cl.h> is missing try to specify OpenCL SDK location.
- - If your are experiencing problems creating your CL context with a default config chances are CL-GL interop is broken on your system, try running the sample app with -interop 0 command line option (expect performance drop). 
- 
-AMD:
-`export $AMDAPPSDKROOT=<SDK_PATH>`
-NVIDIA:
-`export $CUDA_PATH=<SDK_PATH>`
 
