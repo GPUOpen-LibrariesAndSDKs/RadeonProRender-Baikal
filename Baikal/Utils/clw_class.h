@@ -10,6 +10,7 @@
 
 #include "CLW.h"
 #include "version.h"
+#include "cl_program_manager.h"
 
 namespace Baikal
 {
@@ -18,17 +19,17 @@ namespace Baikal
     public:
         //create from file
         ClwClass(CLWContext context,
+            const CLProgramManager *program_manager,
             std::string const& cl_file,
-            std::string const& opts = "",
-            std::string const& cache_path = "");
-
+            std::string const& opts = "");
+/*
         //create from memory
         ClwClass(CLWContext context,
             const char* data,
             const char* includes[],
             std::size_t inc_num,
             std::string const& opts = "",
-            std::string const& cache_path = "");
+            std::string const& cache_path = "");*/
 
         virtual ~ClwClass() = default;
 
@@ -36,7 +37,8 @@ namespace Baikal
     protected:
         CLWContext GetContext() const { return m_context; }
         CLWKernel GetKernel(std::string const& name, std::string const& opts = "");
-        void SetDefaultBuildOptions(std::string const& opts);
+        std::string GetFullBuildOpts() const;
+        /*void SetDefaultBuildOptions(std::string const& opts);
         std::string GetDefaultBuildOpts() const { return m_default_opts; }
         std::string GetFullBuildOpts() const;
         CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
@@ -44,25 +46,51 @@ namespace Baikal
         static std::uint32_t CheckSum(std::ifstream& file);
 
         bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
-        void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;
+        void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;*/
 
     private:
-        void AddCommonOptions(std::string& opts) const;
+        //void AddCommonOptions(std::string& opts) const;
 
         // Context to build programs for
         CLWContext m_context;
+
+        const CLProgramManager *m_program_manager;
+        uint32_t m_program_id;
         // Mapping of build options to programs
-        std::unordered_map<std::string, CLWProgram> m_programs;
+        //std::unordered_map<std::string, CLWProgram> m_programs;
         // Default build options
-        std::string m_default_opts;
+        //std::string m_default_opts;
         // Name of program CL file
-        std::string m_cl_file;
+        //std::string m_cl_file;
         // stored program CL file
-        std::string m_cl_file_src;
+        //std::string m_cl_file_src;
         // Binary cache path
-        std::string m_cache_path;
+        //std::string m_cache_path;
     };
 
+    inline ClwClass::ClwClass(
+        CLWContext context,
+        const CLProgramManager *program_manager,
+        std::string const& cl_file,
+        std::string const& opts)
+        : m_context(context)
+        , m_program_manager(program_manager)
+    {
+        m_program_id = m_program_manager->CreateProgram(context, cl_file, opts);
+    }
+
+    inline std::string ClwClass::GetFullBuildOpts() const
+    {
+        return "";
+        //return m_program_manager->GetProgram()
+    }
+
+    inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
+    {
+        return m_program_manager->GetProgram(m_program_id).GetKernel(name);
+    }
+
+    /*
     inline void ClwClass::AddCommonOptions(std::string& opts) const {
         opts.append(" -cl-mad-enable -cl-fast-relaxed-math "
             "-cl-std=CL1.2 -I . ");
@@ -89,20 +117,6 @@ namespace Baikal
         return options;
     }
 
-    inline ClwClass::ClwClass(
-        CLWContext context,
-        std::string const& cl_file,
-        std::string const& opts,
-        std::string const& cache_path)
-    : m_context(context)
-    , m_cl_file(cl_file)
-    , m_cl_file_src("")
-    , m_default_opts(opts)
-    , m_cache_path(cache_path)
-    {
-        auto program = CreateProgram(cl_file, m_default_opts, m_context);
-        m_programs.emplace(std::make_pair(m_default_opts, program));
-    }
 
     inline ClwClass::ClwClass(CLWContext context,
         const char* data,
@@ -306,5 +320,5 @@ namespace Baikal
         {
             out.write((char*)&data[0], data.size());
         }
-    }
+    }*/
 }

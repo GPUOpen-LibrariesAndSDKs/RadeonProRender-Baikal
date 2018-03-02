@@ -53,7 +53,7 @@ namespace Baikal
     {
     public:
         // Constructor
-        WaveletDenoiser(CLWContext context);
+        WaveletDenoiser(CLWContext context, const CLProgramManager *program_manager);
         virtual ~WaveletDenoiser();
         // Apply filter
         void Apply(InputSet const& input_set, Output& output) override;
@@ -100,14 +100,14 @@ namespace Baikal
         bool                m_buffers_initialized;
     };
 
-    inline WaveletDenoiser::WaveletDenoiser(CLWContext context)
+    inline WaveletDenoiser::WaveletDenoiser(CLWContext context, const CLProgramManager *program_manager)
 #ifdef BAIKAL_EMBED_KERNELS
         : ClwPostEffect(context,
             g_wavelet_denoise_opencl,
             g_wavelet_denoise_opencl_inc,
             sizeof(g_wavelet_denoise_opencl_inc) / sizeof(*g_wavelet_denoise_opencl_inc))
 #else
-        : ClwPostEffect(context, "../Baikal/Kernels/CL/wavelet_denoise.cl")
+        : ClwPostEffect(program_manager, context, "../Baikal/Kernels/CL/wavelet_denoise.cl")
 #endif
         , m_max_wavelet_passes(5)
         , m_buffers_width(0)

@@ -38,17 +38,17 @@ namespace Baikal
     {
     public:
         explicit CLProgramManager(const std::string &cache_path);
-        uint32_t CreateProgram(CLWContext context, const std::string &fname, const std::string &options);
-        void LoadHeader(const std::string &header);
-        void AddHeader(const std::string &header, const std::string &source);
+        uint32_t CreateProgram(CLWContext context, const std::string &fname, const std::string &options) const;
+        void LoadHeader(const std::string &header) const;
+        void AddHeader(const std::string &header, const std::string &source) const;
         const std::string& ReadHeader(const std::string &header) const;
-        CLWProgram GetProgram(uint32_t id);
-        void CompileProgram(uint32_t id);
+        CLWProgram GetProgram(uint32_t id) const;
+        void CompileProgram(uint32_t id) const;
 
     private:
-        std::string m_cache_path;
-        std::map<uint32_t, CLProgram> m_programs;
-        std::map<std::string, std::string> m_headers;
+        mutable std::string m_cache_path;
+        mutable std::map<uint32_t, CLProgram> m_programs;
+        mutable std::map<std::string, std::string> m_headers;
         static uint32_t m_next_program_id;
     };
 }

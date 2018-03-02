@@ -37,8 +37,8 @@ namespace Baikal
                 return std::unique_ptr<Renderer>(
                     new MonteCarloRenderer(
                         m_context, 
-                        std::make_unique<PathTracingEstimator>(m_context, m_intersector, m_cache_path),
-                        m_cache_path
+                        &m_program_manager,
+                        std::make_unique<PathTracingEstimator>(m_context, m_intersector, &m_program_manager)
                         ));
             default:
                 throw std::runtime_error("Renderer not supported");
@@ -59,10 +59,10 @@ namespace Baikal
         {
             case PostEffectType::kBilateralDenoiser:
                 return std::unique_ptr<PostEffect>(
-                                            new BilateralDenoiser(m_context));
+                                            new BilateralDenoiser(m_context, &m_program_manager));
             case PostEffectType::kWaveletDenoiser:
                 return std::unique_ptr<PostEffect>(
-                                            new WaveletDenoiser(m_context));
+                                            new WaveletDenoiser(m_context, &m_program_manager));
             default:
                 throw std::runtime_error("PostEffect not supported");
         }

@@ -73,7 +73,7 @@ namespace Baikal
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
         std::shared_ptr<RadeonRays::IntersectionApi> api,
-        CLProgramManager *program_manager
+        const CLProgramManager *program_manager
     ) : 
 #ifdef BAIKAL_EMBED_KERNELS
         ClwClass(context,
@@ -82,7 +82,7 @@ namespace Baikal
             sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
             "", cache_path)
 #else
-        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
+        ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
 #endif
         , Estimator(api)
         , m_sample_counter(0)
@@ -182,7 +182,7 @@ namespace Baikal
     {
         if (atomic_update)
         {
-            SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
+            //SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
         }
 
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);

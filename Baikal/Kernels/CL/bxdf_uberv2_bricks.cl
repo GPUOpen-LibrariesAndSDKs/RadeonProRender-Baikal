@@ -1,3 +1,5 @@
+#ifndef BXDF_UBERV2_BRICKS
+#define BXDF_UBERV2_BRICKS
 // Diffuse layer
 float3 UberV2_Lambert_Evaluate(
     // Preprocessed shader input data
@@ -674,3 +676,4 @@ float3 UberV2_Coating_Sample(
     return UberV2_IdealReflect_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf, ks);
 }
 
+#endif

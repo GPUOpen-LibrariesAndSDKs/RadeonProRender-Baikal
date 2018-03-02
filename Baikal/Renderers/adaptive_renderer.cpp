@@ -3,6 +3,7 @@
 
 namespace Baikal
 {
+    /*
     AdaptiveRenderer::AdaptiveRenderer(
         CLWContext context,
         std::unique_ptr<Estimator> estimator
@@ -214,4 +215,5 @@ namespace Baikal
             GetContext().Launch2D(0, gs, ls, generate_kernel);
         }
     }
+    */
 }

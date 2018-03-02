@@ -1315,22 +1315,14 @@ namespace Baikal
                 }
 
                 // fill parameters as integer values
-                const std::vector<std::pair<std::string, int*>> integer_params_map =
-                {
-                    { "uberv2.layers", &(clw_material->uberv2.layers) },
-                    { "uberv2.refraction.ior_mode", &(clw_material->uberv2.refraction_ior_mode) },
-                    { "uberv2.refraction.thin_surface", &(clw_material->uberv2.refraction_thin_surface) },
-                    { "uberv2.emission.mode", &(clw_material->uberv2.emission_mode) },
-                    { "uberv2.sss.multiscatter", &(clw_material->uberv2.sss_multiscatter) }
-                };
+                const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
+                clw_material->uberv2.layers = uber_material.GetLayers();
+                clw_material->uberv2.refraction_ior_mode = uber_material.IsLinkRefractionIOR();
+                clw_material->uberv2.refraction_thin_surface = uber_material.IsThin();
+                clw_material->uberv2.emission_mode = uber_material.isDoubleSided();
+                clw_material->uberv2.sss_multiscatter = uber_material.IsMultiscatter();
 
-                for (const auto &entry : integer_params_map)
-                {
-                    auto value = material.GetInputValue(entry.first);
-                    assert(value.type == Material::InputType::kUint);
-                    *(entry.second) = value.uint_value;
-                }
-
+                /*
                 auto value = material.GetInputValue("uberv2.normal");
 
                 if (value.type == Material::InputType::kTexture && value.tex_value)
@@ -1353,7 +1345,7 @@ namespace Baikal
                         clw_material->bump_flag = 0;
                     }
                 }
-
+                */
 
                 break;
             }

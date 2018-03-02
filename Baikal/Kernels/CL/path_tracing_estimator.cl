@@ -1,4 +1,3 @@
-
 /**********************************************************************
 Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
 
@@ -20,6 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+#ifndef PATH_TRACING_ESTIMATOR_CL
+#define PATH_TRACING_ESTIMATOR_CL
+
 #include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/ray.cl>
 #include <../Baikal/Kernels/CL/isect.cl>
@@ -832,3 +834,6 @@ KERNEL void AdvanceIterationCount(
         ADD_FLOAT4(&output[output_index], v);
     }
 }
+
+#endif
+

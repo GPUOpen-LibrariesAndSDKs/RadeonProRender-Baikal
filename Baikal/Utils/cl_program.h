@@ -24,7 +24,9 @@ THE SOFTWARE.
 
 #include <string>
 #include <vector>
+#include <set>
 #include "CLWProgram.h"
+#include "CLWContext.h"
 
 namespace Baikal
 {
@@ -32,8 +34,8 @@ namespace Baikal
     class CLProgram
     {
     public:
-        CLProgram(CLProgramManager *program_manager, uint32_t id, CLWContext context) :
-            m_program_manager(program_manager), m_id(id), m_context(context) {};
+        CLProgram() = default;
+        CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context);
         bool IsDirty() const { return m_is_dirty; }
         uint32_t GetId() const { return m_id; }
         void SetSource(const std::string &source, const std::string &compilation_options);
@@ -46,7 +48,7 @@ namespace Baikal
         void ParseSource(const std::string &source);
         void BuildSource(const std::string &source);
 
-        CLProgramManager *m_program_manager;
+        const CLProgramManager *m_program_manager;
         std::string m_compiled_source;
         std::string m_program_source;
         std::string m_compilation_options;
@@ -55,6 +57,7 @@ namespace Baikal
         bool m_is_dirty = true;
         uint32_t m_id;
         CLWContext m_context;
+        std::set<std::string> m_included_headers;
 
     };
 }

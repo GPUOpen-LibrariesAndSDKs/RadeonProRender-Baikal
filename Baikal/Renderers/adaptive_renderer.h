@@ -34,7 +34,7 @@ namespace Baikal
 {
     class ClwOutput;
     struct ClwScene;
-
+    /*
     ///< Renderer implementation
     class AdaptiveRenderer : public MonteCarloRenderer
     {
@@ -87,5 +87,5 @@ namespace Baikal
         CLWBuffer<int> m_tile_distribution_buffer;
         Distribution1D m_tile_distribution;
     };
-
+    */
 }

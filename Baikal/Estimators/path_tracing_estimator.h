@@ -42,7 +42,7 @@ namespace Baikal
         PathTracingEstimator(
             CLWContext context,
             std::shared_ptr<RadeonRays::IntersectionApi> api,
-            CLProgramManager *program_manager
+            const CLProgramManager *program_manager
         );
         
         ~PathTracingEstimator() override;

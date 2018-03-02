@@ -96,7 +96,9 @@ int Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledCompone
 #include <../Baikal/Kernels/CL/disney.cl>
 #include <../Baikal/Kernels/CL/bxdf_basic.cl>
 #ifdef ENABLE_UBERV2
+
 #include <../Baikal/Kernels/CL/bxdf_uberv2.cl>
+
 #endif
 
 /*
