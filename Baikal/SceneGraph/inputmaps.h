@@ -23,21 +23,26 @@ THE SOFTWARE.
 #pragma once
 
 #include "inputmap.h"
+
+#include <assert.h>
+
 #include "math/float3.h"
+
 
 namespace Baikal
 {
-    class InputMap_ConstantFloat4 : public InputMap
+    class InputMap_ConstantFloat3 : public InputMap
     {
     public:
-        static InputMap::Ptr Create(RadeonRays::float4 value)
+        static InputMap::Ptr Create(RadeonRays::float3 value)
         {
-            return InputMap::Ptr(new InputMap_ConstantFloat4(value));
+            return InputMap::Ptr(new InputMap_ConstantFloat3(value));
         }
 
-        InputMap_ConstantFloat4(RadeonRays::float4 v) : InputMap(InputMapType::kConstantFloat4), value(v) {}
+        RadeonRays::float3 m_value;
 
-        RadeonRays::float4 value;
+    private:
+        explicit InputMap_ConstantFloat3(RadeonRays::float3 v) : InputMap(InputMapType::kConstantFloat3), m_value(v) {}
     };
 
     class InputMap_ConstantFloat : public InputMap
@@ -48,9 +53,67 @@ namespace Baikal
             return InputMap::Ptr(new InputMap_ConstantFloat(value));
         }
 
-        InputMap_ConstantFloat(float v) : InputMap(InputMapType::kConstantFloat), value(v) {}
+        float m_value;
 
-        float value;
+    private:
+        explicit InputMap_ConstantFloat(float v) : InputMap(InputMapType::kConstantFloat), m_value(v) {}
     };
+
+    template<InputMap::InputMapType type>
+    class InputMap_TwoArg : public InputMap
+    {
+    public:
+        static InputMap::Ptr Create(InputMap::Ptr a, InputMap::Ptr b)
+        {
+            return InputMap::Ptr(new InputMap_TwoArg(a, b));
+        }
+
+        InputMap::Ptr m_a;
+        InputMap::Ptr m_b;
+
+    private:
+        InputMap_TwoArg(InputMap::Ptr a, InputMap::Ptr b) :
+            InputMap(type),
+            m_a(a),
+            m_b(b)
+        {
+            assert(m_a && m_b);
+        }
+    };
+
+    typedef InputMap_TwoArg<InputMap::InputMapType::kAdd> InputMap_Add;
+    typedef InputMap_TwoArg<InputMap::InputMapType::kSub> InputMap_Sub;
+    typedef InputMap_TwoArg<InputMap::InputMapType::kMul> InputMap_Mul;
+    typedef InputMap_TwoArg<InputMap::InputMapType::kDiv> InputMap_Div;
+/*
+
+    kSampler,
+    kAdd,
+    kSub,
+    kMul,
+    kDiv,
+    kSin,
+    kCos,
+    kTan,
+    kSelect, //component as parameter
+    kCombine,
+    kDot3,
+    kCross3,
+    kLength3,
+    kNormalize3,
+    kPow,
+    kAcos,
+    kAsin,
+    kAtan,
+    kAverage, //Components as parameter
+    kMin,
+    kMax,
+    kFloor,
+    kMod,
+    kAbs,
+    kShuffle, //Step count as parameter (1 - WXYZ, 2- ZWXY, 3 - YZWX)
+    kDot4
+*/
+
 
 }

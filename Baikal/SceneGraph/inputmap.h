@@ -32,7 +32,7 @@ namespace Baikal
         using Ptr = std::shared_ptr<InputMap>;
         enum class InputMapType
         {
-            kConstantFloat4 = 0,
+            kConstantFloat3 = 0,
             kConstantFloat,
             kConstantInt,
             kSampler,
@@ -62,8 +62,8 @@ namespace Baikal
             kShuffle, //Step count as parameter (1 - WXYZ, 2- ZWXY, 3 - YZWX)
             kDot4
         };
-        InputMapType type;
+        InputMapType m_type;
 
-        InputMap(InputMapType t) : SceneObject(), type(t) {}
+        InputMap(InputMapType t) : SceneObject(), m_type(t) {}
     };
 }

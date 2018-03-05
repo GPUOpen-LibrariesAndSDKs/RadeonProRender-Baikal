@@ -78,7 +78,7 @@ typedef struct
 
 typedef enum
 {
-    kFloat4 = 0,
+    kFloat3 = 0,
     kFloat = 1,
     kInt = 2
 } InputMapDataType;

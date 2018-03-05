@@ -93,37 +93,84 @@ void CLInputMapGenerator::GenerateSingleInput(std::shared_ptr<Baikal::InputMap> 
     m_float4_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "(dg, input_map_values);\n";
     m_float_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "(dg, input_map_values).x;\n";
 
-    m_read_functions += "float4 ReadInputMap" + input_id + "(DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values)\n{\n";
+    m_read_functions += "float4 ReadInputMap" + input_id + "(DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values)\n{\n"
+        "\treturn (float4)(\n\t";
 
     GenerateInputSource(input);
 
-    m_read_functions += "}\n";
+    m_read_functions += "\t);\n}\n";
 
     m_generated_inputs.insert(input->GetId());
 }
 
 void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> input)
 {
-    if (input->type == InputMap::InputMapType::kConstantFloat)
+    if (input->m_type == InputMap::InputMapType::kConstantFloat)
     {
         InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
 
         ClwScene::InputMapData dta = {0};
-        dta.float_value.value.x = i->value;
+        dta.float_value.value.x = i->m_value;
         dta.int_values.type = ClwScene::InputMapDataType::kFloat;
         m_input_map.push_back(dta);
 
-        m_read_functions += "\treturn (float4)(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].float_value.value, 0.0f);\n";
+        m_read_functions += "(float4)(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].float_value.value, 0.0f)\n";
     }
-    else if(input->type == InputMap::InputMapType::kConstantFloat4)
+    else if(input->m_type == InputMap::InputMapType::kConstantFloat3)
     {
-        InputMap_ConstantFloat4 *i = static_cast<InputMap_ConstantFloat4*>(input.get());
+        InputMap_ConstantFloat3 *i = static_cast<InputMap_ConstantFloat3*>(input.get());
 
         ClwScene::InputMapData dta = {0};
-        dta.float_value.value = i->value;
-        dta.int_values.type = ClwScene::InputMapDataType::kFloat4;
+        dta.float_value.value = i->m_value;
+        dta.int_values.type = ClwScene::InputMapDataType::kFloat3;
         m_input_map.push_back(dta);
 
-        m_read_functions += "\treturn (float4)(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].float_value.value, 0.0f);\n";
+        m_read_functions += "(float4)(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].float_value.value, 0.0f)\n";
     }
+    else if(input->m_type == InputMap::InputMapType::kAdd)
+    {
+        InputMap_Add *i = static_cast<InputMap_Add*>(input.get());
+
+
+        m_read_functions += "(\n\t\t";
+        GenerateInputSource(i->m_a);
+        m_read_functions +=  "\t)\n\t + \n\t(\n\t\t";
+        GenerateInputSource(i->m_b);
+        m_read_functions += "\t)\n";
+    }
+    else if(input->m_type == InputMap::InputMapType::kSub)
+    {
+        InputMap_Sub *i = static_cast<InputMap_Sub*>(input.get());
+
+
+        m_read_functions += "(\n\t\t";
+        GenerateInputSource(i->m_a);
+        m_read_functions +=  "\t)\n\t - \n\t(\n\t\t";
+        GenerateInputSource(i->m_b);
+        m_read_functions += "\t)\n";
+    }
+    else if(input->m_type == InputMap::InputMapType::kMul)
+    {
+        InputMap_Mul *i = static_cast<InputMap_Mul*>(input.get());
+
+
+        m_read_functions += "(\n\t\t";
+        GenerateInputSource(i->m_a);
+        m_read_functions +=  "\t)\n\t * \n\t(\n\t\t";
+        GenerateInputSource(i->m_b);
+        m_read_functions += "\t)\n";
+    }
+    else if(input->m_type == InputMap::InputMapType::kDiv)
+    {
+        InputMap_Div *i = static_cast<InputMap_Div*>(input.get());
+
+
+        m_read_functions += "(\n\t\t";
+        GenerateInputSource(i->m_a);
+        m_read_functions +=  "\t)\n\t / \n\t(\n\t\t";
+        GenerateInputSource(i->m_b);
+        m_read_functions += "\t)\n";
+    }
+
+
 }

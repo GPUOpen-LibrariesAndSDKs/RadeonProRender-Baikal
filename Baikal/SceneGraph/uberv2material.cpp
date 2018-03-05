@@ -40,8 +40,8 @@ UberV2Material::UberV2Material()
 {
     using namespace RadeonRays;
 
-    auto f4_one = InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f));
-    auto f4_zero = InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 0.0f, 0.0f));
+    auto f4_one = InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 1.0f));
+    auto f4_zero = InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f));
     auto f_zero = InputMap_ConstantFloat::Create(0.0f);
     auto def_ior = InputMap_ConstantFloat::Create(1.5f);
     auto def_roughness = InputMap_ConstantFloat::Create(0.5f);

@@ -417,18 +417,18 @@ namespace Baikal
             auto roughness = InputMap_ConstantFloat::Create(0.05);
 
             auto uberv2 = UberV2Material::Create();
-            uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 0.0f)));
-            uberv2->SetInputValue("uberv2.coating.color", InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.coating.color", InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f)));
             uberv2->SetInputValue("uberv2.reflection.roughness", roughness);
-            uberv2->SetInputValue("uberv2.reflection.color", InputMap_ConstantFloat4::Create(float4(0.0f, 1.0f, 0.0f, 0.0f)));
-            uberv2->SetInputValue("uberv2.refraction.color", InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 1.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.reflection.color", InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+            uberv2->SetInputValue("uberv2.refraction.color", InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 1.0f, 0.0f)));
             uberv2->SetInputValue("uberv2.refraction.roughness", roughness);
             uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kCoatingLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kRefractionLayer);
             mesh->SetMaterial(uberv2);
             matrix t = RadeonRays::translation(float3(0, 0, -10.f));
             mesh->SetTransform(t);
 
-            auto diffuse_color = InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f));
+            auto diffuse_color = InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f));
 
             for (int i = 0; i < 5; ++i)
             {
@@ -485,7 +485,16 @@ namespace Baikal
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
             auto roughness = InputMap_ConstantFloat::Create(0.05);
-            auto diffuse_color = InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f));
+            auto color1 = InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 1.0f, 0.0f));
+            auto color2 = InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f));
+            auto color3 = InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f));
+
+            auto sum = InputMap_Add::Create(color1, color2);
+
+
+            auto diffuse_color = InputMap_Mul::Create(sum, color3);
+
+
             auto uberv2 = UberV2Material::Create();
             uberv2->SetInputValue("uberv2.diffuse.color", diffuse_color);
             uberv2->SetInputValue("uberv2.coating.color", diffuse_color);
