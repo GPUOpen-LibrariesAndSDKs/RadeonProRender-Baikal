@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <assert.h>
 #include <chrono>
 #include <iostream>
+#include <algorithm>
 
 #include "cl_program_manager.h"
 
@@ -142,5 +143,10 @@ void CLProgram::Compile()
     std::cerr<<"Program compilation time: "<<elapsed_ms<<" ms"<<std::endl;
 
     m_is_dirty = false;
-
 }
+
+bool CLProgram::IsHeaderNeeded(const std::string &header_name) const
+{
+    return (std::find(m_required_headers.begin(), m_required_headers.end(), header_name) != m_required_headers.end());
+}
+

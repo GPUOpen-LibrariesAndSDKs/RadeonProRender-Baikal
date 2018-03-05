@@ -37,13 +37,17 @@ namespace Baikal
         CLProgram() = default;
         CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context);
         bool IsDirty() const { return m_is_dirty; }
+        void SetDirty() { m_is_dirty = true; }
         uint32_t GetId() const { return m_id; }
         void SetSource(const std::string &source, const std::string &compilation_options);
         CLWProgram GetCLWProgram() const { return m_compiled_program; }
 
+        bool IsHeaderNeeded(const std::string &header_name) const;
+
+
         const std::string& GetFullSource();
         void Compile();
-        
+
     private:
         void ParseSource(const std::string &source);
         void BuildSource(const std::string &source);

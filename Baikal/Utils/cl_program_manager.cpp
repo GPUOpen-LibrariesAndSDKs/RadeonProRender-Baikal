@@ -59,13 +59,25 @@ uint32_t CLProgramManager::CreateProgram(CLWContext context, const std::string &
 
 void CLProgramManager::AddHeader(const std::string &header, const std::string &source) const
 {
-    m_headers[header] = source;
+    std::string currect_header_code = m_headers[header];
+    if (currect_header_code != source)
+    {
+        m_headers[header] = source;
+
+        for (auto &program : m_programs)
+        {
+            if (program.second.IsHeaderNeeded(header))
+            {
+                program.second.SetDirty();
+            }
+        }
+    }
 }
 
 void CLProgramManager::LoadHeader(const std::string &header) const
 {
     std::string header_source = ReadFile(header);
-    m_headers[header] = header_source;
+    AddHeader(header, header_source);
 }
 
 const std::string& CLProgramManager::ReadHeader(const std::string &header) const
@@ -84,7 +96,7 @@ CLWProgram CLProgramManager::GetProgram(uint32_t id) const
     return program.GetCLWProgram();
 }
 
-void CLProgramManager::CompileProgram(uint32_t id) const 
+void CLProgramManager::CompileProgram(uint32_t id) const
 {
     CLProgram &program = m_programs[id];
 
