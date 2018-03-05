@@ -76,6 +76,30 @@ typedef struct
     int offset[3];
 } Shape;
 
+typedef enum
+{
+    kFloat4 = 0,
+    kFloat = 1,
+    kInt = 2
+} InputMapDataType;
+
+// Input data for input maps
+typedef struct _InputMapData
+{
+    union
+    {
+        struct
+        {
+            float3 value;
+        } float_value;
+        struct
+        {
+            int idx;
+            int placeholder[2];
+            int type; //We can use it since float3 is actually float4
+        } int_values;
+    };
+} InputMapData;
 
 enum Bxdf
 {

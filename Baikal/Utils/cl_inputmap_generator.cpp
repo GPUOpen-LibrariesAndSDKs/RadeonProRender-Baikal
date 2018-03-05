@@ -32,12 +32,12 @@ const std::string header = "#ifndef INPUTMAPS_CL\n#define INPUTMAPS_CL\n\n";
 const std::string footer = "#endif\n\n";
 
 const std::string float4_selector_header =
-    "float4 GetInputMapFloat4(uint input_id)\n{\n"
+    "float4 GetInputMapFloat4(uint input_id, DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values)\n{\n"
     "\tswitch(input_id)\n\t{\n";
 const std::string float4_selector_footer = "\t}\n\treturn 0.0f;\n}\n";
 
 const std::string float_selector_header =
-    "float GetInputMapFloat(uint input_id)\n{\n"
+    "float GetInputMapFloat(uint input_id, DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values)\n{\n"
     "\tswitch(input_id)\n\t{\n";
 const std::string float_selector_footer = "\t}\n\treturn 0.0f;\n}\n";
 
@@ -47,6 +47,7 @@ void CLInputMapGenerator::Generate(const Collector& mat_collector)
     m_read_functions.clear();
     m_float4_selector = float4_selector_header;
     m_float_selector = float_selector_header;
+    m_input_map.clear();
 
     m_generated_inputs.clear();
     auto mat_iter = mat_collector.CreateIterator();
@@ -89,10 +90,10 @@ void CLInputMapGenerator::GenerateSingleInput(std::shared_ptr<Baikal::InputMap> 
     std::string input_id = std::to_string(input->GetId());
 
     //Generate code for selectors
-    m_float4_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "();\n";
-    m_float_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "().x;\n";
+    m_float4_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "(dg, input_map_values);\n";
+    m_float_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "(dg, input_map_values).x;\n";
 
-    m_read_functions += "float4 ReadInputMap" + input_id + "()\n{\n";
+    m_read_functions += "float4 ReadInputMap" + input_id + "(DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values)\n{\n";
 
     GenerateInputSource(input);
 
@@ -106,11 +107,23 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
     if (input->type == InputMap::InputMapType::kConstantFloat)
     {
         InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
-        m_read_functions += "\treturn " + std::to_string(i->value) + ";\n";
+
+        ClwScene::InputMapData dta = {0};
+        dta.float_value.value.x = i->value;
+        dta.int_values.type = ClwScene::InputMapDataType::kFloat;
+        m_input_map.push_back(dta);
+
+        m_read_functions += "\treturn (float4)(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].float_value.value, 0.0f);\n";
     }
     else if(input->type == InputMap::InputMapType::kConstantFloat4)
     {
         InputMap_ConstantFloat4 *i = static_cast<InputMap_ConstantFloat4*>(input.get());
-        m_read_functions += "\treturn (float4)(" + std::to_string(i->value.x) + ", " + std::to_string(i->value.y) + ", " + std::to_string(i->value.z) + ", " + std::to_string(i->value.w) + ");\n";
+
+        ClwScene::InputMapData dta = {0};
+        dta.float_value.value = i->value;
+        dta.int_values.type = ClwScene::InputMapDataType::kFloat4;
+        m_input_map.push_back(dta);
+
+        m_read_functions += "\treturn (float4)(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].float_value.value, 0.0f);\n";
     }
 }

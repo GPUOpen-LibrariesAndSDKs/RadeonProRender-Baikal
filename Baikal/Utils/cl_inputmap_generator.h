@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 #include "SceneGraph/scene1.h"
 #include "SceneGraph/Collector/collector.h"
+#include "SceneGraph/clwscene.h"
 
 namespace Baikal
 {
@@ -39,6 +40,10 @@ namespace Baikal
         {
             return m_source_code;
         }
+        const std::vector<ClwScene::InputMapData>& GetInputMapData() const
+        {
+            return m_input_map;
+        }
 
     private:
         void GenerateSingleMaterial(const UberV2Material *material);
@@ -49,5 +54,6 @@ namespace Baikal
         std::string m_float4_selector;
         std::string m_float_selector;
         std::set<uint32_t> m_generated_inputs;
+        std::vector<ClwScene::InputMapData> m_input_map;
     };
 }

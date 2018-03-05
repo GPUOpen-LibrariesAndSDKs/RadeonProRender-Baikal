@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CLW.h"
-#include "math/float3.h"
+//#include "math/float3.h"
 #include "SceneGraph/scene1.h"
 #include "radeon_rays.h"
 #include "SceneGraph/Collector/collector.h"
@@ -39,6 +39,7 @@ namespace Baikal
 
         CLWBuffer<Camera> camera;
         CLWBuffer<int> light_distributions;
+        CLWBuffer<InputMapData> input_map_data;
 
         std::unique_ptr<Bundle> material_bundle;
         std::unique_ptr<Bundle> volume_bundle;

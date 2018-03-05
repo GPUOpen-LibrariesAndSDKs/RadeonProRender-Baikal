@@ -303,7 +303,8 @@ KERNEL void ShadeSurface(
     // Indirect rays
     GLOBAL ray* restrict indirect_rays,
     // Radiance
-    GLOBAL float3* restrict output
+    GLOBAL float3* restrict output,
+    GLOBAL InputMapData const* restrict input_map_values
 )
 {
     int global_id = get_global_id(0);
@@ -367,7 +368,7 @@ KERNEL void ShadeSurface(
         UberV2ShaderData uber_shader_data;
         if (diffgeo.mat.type == kUberV2)
         {
-            uber_shader_data = UberV2PrepareInputs(&diffgeo);
+            uber_shader_data = UberV2PrepareInputs(&diffgeo, input_map_values);
             GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
         }
         else

@@ -181,7 +181,7 @@ namespace Baikal
                 scene_io = is_fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
             auto scene_io1 = Baikal::SceneIo::CreateSceneIoTest();
             //m_scene = scene_io->LoadScene(filename, basepath);
-            m_scene = scene_io1->LoadScene("uberv2_test_spheres"/*"sphere+uberv2+ibl"*/, basepath);
+            m_scene = scene_io1->LoadScene(/*"uberv2_test_spheres"*/"sphere+uberv2+ibl", basepath);
 
             // Enable this to generate new materal mapping for a model
 #if 0

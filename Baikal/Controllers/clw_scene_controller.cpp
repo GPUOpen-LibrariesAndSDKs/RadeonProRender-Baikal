@@ -724,15 +724,35 @@ namespace Baikal
                 WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, materials + num_materials_written);
                 ++num_materials_written;
             }
+        }
+        // Unmap material buffer
+        m_context.UnmapBuffer(0, out.materials, materials);
 
+        // Serialize input map data
+        {
             CLInputMapGenerator generator;
             generator.Generate(mat_collector);
             std::string source = generator.GetGeneratedSource();
             m_program_manager->AddHeader("inputmaps.cl", source);
+
+            // Get new buffer size
+            const std::vector<ClwScene::InputMapData> &input_map = generator.GetInputMapData();
+            std::size_t input_map_data_buffer_size = input_map.size();
+
+            // Recreate material buffer if it needs resize
+            if (input_map_data_buffer_size > out.input_map_data.GetElementCount())
+            {
+                // Create material buffer
+                out.input_map_data = m_context.CreateBuffer<ClwScene::InputMapData>(input_map_data_buffer_size, CL_MEM_READ_ONLY);
+            }
+
+            ClwScene::InputMapData* input_map_data = nullptr;
+            // Map GPU input map buffer
+            m_context.MapBuffer(0, out.input_map_data, CL_MAP_WRITE, &input_map_data).Wait();
+            memcpy(input_map_data, input_map.data(), sizeof(ClwScene::InputMapData) * input_map_data_buffer_size);
+            m_context.UnmapBuffer(0, out.input_map_data, input_map_data);
         }
 
-        // Unmap material buffer
-        m_context.UnmapBuffer(0, out.materials, materials);
     }
 
     void ClwSceneController::UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const

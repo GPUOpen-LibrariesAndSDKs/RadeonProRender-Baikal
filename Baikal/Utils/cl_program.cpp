@@ -139,7 +139,7 @@ void CLProgram::Compile()
 
     end = std::chrono::system_clock::now();
     int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    std::cerr<<"Program compilation time: "<<elapsed_ms<<"milliseconds"<<std::endl;
+    std::cerr<<"Program compilation time: "<<elapsed_ms<<" ms"<<std::endl;
 
     m_is_dirty = false;
 
