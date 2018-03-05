@@ -37,30 +37,12 @@ CLProgram::CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWCo
     m_id(id),
     m_context(context)
 {
-    m_compilation_options.append(" -cl-mad-enable -cl-fast-relaxed-math "
-        "-cl-std=CL1.2 -I . ");
-
-    m_compilation_options.append(
-#if defined(__APPLE__)
-        "-D APPLE "
-#elif defined(_WIN32) || defined (WIN32)
-        "-D WIN32 "
-#elif defined(__linux__)
-        "-D __linux__ "
-#else
-        ""
-#endif
-    );
-#ifdef ENABLE_UBERV2
-    m_compilation_options.append("-D ENABLE_UBERV2");
-#endif
 };
 
-void CLProgram::SetSource(const std::string &source, const std::string &compilation_options)
+void CLProgram::SetSource(const std::string &source)
 {
     m_compiled_source.reserve(1024 * 1024); //Just reserve 1M for now
     m_program_source = source;
-    m_compilation_options += compilation_options;
     ParseSource(m_program_source);
 }
 
@@ -80,7 +62,7 @@ void CLProgram::ParseSource(const std::string &source)
         offset = end_position;
 
         m_program_manager->LoadHeader(fname);
-        m_required_headers.push_back(fname);
+        m_required_headers.insert(fname);
         std::string arr = m_program_manager->ReadHeader(fname);
         ParseSource(arr);
     }
@@ -130,23 +112,41 @@ const std::string& CLProgram::GetFullSource()
     return m_compiled_source;
 }
 
-void CLProgram::Compile()
+CLWProgram CLProgram::Compile(const std::string &opts)
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     start = std::chrono::system_clock::now();
     const std::string &src = GetFullSource();
 
-    m_compiled_program = CLWProgram::CreateFromSource(src.c_str(), src.size(), m_compilation_options.c_str(), m_context);
+    CLWProgram compiled_program = CLWProgram::CreateFromSource(src.c_str(), src.size(), opts.c_str(), m_context);
 
     end = std::chrono::system_clock::now();
     int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     std::cerr<<"Program compilation time: "<<elapsed_ms<<" ms"<<std::endl;
 
     m_is_dirty = false;
+    return compiled_program;
 }
 
 bool CLProgram::IsHeaderNeeded(const std::string &header_name) const
 {
-    return (std::find(m_required_headers.begin(), m_required_headers.end(), header_name) != m_required_headers.end());
+    return (m_required_headers.find(header_name) != m_required_headers.end());
 }
 
+CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
+{
+    // global dirty flag
+    if (m_is_dirty)
+    {
+        m_programs.clear();
+    }
+
+    auto it = m_programs.find(opts);
+    if (it != m_programs.end())
+    {
+        return it->second;
+    }
+
+    m_programs[opts] = Compile(opts);
+    return m_programs[opts];
+}

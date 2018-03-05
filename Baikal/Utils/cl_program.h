@@ -25,6 +25,8 @@ THE SOFTWARE.
 #include <string>
 #include <vector>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include "CLWProgram.h"
 #include "CLWContext.h"
 
@@ -39,14 +41,13 @@ namespace Baikal
         bool IsDirty() const { return m_is_dirty; }
         void SetDirty() { m_is_dirty = true; }
         uint32_t GetId() const { return m_id; }
-        void SetSource(const std::string &source, const std::string &compilation_options);
-        CLWProgram GetCLWProgram() const { return m_compiled_program; }
+        void SetSource(const std::string &source);
+        CLWProgram GetCLWProgram(const std::string &opts);
 
         bool IsHeaderNeeded(const std::string &header_name) const;
 
-
         const std::string& GetFullSource();
-        void Compile();
+        CLWProgram Compile(const std::string &opts);
 
     private:
         void ParseSource(const std::string &source);
@@ -55,9 +56,10 @@ namespace Baikal
         const CLProgramManager *m_program_manager;
         std::string m_compiled_source;
         std::string m_program_source;
-        std::string m_compilation_options;
-        std::vector<std::string> m_required_headers;
-        CLWProgram m_compiled_program;
+        std::unordered_set<std::string> m_required_headers;
+
+        std::unordered_map<std::string, CLWProgram> m_programs;
+
         bool m_is_dirty = true;
         uint32_t m_id;
         CLWContext m_context;

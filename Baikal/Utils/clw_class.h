@@ -37,11 +37,10 @@ namespace Baikal
     protected:
         CLWContext GetContext() const { return m_context; }
         CLWKernel GetKernel(std::string const& name, std::string const& opts = "");
-        std::string GetFullBuildOpts() const;
-        /*void SetDefaultBuildOptions(std::string const& opts);
+        void SetDefaultBuildOptions(std::string const& opts);
         std::string GetDefaultBuildOpts() const { return m_default_opts; }
         std::string GetFullBuildOpts() const;
-        CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
+        /*CLWProgram CreateProgram(std::string const& filename, std::string const& opts, CLWContext context);
         std::string GetFilenameHash(std::string const& filename, std::string const& opts, CLWContext context) const;
         static std::uint32_t CheckSum(std::ifstream& file);
 
@@ -49,23 +48,16 @@ namespace Baikal
         void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data) const;*/
 
     private:
-        //void AddCommonOptions(std::string& opts) const;
+        void AddCommonOptions(std::string& opts) const;
 
         // Context to build programs for
         CLWContext m_context;
-
+        // Program manager pointer
         const CLProgramManager *m_program_manager;
+        // Program id
         uint32_t m_program_id;
-        // Mapping of build options to programs
-        //std::unordered_map<std::string, CLWProgram> m_programs;
         // Default build options
-        //std::string m_default_opts;
-        // Name of program CL file
-        //std::string m_cl_file;
-        // stored program CL file
-        //std::string m_cl_file_src;
-        // Binary cache path
-        //std::string m_cache_path;
+        std::string m_default_opts;
     };
 
     inline ClwClass::ClwClass(
@@ -76,22 +68,22 @@ namespace Baikal
         : m_context(context)
         , m_program_manager(program_manager)
     {
-        m_program_id = m_program_manager->CreateProgram(context, cl_file, opts);
-    }
+        auto options = opts;
+        AddCommonOptions(options);
 
-    inline std::string ClwClass::GetFullBuildOpts() const
-    {
-        return "";
-        //return m_program_manager->GetProgram()
+        m_program_id = m_program_manager->CreateProgram(context, cl_file);
     }
 
     inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
     {
-        return m_program_manager->GetProgram(m_program_id).GetKernel(name);
+        std::string options = opts.empty() ? m_default_opts : opts;
+        AddCommonOptions(options);
+        return m_program_manager->GetProgram(m_program_id, options).GetKernel(name);
     }
 
-    /*
-    inline void ClwClass::AddCommonOptions(std::string& opts) const {
+
+    inline void ClwClass::AddCommonOptions(std::string& opts) const
+    {
         opts.append(" -cl-mad-enable -cl-fast-relaxed-math "
             "-cl-std=CL1.2 -I . ");
 
@@ -111,13 +103,20 @@ namespace Baikal
 #endif
     }
 
-    inline std::string ClwClass::GetFullBuildOpts() const {
+    inline std::string ClwClass::GetFullBuildOpts() const
+    {
         auto options = m_default_opts;
         AddCommonOptions(options);
         return options;
     }
 
+    inline void ClwClass::SetDefaultBuildOptions(std::string const& opts)
+    {
+        m_default_opts = opts;
+    }
 
+
+/*
     inline ClwClass::ClwClass(CLWContext context,
         const char* data,
         const char* includes[],
@@ -142,9 +141,6 @@ namespace Baikal
         m_programs.emplace(std::make_pair(m_default_opts, program));
     }
 
-    inline void ClwClass::SetDefaultBuildOptions(std::string const& opts) {
-        m_default_opts = opts;
-    }
 
     inline std::uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
     {

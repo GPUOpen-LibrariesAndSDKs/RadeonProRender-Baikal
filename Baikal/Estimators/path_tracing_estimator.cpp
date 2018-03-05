@@ -182,7 +182,7 @@ namespace Baikal
     {
         if (atomic_update)
         {
-            //SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
+            SetDefaultBuildOptions(" -D BAIKAL_ATOMIC_RESOLVE ");
         }
 
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
