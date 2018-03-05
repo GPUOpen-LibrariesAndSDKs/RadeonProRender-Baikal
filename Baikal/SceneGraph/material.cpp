@@ -10,17 +10,17 @@ namespace Baikal
     : m_thin(false)
     {
     }
-    
+
     void Material::RegisterInput(std::string const& name,
                                  std::string const& desc,
                                  std::set<InputType>&& supported_types)
     {
         Input input {{name, desc, std::move(supported_types)}, InputValue()};
-        
+
         assert(input.info.supported_types.size() > 0);
-        
+
         input.value.type = *input.info.supported_types.begin();
-        
+
         switch (input.value.type)
         {
             case InputType::kFloat4:
@@ -37,10 +37,10 @@ namespace Baikal
             default:
                 break;
         }
-        
+
         m_inputs.emplace(std::make_pair(name, input));
     }
-    
+
     void Material::ClearInputs()
     {
         m_inputs.clear();
@@ -51,7 +51,7 @@ namespace Baikal
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
         std::set<Material::Ptr> materials;
-        
+
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&materials](std::pair<std::string, Input> const& map_entry)
                       {
@@ -62,15 +62,15 @@ namespace Baikal
                           }
                       }
                       );
-        
+
         return std::make_unique<ContainerIterator<std::set<Material::Ptr>>>(std::move(materials));
     }
-    
+
     // Iterator of textures (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateTextureIterator() const
     {
         std::set<Texture::Ptr> textures;
-        
+
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&textures](std::pair<std::string, Input> const& map_entry)
                       {
@@ -81,10 +81,10 @@ namespace Baikal
                           }
                       }
                       );
-        
+
         return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(textures));
     }
-    
+
     // Set input value
     // If specific data type is not supported throws std::runtime_error
 
@@ -148,11 +148,11 @@ namespace Baikal
     Material::InputValue Material::GetInputValue(std::string const& name) const
     {
         auto input_iter = m_inputs.find(name);
-        
+
         if (input_iter != m_inputs.cend())
         {
             auto& input = input_iter->second;
-            
+
             return input.value;
         }
         else
@@ -165,7 +165,7 @@ namespace Baikal
     {
         return m_thin;
     }
-    
+
     void Material::SetThin(bool thin)
     {
         m_thin = thin;
@@ -199,17 +199,17 @@ namespace Baikal
         RegisterInput("ior", "Index of refraction", {InputType::kFloat4});
         RegisterInput("fresnel", "Fresnel flag", {InputType::kFloat4});
         RegisterInput("roughness", "Roughness", {InputType::kFloat4, InputType::kTexture});
-        
+
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
         SetInputValue("normal", static_cast<Texture::Ptr>(nullptr));
         SetInputValue("bump", static_cast<Texture::Ptr>(nullptr));
     }
-    
+
     SingleBxdf::BxdfType SingleBxdf::GetBxdfType() const
     {
         return m_type;
     }
-    
+
     void SingleBxdf::SetBxdfType(BxdfType type)
     {
         m_type = type;
@@ -230,12 +230,12 @@ namespace Baikal
         RegisterInput("ior", "Index of refraction", {InputType::kFloat4});
         RegisterInput("weight", "Blend weight", {InputType::kFloat4, InputType::kTexture});
     }
-    
+
     MultiBxdf::Type MultiBxdf::GetType() const
     {
         return m_type;
     }
-    
+
     void MultiBxdf::SetType(Type type)
     {
         m_type = type;
@@ -270,14 +270,14 @@ namespace Baikal
         RegisterInput("roughness", "Roughness of specular & diffuse layers", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("normal", "Normal map", {InputType::kTexture});
         RegisterInput("bump", "Bump map", { InputType::kTexture });
-        
+
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
         SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
         SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
         SetInputValue("normal", Texture::Ptr{nullptr});
         SetInputValue("bump", Texture::Ptr{nullptr});
     }
-    
+
     // Check if material has emissive components
     bool DisneyBxdf::HasEmission() const
     {
@@ -386,27 +386,27 @@ namespace Baikal
             SingleBxdfConcrete(BxdfType type) :
             SingleBxdf(type) {}
         };
-        
+
         struct MultiBxdfConcrete: public MultiBxdf {
             MultiBxdfConcrete(Type type) :
             Baikal::MultiBxdf(type) {}
         };
-        
+
         struct DisneyBxdfConcrete: public DisneyBxdf {
         };
 
         struct VolumeMaterialConcrete : public VolumeMaterial {
         };
     }
-    
+
     SingleBxdf::Ptr SingleBxdf::Create(BxdfType type) {
         return std::make_shared<SingleBxdfConcrete>(type);
     }
-    
+
     MultiBxdf::Ptr MultiBxdf::Create(Type type) {
         return std::make_shared<MultiBxdfConcrete>(type);
     }
-    
+
     DisneyBxdf::Ptr DisneyBxdf::Create() {
         return std::make_shared<DisneyBxdfConcrete>();
     }

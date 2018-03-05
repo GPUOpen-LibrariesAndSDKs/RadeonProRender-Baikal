@@ -23,6 +23,8 @@ THE SOFTWARE.
 #include "cl_program.h"
 
 #include <assert.h>
+#include <chrono>
+#include <iostream>
 
 #include "cl_program_manager.h"
 
@@ -30,9 +32,9 @@ using namespace Baikal;
 
 
 CLProgram::CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context) :
-    m_program_manager(program_manager), 
-    m_id(id), 
-    m_context(context) 
+    m_program_manager(program_manager),
+    m_id(id),
+    m_context(context)
 {
     m_compilation_options.append(" -cl-mad-enable -cl-fast-relaxed-math "
         "-cl-std=CL1.2 -I . ");
@@ -129,7 +131,16 @@ const std::string& CLProgram::GetFullSource()
 
 void CLProgram::Compile()
 {
+    std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
+    start = std::chrono::system_clock::now();
     const std::string &src = GetFullSource();
+
     m_compiled_program = CLWProgram::CreateFromSource(src.c_str(), src.size(), m_compilation_options.c_str(), m_context);
+
+    end = std::chrono::system_clock::now();
+    int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+    std::cerr<<"Program compilation time: "<<elapsed_ms<<"milliseconds"<<std::endl;
+
     m_is_dirty = false;
+
 }

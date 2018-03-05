@@ -134,7 +134,7 @@ void GetMaterialBxDFType(
             return;
         }
     }
-    
+
     const int bxdf_type = (dg->mat.uberv2.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer | kDiffuseLayer));
     const float ndotwi = dot(dg->n, wi);
 
@@ -165,7 +165,7 @@ void GetMaterialBxDFType(
     {
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
         const float fresnel = CalculateFresnel(top_ior, shader_data->coating_ior, ndotwi);
-        if (sample < fresnel) // Will sample coating layer 
+        if (sample < fresnel) // Will sample coating layer
         {
             bxdf_flags |= kBxdfFlagsSingular; // Coating always singular
             Bxdf_SetFlags(dg, bxdf_flags);
@@ -181,7 +181,7 @@ void GetMaterialBxDFType(
     {
         const float fresnel = CalculateFresnel(top_ior, shader_data->reflection_ior, ndotwi);
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-        if (sample < fresnel) // Will sample reflection layer 
+        if (sample < fresnel) // Will sample reflection layer
         {
             if (shader_data->reflection_roughness < ROUGHNESS_EPS)
             {
@@ -239,7 +239,7 @@ float Fresnel_Blend_F(
 /// If we have mix - calculate following result:
 /// result = mix(BxDF, 0.0f, transparency) where
 /// BxDF = F(1.0, refraction_ior) * BRDF + (1.0f - F(1.0, refraction_ior)) * refraction
-/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
 /// (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
 float3 UberV2_Evaluate(
     // Geometry
@@ -255,10 +255,10 @@ float3 UberV2_Evaluate(
 )
 {
     int layers = dg->mat.uberv2.layers;
-    
+
     int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
     int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
-    
+
     if (fresnel_blend_layers == 0) return 0.0f;
     float3 result;
     // Check if we have single layer material or not
@@ -280,7 +280,7 @@ float3 UberV2_Evaluate(
         {
             result = UberV2_Lambert_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         }
-        
+
         // Apply transparency if any
         if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
@@ -320,7 +320,7 @@ float3 UberV2_Evaluate(
     }
 
     // Calculate BRDF part. Calculated in reverse order that will give us (if we have all layers)
-    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
     // (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
     result = values[brdf_layers - 1];
     for (int a = brdf_layers - 1; a > 0; --a)
@@ -334,7 +334,7 @@ float3 UberV2_Evaluate(
     {
         result = Fresnel_Blend(1.0f, shader_data->refraction_ior, result, UberV2_Refraction_Evaluate(shader_data, wi, wo, TEXTURE_ARGS), wi);
     }
-    
+
     // If we have transparency layer - we simply blend it with result
     if ((layers & kTransparencyLayer) == kTransparencyLayer)
     {
@@ -351,7 +351,7 @@ float3 UberV2_Evaluate(
 /// If we have mix - calculate following result:
 /// result = mix(BxDF, 0.0f, transparency) where
 /// BxDF = F(1.0, refraction_ior) * BRDF + (1.0f - F(1.0, refraction_ior)) * refraction
-/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
 /// (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
 float UberV2_GetPdf(
     // Geometry
@@ -434,7 +434,7 @@ float UberV2_GetPdf(
     }
 
     // Calculate BRDF part. Calculated in reverse order that will give us (if we have all layers)
-    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
     // (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
     result = values[brdf_layers - 1];
     for (int a = brdf_layers - 1; a > 0; --a)

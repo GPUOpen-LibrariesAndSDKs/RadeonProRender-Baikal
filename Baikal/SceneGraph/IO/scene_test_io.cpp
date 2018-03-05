@@ -480,6 +480,31 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
         }
+        else if (filename == "sphere+uberv2+ibl")
+        {
+            auto mesh = CreateSphere(64, 32, 2.f, float3());
+            scene->AttachShape(mesh);
+            auto roughness = InputMap_ConstantFloat::Create(0.05);
+            auto diffuse_color = InputMap_ConstantFloat4::Create(float4(1.0f, 0.0f, 0.0f, 0.0f));
+            auto uberv2 = UberV2Material::Create();
+            uberv2->SetInputValue("uberv2.diffuse.color", diffuse_color);
+            uberv2->SetInputValue("uberv2.coating.color", diffuse_color);
+            uberv2->SetInputValue("uberv2.reflection.roughness", roughness);
+            uberv2->SetInputValue("uberv2.reflection.color", diffuse_color);
+            uberv2->SetInputValue("uberv2.refraction.color", diffuse_color);
+            uberv2->SetInputValue("uberv2.refraction.roughness", roughness);
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+            mesh->SetMaterial(uberv2);
+
+
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+
+            auto ibl = ImageBasedLight::Create();
+            ibl->SetTexture(ibl_texture);
+            ibl->SetMultiplier(1.f);
+            scene->AttachLight(ibl);
+
+        }
 
         return scene;
     }
