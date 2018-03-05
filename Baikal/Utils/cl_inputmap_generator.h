@@ -23,11 +23,14 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <set>
+
 #include "SceneGraph/scene1.h"
 #include "SceneGraph/Collector/collector.h"
 
 namespace Baikal
 {
+    class UberV2Material;
     class CLInputMapGenerator
     {
     public:
@@ -40,9 +43,11 @@ namespace Baikal
     private:
         void GenerateSingleMaterial(const UberV2Material *material);
         void GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input);
+        void GenerateInputSource(std::shared_ptr<Baikal::InputMap> input);
         std::string m_source_code;
         std::string m_read_functions;
         std::string m_float4_selector;
         std::string m_float_selector;
+        std::set<uint32_t> m_generated_inputs;
     };
 }

@@ -20,27 +20,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#pragma once
-
 #include <assert.h>
 
 #include "cl_inputmap_generator.h"
 #include "SceneGraph/uberv2material.h"
+#include "SceneGraph/inputmaps.h"
 
 using namespace Baikal;
 
 const std::string header = "#ifndef INPUTMAPS_CL\n#define INPUTMAPS_CL\n\n";
 const std::string footer = "#endif\n\n";
 
-const std::string float4_selector_header = 
+const std::string float4_selector_header =
     "float4 GetInputMapFloat4(uint input_id)\n{\n"
     "\tswitch(input_id)\n\t{\n";
-const std::string float4_selector_footer = "\t}\n}\n";
+const std::string float4_selector_footer = "\t}\n\treturn 0.0f;\n}\n";
 
-const std::string float_selector_header = 
+const std::string float_selector_header =
     "float GetInputMapFloat(uint input_id)\n{\n"
     "\tswitch(input_id)\n\t{\n";
-const std::string float_selector_footer = "\t}\n}\n";
+const std::string float_selector_footer = "\t}\n\treturn 0.0f;\n}\n";
 
 void CLInputMapGenerator::Generate(const Collector& mat_collector)
 {
@@ -48,7 +47,8 @@ void CLInputMapGenerator::Generate(const Collector& mat_collector)
     m_read_functions.clear();
     m_float4_selector = float4_selector_header;
     m_float_selector = float_selector_header;
-    
+
+    m_generated_inputs.clear();
     auto mat_iter = mat_collector.CreateIterator();
     for (; mat_iter->IsValid(); mat_iter->Next())
     {
@@ -73,7 +73,7 @@ void CLInputMapGenerator::GenerateSingleMaterial(const UberV2Material *material)
     for (size_t input_id = 0; input_id < material->GetNumInputs(); ++input_id)
     {
         Material::Input input = material->GetInput(input_id);
-        assert((!input.info.supported_types.empty()) && 
+        assert((!input.info.supported_types.empty()) &&
             ( *(input.info.supported_types.begin()) == Material::InputType::kInputMap));
 
         auto input_map = input.value.input_map_value;
@@ -84,5 +84,33 @@ void CLInputMapGenerator::GenerateSingleMaterial(const UberV2Material *material)
 
 void CLInputMapGenerator::GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input)
 {
+    if (m_generated_inputs.find(input->GetId()) != m_generated_inputs.end()) return;
 
+    std::string input_id = std::to_string(input->GetId());
+
+    //Generate code for selectors
+    m_float4_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "();\n";
+    m_float_selector += "\t\tcase " + input_id + ": return ReadInputMap" + input_id + "().x;\n";
+
+    m_read_functions += "float4 ReadInputMap" + input_id + "()\n{\n";
+
+    GenerateInputSource(input);
+
+    m_read_functions += "}\n";
+
+    m_generated_inputs.insert(input->GetId());
+}
+
+void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> input)
+{
+    if (input->type == InputMap::InputMapType::kConstantFloat)
+    {
+        InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
+        m_read_functions += "\treturn " + std::to_string(i->value) + ";\n";
+    }
+    else if(input->type == InputMap::InputMapType::kConstantFloat4)
+    {
+        InputMap_ConstantFloat4 *i = static_cast<InputMap_ConstantFloat4*>(input.get());
+        m_read_functions += "\treturn (float4)(" + std::to_string(i->value.x) + ", " + std::to_string(i->value.y) + ", " + std::to_string(i->value.z) + ", " + std::to_string(i->value.w) + ");\n";
+    }
 }

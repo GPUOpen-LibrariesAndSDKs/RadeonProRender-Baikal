@@ -53,5 +53,4 @@ namespace Baikal
         float value;
     };
 
-
 }

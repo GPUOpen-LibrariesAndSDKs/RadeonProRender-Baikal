@@ -34,13 +34,13 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/light.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
 #include <../Baikal/Kernels/CL/material.cl>
-#include <../Baikal/Kernels/CL/volumetrics.cl> 
+#include <../Baikal/Kernels/CL/volumetrics.cl>
 #include <../Baikal/Kernels/CL/path.cl>
 
 
 KERNEL
 void InitPathData(
-    GLOBAL int const* restrict src_index, 
+    GLOBAL int const* restrict src_index,
     GLOBAL int* restrict dst_index,
     GLOBAL int const* restrict num_elements,
     GLOBAL Path* restrict paths
@@ -54,7 +54,7 @@ void InitPathData(
         GLOBAL Path* my_path = paths + global_id;
         dst_index[global_id] = src_index[global_id];
 
-        // Initalize path data 
+        // Initalize path data
         my_path->throughput = make_float3(1.f, 1.f, 1.f);
         my_path->volume = INVALID_IDX;
         my_path->flags = 0;
@@ -64,7 +64,7 @@ void InitPathData(
 
 // This kernel only handles scattered paths.
 // It applies direct illumination and generates
-// path continuation if multiscattering is enabled. 
+// path continuation if multiscattering is enabled.
 KERNEL void ShadeVolume(
     // Ray batch
     GLOBAL ray const* restrict rays,
@@ -102,7 +102,7 @@ KERNEL void ShadeVolume(
     int num_lights,
     // RNG seed
     uint rng_seed,
-    // Sampler state 
+    // Sampler state
     GLOBAL uint* restrict random,
     // Sobol matrices
     GLOBAL uint const* restrict sobol_mat,
@@ -231,7 +231,7 @@ KERNEL void ShadeVolume(
         pdf = 1.f / (4.f * PI);
 
         // Generate new path segment
-        Ray_Init(indirect_rays + global_id, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF); 
+        Ray_Init(indirect_rays + global_id, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF);
 
         // Update path throughput multiplying by phase function.
         Path_MulThroughput(path, PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
@@ -245,7 +245,7 @@ KERNEL void ShadeVolume(
 }
 
 
-// Handle ray-surface interaction possibly generating path continuation. 
+// Handle ray-surface interaction possibly generating path continuation.
 // This is only applied to non-scattered paths.
 KERNEL void ShadeSurface(
     // Ray batch
@@ -342,7 +342,7 @@ KERNEL void ShadeSurface(
         float3 wi = -normalize(rays[hit_idx].d.xyz);
 
         Sampler sampler;
-#if SAMPLER == SOBOL 
+#if SAMPLER == SOBOL
         uint scramble = random[pixel_idx] * 0x1fe3434f;
         Sampler_Init(&sampler, frame, SAMPLE_DIM_SURFACE_OFFSET + bounce * SAMPLE_DIMS_PER_BOUNCE, scramble);
 #elif SAMPLER == RANDOM
@@ -356,25 +356,25 @@ KERNEL void ShadeSurface(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo); 
+        Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
         bool backfacing = ngdotwi < 0.f;
 
-        // Select BxDF 
+        // Select BxDF
 #ifdef ENABLE_UBERV2
         UberV2ShaderData uber_shader_data;
         if (diffgeo.mat.type == kUberV2)
         {
-            uber_shader_data = UberV2PrepareInputs(dg);
+            uber_shader_data = UberV2PrepareInputs(&diffgeo);
             GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
         }
         else Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 #else
         Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 #endif
-                    
+
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);
 
@@ -415,7 +415,7 @@ KERNEL void ShadeSurface(
         {
             //Reverse normal and tangents in this case
             //but not for BTDFs, since BTDFs rely
-            //on normal direction in order to arrange   
+            //on normal direction in order to arrange
             //indices of refraction
             diffgeo.n = -diffgeo.n;
             diffgeo.dpdu = -diffgeo.dpdu;
@@ -452,7 +452,7 @@ KERNEL void ShadeSurface(
         float bxdf_weight = 1.f;
         float light_weight = 1.f;
 
-        int light_idx = Scene_SampleLight(&scene, Sampler_Sample1D(&sampler, SAMPLER_ARGS), &selection_pdf); 
+        int light_idx = Scene_SampleLight(&scene, Sampler_Sample1D(&sampler, SAMPLER_ARGS), &selection_pdf);
 
         float3 throughput = Path_GetThroughput(path);
 
@@ -460,14 +460,14 @@ KERNEL void ShadeSurface(
         const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf, &uber_shader_data);
 
-        // If we have light to sample we can hopefully do mis 
-        if (light_idx > -1) 
+        // If we have light to sample we can hopefully do mis
+        if (light_idx > -1)
         {
             // Sample light
             int bxdf_flags = Path_GetBxdfFlags(path);
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &lightwo, &light_pdf);
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS, &uber_shader_data);
-            light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf); 
+            light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf);
 
             // Apply MIS to account for both
             if (NON_BLACK(le) && light_pdf > 0.0f && !Bxdf_IsSingular(&diffgeo))
@@ -498,7 +498,7 @@ KERNEL void ShadeSurface(
                 radiance += Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length) * throughput;
             }
 
-            // And write the light sample 
+            // And write the light sample
             light_samples[global_id] = REASONABLE_RADIANCE(radiance);
         }
         else
@@ -580,7 +580,7 @@ KERNEL void ShadeBackgroundEnvMap(
         float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
 
         // In case of a miss
-        if (isects[global_id].shapeid < 0 && env_light_idx != -1)  
+        if (isects[global_id].shapeid < 0 && env_light_idx != -1)
         {
             // Multiply by throughput
             int volume_idx = paths[pixel_idx].volume;
@@ -603,12 +603,12 @@ KERNEL void ShadeBackgroundEnvMap(
             }
         }
 
-        ADD_FLOAT4(&output[output_index], v); 
+        ADD_FLOAT4(&output[output_index], v);
     }
 }
 
 ///< Handle light samples and visibility info and add contribution to final buffer
-KERNEL void GatherLightSamples(  
+KERNEL void GatherLightSamples(
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
     // Output indices
@@ -642,12 +642,12 @@ KERNEL void GatherLightSamples(
             if (shadow_hits[global_id] == -1)
             {
                 // Add its contribution to radiance accumulator
-                radiance.xyz += light_samples[global_id];  
+                radiance.xyz += light_samples[global_id];
             }
         }
 
         // Divide by number of light samples (samples already have built-in throughput)
-        ADD_FLOAT4(&output[output_index], radiance); 
+        ADD_FLOAT4(&output[output_index], radiance);
     }
 }
 
@@ -737,11 +737,11 @@ KERNEL void FilterPathStream(
 
         if (Path_IsAlive(path))
         {
-            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT);  
+            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT);
 
             if (!kill)
             {
-                predicate[global_id] = isects[global_id].shapeid >= 0 ? 1 : 0; 
+                predicate[global_id] = isects[global_id].shapeid >= 0 ? 1 : 0;
             }
             else
             {
@@ -751,7 +751,7 @@ KERNEL void FilterPathStream(
         }
         else
         {
-            predicate[global_id] = 0; 
+            predicate[global_id] = 0;
         }
     }
 }
@@ -761,7 +761,7 @@ KERNEL void ShadeMiss(
     // Ray batch
     GLOBAL ray const* restrict rays,
     // Intersection data
-    GLOBAL Intersection const* restrict isects,  
+    GLOBAL Intersection const* restrict isects,
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
     // Output indices

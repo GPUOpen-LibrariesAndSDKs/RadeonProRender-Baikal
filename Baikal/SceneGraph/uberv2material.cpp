@@ -26,7 +26,7 @@ THE SOFTWARE.
 using namespace Baikal;
 using namespace RadeonRays;
 
-namespace 
+namespace
 {
     struct UberV2MaterialConcrete : public UberV2Material {
     };
@@ -40,59 +40,65 @@ UberV2Material::UberV2Material()
 {
     using namespace RadeonRays;
 
+    auto f4_one = InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f));
+    auto f4_zero = InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 0.0f, 0.0f));
+    auto f_zero = InputMap_ConstantFloat::Create(0.0f);
+    auto def_ior = InputMap_ConstantFloat::Create(1.5f);
+    auto def_roughness = InputMap_ConstantFloat::Create(0.5f);
+
     //Diffuse
     RegisterInput("uberv2.diffuse.color", "base diffuse albedo", { InputType::kInputMap });
-    SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f)));
+    SetInputValue("uberv2.diffuse.color", f4_one);
 
     //Reflection
     RegisterInput("uberv2.reflection.color", "base reflection albedo", { InputType::kInputMap });
-    SetInputValue("uberv2.reflection.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f)));
+    SetInputValue("uberv2.reflection.color", f4_one);
     RegisterInput("uberv2.reflection.roughness", "reflection roughness", { InputType::kInputMap });
-    SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create(0.5f));
+    SetInputValue("uberv2.reflection.roughness", def_roughness);
     RegisterInput("uberv2.reflection.anisotropy", "level of anisotropy", { InputType::kInputMap });
-    SetInputValue("uberv2.reflection.anisotropy", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.reflection.anisotropy", f_zero);
     RegisterInput("uberv2.reflection.anisotropy_rotation", "orientation of anisotropic component", { InputType::kInputMap });
-    SetInputValue("uberv2.reflection.anisotropy_rotation", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.reflection.anisotropy_rotation", f_zero);
     RegisterInput("uberv2.reflection.ior", "index of refraction", { InputType::kInputMap });
-    SetInputValue("uberv2.reflection.ior", InputMap_ConstantFloat::Create(1.5f));
+    SetInputValue("uberv2.reflection.ior", def_ior);
     RegisterInput("uberv2.reflection.metalness", "metalness of the material", { InputType::kInputMap });
-    SetInputValue("uberv2.reflection.metalness", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.reflection.metalness", f_zero);
 
     //Coating
     RegisterInput("uberv2.coating.color", "base coating albedo", { InputType::kInputMap });
-    SetInputValue("uberv2.coating.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f)));
+    SetInputValue("uberv2.coating.color", f4_one);
     RegisterInput("uberv2.coating.ior", "index of refraction", { InputType::kInputMap });
-    SetInputValue("uberv2.coating.ior", InputMap_ConstantFloat::Create(1.5f));
+    SetInputValue("uberv2.coating.ior", def_ior);
 
     //Refraction
     RegisterInput("uberv2.refraction.color", "base refraction albedo", { InputType::kInputMap });
-    SetInputValue("uberv2.refraction.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f)));
+    SetInputValue("uberv2.refraction.color", f4_one);
     RegisterInput("uberv2.refraction.roughness", "refraction roughness", { InputType::kInputMap });
-    SetInputValue("uberv2.refraction.roughness", InputMap_ConstantFloat::Create(0.5f));
+    SetInputValue("uberv2.refraction.roughness", def_roughness);
     RegisterInput("uberv2.refraction.ior", "index of refraction", { InputType::kInputMap });
-    SetInputValue("uberv2.refraction.ior", InputMap_ConstantFloat::Create(1.5f));
+    SetInputValue("uberv2.refraction.ior", def_ior);
 
     //Emission
     RegisterInput("uberv2.emission.color", "emission albedo", { InputType::kInputMap });
-    SetInputValue("uberv2.emission.color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f)));
+    SetInputValue("uberv2.emission.color", f4_one);
 
     //SSS
     RegisterInput("uberv2.sss.absorption_color", "volume absorption color", { InputType::kInputMap });
-    SetInputValue("uberv2.sss.absorption_color", InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 0.0f, 0.0f)));
+    SetInputValue("uberv2.sss.absorption_color", f4_zero);
     RegisterInput("uberv2.sss.scatter_color", "volume scattering color", { InputType::kInputMap });
-    SetInputValue("uberv2.sss.scatter_color", InputMap_ConstantFloat4::Create(float4(0.0f, 0.0f, 0.0f, 0.0f)));
+    SetInputValue("uberv2.sss.scatter_color", f4_zero);
     RegisterInput("uberv2.sss.absorption_distance", "maximum distance the light can travel before absorbed in meters", { InputType::kInputMap });
-    SetInputValue("uberv2.sss.absorption_distance", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.sss.absorption_distance", f_zero);
     RegisterInput("uberv2.sss.scatter_distance", "maximum distance the light can travel before scattered", { InputType::kInputMap });
-    SetInputValue("uberv2.sss.scatter_distance", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.sss.scatter_distance", f_zero);
     RegisterInput("uberv2.sss.scatter_direction", "scattering direction (G parameter of Henyey-Grenstein scattering function)", { InputType::kInputMap });
-    SetInputValue("uberv2.sss.scatter_direction", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.sss.scatter_direction", f_zero);
     RegisterInput("uberv2.sss.subsurface_color", "color of diffuse refraction BRDF", { InputType::kInputMap });
-    SetInputValue("uberv2.sss.subsurface_color", InputMap_ConstantFloat4::Create(float4(1.0f, 1.0f, 1.0f, 1.0f)));
+    SetInputValue("uberv2.sss.subsurface_color", f4_one);
 
     //Transparency
     RegisterInput("uberv2.transparency", "level of transparency", { InputType::kInputMap });
-    SetInputValue("uberv2.transparency", InputMap_ConstantFloat::Create(0.0f));
+    SetInputValue("uberv2.transparency", f_zero);
 
 
     /*RegisterInput("uberv2.normal", "normal map texture", { InputType::kInputMap });
