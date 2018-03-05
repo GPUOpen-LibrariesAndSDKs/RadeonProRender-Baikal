@@ -12,7 +12,7 @@ float3 UberV2_Lambert_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    return shader_data->diffuse_color.xyz / PI;
+    return shader_data->diffuse_color.xyz /  PI;
 }
 
 float UberV2_Lambert_GetPdf(
@@ -39,7 +39,7 @@ float3 UberV2_Lambert_Sample(
     TEXTURE_ARG_LIST,
     // Sample
     float2 sample,
-    // Outgoing  direction
+    // Outgoing direction
     float3* wo,
     // PDF at wo
     float* pdf
@@ -628,7 +628,7 @@ float3 UberV2_Reflection_Sample(
     const float metalness = shader_data->reflection_metalness;
 
     float3 color = mix((float3)(1.0f, 1.0f, 1.0f), ks, metalness);
-    
+
     return is_singular ?
         UberV2_IdealReflect_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf, color) :
         UberV2_MicrofacetGGX_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf, color);

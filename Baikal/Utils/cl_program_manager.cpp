@@ -23,6 +23,9 @@ THE SOFTWARE.
 #include "cl_program_manager.h"
 
 #include <fstream>
+#include <regex>
+
+
 using namespace Baikal;
 
 uint32_t CLProgramManager::m_next_program_id = 0;
@@ -51,7 +54,25 @@ CLProgramManager::CLProgramManager(const std::string &cache_path) :
 
 uint32_t CLProgramManager::CreateProgram(CLWContext context, const std::string &fname) const
 {
-    CLProgram prg(this, m_next_program_id++, context);
+    std::regex delimiter("\\\\");
+    auto fullpath = std::regex_replace(fname, delimiter, "/");
+
+    auto filename_start = fullpath.find_last_of('/');
+
+    if (filename_start == std::string::npos)
+        filename_start = 0;
+    else
+        filename_start += 1;
+
+    auto filename_end = fullpath.find_last_of('.');
+
+    if (filename_end == std::string::npos)
+        filename_end = fullpath.size();
+
+    auto name = fullpath.substr(filename_start, filename_end - filename_start);
+
+
+    CLProgram prg(this, m_next_program_id++, context, name, m_cache_path);
     prg.SetSource(ReadFile(fname));
     m_programs.insert(std::make_pair(prg.GetId(), prg));
     return prg.GetId();
@@ -94,12 +115,5 @@ CLWProgram CLProgramManager::GetProgram(uint32_t id, const std::string &opts) co
 void CLProgramManager::CompileProgram(uint32_t id, const std::string &opts) const
 {
     CLProgram &program = m_programs[id];
-
-    //Temporary to save
-    const std::string &program_source = program.GetFullSource();
-    std::ofstream out("1.cl");
-    out << program_source;
-    out.close();
-
     program.Compile(opts);
 }

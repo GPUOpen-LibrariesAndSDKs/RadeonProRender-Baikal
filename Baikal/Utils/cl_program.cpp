@@ -26,14 +26,83 @@ THE SOFTWARE.
 #include <chrono>
 #include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <regex>
 
 #include "cl_program_manager.h"
+#include "version.h"
 
 using namespace Baikal;
 
+inline std::uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
+{
+    std::uint32_t hash, i;
+    for (hash = i = 0; i < len; ++i)
+    {
+        hash += key[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+    return hash;
+}
 
-CLProgram::CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context) :
+// Computting check sum algo
+// Copy from here: https://codereview.stackexchange.com/questions/104948/32-bit-checksum-of-a-file
+inline std::uint32_t CheckSum(const std::string &source)
+{
+    std::uint32_t check_sum = 0;
+    unsigned shift = 0;
+    for (uint32_t ch : source)
+    {
+        check_sum += (ch << shift);
+        shift += 8;
+        if (shift == 32) {
+            shift = 0;
+        }
+    }
+    return check_sum;
+}
+
+inline bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& data)
+{
+    std::ifstream in(name, std::ios::in | std::ios::binary);
+    if (in)
+    {
+        data.clear();
+        std::streamoff beg = in.tellg();
+        in.seekg(0, std::ios::end);
+        std::streamoff fileSize = in.tellg() - beg;
+        in.seekg(0, std::ios::beg);
+        data.resize(static_cast<unsigned>(fileSize));
+        in.read((char*)&data[0], fileSize);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+inline void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data)
+{
+    std::ofstream out(name, std::ios::out | std::ios::binary);
+
+    if (out)
+    {
+        out.write((char*)&data[0], data.size());
+    }
+}
+
+
+CLProgram::CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context,
+                     const std::string &program_name, const std::string &cache_path) :
     m_program_manager(program_manager),
+    m_program_name(program_name),
+    m_cache_path(cache_path),
     m_id(id),
     m_context(context)
 {
@@ -100,25 +169,12 @@ void CLProgram::BuildSource(const std::string &source)
     m_compiled_source += source.substr(offset);
 }
 
-const std::string& CLProgram::GetFullSource()
-{
-    if (m_is_dirty)
-    {
-        m_compiled_source.clear();
-        m_included_headers.clear();
-        BuildSource(m_program_source);
-    }
-
-    return m_compiled_source;
-}
-
 CLWProgram CLProgram::Compile(const std::string &opts)
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     start = std::chrono::system_clock::now();
-    const std::string &src = GetFullSource();
 
-    CLWProgram compiled_program = CLWProgram::CreateFromSource(src.c_str(), src.size(), opts.c_str(), m_context);
+    CLWProgram compiled_program = CLWProgram::CreateFromSource(m_compiled_source.c_str(), m_compiled_source.size(), opts.c_str(), m_context);
 
     end = std::chrono::system_clock::now();
     int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
@@ -139,6 +195,9 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
     if (m_is_dirty)
     {
         m_programs.clear();
+        m_compiled_source.clear();
+        m_included_headers.clear();
+        BuildSource(m_program_source);
     }
 
     auto it = m_programs.find(opts);
@@ -147,6 +206,71 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
         return it->second;
     }
 
-    m_programs[opts] = Compile(opts);
-    return m_programs[opts];
+    CLWProgram result;
+    //check if we can get it from cache
+    if (!m_cache_path.empty())
+    {
+        std::string filename = GetFilenameHash(opts);
+
+        auto cached_program_path = m_cache_path;
+        cached_program_path.append("/");
+        cached_program_path.append(filename);
+        cached_program_path.append(".bin");
+
+        std::vector<std::uint8_t> binary;
+        if (LoadBinaries(cached_program_path, binary))
+        {
+            // Create from binary
+            std::size_t size = binary.size();
+            auto binaries = &binary[0];
+            result = CLWProgram::CreateFromBinary(&binaries, &size, m_context);
+        }
+        else
+        {
+            result = Compile(opts);
+            m_programs[opts] = result;
+
+            // Save binaries
+            result.GetBinaries(0, binary);
+            SaveBinaries(cached_program_path, binary);
+        }
+
+    }
+
+    return result;
+}
+
+std::string CLProgram::GetFilenameHash(std::string const& opts) const
+{
+    auto name = m_program_name;
+    auto device_name = m_context.GetDevice(0).GetName();
+
+    std::regex forbidden("(\\\\)|[\\./:<>\\\"\\|\\?\\*]");
+
+    device_name = std::regex_replace(device_name, forbidden, "_");
+    device_name.erase(
+        std::remove_if(device_name.begin(), device_name.end(), isspace),
+                      device_name.end());
+
+    name.append("_");
+    name.append(device_name);
+
+    auto extra = m_context.GetDevice(0).GetVersion();
+    extra.append(opts);
+
+    std::ostringstream oss;
+    oss << jenkins_one_at_a_time_hash(extra.c_str(), extra.size());
+
+    name.append("_");
+    name.append(oss.str());
+
+
+    std::uint32_t file_hash = CheckSum(m_compiled_source);
+
+    name.append("_");
+    name.append(std::to_string(file_hash));
+
+    name.append(BAIKAL_VERSION);
+
+    return name;
 }
