@@ -85,13 +85,12 @@ namespace Baikal
     typedef InputMap_TwoArg<InputMap::InputMapType::kSub> InputMap_Sub;
     typedef InputMap_TwoArg<InputMap::InputMapType::kMul> InputMap_Mul;
     typedef InputMap_TwoArg<InputMap::InputMapType::kDiv> InputMap_Div;
+    typedef InputMap_TwoArg<InputMap::InputMapType::kMin> InputMap_Min;
+    typedef InputMap_TwoArg<InputMap::InputMapType::kMax> InputMap_Max;
+
 /*
 
     kSampler,
-    kAdd,
-    kSub,
-    kMul,
-    kDiv,
     kSin,
     kCos,
     kTan,
@@ -106,8 +105,6 @@ namespace Baikal
     kAsin,
     kAtan,
     kAverage, //Components as parameter
-    kMin,
-    kMax,
     kFloor,
     kMod,
     kAbs,

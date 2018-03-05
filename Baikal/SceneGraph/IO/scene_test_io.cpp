@@ -485,14 +485,14 @@ namespace Baikal
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
             auto roughness = InputMap_ConstantFloat::Create(0.05);
-            auto color1 = InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 1.0f, 0.0f));
+            auto color1 = InputMap_ConstantFloat3::Create(float3(0.5f, 0.0f, 1.0f, 0.0f));
             auto color2 = InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f));
-            auto color3 = InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f));
+            auto color3 = InputMap_ConstantFloat3::Create(float3(0.5f, 0.0f, 0.0f, 0.0f));
 
-            auto sum = InputMap_Add::Create(color1, color2);
+            auto sum = InputMap_Add::Create(color1, color3);
 
 
-            auto diffuse_color = InputMap_Mul::Create(sum, color3);
+            auto diffuse_color = InputMap_Max::Create(sum, color2);
 
 
             auto uberv2 = UberV2Material::Create();

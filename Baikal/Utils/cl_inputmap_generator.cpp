@@ -171,6 +171,28 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         GenerateInputSource(i->m_b);
         m_read_functions += "\t)\n";
     }
+    else if(input->m_type == InputMap::InputMapType::kMin)
+    {
+        InputMap_Min *i = static_cast<InputMap_Min*>(input.get());
+
+
+        m_read_functions += "min(\n\t\t";
+        GenerateInputSource(i->m_a);
+        m_read_functions +=  "\t, \n\t\t";
+        GenerateInputSource(i->m_b);
+        m_read_functions += "\t)\n";
+    }
+    else if(input->m_type == InputMap::InputMapType::kMax)
+    {
+        InputMap_Max *i = static_cast<InputMap_Max*>(input.get());
+
+
+        m_read_functions += "max(\n\t\t";
+        GenerateInputSource(i->m_a);
+        m_read_functions +=  "\t, \n\t\t";
+        GenerateInputSource(i->m_b);
+        m_read_functions += "\t)\n";
+    }
 
 
 }
