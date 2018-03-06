@@ -47,58 +47,46 @@ protected:
         m_scene = io->LoadScene("sphere+plane+ibl", "");
     }
 
-    void MaterialTestHelperFunction(
-        const std::string& test_name,
-        const std::vector<float> &iors,
-        std::function<std::shared_ptr<Baikal::MultiBxdf>(float ior)> produce_material)
+    void SetUp() override
     {
-        using namespace Baikal;
-
+        BasicTest::SetUp();
         m_camera->LookAt(
             RadeonRays::float3(0.f, 2.f, -10.f),
             RadeonRays::float3(0.f, 2.f, 0.f),
             RadeonRays::float3(0.f, 1.f, 0.f));
+    }
 
-        for (auto ior : iors)
+    void RunAndSave(Baikal::UberV2Material::Ptr material)
+    {
+        ClearOutput();
+
+        ApplyMaterialToObject("sphere", material);
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
         {
-            auto material = produce_material(ior);
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
 
-            ApplyMaterialToObject("sphere", material);
-
-            ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
-
-            auto& scene = m_controller->GetCachedScene(m_scene);
-
-            for (auto i = 0u; i < kNumIterations; ++i)
-            {
-                ASSERT_NO_THROW(m_renderer->Render(scene));
-            }
-
-            {
-                std::ostringstream oss;
-
-                if (iors.size() == 1 && iors[0] == 0)
-                    oss << test_name << ".png";
-                else
-                    oss << test_name << "_" << ior << ".png";
-
-                SaveOutput(oss.str());
-                ASSERT_TRUE(CompareToReference(oss.str()));
-            }
+        {
+            std::ostringstream oss;
+            oss << test_name() << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
         }
     }
+
 };
 
 TEST_F(InputMapsTest, InputMap_ConstFloat4)
 {
-    m_camera->LookAt(
-        RadeonRays::float3(0.f, 2.f, -10.f),
-        RadeonRays::float3(0.f, 2.f, 0.f),
-        RadeonRays::float3(0.f, 1.f, 0.f));
-
     auto material = Baikal::UberV2Material::Create();
     auto diffuse_color = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f)));
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
 
     std::vector<float3> colors =
     {
@@ -130,4 +118,92 @@ TEST_F(InputMapsTest, InputMap_ConstFloat4)
             ASSERT_TRUE(CompareToReference(oss.str()));
         }
     }
+}
+
+TEST_F(InputMapsTest, InputMap_ConstFloat)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto diffuse_color = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f)));
+    auto ior = std::static_pointer_cast<Baikal::InputMap_ConstantFloat>(Baikal::InputMap_ConstantFloat::Create(1.0f));
+    material->SetInputValue("uberv2.coating.color", diffuse_color);
+    material->SetInputValue("uberv2.coating.ior", ior);
+    material->SetLayers(Baikal::UberV2Material::Layers::kCoatingLayer);
+
+    std::vector<float> iors = { 0.0f, 0.05f, 0.1f, 0.5f, 1.0f};
+
+    for (auto& c : iors)
+    {
+        ior->m_value = c;
+        ClearOutput();
+
+        ApplyMaterialToObject("sphere", material);
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_" << c << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+}
+
+TEST_F(InputMapsTest, InputMap_Add)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f)));
+    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+    auto diffuse_color = Baikal::InputMap_Add::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Sub)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f)));
+    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+    auto diffuse_color = Baikal::InputMap_Sub::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Mul)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f)));
+    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+    auto diffuse_color = Baikal::InputMap_Mul::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Div)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 1.0f, 0.0f, 0.0f)));
+    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 100.0f, 0.0f, 0.0f)));
+    auto diffuse_color = Baikal::InputMap_Div::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
 }
