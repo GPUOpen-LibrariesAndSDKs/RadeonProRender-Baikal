@@ -174,7 +174,21 @@ CLWProgram CLProgram::Compile(const std::string &opts)
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     start = std::chrono::system_clock::now();
 
-    CLWProgram compiled_program = CLWProgram::CreateFromSource(m_compiled_source.c_str(), m_compiled_source.size(), opts.c_str(), m_context);
+    CLWProgram compiled_program;
+    try
+    {
+        compiled_program = CLWProgram::CreateFromSource(m_compiled_source.c_str(), m_compiled_source.size(), opts.c_str(), m_context);
+    }
+    catch (CLWException exception)
+    {
+        std::cerr<<"Compilation failed!"<<std::endl;
+        std::cerr<<"Dumping source to file:"<<m_program_name<<".cl.failed"<<std::endl;
+        std::string fname = m_program_name + ".cl.failed";
+        std::ofstream file(fname);
+        file << m_compiled_source;
+        file.close();
+        throw;
+    }
 
     end = std::chrono::system_clock::now();
     int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();

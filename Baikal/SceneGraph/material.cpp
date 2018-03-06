@@ -79,6 +79,10 @@ namespace Baikal
                           {
                               textures.insert(map_entry.second.value.tex_value);
                           }
+                          else if (map_entry.second.value.type == InputType::kInputMap)
+                          {
+                              map_entry.second.value.input_map_value->CollectTextures(textures);
+                          }
                       }
                       );
 

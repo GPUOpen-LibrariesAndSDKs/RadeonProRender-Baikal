@@ -34,36 +34,38 @@ namespace Baikal
         {
             kConstantFloat3 = 0,
             kConstantFloat,
-            kConstantInt,
             kSampler,
-            kAdd,
-            kSub,
-            kMul,
-            kDiv,
-            kSin,
-            kCos,
-            kTan,
-            kSelect, //component as parameter
-            kCombine,
-            kDot3,
-            kCross3,
-            kLength3,
-            kNormalize3,
-            kPow,
-            kAcos,
-            kAsin,
-            kAtan,
-            kAverage, //Components as parameter
-            kMin,
-            kMax,
-            kFloor,
-            kMod,
-            kAbs,
-            kShuffle, //Step count as parameter (1 - WXYZ, 2- ZWXY, 3 - YZWX)
-            kDot4
+            kAdd, // a + b
+            kSub, // a - b
+            kMul, // a * b
+            kDiv, // a / b
+            kSin, // sin(arg)
+            kCos, // cos(arg)
+            kTan, // tan(arg)
+            kSelect, // Selects single component from input arg
+            kDot3, // dot(a.xyz, b.xyz)
+            kCross3, // cross(a.xyz, b.xyz)
+            kLength3, // length(a.xyz)
+            kNormalize3, // normalize(a.xyz)
+            kPow, // pow(a, b)
+            kAcos, // acos(arg)
+            kAsin, // asin(arg)
+            kAtan, // atan(arg)
+            kLerp, // mix (a, b, control)
+            kMin, // min(a, b)
+            kMax, // max(a, b)
+            kFloor, // floor(arg)
+            kMod, // fmod(a, b)
+            kAbs, // fabs(arg)
+            kShuffle, // shuffle(arg, mask)
+            kShuffle2, // shuffle2(a, b, mask)
+            kDot4, // dot(a, b)
+            kCross4, // cross(a, b)
+            kMatMul // arg * mat4
         };
         InputMapType m_type;
 
         InputMap(InputMapType t) : SceneObject(), m_type(t) {}
+        virtual void CollectTextures(std::set<Texture::Ptr> &textures) = 0;
     };
 }

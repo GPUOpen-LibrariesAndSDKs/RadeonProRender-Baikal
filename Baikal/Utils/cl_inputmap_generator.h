@@ -35,7 +35,7 @@ namespace Baikal
     class CLInputMapGenerator
     {
     public:
-        void Generate(const Collector& mat_collector);
+        void Generate(const Collector& mat_collector, const Collector& tex_collector);
         const std::string& GetGeneratedSource() const
         {
             return m_source_code;
@@ -46,9 +46,9 @@ namespace Baikal
         }
 
     private:
-        void GenerateSingleMaterial(const UberV2Material *material);
-        void GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input);
-        void GenerateInputSource(std::shared_ptr<Baikal::InputMap> input);
+        void GenerateSingleMaterial(const UberV2Material *material, const Collector& tex_collector);
+        void GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input, const Collector& tex_collector);
+        void GenerateInputSource(std::shared_ptr<Baikal::InputMap> input, const Collector& tex_collector);
         std::string m_source_code;
         std::string m_read_functions;
         std::string m_float4_selector;

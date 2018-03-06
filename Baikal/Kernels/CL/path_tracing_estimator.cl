@@ -368,7 +368,7 @@ KERNEL void ShadeSurface(
         UberV2ShaderData uber_shader_data;
         if (diffgeo.mat.type == kUberV2)
         {
-            uber_shader_data = UberV2PrepareInputs(&diffgeo, input_map_values);
+            uber_shader_data = UberV2PrepareInputs(&diffgeo, input_map_values, TEXTURE_ARGS);
             GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
         }
         else

@@ -731,7 +731,7 @@ namespace Baikal
         // Serialize input map data
         {
             CLInputMapGenerator generator;
-            generator.Generate(mat_collector);
+            generator.Generate(mat_collector, tex_collector);
             std::string source = generator.GetGeneratedSource();
             m_program_manager->AddHeader("inputmaps.cl", source);
 
