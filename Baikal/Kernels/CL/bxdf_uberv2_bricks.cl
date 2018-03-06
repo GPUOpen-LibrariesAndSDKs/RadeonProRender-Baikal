@@ -12,7 +12,7 @@ float3 UberV2_Lambert_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    return shader_data->diffuse_color.xyz /  PI;
+    return shader_data->diffuse_color.xyz / PI;
 }
 
 float UberV2_Lambert_GetPdf(

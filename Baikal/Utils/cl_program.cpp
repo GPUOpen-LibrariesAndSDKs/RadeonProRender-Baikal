@@ -224,6 +224,7 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
             std::size_t size = binary.size();
             auto binaries = &binary[0];
             result = CLWProgram::CreateFromBinary(&binaries, &size, m_context);
+            m_programs[opts] = result;
         }
         else
         {
@@ -234,9 +235,9 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
             result.GetBinaries(0, binary);
             SaveBinaries(cached_program_path, binary);
         }
-
     }
 
+    m_is_dirty = false;
     return result;
 }
 
