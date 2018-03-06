@@ -746,11 +746,14 @@ namespace Baikal
                 out.input_map_data = m_context.CreateBuffer<ClwScene::InputMapData>(input_map_data_buffer_size, CL_MEM_READ_ONLY);
             }
 
-            ClwScene::InputMapData* input_map_data = nullptr;
-            // Map GPU input map buffer
-            m_context.MapBuffer(0, out.input_map_data, CL_MAP_WRITE, &input_map_data).Wait();
-            memcpy(input_map_data, input_map.data(), sizeof(ClwScene::InputMapData) * input_map_data_buffer_size);
-            m_context.UnmapBuffer(0, out.input_map_data, input_map_data);
+            if (input_map_data_buffer_size > 0)
+            {
+                ClwScene::InputMapData* input_map_data = nullptr;
+                // Map GPU input map buffer
+                m_context.MapBuffer(0, out.input_map_data, CL_MAP_WRITE, &input_map_data).Wait();
+                memcpy(input_map_data, input_map.data(), sizeof(ClwScene::InputMapData) * input_map_data_buffer_size);
+                m_context.UnmapBuffer(0, out.input_map_data, input_map_data);
+            }
         }
 
     }
