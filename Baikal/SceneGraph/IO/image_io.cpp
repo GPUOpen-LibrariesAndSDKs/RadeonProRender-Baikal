@@ -63,16 +63,13 @@ namespace Baikal
             {
                 input->read_image(TypeDesc::UINT8, texturedata, 4 * sizeof(char));
                 // set B, G and A components to 
-                for (auto y = 0u; y < spec.height; y++)
+                for (auto i = 0u; i < size; i += 4)
                 {
-                    auto step = size / spec.height;
-                    for (auto x = 0u; x < spec.height; x++)
-                    {
-                        texturedata[y * step + 4 * x + 1] = texturedata[y * step + 4 * x];
-                        texturedata[y * step + 4 * x + 2] = texturedata[y * step + 4 * x];
-                        texturedata[y * step + 4 * x + 3] = texturedata[y * step + 4 * x];
-                    }
+                    texturedata[i + 1] = texturedata[i];
+                    texturedata[i + 2] = texturedata[i];
+                    texturedata[i + 3] = texturedata[i];
                 }
+
             }
             else
             {
