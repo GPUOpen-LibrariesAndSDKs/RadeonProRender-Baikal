@@ -113,9 +113,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
 
             ClwScene::InputMapData dta = {0};
-            dta.float_value.value.x = i->m_value;
-            dta.float_value.value.y = i->m_value;
-            dta.float_value.value.z = i->m_value;
+            dta.float_value.value.x = i->GetValue();
+            dta.float_value.value.y = i->GetValue();
+            dta.float_value.value.z = i->GetValue();
             dta.int_values.type = ClwScene::InputMapDataType::kFloat;
             m_input_map.push_back(dta);
 
@@ -127,7 +127,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_ConstantFloat3 *i = static_cast<InputMap_ConstantFloat3*>(input.get());
 
             ClwScene::InputMapData dta = {0};
-            dta.float_value.value = i->m_value;
+            dta.float_value.value = i->GetValue();
             dta.int_values.type = ClwScene::InputMapDataType::kFloat3;
             m_input_map.push_back(dta);
 
@@ -139,7 +139,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Sampler *i = static_cast<InputMap_Sampler*>(input.get());
 
             ClwScene::InputMapData dta = {0};
-            dta.int_values.idx = tex_collector.GetItemIndex(i->m_texture);
+            dta.int_values.idx = tex_collector.GetItemIndex(i->GetTexture());
             dta.int_values.type = ClwScene::InputMapDataType::kFloat3;
             m_input_map.push_back(dta);
             m_read_functions += "(Texture_Sample2D(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(m_input_map.size() - 1) + "].int_values.idx)))\n";
@@ -151,9 +151,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Add *i = static_cast<InputMap_Add*>(input.get());
 
             m_read_functions += "(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t)\n\t + \n\t(\n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -162,9 +162,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Sub *i = static_cast<InputMap_Sub*>(input.get());
 
             m_read_functions += "(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t)\n\t - \n\t(\n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -173,9 +173,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Mul *i = static_cast<InputMap_Mul*>(input.get());
 
             m_read_functions += "(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t)\n\t * \n\t(\n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -184,9 +184,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Div *i = static_cast<InputMap_Div*>(input.get());
 
             m_read_functions += "(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t)\n\t / \n\t(\n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -195,9 +195,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Min *i = static_cast<InputMap_Min*>(input.get());
 
             m_read_functions += "min(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -206,9 +206,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Max *i = static_cast<InputMap_Max*>(input.get());
 
             m_read_functions += "max(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -217,9 +217,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Dot3 *i = static_cast<InputMap_Dot3*>(input.get());
 
             m_read_functions += "((float4)(dot(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  ".xyz\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += ".xyz\t), 0.0f, 0.0f, 0.0f))\n";
             break;
         }
@@ -228,9 +228,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Dot4 *i = static_cast<InputMap_Dot4*>(input.get());
 
             m_read_functions += "((float4)(dot(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t), 0.0f, 0.0f, 0.0f))\n";
             break;
         }
@@ -239,9 +239,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Cross3 *i = static_cast<InputMap_Cross3*>(input.get());
 
             m_read_functions += "((float4)(cross(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  ".xyz\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += ".xyz\t), 0.0f))\n";
             break;
         }
@@ -250,9 +250,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Cross4 *i = static_cast<InputMap_Cross4*>(input.get());
 
             m_read_functions += "cross(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -261,9 +261,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Pow *i = static_cast<InputMap_Pow*>(input.get());
 
             m_read_functions += "pow(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += ".x\t)\n";
             break;
         }
@@ -272,9 +272,9 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Mod *i = static_cast<InputMap_Mod*>(input.get());
 
             m_read_functions += "fmod(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -284,7 +284,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Sin *i = static_cast<InputMap_Sin*>(input.get());
 
             m_read_functions += "sin(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -293,7 +293,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Cos *i = static_cast<InputMap_Cos*>(input.get());
 
             m_read_functions += "cos(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -302,7 +302,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Tan *i = static_cast<InputMap_Tan*>(input.get());
 
             m_read_functions += "tan(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -311,7 +311,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Asin *i = static_cast<InputMap_Asin*>(input.get());
 
             m_read_functions += "asin(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -320,7 +320,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Acos *i = static_cast<InputMap_Acos*>(input.get());
 
             m_read_functions += "acos(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -329,7 +329,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Atan *i = static_cast<InputMap_Atan*>(input.get());
 
             m_read_functions += "atan(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -338,7 +338,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Length3 *i = static_cast<InputMap_Length3*>(input.get());
 
             m_read_functions += "(float4)(length(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += ".xyz\t), 0.0f, 0.0f, 0.0f)\n";
             break;
         }
@@ -347,7 +347,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Normalize3 *i = static_cast<InputMap_Normalize3*>(input.get());
 
             m_read_functions += "(float4)(normalize(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += ".xyz\t), 0.0f)\n";
             break;
         }
@@ -356,7 +356,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Floor *i = static_cast<InputMap_Floor*>(input.get());
 
             m_read_functions += "floor(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -365,7 +365,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Abs *i = static_cast<InputMap_Abs*>(input.get());
 
             m_read_functions += "fabs(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -375,11 +375,11 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             InputMap_Lerp *i = static_cast<InputMap_Lerp*>(input.get());
 
             m_read_functions += "mix(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions +=  "\t, \n\t\t";
-            GenerateInputSource(i->m_control, tex_collector);
+            GenerateInputSource(i->GetControl(), tex_collector);
             m_read_functions += "\t)\n";
             break;
         }
@@ -387,35 +387,37 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         {
             InputMap_Select *i = static_cast<InputMap_Select*>(input.get());
             static const std::vector<std::string> selection_to_text = { ".x", ".y", ".z", ".w" };
-            assert(static_cast<uint32_t>(i->m_selection) < selection_to_text.size());
+            assert(static_cast<uint32_t>(i->GetSelection()) < selection_to_text.size());
 
             m_read_functions += "(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
-            m_read_functions +=  selection_to_text[static_cast<uint32_t>(i->m_selection)];
+            GenerateInputSource(i->GetArg(), tex_collector);
+            m_read_functions +=  selection_to_text[static_cast<uint32_t>(i->GetSelection())];
             m_read_functions += "\n\t)\n";
             break;
         }
         case InputMap::InputMapType::kShuffle:
         {
             InputMap_Shuffle *i = static_cast<InputMap_Shuffle*>(input.get());
+            auto mask = i->GetMask();
 
             m_read_functions += "shuffle(\n\t\t";
-            GenerateInputSource(i->m_arg, tex_collector);
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions += "\t, \n\t\t";
-            m_read_functions += "(uint4)(" + std::to_string(i->m_mask[0]) + ", " + std::to_string(i->m_mask[1]) + ", " + std::to_string(i->m_mask[2]) + ", " + std::to_string(i->m_mask[3]) + ")\n";
+            m_read_functions += "(uint4)(" + std::to_string(mask[0]) + ", " + std::to_string(mask[1]) + ", " + std::to_string(mask[2]) + ", " + std::to_string(mask[3]) + ")\n";
             m_read_functions += "\t)\n";
             break;
         }
         case InputMap::InputMapType::kShuffle2:
         {
             InputMap_Shuffle2 *i = static_cast<InputMap_Shuffle2*>(input.get());
+            auto mask = i->GetMask();
 
             m_read_functions += "shuffle2(\n\t\t";
-            GenerateInputSource(i->m_a, tex_collector);
+            GenerateInputSource(i->GetA(), tex_collector);
             m_read_functions += "\t, \n\t\t";
-            GenerateInputSource(i->m_b, tex_collector);
+            GenerateInputSource(i->GetB(), tex_collector);
             m_read_functions += "\t, \n\t\t";
-            m_read_functions += "(uint4)(" + std::to_string(i->m_mask[0]) + ", " + std::to_string(i->m_mask[1]) + ", " + std::to_string(i->m_mask[2]) + ", " + std::to_string(i->m_mask[3]) + ")\n";
+            m_read_functions += "(uint4)(" + std::to_string(mask[0]) + ", " + std::to_string(mask[1]) + ", " + std::to_string(mask[2]) + ", " + std::to_string(mask[3]) + ")\n";
             m_read_functions += "\t)\n";
             break;
         }
@@ -423,30 +425,32 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         {
             InputMap_MatMul *i = static_cast<InputMap_MatMul*>(input.get());
 
+            auto mat4 = i->GetMatrix();
+
             m_read_functions += "matrix_mul_vector4(\n\t\t";
             //Generate matrix
             m_read_functions += "matrix_from_rows(\n\t\t\t";
             m_read_functions += "make_float4(" +
-                std::to_string(i->m_mat4.m00) + ", " +
-                std::to_string(i->m_mat4.m01) + ", " +
-                std::to_string(i->m_mat4.m02) + ", " +
-                std::to_string(i->m_mat4.m03) + "), \n\t\t\t";
+                std::to_string(mat4.m00) + ", " +
+                std::to_string(mat4.m01) + ", " +
+                std::to_string(mat4.m02) + ", " +
+                std::to_string(mat4.m03) + "), \n\t\t\t";
             m_read_functions += "make_float4(" +
-                std::to_string(i->m_mat4.m10) + ", " +
-                std::to_string(i->m_mat4.m11) + ", " +
-                std::to_string(i->m_mat4.m12) + ", " +
-                std::to_string(i->m_mat4.m13) + "), \n\t\t\t";
+                std::to_string(mat4.m10) + ", " +
+                std::to_string(mat4.m11) + ", " +
+                std::to_string(mat4.m12) + ", " +
+                std::to_string(mat4.m13) + "), \n\t\t\t";
             m_read_functions += "make_float4(" +
-                std::to_string(i->m_mat4.m20) + ", " +
-                std::to_string(i->m_mat4.m21) + ", " +
-                std::to_string(i->m_mat4.m22) + ", " +
-                std::to_string(i->m_mat4.m23) + "), \n\t\t\t";
+                std::to_string(mat4.m20) + ", " +
+                std::to_string(mat4.m21) + ", " +
+                std::to_string(mat4.m22) + ", " +
+                std::to_string(mat4.m23) + "), \n\t\t\t";
             m_read_functions += "make_float4(" +
-                std::to_string(i->m_mat4.m30) + ", " +
-                std::to_string(i->m_mat4.m31) + ", " +
-                std::to_string(i->m_mat4.m32) + ", " +
-                std::to_string(i->m_mat4.m33) + ")),\n\t\t(";
-            GenerateInputSource(i->m_arg, tex_collector);
+                std::to_string(mat4.m30) + ", " +
+                std::to_string(mat4.m31) + ", " +
+                std::to_string(mat4.m32) + ", " +
+                std::to_string(mat4.m33) + ")),\n\t\t(";
+            GenerateInputSource(i->GetArg(), tex_collector);
             m_read_functions +=  "\t)\n\t)";
             break;
         }

@@ -35,9 +35,10 @@ namespace Baikal
     class InputMap_ConstantFloat3 : public InputMap
     {
     public:
-        static InputMap::Ptr Create(RadeonRays::float3 value)
+        using Ptr = std::shared_ptr<InputMap_ConstantFloat3>;
+        static Ptr Create(RadeonRays::float3 value)
         {
-            return InputMap::Ptr(new InputMap_ConstantFloat3(value));
+            return Ptr(new InputMap_ConstantFloat3(value));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -45,18 +46,35 @@ namespace Baikal
             return;
         }
 
-        RadeonRays::float3 m_value;
+        void SetValue(RadeonRays::float3 value)
+        {
+            m_value = value;
+            SetDirty(true);
+        }
+
+        RadeonRays::float3 GetValue() const
+        {
+            return m_value;
+        }
 
     private:
-        explicit InputMap_ConstantFloat3(RadeonRays::float3 v) : InputMap(InputMapType::kConstantFloat3), m_value(v) {}
+        RadeonRays::float3 m_value;
+
+        explicit InputMap_ConstantFloat3(RadeonRays::float3 v) :
+        InputMap(InputMapType::kConstantFloat3),
+        m_value(v)
+        {
+            SetDirty(true);
+        }
     };
 
     class InputMap_ConstantFloat : public InputMap
     {
     public:
-        static InputMap::Ptr Create(float value)
+        using Ptr = std::shared_ptr<InputMap_ConstantFloat>;
+        static Ptr Create(float value)
         {
-            return InputMap::Ptr(new InputMap_ConstantFloat(value));
+            return Ptr(new InputMap_ConstantFloat(value));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -64,18 +82,34 @@ namespace Baikal
             return;
         }
 
+        void SetValue(float value)
+        {
+            m_value = value;
+            SetDirty(true);
+        }
+
+        float GetValue() const
+        {
+            return m_value;
+        }
+    private:
         float m_value;
 
-    private:
-        explicit InputMap_ConstantFloat(float v) : InputMap(InputMapType::kConstantFloat), m_value(v) {}
+        explicit InputMap_ConstantFloat(float v) :
+        InputMap(InputMapType::kConstantFloat),
+        m_value(v)
+        {
+            SetDirty(true);
+        }
     };
 
     class InputMap_Sampler : public InputMap
     {
     public:
-        static InputMap::Ptr Create(Texture::Ptr texture)
+        using Ptr = std::shared_ptr<InputMap_Sampler>;
+        static Ptr Create(Texture::Ptr texture)
         {
-            return InputMap::Ptr(new InputMap_Sampler(texture));
+            return Ptr(new InputMap_Sampler(texture));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -84,12 +118,28 @@ namespace Baikal
             return;
         }
 
-        Texture::Ptr m_texture;
+        void SetTexture(Texture::Ptr texture)
+        {
+            m_texture = texture;
+            assert(m_texture);
+            SetDirty(true);
+        }
+
+        Texture::Ptr GetTexture() const
+        {
+            return m_texture;
+        }
 
     private:
+        Texture::Ptr m_texture;
+
         explicit InputMap_Sampler(Texture::Ptr texture) :
         InputMap(InputMapType::kSampler),
-        m_texture(texture) {}
+        m_texture(texture)
+        {
+            assert(m_texture);
+            SetDirty(true);
+        }
     };
 
 
@@ -97,9 +147,10 @@ namespace Baikal
     class InputMap_TwoArg : public InputMap
     {
     public:
-        static InputMap::Ptr Create(InputMap::Ptr a, InputMap::Ptr b)
+        using Ptr = std::shared_ptr<InputMap_TwoArg<type>>;
+        static Ptr Create(InputMap::Ptr a, InputMap::Ptr b)
         {
-            return InputMap::Ptr(new InputMap_TwoArg(a, b));
+            return Ptr(new InputMap_TwoArg(a, b));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -109,16 +160,41 @@ namespace Baikal
             return;
         }
 
+        void SetA(InputMap::Ptr a)
+        {
+            m_a = a;
+            assert(m_a);
+            SetDirty(true);
+        }
+
+        void SetB(InputMap::Ptr b)
+        {
+            m_b = b;
+            assert(m_b);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetA() const
+        {
+            return m_a;
+        }
+
+        InputMap::Ptr GetB() const
+        {
+            return m_b;
+        }
+
+    private:
         InputMap::Ptr m_a;
         InputMap::Ptr m_b;
 
-    private:
         InputMap_TwoArg(InputMap::Ptr a, InputMap::Ptr b) :
             InputMap(type),
             m_a(a),
             m_b(b)
         {
             assert(m_a && m_b);
+            SetDirty(true);
         }
     };
 
@@ -139,9 +215,10 @@ namespace Baikal
     class InputMap_OneArg : public InputMap
     {
     public:
-        static InputMap::Ptr Create(InputMap::Ptr arg)
+        using Ptr = std::shared_ptr<InputMap_OneArg<type>>;
+        static Ptr Create(InputMap::Ptr arg)
         {
-            return InputMap::Ptr(new InputMap_OneArg(arg));
+            return Ptr(new InputMap_OneArg(arg));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -150,14 +227,27 @@ namespace Baikal
             return;
         }
 
-        InputMap::Ptr m_arg;
+        void SetArg(InputMap::Ptr arg)
+        {
+            m_arg = arg;
+            assert(m_arg);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetArg() const
+        {
+            return m_arg;
+        }
 
     private:
+        InputMap::Ptr m_arg;
+
         InputMap_OneArg(InputMap::Ptr arg) :
         InputMap(type),
         m_arg(arg)
         {
             assert(m_arg);
+            SetDirty(true);
         }
     };
 
@@ -175,14 +265,47 @@ namespace Baikal
     class InputMap_Lerp : public InputMap
     {
     public:
-        static InputMap::Ptr Create(InputMap::Ptr a, InputMap::Ptr b, InputMap::Ptr control)
+        using Ptr = std::shared_ptr<InputMap_Lerp>;
+        static Ptr Create(InputMap::Ptr a, InputMap::Ptr b, InputMap::Ptr control)
         {
-            return InputMap::Ptr(new InputMap_Lerp(a, b, control));
+            return Ptr(new InputMap_Lerp(a, b, control));
         }
 
-        InputMap::Ptr m_a;
-        InputMap::Ptr m_b;
-        InputMap::Ptr m_control;
+        void SetA(InputMap::Ptr a)
+        {
+            m_a = a;
+            assert(m_a);
+            SetDirty(true);
+        }
+
+        void SetB(InputMap::Ptr b)
+        {
+            m_b = b;
+            assert(m_b);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetA() const
+        {
+            return m_a;
+        }
+
+        InputMap::Ptr GetB() const
+        {
+            return m_b;
+        }
+
+        void SetControl(InputMap::Ptr control)
+        {
+            m_control = control;
+            assert(m_control);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetControl() const
+        {
+            return m_control;
+        }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
         {
@@ -194,6 +317,10 @@ namespace Baikal
 
 
     private:
+        InputMap::Ptr m_a;
+        InputMap::Ptr m_b;
+        InputMap::Ptr m_control;
+
         InputMap_Lerp(InputMap::Ptr a, InputMap::Ptr b, InputMap::Ptr control) :
         InputMap(InputMap::InputMapType::kLerp),
         m_a(a),
@@ -201,12 +328,14 @@ namespace Baikal
         m_control(control)
         {
             assert(m_a && m_b && m_control);
+            SetDirty(true);
         }
     };
 
     class InputMap_Select : public InputMap
     {
     public:
+        using Ptr = std::shared_ptr<InputMap_Select>;
         enum class Selection
         {
             kX = 0,
@@ -214,9 +343,9 @@ namespace Baikal
             kZ = 2,
             kW = 3
         };
-        static InputMap::Ptr Create(InputMap::Ptr arg, Selection selection)
+        static Ptr Create(InputMap::Ptr arg, Selection selection)
         {
-            return InputMap::Ptr(new InputMap_Select(arg, selection));
+            return Ptr(new InputMap_Select(arg, selection));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -225,26 +354,50 @@ namespace Baikal
             return;
         }
 
+        void SetArg(InputMap::Ptr arg)
+        {
+            m_arg = arg;
+            assert(m_arg);
+            SetDirty(true);
+        }
 
+        InputMap::Ptr GetArg() const
+        {
+            return m_arg;
+        }
+
+        void SetSelection(Selection selection)
+        {
+            m_selection = selection;
+            SetDirty(true);
+        }
+
+        Selection GetSelection() const
+        {
+            return m_selection;
+        }
+
+    private:
         InputMap::Ptr m_arg;
         Selection m_selection;
 
-    private:
         InputMap_Select(InputMap::Ptr arg, Selection selection) :
         InputMap(InputMap::InputMapType::kSelect),
         m_arg(arg),
         m_selection(selection)
         {
             assert(m_arg);
+            SetDirty(true);
         }
     };
 
     class InputMap_Shuffle : public InputMap
     {
     public:
-        static InputMap::Ptr Create(InputMap::Ptr arg, const std::array<uint32_t, 4> &mask)
+        using Ptr = std::shared_ptr<InputMap_Shuffle>;
+        static Ptr Create(InputMap::Ptr arg, const std::array<uint32_t, 4> &mask)
         {
-            return InputMap::Ptr(new InputMap_Shuffle(arg, mask));
+            return Ptr(new InputMap_Shuffle(arg, mask));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -253,25 +406,50 @@ namespace Baikal
             return;
         }
 
+        void SetArg(InputMap::Ptr arg)
+        {
+            m_arg = arg;
+            assert(m_arg);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetArg() const
+        {
+            return m_arg;
+        }
+
+        void SetMask(const std::array<uint32_t, 4> &mask)
+        {
+            m_mask = mask;
+            SetDirty(true);
+        }
+
+        std::array<uint32_t, 4> GetMask() const
+        {
+            return m_mask;
+        }
+
+    private:
         InputMap::Ptr m_arg;
         std::array<uint32_t, 4> m_mask;
 
-    private:
         InputMap_Shuffle(InputMap::Ptr arg, const std::array<uint32_t, 4> &mask) :
         InputMap(InputMap::InputMapType::kShuffle),
         m_arg(arg),
         m_mask(mask)
         {
             assert(m_arg);
+            SetDirty(true);
         }
     };
 
     class InputMap_Shuffle2 : public InputMap
     {
     public:
-        static InputMap::Ptr Create(InputMap::Ptr a, InputMap::Ptr b, const std::array<uint32_t, 4> &mask)
+        using Ptr = std::shared_ptr<InputMap_Shuffle2>;
+        static Ptr Create(InputMap::Ptr a, InputMap::Ptr b, const std::array<uint32_t, 4> &mask)
         {
-            return InputMap::Ptr(new InputMap_Shuffle2(a, b, mask));
+            return Ptr(new InputMap_Shuffle2(a, b, mask));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -281,12 +459,46 @@ namespace Baikal
             return;
         }
 
+        void SetA(InputMap::Ptr a)
+        {
+            m_a = a;
+            assert(m_a);
+            SetDirty(true);
+        }
 
+        InputMap::Ptr GetA() const
+        {
+            return m_a;
+        }
+
+        void SetB(InputMap::Ptr b)
+        {
+            m_b = b;
+            assert(m_b);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetB() const
+        {
+            return m_b;
+        }
+
+        void SetMask(const std::array<uint32_t, 4> &mask)
+        {
+            m_mask = mask;
+            SetDirty(true);
+        }
+
+        std::array<uint32_t, 4> GetMask() const
+        {
+            return m_mask;
+        }
+
+    private:
         InputMap::Ptr m_a;
         InputMap::Ptr m_b;
         std::array<uint32_t, 4> m_mask;
 
-    private:
         InputMap_Shuffle2(InputMap::Ptr a, InputMap::Ptr b, const std::array<uint32_t, 4> &mask) :
         InputMap(InputMap::InputMapType::kShuffle2),
         m_a(a),
@@ -294,15 +506,17 @@ namespace Baikal
         m_mask(mask)
         {
             assert(m_a && m_b);
+            SetDirty(true);
         }
     };
 
     class InputMap_MatMul : public InputMap
     {
     public:
-        static InputMap::Ptr Create(InputMap::Ptr arg, const RadeonRays::matrix &mat4)
+        using Ptr = std::shared_ptr<InputMap_MatMul>;
+        static Ptr Create(InputMap::Ptr arg, const RadeonRays::matrix &mat4)
         {
-            return InputMap::Ptr(new InputMap_MatMul(arg, mat4));
+            return Ptr(new InputMap_MatMul(arg, mat4));
         }
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
@@ -311,16 +525,40 @@ namespace Baikal
             return;
         }
 
+        void SetArg(InputMap::Ptr arg)
+        {
+            m_arg = arg;
+            assert(m_arg);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetArg() const
+        {
+            return m_arg;
+        }
+
+        void SetMatrix(const RadeonRays::matrix &mat4)
+        {
+            m_mat4 = mat4;
+            SetDirty(true);
+        }
+
+        RadeonRays::matrix GetMatrix() const
+        {
+            return m_mat4;
+        }
+
+    private:
         InputMap::Ptr m_arg;
         RadeonRays::matrix m_mat4;
 
-    private:
         InputMap_MatMul(InputMap::Ptr arg, const RadeonRays::matrix &mat4) :
         InputMap(InputMap::InputMapType::kMatMul),
         m_arg(arg),
         m_mat4(mat4)
         {
             assert(m_arg);
+            SetDirty(true);
         }
     };
 }

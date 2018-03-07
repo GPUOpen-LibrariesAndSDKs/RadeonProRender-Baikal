@@ -1,16 +1,16 @@
 /**********************************************************************
  Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -46,7 +46,7 @@ namespace Baikal
 
     /**
      \brief Tracks changes of a scene and serialized data if needed.
-     
+
      SceneTracker class is intended to keep track of CPU side scene changes and update all
      necessary renderer buffers.
      */
@@ -57,7 +57,7 @@ namespace Baikal
         SceneController();
         // Destructor
         virtual ~SceneController() = default;
-        
+
         // Given a scene this method produces (or loads from cache) corresponding GPU representation.
         CompiledScene& CompileScene(Scene1::Ptr scene) const;
 
@@ -92,7 +92,7 @@ namespace Baikal
         virtual void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, CompiledScene& out) const = 0;
         // If scene attributes changed
         virtual void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, CompiledScene& out) const = 0;
-        
+
     private:
         mutable Scene1::Ptr m_current_scene;
         // Scene cache map (CPU scene -> GPU scene mapping)
@@ -101,6 +101,8 @@ namespace Baikal
         mutable Collector m_material_collector;
         mutable Collector m_volume_collector;
         mutable Collector m_texture_collector;
+        mutable Collector m_input_maps_collector;
+        mutable Collector m_input_map_leafs_collector;
     };
 }
 

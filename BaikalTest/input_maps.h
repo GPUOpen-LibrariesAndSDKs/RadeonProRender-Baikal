@@ -84,7 +84,7 @@ protected:
 TEST_F(InputMapsTest, InputMap_ConstFloat4)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto diffuse_color = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f)));
+    auto diffuse_color = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f));
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
     material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
 
@@ -97,7 +97,7 @@ TEST_F(InputMapsTest, InputMap_ConstFloat4)
 
     for (auto& c : colors)
     {
-        diffuse_color->m_value = c;
+        diffuse_color->SetValue(c);
         ClearOutput();
 
         ApplyMaterialToObject("sphere", material);
@@ -123,8 +123,8 @@ TEST_F(InputMapsTest, InputMap_ConstFloat4)
 TEST_F(InputMapsTest, InputMap_ConstFloat)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto diffuse_color = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f)));
-    auto ior = std::static_pointer_cast<Baikal::InputMap_ConstantFloat>(Baikal::InputMap_ConstantFloat::Create(1.0f));
+    auto diffuse_color = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f));
+    auto ior = Baikal::InputMap_ConstantFloat::Create(1.0f);
     material->SetInputValue("uberv2.coating.color", diffuse_color);
     material->SetInputValue("uberv2.coating.ior", ior);
     material->SetLayers(Baikal::UberV2Material::Layers::kCoatingLayer);
@@ -133,7 +133,7 @@ TEST_F(InputMapsTest, InputMap_ConstFloat)
 
     for (auto& c : iors)
     {
-        ior->m_value = c;
+        ior->SetValue(c);
         ClearOutput();
 
         ApplyMaterialToObject("sphere", material);
@@ -305,7 +305,7 @@ TEST_F(InputMapsTest, InputMap_Select)
 
     auto material = Baikal::UberV2Material::Create();
     auto color1 = Baikal::InputMap_Sampler::Create(texture);
-    std::shared_ptr<Baikal::InputMap_Select> diffuse_color = std::static_pointer_cast<Baikal::InputMap_Select>(Baikal::InputMap_Select::Create(color1, Baikal::InputMap_Select::Selection::kX));
+    std::shared_ptr<Baikal::InputMap_Select> diffuse_color = Baikal::InputMap_Select::Create(color1, Baikal::InputMap_Select::Selection::kX);
 
     std::vector<Baikal::InputMap_Select::Selection> selections =
     {
@@ -320,7 +320,7 @@ TEST_F(InputMapsTest, InputMap_Select)
 
     for (auto c : selections)
     {
-        diffuse_color->m_selection = c;
+        diffuse_color->SetSelection(c);
 
         ClearOutput();
 
@@ -501,7 +501,7 @@ TEST_F(InputMapsTest, InputMap_Lerp)
 TEST_F(InputMapsTest, InputMap_Floor)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto color = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f)));
+    auto color = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f));
     auto diffuse_color = Baikal::InputMap_Floor::Create(color);
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
     material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
@@ -514,7 +514,7 @@ TEST_F(InputMapsTest, InputMap_Floor)
 
     for (auto& c : colors)
     {
-        color->m_value = c;
+        color->SetValue(c);
         ClearOutput();
 
         ApplyMaterialToObject("sphere", material);
