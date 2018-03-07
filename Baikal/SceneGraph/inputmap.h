@@ -67,5 +67,7 @@ namespace Baikal
 
         InputMap(InputMapType t) : SceneObject(), m_type(t) {}
         virtual void CollectTextures(std::set<Texture::Ptr> &textures) = 0;
+        virtual void GetLeafs(std::set<Ptr> &leafs) {};
+        virtual bool IsLeaf() const { return false;}
     };
 }
