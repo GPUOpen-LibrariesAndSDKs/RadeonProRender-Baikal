@@ -601,7 +601,7 @@ namespace Baikal
     void PathTracingEstimator::SetRandomSeed(std::uint32_t seed)
     {
         std::srand(seed);
-        
+
         auto size = m_render_data->random.GetElementCount();
 
         if (size != 0)

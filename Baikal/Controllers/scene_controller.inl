@@ -226,7 +226,7 @@ namespace Baikal
                                     // Return resulting set
                                     return input_maps;
                                 });
-        m_input_map_leafs_collector.Commit();
+        m_input_map_leafs_collector.CommitOrderedById();
 
 
         // Add background texture from scene into texture collector
