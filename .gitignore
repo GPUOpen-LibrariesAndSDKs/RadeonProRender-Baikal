@@ -21,3 +21,4 @@
 *.mtl
 */OutputImages/*
 */ReferenceImages/*
+*/cache/*.bin

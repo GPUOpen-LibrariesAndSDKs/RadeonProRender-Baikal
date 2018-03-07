@@ -56,11 +56,11 @@ protected:
             RadeonRays::float3(0.f, 1.f, 0.f));
     }
 
-    void RunAndSave(Baikal::UberV2Material::Ptr material)
+    void RunAndSave(Baikal::UberV2Material::Ptr material, std::string object_name = "sphere")
     {
         ClearOutput();
 
-        ApplyMaterialToObject("sphere", material);
+        ApplyMaterialToObject(object_name, material);
 
         ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
@@ -159,8 +159,8 @@ TEST_F(InputMapsTest, InputMap_ConstFloat)
 TEST_F(InputMapsTest, InputMap_Add)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f)));
-    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f));
     auto diffuse_color = Baikal::InputMap_Add::Create(color1, color2);
 
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
@@ -172,8 +172,8 @@ TEST_F(InputMapsTest, InputMap_Add)
 TEST_F(InputMapsTest, InputMap_Sub)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f)));
-    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f));
     auto diffuse_color = Baikal::InputMap_Sub::Create(color1, color2);
 
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
@@ -185,8 +185,8 @@ TEST_F(InputMapsTest, InputMap_Sub)
 TEST_F(InputMapsTest, InputMap_Mul)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f)));
-    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f)));
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f, 0.0f));
     auto diffuse_color = Baikal::InputMap_Mul::Create(color1, color2);
 
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
@@ -198,9 +198,395 @@ TEST_F(InputMapsTest, InputMap_Mul)
 TEST_F(InputMapsTest, InputMap_Div)
 {
     auto material = Baikal::UberV2Material::Create();
-    auto color1 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 1.0f, 0.0f, 0.0f)));
-    auto color2 = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 100.0f, 0.0f, 0.0f)));
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 1.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 100.0f, 0.0f, 0.0f));
     auto diffuse_color = Baikal::InputMap_Div::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Sin)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto diffuse_color = Baikal::InputMap_Sin::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Cos)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto diffuse_color = Baikal::InputMap_Cos::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Tan)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto diffuse_color = Baikal::InputMap_Tan::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_ASin)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto diffuse_color = Baikal::InputMap_Asin::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_ACos)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto diffuse_color = Baikal::InputMap_Acos::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_ATan)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto diffuse_color = Baikal::InputMap_Atan::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Select)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    std::shared_ptr<Baikal::InputMap_Select> diffuse_color = std::static_pointer_cast<Baikal::InputMap_Select>(Baikal::InputMap_Select::Create(color1, Baikal::InputMap_Select::Selection::kX));
+
+    std::vector<Baikal::InputMap_Select::Selection> selections =
+    {
+        Baikal::InputMap_Select::Selection::kX,
+        Baikal::InputMap_Select::Selection::kY,
+        Baikal::InputMap_Select::Selection::kZ,
+        Baikal::InputMap_Select::Selection::kW
+    };
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    for (auto c : selections)
+    {
+        diffuse_color->m_selection = c;
+
+        ClearOutput();
+
+        ApplyMaterialToObject("sphere", material);
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_"<<(static_cast<uint32_t>(c))<< ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+}
+
+TEST_F(InputMapsTest, InputMap_Dot3)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f));
+
+    auto diffuse_color = Baikal::InputMap_Dot3::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+TEST_F(InputMapsTest, InputMap_Dot4)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f));
+
+    auto diffuse_color = Baikal::InputMap_Dot4::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+TEST_F(InputMapsTest, InputMap_Cross3)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f));
+
+    auto diffuse_color = Baikal::InputMap_Cross3::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+TEST_F(InputMapsTest, InputMap_Cross4)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f));
+
+    auto diffuse_color = Baikal::InputMap_Cross4::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Min)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f));
+    auto diffuse_color = Baikal::InputMap_Min::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+TEST_F(InputMapsTest, InputMap_Max)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f));
+    auto diffuse_color = Baikal::InputMap_Max::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Pow)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture);
+    auto color2 = Baikal::InputMap_ConstantFloat::Create(2.2f);
+    auto diffuse_color = Baikal::InputMap_Pow::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Abs)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(-1.0f, -1.0f, -1.0f));
+    auto diffuse_color = Baikal::InputMap_Abs::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Length3)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(-1.0f, 0.0f, 0.0f));
+    auto diffuse_color = Baikal::InputMap_Length3::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Normalize3)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f));
+    auto diffuse_color = Baikal::InputMap_Normalize3::Create(color1);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Lerp)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto texture1 = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+    auto texture2 = image_io->LoadImage("../Resources/Textures/test_albedo3.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_Sampler::Create(texture1);
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));;
+    auto control = Baikal::InputMap_Sampler::Create(texture2);
+    auto diffuse_color = Baikal::InputMap_Lerp::Create(color1, color2, control);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material, "quad");
+}
+
+TEST_F(InputMapsTest, InputMap_Floor)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f)));
+    auto diffuse_color = Baikal::InputMap_Floor::Create(color);
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    std::vector<float3> colors =
+    {
+        float3(1.8f, 1.7f, 1.6f),
+        float3(0.1f, 0.2f, 0.8f)
+    };
+
+    for (auto& c : colors)
+    {
+        color->m_value = c;
+        ClearOutput();
+
+        ApplyMaterialToObject("sphere", material);
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_" << c.x << "_" << c.y << "_" << c.z << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+}
+
+TEST_F(InputMapsTest, InputMap_Mod)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(5.0f, 4.0f, 3.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(2.0f, 2.1f, 3.0f));
+    auto diffuse_color = Baikal::InputMap_Mod::Create(color1, color2);
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Shuffle)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
+    auto diffuse_color = Baikal::InputMap_Shuffle::Create(color1, {0, 0, 0, 0});
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_Shuffle2)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
+    auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f));
+    auto diffuse_color = Baikal::InputMap_Shuffle2::Create(color1, color2, {0, 5, 1, 6});
+
+    material->SetInputValue("uberv2.diffuse.color", diffuse_color);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+
+    RunAndSave(material);
+}
+
+TEST_F(InputMapsTest, InputMap_MatMul)
+{
+    auto material = Baikal::UberV2Material::Create();
+    auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
+    RadeonRays::matrix mat(
+        0.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f
+    );
+
+    auto diffuse_color = Baikal::InputMap_MatMul::Create(color1, mat);
 
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
     material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);

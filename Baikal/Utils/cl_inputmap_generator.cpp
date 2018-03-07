@@ -114,6 +114,8 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
 
             ClwScene::InputMapData dta = {0};
             dta.float_value.value.x = i->m_value;
+            dta.float_value.value.y = i->m_value;
+            dta.float_value.value.z = i->m_value;
             dta.int_values.type = ClwScene::InputMapDataType::kFloat;
             m_input_map.push_back(dta);
 
@@ -218,18 +220,18 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             GenerateInputSource(i->m_a, tex_collector);
             m_read_functions +=  ".xyz\t, \n\t\t";
             GenerateInputSource(i->m_b, tex_collector);
-            m_read_functions += ".xyz\t)), 0.0f)\n";
+            m_read_functions += ".xyz\t), 0.0f, 0.0f, 0.0f))\n";
             break;
         }
         case InputMap::InputMapType::kDot4:
         {
             InputMap_Dot4 *i = static_cast<InputMap_Dot4*>(input.get());
 
-            m_read_functions += "dot(\n\t\t";
+            m_read_functions += "((float4)(dot(\n\t\t";
             GenerateInputSource(i->m_a, tex_collector);
             m_read_functions +=  "\t, \n\t\t";
             GenerateInputSource(i->m_b, tex_collector);
-            m_read_functions += "\t)\n";
+            m_read_functions += "\t), 0.0f, 0.0f, 0.0f))\n";
             break;
         }
         case InputMap::InputMapType::kCross3:
@@ -240,7 +242,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             GenerateInputSource(i->m_a, tex_collector);
             m_read_functions +=  ".xyz\t, \n\t\t";
             GenerateInputSource(i->m_b, tex_collector);
-            m_read_functions += ".xyz\t)), 0.0f)\n";
+            m_read_functions += ".xyz\t), 0.0f))\n";
             break;
         }
         case InputMap::InputMapType::kCross4:
@@ -337,7 +339,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
 
             m_read_functions += "(float4)(length(\n\t\t";
             GenerateInputSource(i->m_arg, tex_collector);
-            m_read_functions += ".xyz\t), 0.0f)\n";
+            m_read_functions += ".xyz\t), 0.0f, 0.0f, 0.0f)\n";
             break;
         }
         case InputMap::InputMapType::kNormalize3:
