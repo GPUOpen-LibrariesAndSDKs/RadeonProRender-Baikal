@@ -89,6 +89,43 @@ namespace Baikal
         return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(textures));
     }
 
+    // Iterator of InputMaps
+    std::unique_ptr<Iterator> Material::CreateInputMapsIterator() const
+    {
+        std::set<Baikal::InputMap::Ptr> input_maps;
+
+        for (auto &input : m_inputs)
+        {
+            if (input.second.value.type == InputType::kInputMap)
+                input_maps.insert(input.second.value.input_map_value);
+        }
+
+        return std::make_unique<ContainerIterator<std::set<Baikal::InputMap::Ptr>>>(std::move(input_maps));
+    }
+
+    // Iterator of InputMap leafs
+    std::unique_ptr<Iterator> Material::CreateInputMapLeafsIterator() const
+    {
+        std::set<Baikal::InputMap::Ptr> input_maps;
+
+        for (auto &input : m_inputs)
+        {
+            if (input.second.value.type == InputType::kInputMap)
+            {
+                if (!input.second.value.input_map_value->IsLeaf())
+                {
+                    input.second.value.input_map_value->GetLeafs(input_maps);
+                }
+                else
+                {
+                    input_maps.insert(input.second.value.input_map_value);
+                }
+            }
+        }
+
+        return std::make_unique<ContainerIterator<std::set<Baikal::InputMap::Ptr>>>(std::move(input_maps));
+    }
+
     // Set input value
     // If specific data type is not supported throws std::runtime_error
 

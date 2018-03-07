@@ -44,6 +44,8 @@ namespace Baikal
         std::unique_ptr<Bundle> material_bundle;
         std::unique_ptr<Bundle> volume_bundle;
         std::unique_ptr<Bundle> texture_bundle;
+        std::unique_ptr<Bundle> input_map_leafs_bundle;
+        std::unique_ptr<Bundle> input_map_bundle;
 
         int num_lights;
         int envmapidx;

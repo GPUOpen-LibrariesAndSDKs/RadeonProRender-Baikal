@@ -8,6 +8,7 @@
 #include "SceneGraph/Collector/collector.h"
 #include "SceneGraph/iterator.h"
 #include "SceneGraph/uberv2material.h"
+#include "SceneGraph/inputmaps.h"
 #include "Utils/distribution1d.h"
 #include "Utils/log.h"
 #include "Utils/cl_inputmap_generator.h"
@@ -728,34 +729,6 @@ namespace Baikal
         // Unmap material buffer
         m_context.UnmapBuffer(0, out.materials, materials);
 
-        // Serialize input map data
-        {
-            CLInputMapGenerator generator;
-            generator.Generate(mat_collector, tex_collector);
-            std::string source = generator.GetGeneratedSource();
-            m_program_manager->AddHeader("inputmaps.cl", source);
-
-            // Get new buffer size
-            const std::vector<ClwScene::InputMapData> &input_map = generator.GetInputMapData();
-            std::size_t input_map_data_buffer_size = input_map.size();
-
-            // Recreate material buffer if it needs resize
-            if (input_map_data_buffer_size > out.input_map_data.GetElementCount())
-            {
-                // Create material buffer
-                out.input_map_data = m_context.CreateBuffer<ClwScene::InputMapData>(input_map_data_buffer_size, CL_MEM_READ_ONLY);
-            }
-
-            if (input_map_data_buffer_size > 0)
-            {
-                ClwScene::InputMapData* input_map_data = nullptr;
-                // Map GPU input map buffer
-                m_context.MapBuffer(0, out.input_map_data, CL_MAP_WRITE, &input_map_data).Wait();
-                memcpy(input_map_data, input_map.data(), sizeof(ClwScene::InputMapData) * input_map_data_buffer_size);
-                m_context.UnmapBuffer(0, out.input_map_data, input_map_data);
-            }
-        }
-
     }
 
     void ClwSceneController::UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const
@@ -1348,6 +1321,7 @@ namespace Baikal
                 clw_material->uberv2.refraction_thin_surface = uber_material.IsThin();
                 clw_material->uberv2.emission_mode = uber_material.isDoubleSided();
                 clw_material->uberv2.sss_multiscatter = uber_material.IsMultiscatter();
+
                 clw_material->nmapidx = -1;
                 clw_material->bump_flag = 0;
 
@@ -1650,4 +1624,92 @@ namespace Baikal
         auto bg_image = scene.GetBackgroundImage();
         out.background_idx = (bg_image) ? tex_collector.GetItemIndex(bg_image) : -1;
     }
+
+    void Baikal::ClwSceneController::UpdateInputMaps(const Baikal::Scene1& scene, Baikal::Collector& input_map_collector, Collector& input_map_leafs_collector, ClwScene& out) const
+    {
+        CLInputMapGenerator generator;
+        generator.Generate(input_map_collector, input_map_leafs_collector);
+        std::string source = generator.GetGeneratedSource();
+        m_program_manager->AddHeader("inputmaps.cl", source);
+    }
+
+    void Baikal::ClwSceneController::UpdateLeafsData(Scene1 const& scene, Collector& input_map_leafs_collector, Collector& tex_collector, ClwScene& out) const
+    {
+        // Get new buffer size
+        std::size_t buffer_size = input_map_leafs_collector.GetNumItems();
+
+        // Recreate input map leafs buffer if it needs resize
+        if (buffer_size > out.input_map_data.GetElementCount())
+        {
+            // Create material buffer
+            out.input_map_data = m_context.CreateBuffer<ClwScene::InputMapData>(buffer_size, CL_MEM_READ_ONLY);
+        }
+
+        if (buffer_size > 0)
+        {
+            ClwScene::InputMapData *input_map_data = nullptr;
+
+            // Map GPU input map buffer
+            m_context.MapBuffer(0, out.input_map_data, CL_MAP_WRITE, &input_map_data).Wait();
+
+            // Update input map leafs bundle to be able to track differences
+            out.input_map_leafs_bundle.reset(input_map_leafs_collector.CreateBundle());
+
+            // leaf iterator
+            auto iter = input_map_leafs_collector.CreateIterator();
+            std::size_t num_inputmap_leafs_written = 0;
+
+            // Iterate and serialize
+            for (; iter->IsValid(); iter->Next())
+            {
+                WriteInputMapLeaf(*iter->ItemAs<InputMap>(), tex_collector, input_map_data + num_inputmap_leafs_written);
+                ++num_inputmap_leafs_written;
+            }
+
+            //Unmap buffer
+            m_context.UnmapBuffer(0, out.input_map_data, input_map_data);
+        }
+    }
+
+    void Baikal::ClwSceneController::WriteInputMapLeaf(InputMap const& leaf, Collector& tex_collector, void* data) const
+    {
+        ClwScene::InputMapData *data_pointer = static_cast<ClwScene::InputMapData*>(data);
+        if (!leaf.IsLeaf())
+        {
+            //Shouldn't happen
+            assert(false);
+            return;
+        }
+
+        switch (leaf.m_type)
+        {
+            case InputMap::InputMapType::kConstantFloat3:
+            {
+                const InputMap_ConstantFloat3 &i = static_cast<const InputMap_ConstantFloat3&>(leaf);
+                data_pointer->float_value.value = i.GetValue();
+                data_pointer->int_values.type = ClwScene::InputMapDataType::kFloat3;
+                break;
+            }
+            case InputMap::InputMapType::kConstantFloat:
+            {
+                const InputMap_ConstantFloat &i = static_cast<const InputMap_ConstantFloat&>(leaf);
+                data_pointer->float_value.value.x = i.GetValue();
+                data_pointer->float_value.value.y = i.GetValue();
+                data_pointer->float_value.value.z = i.GetValue();
+                data_pointer->int_values.type = ClwScene::InputMapDataType::kFloat;
+                break;
+            }
+            case InputMap::InputMapType::kSampler:
+            {
+                const InputMap_Sampler &i = static_cast<const InputMap_Sampler&>(leaf);
+                data_pointer->int_values.idx = tex_collector.GetItemIndex(i.GetTexture());
+                data_pointer->int_values.type = ClwScene::InputMapDataType::kFloat3;
+                break;
+            }
+            default:
+                //Shouldn't happen
+                assert(false);
+        }
+    }
+
 }

@@ -160,7 +160,6 @@ namespace Baikal
                                   return textures;
                               });
 
-
         // Collect textures from lights
         m_texture_collector.Collect(*light_iter,
                                     [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
@@ -183,6 +182,53 @@ namespace Baikal
                                   return textures;
                               });
 
+        mat_iter->Reset();
+        m_input_maps_collector.Collect(*mat_iter,
+                                [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
+                                {
+                                    // Texture set
+                                    std::set<SceneObject::Ptr> input_maps;
+
+                                    auto material = std::static_pointer_cast<Material>(item);
+
+                                    // Create texture dependency iterator
+                                    auto input_map_iter = material->CreateInputMapsIterator();
+
+                                    // Emplace all dependent textures
+                                    for (; input_map_iter->IsValid(); input_map_iter->Next())
+                                    {
+                                        input_maps.emplace(input_map_iter->ItemAs<InputMap>());
+                                    }
+
+                                    // Return resulting set
+                                    return input_maps;
+                                });
+        m_input_maps_collector.Commit();
+
+        mat_iter->Reset();
+        m_input_map_leafs_collector.Collect(*mat_iter,
+                                [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
+                                {
+                                    // Texture set
+                                    std::set<SceneObject::Ptr> input_maps;
+
+                                    auto material = std::static_pointer_cast<Material>(item);
+
+                                    // Create texture dependency iterator
+                                    auto input_map_iter = material->CreateInputMapLeafsIterator();
+
+                                    // Emplace all dependent textures
+                                    for (; input_map_iter->IsValid(); input_map_iter->Next())
+                                    {
+                                        input_maps.emplace(input_map_iter->ItemAs<InputMap>());
+                                    }
+
+                                    // Return resulting set
+                                    return input_maps;
+                                });
+        m_input_map_leafs_collector.Commit();
+
+
         // Add background texture from scene into texture collector
         auto background_texture = scene->GetBackgroundImage();
         if (background_texture)
@@ -200,7 +246,8 @@ namespace Baikal
             auto res = m_scene_cache.emplace(std::make_pair(scene, CompiledScene()));
 
             // Recompile all the stuff into cached scene
-            RecompileFull(*scene, m_material_collector, m_texture_collector, m_volume_collector, res.first->second);
+            RecompileFull(*scene, m_material_collector, m_texture_collector, m_volume_collector,
+                          m_input_maps_collector, m_input_map_leafs_collector, res.first->second);
 
             // Set scene as current
             m_current_scene = scene;
@@ -221,6 +268,13 @@ namespace Baikal
                 volume->SetDirty(false);
             });
 
+            // It will mark entire hierarchy as not dirty
+            m_input_maps_collector.Finalize([](SceneObject::Ptr item)
+            {
+                auto input_map = std::static_pointer_cast<InputMap>(item);
+                input_map->SetDirty(false);
+            });
+
             // Return the scene
             return res.first->second;
         }
@@ -235,9 +289,7 @@ namespace Baikal
                                                  [](SceneObject::Ptr ptr)->bool
             {
                 auto mat = std::static_pointer_cast<Material>(ptr);
-                /// @FIXME It's bad to consider all UberV2 materials dirty,
-                /// but for now it's the only way to work.
-                return mat->IsDirty() || dynamic_cast<UberV2Material*>(mat.get());
+                return mat->IsDirty();
             });
 
             bool should_update_volumes = !out.volume_bundle ||
@@ -253,6 +305,20 @@ namespace Baikal
                 m_texture_collector.NeedsUpdate(out.texture_bundle.get(), [](SceneObject::Ptr ptr) {
                 auto tex = std::static_pointer_cast<Texture>(ptr);
                 return tex->IsDirty(); }));
+
+            bool should_update_leafs_data = (m_input_map_leafs_collector.GetNumItems() > 0) && (
+                !out.input_map_leafs_bundle ||
+                m_input_map_leafs_collector.NeedsUpdate(out.input_map_leafs_bundle.get(), [](SceneObject::Ptr ptr)
+                {
+                    return ptr->IsDirty();
+                }));
+
+            bool should_update_input_maps = (m_input_maps_collector.GetNumItems() > 0) && (
+                !out.input_map_bundle ||
+                m_input_maps_collector.NeedsUpdate(out.input_map_bundle.get(), [](SceneObject::Ptr ptr)
+                {
+                    return ptr->IsDirty();
+                }));
 
             // Check if we have valid camera
             auto camera = scene->GetCamera();
@@ -362,6 +428,16 @@ namespace Baikal
                 UpdateVolumes(*scene, m_volume_collector, out);
             }
 
+            if (should_update_leafs_data)
+            {
+                UpdateLeafsData(*scene, m_input_map_leafs_collector, m_texture_collector, out);
+            }
+
+            if (should_update_input_maps)
+            {
+                UpdateInputMaps(*scene, m_input_maps_collector, m_input_map_leafs_collector, out);
+            }
+
             // Set current scene
             if (m_current_scene != scene)
             {
@@ -398,6 +474,13 @@ namespace Baikal
                 volume->SetDirty(false);
             });
 
+            // It will mark entire hierarchy as not dirty
+            m_input_maps_collector.Finalize([](SceneObject::Ptr item)
+            {
+                auto input_map = std::static_pointer_cast<InputMap>(item);
+                input_map->SetDirty(false);
+            });
+
             // Return the scene
             return out;
         }
@@ -406,7 +489,8 @@ namespace Baikal
     template <typename CompiledScene>
     inline
     void SceneController<CompiledScene>::RecompileFull(
-        Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, Collector& vol_collector, CompiledScene& out) const
+        Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, Collector& vol_collector,
+        Collector& input_maps_collector, Collector& input_map_leafs_collector, CompiledScene& out) const
     {
         UpdateCamera(scene, m_material_collector, m_texture_collector, out);
         DropCameraDirty(scene);
@@ -422,6 +506,10 @@ namespace Baikal
         UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
 
         UpdateTextures(scene, m_material_collector, m_texture_collector, out);
+
+        UpdateLeafsData(scene, m_input_map_leafs_collector, m_texture_collector, out);
+
+        UpdateInputMaps(scene, m_input_maps_collector, m_input_map_leafs_collector, out);
 
         UpdateVolumes(scene, vol_collector, out);
 

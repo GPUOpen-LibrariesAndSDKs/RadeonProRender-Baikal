@@ -178,6 +178,13 @@ CLWProgram CLProgram::Compile(const std::string &opts)
     try
     {
         compiled_program = CLWProgram::CreateFromSource(m_compiled_source.c_str(), m_compiled_source.size(), opts.c_str(), m_context);
+        /*
+         * Code below usable for cache debugging
+        //dump source to some file
+        int e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        std::ofstream file(std::to_string(e));
+        file << m_compiled_source;
+        file.close();*/
     }
     catch (CLWException exception)
     {

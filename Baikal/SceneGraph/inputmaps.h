@@ -210,6 +210,13 @@ namespace Baikal
             return InputMap::IsDirty() || m_a->IsDirty() || m_b->IsDirty();
         }
 
+        void SetDirty(bool dirty) const override
+        {
+            SceneObject::SetDirty(dirty);
+            m_a->SetDirty(dirty);
+            m_b->SetDirty(dirty);
+        }
+
         void GetLeafs(std::set<InputMap::Ptr> & leafs) override
         {
             if (m_a->IsLeaf()) leafs.insert(m_a);
@@ -286,6 +293,12 @@ namespace Baikal
             else m_arg->GetLeafs(leafs);
         }
 
+        void SetDirty(bool dirty) const override
+        {
+            SceneObject::SetDirty(dirty);
+            m_arg->SetDirty(dirty);
+        }
+
     protected:
         InputMap::Ptr m_arg;
 
@@ -348,6 +361,13 @@ namespace Baikal
             if (m_control->IsLeaf()) leafs.insert(m_control);
             else m_control->GetLeafs(leafs);
         }
+
+        void SetDirty(bool dirty) const override
+        {
+            InputMap_TwoArg::SetDirty(dirty);
+            m_control->SetDirty(dirty);
+        }
+
 
     private:
         InputMap::Ptr m_control;

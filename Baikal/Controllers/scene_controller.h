@@ -65,7 +65,9 @@ namespace Baikal
     protected:
         // Recompile the scene from scratch, i.e. not loading from cache.
         // All the buffers are recreated and reloaded.
-        void RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, CompiledScene& out) const;
+        void RecompileFull(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector,
+                           Collector& vol_collector, Collector& input_maps_collector,
+                           Collector& input_map_leafs_collector, CompiledScene& out) const;
 
         // set dirty flag to false for camera object
         void DropCameraDirty(Scene1 const& scene) const;
@@ -84,6 +86,10 @@ namespace Baikal
         virtual void UpdateMaterials(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Update texture data only.
         virtual void UpdateTextures(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, CompiledScene& out) const = 0;
+        // Update input maps only
+        virtual void UpdateInputMaps(Scene1 const& scene, Collector& input_map_collector, Collector& input_map_leafs_collector, CompiledScene& out) const = 0;
+        // Update input map leafs only
+        virtual void UpdateLeafsData(Scene1 const& scene, Collector& input_map_leafs_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Default material
         virtual Material::Ptr GetDefaultMaterial() const = 0;
         // If m_current_scene changes
