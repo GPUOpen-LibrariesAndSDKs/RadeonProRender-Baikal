@@ -57,10 +57,28 @@ namespace Baikal
             auto size = spec.width * spec.height * spec.depth * 4;
             
             texturedata = new char[size];
-            
+
             // Read data to storage
-            input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
-            
+            if (spec.nchannels == 1)
+            {
+                input->read_image(TypeDesc::UINT8, texturedata, 4 * sizeof(char));
+                // set B, G and A components to 
+                for (auto y = 0u; y < spec.height; y++)
+                {
+                    auto step = size / spec.height;
+                    for (auto x = 0u; x < spec.height; x++)
+                    {
+                        texturedata[y * step + 4 * x + 1] = texturedata[y * step + 4 * x];
+                        texturedata[y * step + 4 * x + 2] = texturedata[y * step + 4 * x];
+                        texturedata[y * step + 4 * x + 3] = texturedata[y * step + 4 * x];
+                    }
+                }
+            }
+            else
+            {
+                input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
+            }
+
             // Close handle
             input->close();
         }
