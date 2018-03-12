@@ -38,6 +38,7 @@ protected:
     void Update(MaterialObject* mat) override;
     void SetInputMaterial(const std::string& input_name, MaterialObject* input) override;
     void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
+
 private:
     Baikal::Material::Ptr m_mat;
 };
