@@ -59,9 +59,10 @@ namespace Baikal
             texturedata = new char[size];
 
             // Read data to storage
+            input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
+
             if (spec.nchannels == 1)
             {
-                input->read_image(TypeDesc::UINT8, texturedata, 4 * sizeof(char));
                 // set B, G and A components to 
                 for (auto i = 0u; i < size; i += 4)
                 {
@@ -70,10 +71,6 @@ namespace Baikal
                     texturedata[i + 3] = texturedata[i];
                 }
 
-            }
-            else
-            {
-                input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
             }
 
             // Close handle
