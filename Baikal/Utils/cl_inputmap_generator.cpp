@@ -22,9 +22,12 @@ THE SOFTWARE.
 
 #include <assert.h>
 
+#include <array>
+
 #include "cl_inputmap_generator.h"
 #include "SceneGraph/uberv2material.h"
 #include "SceneGraph/inputmaps.h"
+
 
 using namespace Baikal;
 

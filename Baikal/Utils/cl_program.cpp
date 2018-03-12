@@ -172,7 +172,7 @@ void CLProgram::BuildSource(const std::string &source)
 CLWProgram CLProgram::Compile(const std::string &opts)
 {
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
-    start = std::chrono::system_clock::now();
+    start = std::chrono::high_resolution_clock::now();
 
     CLWProgram compiled_program;
     try
@@ -197,7 +197,7 @@ CLWProgram CLProgram::Compile(const std::string &opts)
         throw;
     }
 
-    end = std::chrono::system_clock::now();
+    end = std::chrono::high_resolution_clock::now();
     int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
     std::cerr<<"Program compilation time: "<<elapsed_ms<<" ms"<<std::endl;
 

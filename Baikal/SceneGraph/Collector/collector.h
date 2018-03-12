@@ -80,7 +80,7 @@ namespace Baikal
         // Commit collected objects
         void Commit();
         // Commit collected objects with order based on object id.
-        void CommitOrderedById();
+        //void CommitOrderedById();
         // Given a budnle check if all collected objects are in the bundle and do not require update
         bool NeedsUpdate(Bundle const* bundle, ChangedFunc cahnged_func) const;
         // Get number of objects in the collection

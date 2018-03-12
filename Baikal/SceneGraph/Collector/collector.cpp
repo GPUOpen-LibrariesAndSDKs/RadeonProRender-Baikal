@@ -6,8 +6,15 @@
 
 namespace Baikal
 {
+    struct IdCompare 
+    {
+        bool operator() (const SceneObject::Ptr& lhs, const SceneObject::Ptr& rhs) const
+        {
+            return lhs->GetId() < rhs->GetId();
+        }
+    };
     using ItemMap = std::map<SceneObject::Ptr, int>;
-    using ItemSet = std::set<SceneObject::Ptr>;
+    using ItemSet = std::set<SceneObject::Ptr, IdCompare>;
 
     class BundleImpl : public Bundle
     {
@@ -47,7 +54,7 @@ namespace Baikal
             new IteratorImpl<ItemSet::const_iterator>(m_impl->m_set.cbegin(),
                                                       m_impl->m_set.cend()));
     }
-
+    
     void Collector::Collect(Iterator& iter, ExpandFunc expand_func)
     {
         for(;iter.IsValid(); iter.Next())
@@ -73,23 +80,6 @@ namespace Baikal
         for (auto& i : m_impl->m_set)
         {
             m_impl->m_map[i] = idx++;
-        }
-    }
-
-    void Collector::CommitOrderedById()
-    {
-        m_impl->m_map.clear();
-
-        std::map<uint32_t, SceneObject::Ptr> sorted;
-        for (auto i : m_impl->m_set)
-        {
-            sorted[i->GetId()] = i;
-        }
-
-        int idx = 0;
-        for (auto& i : sorted)
-        {
-            m_impl->m_map[i.second] = idx++;
         }
     }
 

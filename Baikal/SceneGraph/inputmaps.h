@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "inputmap.h"
 
 #include <assert.h>
+#include <array>
 
 #include "math/float3.h"
 #include "math/matrix.h"
