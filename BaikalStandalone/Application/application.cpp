@@ -568,7 +568,6 @@ namespace Baikal
 
     bool Application::UpdateGui()
     {
-        static bool load_texture = false;
         static float aperture = 0.0f;
         static float focal_length = 35.f;
         static float focus_distance = 1.f;
@@ -801,8 +800,6 @@ namespace Baikal
                 if (settings == m_material_settings.end())
                     throw std::runtime_error(
                         "Application::UpdateGui(...): there is no such shape id in material settings");
-
-                settings->Clear();
 
                 size_t uint_counter = 0;
                 size_t float_counter = 0;
