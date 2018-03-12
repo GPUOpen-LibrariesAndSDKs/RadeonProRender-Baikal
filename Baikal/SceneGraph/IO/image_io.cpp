@@ -12,7 +12,7 @@ namespace Baikal
         void SaveImage(std::string const& filename, Texture::Ptr texture) const override;
     };
     
-    static Texture::Format GetTextureForemat(OIIO_NAMESPACE::ImageSpec const& spec)
+    static Texture::Format GetTextureFormat(OIIO_NAMESPACE::ImageSpec const& spec)
     {
         OIIO_NAMESPACE_USING
         
@@ -24,7 +24,7 @@ namespace Baikal
             return Texture::Format::kRgba32;
     }
     
-    static OIIO_NAMESPACE::TypeDesc GetTextureForemat(Texture::Format fmt)
+    static OIIO_NAMESPACE::TypeDesc GetTextureFormat(Texture::Format fmt)
     {
         OIIO_NAMESPACE_USING
         
@@ -49,7 +49,7 @@ namespace Baikal
         
         ImageSpec const& spec = input->spec();
         
-        auto fmt = GetTextureForemat(spec);
+        auto fmt = GetTextureFormat(spec);
         char* texturedata = nullptr;
 
         if (fmt == Texture::Format::kRgba8)
@@ -57,10 +57,22 @@ namespace Baikal
             auto size = spec.width * spec.height * spec.depth * 4;
             
             texturedata = new char[size];
-            
+
             // Read data to storage
             input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
-            
+
+            if (spec.nchannels == 1)
+            {
+                // set B, G and A components to 
+                for (auto i = 0u; i < size; i += 4)
+                {
+                    texturedata[i + 1] = texturedata[i];
+                    texturedata[i + 2] = texturedata[i];
+                    texturedata[i + 3] = texturedata[i];
+                }
+
+            }
+
             // Close handle
             input->close();
         }
@@ -107,7 +119,7 @@ namespace Baikal
         }
 
         auto dim = texture->GetSize();
-        auto fmt = GetTextureForemat(texture->GetFormat());
+        auto fmt = GetTextureFormat(texture->GetFormat());
 
         ImageSpec spec(dim.x, dim.y, 4, fmt);
 
