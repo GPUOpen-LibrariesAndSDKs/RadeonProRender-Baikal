@@ -462,7 +462,11 @@ KERNEL void ShadeSurface(
 
         // Sample bxdf
         const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+#ifdef ENABLE_UBERV2
         float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf, &uber_shader_data);
+#else
+        float3 bxdf = Bxdf_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf);
+#endif
 
         // If we have light to sample we can hopefully do mis
         if (light_idx > -1)
@@ -470,7 +474,11 @@ KERNEL void ShadeSurface(
             // Sample light
             int bxdf_flags = Path_GetBxdfFlags(path);
             float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &lightwo, &light_pdf);
+#ifdef ENABLE_UBERV2
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS, &uber_shader_data);
+#else
+            light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS);
+#endif
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf);
 
             // Apply MIS to account for both
@@ -478,7 +486,11 @@ KERNEL void ShadeSurface(
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
+#ifdef ENABLE_UBERV2
                 radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS, &uber_shader_data) * throughput * light_weight / light_pdf / selection_pdf;
+#else
+                radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * light_weight / light_pdf / selection_pdf;
+#endif
             }
         }
 
