@@ -22,6 +22,7 @@ THE SOFTWARE.
 #pragma once
 
 #include "MaterialObject.h"
+#include "SceneGraph/uberv2material.h"
 
 class UberMaterialObject : public MaterialObject
 {
@@ -38,7 +39,7 @@ protected:
     void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
 
 private:
-    Baikal::Material::Ptr m_mat; //ubermaterial material
+    Baikal::UberV2Material::Ptr m_mat; //ubermaterial material
 
 };
 

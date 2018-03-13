@@ -77,7 +77,7 @@ namespace Baikal
 
         void SetMultiscatter(bool is_multiscatter)
         {
-            is_multiscatter_ = is_multiscatter_;
+            is_multiscatter_ = is_multiscatter;
         }
         bool IsMultiscatter() const
         {
