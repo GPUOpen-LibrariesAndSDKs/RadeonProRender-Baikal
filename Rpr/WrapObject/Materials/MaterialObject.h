@@ -69,6 +69,7 @@ public:
         kStandard = RPR_MATERIAL_NODE_STANDARD,
         kPassthrough = RPR_MATERIAL_NODE_PASSTHROUGH,
         kOrennayar = RPR_MATERIAL_NODE_ORENNAYAR,
+        kArithmetic = RPR_MATERIAL_NODE_ARITHMETIC,
         kUberV2 = 0x100
     };
 
@@ -83,6 +84,7 @@ public:
     bool IsMap() { return   m_type == Type::kBumpMap || 
                             m_type == Type::kNormalMap || 
                             m_type == Type::kDotTexture; }
+    bool IsArithmetic() const { return m_type == Type::kArithmetic; }
 
     bool IsTexture() { return IsImg() || IsMap(); }
 

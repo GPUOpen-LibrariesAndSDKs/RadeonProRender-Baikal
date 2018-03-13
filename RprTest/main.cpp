@@ -3910,8 +3910,8 @@ int main(int argc, char* argv[])
     OrthoRenderTest();
     BackgroundImageTest();
     EnvironmentOverrideTest();*/
-    UberV2Test();
-    UberV2RPRXTest();
+    /*UberV2Test();
+    UberV2RPRXTest();*/
     UberV2RPRXTest_Arithmetics();
     UberV2Test_Arithmetics();
 

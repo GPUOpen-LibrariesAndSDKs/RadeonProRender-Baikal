@@ -1,8 +1,10 @@
 #include "UberMaterialObject.h"
 
 #include "TextureMaterialObject.h"
+#include "ArithmeticMaterialObject.h"
 #include "SceneGraph/uberv2material.h"
 #include "SceneGraph/inputmaps.h"
+#include "WrapObject/Exception.h"
 
 using namespace RadeonRays;
 using namespace Baikal;
@@ -56,7 +58,15 @@ Baikal::Material::Ptr UberMaterialObject::GetMaterial()
 
 void UberMaterialObject::SetInputMaterial(const std::string & input_name, MaterialObject * input)
 {
-    m_mat->SetInputValue(input_name, input->GetMaterial());
+    if (input->IsArithmetic())
+    {
+        ArithmeticMaterialObject *arithmetic = static_cast<ArithmeticMaterialObject*>(input);
+        m_mat->SetInputValue(input_name, arithmetic->GetInputMap());
+    }
+    else
+    {
+        throw Exception(RPR_ERROR_INTERNAL_ERROR, "Only arithmetic nodes allowed as UberV2 inputs");
+    }
 }
 
 void UberMaterialObject::SetInputTexture(const std::string & input_name, TextureMaterialObject * input)

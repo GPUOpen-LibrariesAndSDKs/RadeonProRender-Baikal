@@ -337,10 +337,9 @@ void UberV2Test_Arithmetics()
     status = rprMaterialNodeSetInputF(add, "color1", 0.0f, 1.0f, 0.0f, 0.0f);
     assert(status == RPR_SUCCESS);
 
-    status = rprMaterialNodeSetInputN_ext(material, RPRX_UBER_MATERIAL_DIFFUSE_COLOR, add);
+    status = rprMaterialNodeSetInputN_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, add);
     assert(status == RPR_SUCCESS);
-
-    status = rprMaterialNodeSetInputF_ext(material, RPRX_UBER_MATERIAL_DIFFUSE_WEIGHT, 1.0f, 0.0f, 0.0f, 0.0f);
+    status = rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE);
     assert(status == RPR_SUCCESS);
 
     //Shapes

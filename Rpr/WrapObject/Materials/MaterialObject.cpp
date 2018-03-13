@@ -52,8 +52,10 @@ namespace
 		{ "roughness_x" , "roughness" },
         { "weight" , "weight" }, 
         { "ior" , "ior" },
-        { "color0", "base_material" },
-        { "color1", "top_material" }, 
+        { "color0", "color0" },
+        { "color1", "color1" }, 
+        { "color2", "color2" },
+        { "color3", "color3" },
         { "data", "data" },
         { "sigmas", "sigmas" },
         { "sigmaa", "sigmaa" },
@@ -213,7 +215,6 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
 
     case RPR_MATERIAL_NODE_TRANSPARENT:
     case RPR_MATERIAL_NODE_ADD:
-        //case RPR_MATERIAL_NODE_ARITHMETIC:
     case RPR_MATERIAL_NODE_BLEND_VALUE:
     case RPR_MATERIAL_NODE_VOLUME:
     case RPR_MATERIAL_NODE_INPUT_LOOKUP:
