@@ -126,6 +126,15 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
             m_read_functions += "(Texture_Sample2D(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx)))\n";
             break;
         }
+        case InputMap::InputMapType::kSamplerBumpmap:
+        {
+            InputMap_SamplerBumpMap *i = static_cast<InputMap_SamplerBumpMap*>(input.get());
+
+            int32_t index = input_map_leaf_collector.GetItemIndex(input);
+
+            m_read_functions += "(Texture_SampleBump(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx)))\n";
+            break;
+        }
         // Two inputs
         case InputMap::InputMapType::kAdd:
         {
@@ -433,6 +442,25 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
                 std::to_string(mat4.m33) + ")),\n\t\t(";
             GenerateInputSource(i->GetArg(), input_map_leaf_collector);
             m_read_functions +=  "\t)\n\t)";
+            break;
+        }
+        case InputMap::InputMapType::kRemap:
+        {
+            InputMap_Remap *i = static_cast<InputMap_Remap*>(input.get());
+            //mix(float3(dest.x), float3(dest.y), (val - src.x) / (src.y - src.x))
+            m_read_functions += "mix((float4)(\n\t\t";
+            GenerateInputSource(i->GetDestinationRange(), input_map_leaf_collector);
+            m_read_functions += ".x)\t, \n\t\t(float4)(\n\t\t";
+            GenerateInputSource(i->GetDestinationRange(), input_map_leaf_collector);
+            m_read_functions += ".y)\t, \n\t\t((\n\t\t";
+            GenerateInputSource(i->GetData(), input_map_leaf_collector);
+            m_read_functions += ") - \n\t\t(\n\t\t";
+            GenerateInputSource(i->GetSourceRange(), input_map_leaf_collector);
+            m_read_functions += ".x)) / \n\t\t((\n\t\t";
+            GenerateInputSource(i->GetSourceRange(), input_map_leaf_collector);
+            m_read_functions += ".y)  - \n\t\t(\n\t\t";
+            GenerateInputSource(i->GetSourceRange(), input_map_leaf_collector);
+            m_read_functions += ".x)))\t\n";
             break;
         }
 

@@ -13,6 +13,7 @@ typedef struct _UberV2ShaderData
     float4 sss_absorption_color;
     float4 sss_scatter_color;
     float4 sss_subsurface_color;
+    float4 shading_normal;
 
     float reflection_roughness;
     float reflection_anisotropy;
@@ -28,6 +29,7 @@ typedef struct _UberV2ShaderData
     float sss_absorption_distance;
     float sss_scatter_distance;
     float sss_scatter_direction;
+
 } UberV2ShaderData;
 
 //Temorary code. Will be moved to generator later with UberV2 redesign
@@ -65,6 +67,8 @@ UberV2ShaderData UberV2PrepareInputs(
     shader_data.sss_absorption_distance = GetInputMapFloat(dg->mat.uberv2.sss_absorption_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.sss_scatter_distance = GetInputMapFloat(dg->mat.uberv2.sss_scatter_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.sss_scatter_direction = GetInputMapFloat(dg->mat.uberv2.sss_scatter_direction_input_id, dg, input_map_values, TEXTURE_ARGS);
+
+    shader_data.shading_normal = GetInputMapFloat(dg->mat.uberv2.shading_normal_input_id, dg, input_map_values, TEXTURE_ARGS);
     return shader_data;
 }
 
@@ -498,6 +502,23 @@ float3 UberV2_Sample(
     }
 
     return 0.f;
+}
+
+void UberV2_ApplyShadingNormal(
+    // Geometry
+    DifferentialGeometry* dg,
+    // Prepared UberV2 shader inputs
+    UberV2ShaderData const* shader_data
+)
+{
+    const int layers = dg->mat.uberv2.layers;
+
+    if ((layers & kShadingNormalLayer) == kShadingNormalLayer)
+    {
+        dg->n = normalize(shader_data->shading_normal.z * dg->n + shader_data->shading_normal.x * dg->dpdu + shader_data->shading_normal.y * dg->dpdv);
+        dg->dpdv = normalize(cross(dg->n, dg->dpdu));
+        dg->dpdu = normalize(cross(dg->dpdv, dg->n));
+    }
 }
 
 #endif

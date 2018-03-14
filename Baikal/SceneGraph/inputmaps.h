@@ -130,14 +130,14 @@ namespace Baikal
             return;
         }
 
-        void SetTexture(Texture::Ptr texture)
+        virtual void SetTexture(Texture::Ptr texture)
         {
             m_texture = texture;
             assert(m_texture);
             SetDirty(true);
         }
 
-        Texture::Ptr GetTexture() const
+        virtual Texture::Ptr GetTexture() const
         {
             return m_texture;
         }
@@ -152,7 +152,7 @@ namespace Baikal
             return true;
         }
 
-    private:
+    protected:
         Texture::Ptr m_texture;
 
         explicit InputMap_Sampler(Texture::Ptr texture) :
@@ -164,7 +164,25 @@ namespace Baikal
         }
     };
 
+    class InputMap_SamplerBumpMap : public InputMap_Sampler
+    {
+    public:
+        using Ptr = std::shared_ptr<InputMap_SamplerBumpMap>;
+        static Ptr Create(Texture::Ptr texture)
+        {
+            return Ptr(new InputMap_SamplerBumpMap(texture));
+        }
 
+    protected:
+        explicit InputMap_SamplerBumpMap(Texture::Ptr texture) :
+            InputMap_Sampler(texture)
+        {
+            SetDirty(true);
+            m_type = InputMapType::kSamplerBumpmap;
+        }
+
+    };
+    
     template<InputMap::InputMapType type>
     class InputMap_TwoArg : public InputMap
     {
@@ -513,4 +531,103 @@ namespace Baikal
             SetDirty(true);
         }
     };
+
+    class InputMap_Remap : public InputMap
+    {
+    public:
+        using Ptr = std::shared_ptr<InputMap_Remap>;
+        static Ptr Create(InputMap::Ptr source_range, InputMap::Ptr destination_range, 
+            InputMap::Ptr data)
+        {
+            return Ptr(new InputMap_Remap(source_range, destination_range, data));
+        }
+
+        void CollectTextures(std::set<Texture::Ptr> &textures) override
+        {
+            m_source_range->CollectTextures(textures);
+            m_destination_range->CollectTextures(textures);
+            m_data->CollectTextures(textures);
+            return;
+        }
+
+        void SetSourceRange(InputMap::Ptr source_range)
+        {
+            m_source_range = source_range;
+            assert(m_source_range);
+            SetDirty(true);
+        }
+
+        void SetDestinationRange(InputMap::Ptr destination_range)
+        {
+            m_destination_range = destination_range;
+            assert(m_destination_range);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetSourceRange() const
+        {
+            return m_source_range;
+        }
+
+        InputMap::Ptr GetDestinationRange() const
+        {
+            return m_destination_range;
+        }
+
+        void SetData(InputMap::Ptr data)
+        {
+            m_data = data;
+            assert(m_data);
+            SetDirty(true);
+        }
+
+        InputMap::Ptr GetData() const
+        {
+            return m_data;
+        }
+
+        bool IsDirty() const override
+        {
+            return InputMap::IsDirty() || m_source_range->IsDirty() || 
+                m_destination_range->IsDirty() || m_data->IsDirty();
+        }
+
+        void SetDirty(bool dirty) const override
+        {
+            SceneObject::SetDirty(dirty);
+            m_source_range->SetDirty(dirty);
+            m_destination_range->SetDirty(dirty);
+            m_data->SetDirty(dirty);
+        }
+
+        void GetLeafs(std::set<InputMap::Ptr> & leafs) override
+        {
+            if (m_source_range->IsLeaf()) leafs.insert(m_source_range);
+            else m_source_range->GetLeafs(leafs);
+
+            if (m_destination_range->IsLeaf()) leafs.insert(m_destination_range);
+            else m_destination_range->GetLeafs(leafs);
+
+            if (m_data->IsLeaf()) leafs.insert(m_data);
+            else m_data->GetLeafs(leafs);
+        }
+
+
+    private:
+        InputMap::Ptr m_source_range;
+        InputMap::Ptr m_destination_range;
+        InputMap::Ptr m_data;
+
+        InputMap_Remap(InputMap::Ptr source_range, InputMap::Ptr destination_range,
+            InputMap::Ptr data) :
+            InputMap(InputMapType::kRemap),
+            m_source_range(source_range),
+            m_destination_range(destination_range),
+            m_data(data)
+        {
+            SetDirty(true);
+            assert(m_source_range && m_destination_range && m_data);
+        }
+    };
+
 }

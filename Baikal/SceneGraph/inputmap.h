@@ -61,7 +61,10 @@ namespace Baikal
             kShuffle2, // shuffle2(a, b, mask)
             kDot4, // dot(a, b)
             kCross4, // cross(a, b)
-            kMatMul // arg * mat4
+            kMatMul, // arg * mat4
+            kRemap, // remaps from source range (x->y) to destination range (x->y)
+                    // calculated as mix(float3(dest.x), float3(dest.y), (val - src.x)/(src.y - src.x))
+            kSamplerBumpmap // samples normal from bump map texture
         };
         InputMapType m_type;
 

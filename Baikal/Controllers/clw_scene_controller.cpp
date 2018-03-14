@@ -1304,7 +1304,8 @@ namespace Baikal
                     { "uberv2.sss.subsurface_color",   &(clw_material->uberv2.sss_subsurface_color_input_id) },
                     { "uberv2.refraction.color",   &(clw_material->uberv2.refraction_color_input_id) },
                     { "uberv2.refraction.roughness",  &(clw_material->uberv2.refraction_roughness_input_id) },
-                    { "uberv2.refraction.ior",  &(clw_material->uberv2.refraction_ior_input_id) }
+                    { "uberv2.refraction.ior",  &(clw_material->uberv2.refraction_ior_input_id) },
+                    { "uberv2.shading_normal", &(clw_material->uberv2.shading_normal_input_id) }
                 };
 
                 for (const auto &entry : input_map)
@@ -1322,34 +1323,9 @@ namespace Baikal
                 clw_material->uberv2.emission_mode = uber_material.isDoubleSided();
                 clw_material->uberv2.sss_multiscatter = uber_material.IsMultiscatter();
 
+                // UberV2 uses own normal/bump map implementation. Just fill default values.
                 clw_material->nmapidx = -1;
                 clw_material->bump_flag = 0;
-
-                /*
-                auto value = material.GetInputValue("uberv2.normal");
-
-                if (value.type == Material::InputType::kTexture && value.tex_value)
-                {
-                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
-                    clw_material->bump_flag = 0;
-                }
-                else
-                {
-                    value = material.GetInputValue("uberv2.bump");
-
-                    if (value.type == Material::InputType::kTexture && value.tex_value)
-                    {
-                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
-                        clw_material->bump_flag = 1;
-                    }
-                    else
-                    {
-                        clw_material->nmapidx = -1;
-                        clw_material->bump_flag = 0;
-                    }
-                }
-                */
-
                 break;
             }
 #endif

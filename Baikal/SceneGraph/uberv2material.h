@@ -48,7 +48,8 @@ namespace Baikal
             kReflectionLayer = 0x8,
             kDiffuseLayer = 0x10,
             kRefractionLayer = 0x20,
-            kSSSLayer = 0x40
+            kSSSLayer = 0x40,
+            kShadingNormalLayer = 0x80
         };
 
         using Ptr = std::shared_ptr<UberV2Material>;

@@ -100,13 +100,9 @@ UberV2Material::UberV2Material()
     RegisterInput("uberv2.transparency", "level of transparency", { InputType::kInputMap });
     SetInputValue("uberv2.transparency", f_zero);
 
-
-    /*RegisterInput("uberv2.normal", "normal map texture", { InputType::kInputMap });
-    SetInputValue("uberv2.normal", Texture::Ptr{ nullptr });
-    RegisterInput("uberv2.bump", "bump map texture", { InputType::kInputMap });
-    SetInputValue("uberv2.bump", Texture::Ptr{ nullptr });*/
-    /*        RegisterInput("uberv2.displacement", "uberv2.displacement", );
-    SetInputValue("uberv2.displacement", );*/
+    //Normal mapping
+    RegisterInput("uberv2.shading_normal", "Shading normal", { InputType::kInputMap });
+    SetInputValue("uberv2.shading_normal", f_zero);
 }
 
 bool UberV2Material::HasEmission() const

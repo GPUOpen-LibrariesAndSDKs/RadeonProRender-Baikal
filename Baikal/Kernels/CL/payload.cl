@@ -129,7 +129,8 @@ enum UberMaterialLayers
     kReflectionLayer = 0x8,
     kDiffuseLayer = 0x10,
     kRefractionLayer = 0x20,
-    kSSSLayer = 0x40
+    kSSSLayer = 0x40,
+    kShadingNormalLayer = 0x80
 };
 
 // Material description
@@ -215,14 +216,16 @@ typedef struct _Material
             int sss_scatter_distance_input_id;
             int sss_scatter_direction_input_id;
 
+            // Normal mapping
+            int shading_normal_input_id;
             //Material parameters
             int layers;
             int refraction_ior_mode;
             int refraction_thin_surface;
-            int emission_mode;
 
+            int emission_mode;
             int sss_multiscatter;
-            int padding[3];
+            int padding[2];
 
 /*            float displacement;
             int displacement_map_idx;*/

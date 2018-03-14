@@ -414,7 +414,7 @@ namespace Baikal
         {
             auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
             scene->AttachShape(mesh);
-            auto roughness = InputMap_ConstantFloat::Create(0.05);
+            auto roughness = InputMap_ConstantFloat::Create(0.05f);
 
             auto uberv2 = UberV2Material::Create();
             uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
@@ -484,11 +484,11 @@ namespace Baikal
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
-            auto roughness = InputMap_ConstantFloat::Create(0.05);
             auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
             auto sampler = InputMap_Sampler::Create(texture);
-            auto gamma = InputMap_ConstantFloat::Create(2.2f);
 
+            auto roughness = InputMap_ConstantFloat::Create(0.05f);
+            auto gamma = InputMap_ConstantFloat::Create(2.2f);
             auto diffuse_color = InputMap_Pow::Create(sampler, gamma);
 
             auto uberv2 = UberV2Material::Create();
@@ -496,9 +496,8 @@ namespace Baikal
             uberv2->SetInputValue("uberv2.coating.color", diffuse_color);
             uberv2->SetInputValue("uberv2.reflection.roughness", roughness);
             uberv2->SetInputValue("uberv2.reflection.color", diffuse_color);
-            uberv2->SetInputValue("uberv2.refraction.color", diffuse_color);
-            uberv2->SetInputValue("uberv2.refraction.roughness", roughness);
-            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer |
+                              UberV2Material::Layers::kReflectionLayer);
             mesh->SetMaterial(uberv2);
 
 
@@ -510,6 +509,7 @@ namespace Baikal
             scene->AttachLight(ibl);
 
         }
+
 
         return scene;
     }
