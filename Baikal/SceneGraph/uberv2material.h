@@ -26,6 +26,11 @@ THE SOFTWARE.
 
 namespace Baikal
 {
+    /**
+    \brief UberV2 material interface
+
+    \details CPU side representation of UberV2 material
+    */
     class UberV2Material : public Material
     {
     public:
@@ -58,37 +63,45 @@ namespace Baikal
         // Check if material has emissive components
         bool HasEmission() const override;
 
+        // Sets refraction IOR linked to reflection IOR
         void LinkRefractionIOR(bool link_to_reflection)
         {
             is_link_to_reflection_ = link_to_reflection;
         }
+        // Check if refraction IOR linked to reflection IOR
         bool IsLinkRefractionIOR() const
         {
             return is_link_to_reflection_;
         }
 
+        // Sets double sided material
         void SetDoubleSided(bool is_double_sided)
         {
             is_double_sided_ = is_double_sided;
         }
+        // Check if material is double sided
         bool isDoubleSided() const
         {
             return is_double_sided_;
         }
 
+        // Sets if multiscattering should be used or not
         void SetMultiscatter(bool is_multiscatter)
         {
             is_multiscatter_ = is_multiscatter;
         }
+        // Check if multiscattering used or not
         bool IsMultiscatter() const
         {
             return is_multiscatter_;
         }
 
+        // Sets layers that should be enabled in material
         void SetLayers(uint32_t layers)
         {
             layers_ = layers;
         }
+        // Returns enabled material layers
         uint32_t GetLayers() const
         {
             return layers_;

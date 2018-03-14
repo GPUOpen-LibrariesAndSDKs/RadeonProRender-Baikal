@@ -40,6 +40,7 @@ UberV2Material::UberV2Material()
 {
     using namespace RadeonRays;
 
+    // Create several input maps that needed for default material parameters
     auto f4_one = InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 1.0f));
     auto f4_zero = InputMap_ConstantFloat3::Create(float3(0.0f, 0.0f, 0.0f, 0.0f));
     auto f_zero = InputMap_ConstantFloat::Create(0.0f);

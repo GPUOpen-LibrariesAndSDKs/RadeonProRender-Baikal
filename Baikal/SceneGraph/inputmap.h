@@ -26,15 +26,20 @@ THE SOFTWARE.
 
 namespace Baikal
 {
+    /**
+     * @brief Base interface for InputMap
+     *
+     * Implementation details for each InputMap lays in inputmaps.h file
+     */
     class InputMap : public SceneObject
     {
     public:
         using Ptr = std::shared_ptr<InputMap>;
         enum class InputMapType
         {
-            kConstantFloat3 = 0,
-            kConstantFloat,
-            kSampler,
+            kConstantFloat3 = 0, // Holds constant float3 value. 
+            kConstantFloat, // Holds constant float value
+            kSampler, // Samples value from provided texture
             kAdd, // a + b
             kSub, // a - b
             kMul, // a * b
@@ -69,8 +74,11 @@ namespace Baikal
         InputMapType m_type;
 
         InputMap(InputMapType t) : SceneObject(), m_type(t) {}
+        // Collects set of textures from this object and all its inputs
         virtual void CollectTextures(std::set<Texture::Ptr> &textures) = 0;
+        // Collects set of leafs from this object and all its inputs
         virtual void GetLeafs(std::set<Ptr> &leafs) {};
+        // Checks if object is leaf or not
         virtual bool IsLeaf() const { return false;}
     };
 }

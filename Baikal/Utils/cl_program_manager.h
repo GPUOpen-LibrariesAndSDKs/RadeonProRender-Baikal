@@ -37,18 +37,25 @@ namespace Baikal
     class CLProgramManager
     {
     public:
+        // Constructor
         explicit CLProgramManager(const std::string &cache_path);
+        // Creates program from file and returns its id
         uint32_t CreateProgram(CLWContext context, const std::string &fname) const;
+        // Loads header from file into map of headers
         void LoadHeader(const std::string &header) const;
+        // Adds header to map from source
         void AddHeader(const std::string &header, const std::string &source) const;
+        // Reads header from disk and returns its source
         const std::string& ReadHeader(const std::string &header) const;
+        // Returns compiled program
         CLWProgram GetProgram(uint32_t id, const std::string &opts) const;
+        // Compiles program
         void CompileProgram(uint32_t id, const std::string &opts) const;
 
     private:
-        mutable std::string m_cache_path;
-        mutable std::map<uint32_t, CLProgram> m_programs;
-        mutable std::map<std::string, std::string> m_headers;
+        mutable std::string m_cache_path; ///< Path to cache folder
+        mutable std::map<uint32_t, CLProgram> m_programs; ///< Cache of programs by id
+        mutable std::map<std::string, std::string> m_headers; ///< Headers map
         static uint32_t m_next_program_id;
     };
 }

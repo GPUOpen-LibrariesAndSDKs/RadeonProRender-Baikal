@@ -35,14 +35,28 @@ namespace Baikal
     class CLInputMapGenerator
     {
     public:
+        /**
+        * @brief Generates source code for input maps. 
+        *
+        * Code stored inside Generator object.
+        * Makes lookups into leaf collectors to get parameters
+        * Each input map will create single function that will output float4 value
+        *
+        * @param input_map_collector set of input maps for generation
+        * @param input_map_leaf_collector list of leaf nodes that holds values
+        */
         void Generate(const Collector& input_map_collector, const Collector& input_map_leaf_collector);
+
+        // Returns generated source
         const std::string& GetGeneratedSource() const
         {
             return m_source_code;
         }
 
     private:
+        // Proceed single input, writes function header and function call
         void GenerateSingleInput(std::shared_ptr<Baikal::InputMap> input, const Collector& input_map_leaf_collector);
+        // Writes source code for single input map. Called recursively.
         void GenerateInputSource(std::shared_ptr<Baikal::InputMap> input, const Collector& input_map_leaf_collector);
         std::string m_source_code;
         std::string m_read_functions;
