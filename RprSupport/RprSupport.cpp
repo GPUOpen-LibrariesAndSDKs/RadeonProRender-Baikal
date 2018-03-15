@@ -105,10 +105,29 @@ rpr_int rprxMaterialDelete(rprx_context context, rprx_material material)
 
 rpr_int rprxMaterialSetParameterN(rprx_context context, rprx_material material, rprx_parameter parameter, rpr_material_node  node)
 {
-    if (!material || !node)
+    if (!material)
         return RPR_ERROR_INVALID_PARAMETER;
 
     auto it = kRPRXInputStrings.find(parameter);
+
+    if (parameter == RPRX_UBER_MATERIAL_BUMP ||
+        parameter == RPRX_UBER_MATERIAL_NORMAL)
+    {
+        rpr_uint layers = 0;
+        rpr_uint status;
+
+        rprMaterialNodeGetInputInfo((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, RPR_MATERIAL_NODE_INPUT_VALUE, 4, &layers, 0);
+
+        if (node)
+        {
+            layers |= RPR_UBER_MATERIAL_LAYER_SHADING_NORMAL;
+        }
+        else
+        {
+            layers &= ~RPR_UBER_MATERIAL_LAYER_SHADING_NORMAL;
+        }
+        rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
+    }
 
     return (it != kRPRXInputStrings.end()) ?
         rprMaterialNodeSetInputN((rpr_material_node)material, it->second.c_str(), (rpr_material_node)node) :
@@ -163,8 +182,7 @@ rpr_int rprxMaterialSetParameterF(rprx_context context, rprx_material material, 
             if (x > 0.f) layers |= RPR_UBER_MATERIAL_LAYER_TRANSPARENCY;
             else layers &= ~RPR_UBER_MATERIAL_LAYER_TRANSPARENCY;
             status = rprMaterialNodeSetInputU_ext((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, layers);
-            if (status != RPR_SUCCESS) return status;
-        
+            if (status != RPR_SUCCESS) return status;       
     }
 
 

@@ -3912,8 +3912,12 @@ int main(int argc, char* argv[])
     EnvironmentOverrideTest();*/
     /*UberV2Test();
     UberV2RPRXTest();*/
-    UberV2RPRXTest_Arithmetics();
-    UberV2Test_Arithmetics();
+    /*UberV2RPRXTest_Arithmetics();
+    UberV2Test_Arithmetics();*/
+/*    UberV2Test_Bump();
+    UberV2Test_NormalMap();*/
+    UberV2RPRXTest_Bump();
+    UberV2RPRXTest_NormalMap();
 
     return 0;
 }
