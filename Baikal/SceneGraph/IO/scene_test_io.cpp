@@ -509,6 +509,59 @@ namespace Baikal
             scene->AttachLight(ibl);
 
         }
+        else if (filename == "shere+plane_uberv2+ibl+normalmap")
+        {
+            auto image_io(Baikal::ImageIo::CreateImageIo());
+            auto bump_texture = image_io->LoadImage("../Resources/Textures/test_normal.jpg");
+
+            auto bump_material = Baikal::UberV2Material::Create();
+            auto bump_sampler = Baikal::InputMap_Sampler::Create(bump_texture);
+            auto bump_remap = Baikal::InputMap_Remap::Create(
+                Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f)),
+                Baikal::InputMap_ConstantFloat3::Create(float3(-1.0f, 1.0f, 0.0f)),
+                bump_sampler);
+            bump_material->SetInputValue("uberv2.shading_normal", bump_remap);
+            //bump_material->SetInputValue("uberv2.diffuse.color", bump_sampler);
+            bump_material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer |
+                Baikal::UberV2Material::Layers::kShadingNormalLayer);
+
+            auto texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+            auto sampler = InputMap_Sampler::Create(texture);
+
+            auto roughness = InputMap_ConstantFloat::Create(0.05f);
+            auto gamma = InputMap_ConstantFloat::Create(2.2f);
+            auto diffuse_color = InputMap_Pow::Create(sampler, gamma);
+
+            auto uberv2 = UberV2Material::Create();
+            uberv2->SetInputValue("uberv2.diffuse.color", diffuse_color);
+            uberv2->SetInputValue("uberv2.coating.color", diffuse_color);
+            uberv2->SetInputValue("uberv2.reflection.roughness", roughness);
+            uberv2->SetInputValue("uberv2.reflection.color", diffuse_color);
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer |
+                UberV2Material::Layers::kReflectionLayer);
+
+            auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.2f, 0.f));
+            scene->AttachShape(mesh);
+            mesh->SetMaterial(uberv2);
+
+            auto floor = CreateQuad(
+            {
+                RadeonRays::float3(-8, 0, -8),
+                RadeonRays::float3(8, 0, -8),
+                RadeonRays::float3(8, 0, 8),
+                RadeonRays::float3(-8, 0, 8),
+            }
+            , false);
+
+            scene->AttachShape(floor);
+            floor->SetMaterial(bump_material);
+
+            auto light = SpotLight::Create();
+            light->SetPosition(RadeonRays::float3(0.f, 20.f, 0.f));
+            light->SetEmittedRadiance(RadeonRays::float3(100.f, 100.f, 100.f));
+            light->SetConeShape(RadeonRays::float2(0.05f, 0.1f));
+            scene->AttachLight(light);
+        }
 
 
         return scene;

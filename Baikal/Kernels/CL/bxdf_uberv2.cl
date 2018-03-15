@@ -52,6 +52,7 @@ UberV2ShaderData UberV2PrepareInputs(
     shader_data.sss_absorption_color = GetInputMapFloat4(dg->mat.uberv2.sss_absorption_color_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.sss_scatter_color = GetInputMapFloat4(dg->mat.uberv2.sss_scatter_color_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.sss_subsurface_color = GetInputMapFloat4(dg->mat.uberv2.sss_subsurface_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.shading_normal = GetInputMapFloat4(dg->mat.uberv2.shading_normal_input_id, dg, input_map_values, TEXTURE_ARGS);
 
     shader_data.reflection_roughness = GetInputMapFloat(dg->mat.uberv2.reflection_roughness_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.reflection_anisotropy = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_input_id, dg, input_map_values, TEXTURE_ARGS);
@@ -67,8 +68,6 @@ UberV2ShaderData UberV2PrepareInputs(
     shader_data.sss_absorption_distance = GetInputMapFloat(dg->mat.uberv2.sss_absorption_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.sss_scatter_distance = GetInputMapFloat(dg->mat.uberv2.sss_scatter_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
     shader_data.sss_scatter_direction = GetInputMapFloat(dg->mat.uberv2.sss_scatter_direction_input_id, dg, input_map_values, TEXTURE_ARGS);
-
-    shader_data.shading_normal = GetInputMapFloat(dg->mat.uberv2.shading_normal_input_id, dg, input_map_values, TEXTURE_ARGS);
     return shader_data;
 }
 

@@ -1679,7 +1679,14 @@ namespace Baikal
             {
                 const InputMap_Sampler &i = static_cast<const InputMap_Sampler&>(leaf);
                 data_pointer->int_values.idx = tex_collector.GetItemIndex(i.GetTexture());
-                data_pointer->int_values.type = ClwScene::InputMapDataType::kFloat3;
+                data_pointer->int_values.type = ClwScene::InputMapDataType::kInt;
+                break;
+            }
+            case InputMap::InputMapType::kSamplerBumpmap:
+            {
+                const InputMap_SamplerBumpMap &i = static_cast<const InputMap_SamplerBumpMap&>(leaf);
+                data_pointer->int_values.idx = tex_collector.GetItemIndex(i.GetTexture());
+                data_pointer->int_values.type = ClwScene::InputMapDataType::kInt;
                 break;
             }
             default:

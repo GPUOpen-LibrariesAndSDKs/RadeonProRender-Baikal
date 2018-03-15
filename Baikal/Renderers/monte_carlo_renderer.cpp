@@ -284,6 +284,7 @@ namespace Baikal
                 fill_kernel.SetArg(argc++, m_estimator->GetRayCountBuffer());
             }
         }
+        fill_kernel.SetArg(argc++, scene.input_map_data);
 
         // Run AOV kernel
         {

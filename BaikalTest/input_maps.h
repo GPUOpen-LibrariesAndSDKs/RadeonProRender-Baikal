@@ -593,3 +593,39 @@ TEST_F(InputMapsTest, InputMap_MatMul)
 
     RunAndSave(material);
 }
+
+TEST_F(InputMapsTest, InputMap_Bump)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto bump_texture= image_io->LoadImage("../Resources/Textures/test_bump.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto bump_sampler = Baikal::InputMap_SamplerBumpMap::Create(bump_texture);
+    auto remap = Baikal::InputMap_Remap::Create(
+        Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f)),
+        Baikal::InputMap_ConstantFloat3::Create(float3(-1.0f, 1.0f, 0.0f)),
+        bump_sampler);
+    material->SetInputValue("uberv2.shading_normal", remap);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer | 
+        Baikal::UberV2Material::Layers::kShadingNormalLayer);
+
+    RunAndSave(material, "quad");
+}
+
+TEST_F(InputMapsTest, InputMap_Normal)
+{
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto normal_texture = image_io->LoadImage("../Resources/Textures/test_normal.jpg");
+
+    auto material = Baikal::UberV2Material::Create();
+    auto normal_sampler = Baikal::InputMap_Sampler::Create(normal_texture);
+    auto remap = Baikal::InputMap_Remap::Create(
+        Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f)),
+        Baikal::InputMap_ConstantFloat3::Create(float3(-1.0f, 1.0f, 0.0f)),
+        normal_sampler);
+    material->SetInputValue("uberv2.shading_normal", remap);
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer |
+        Baikal::UberV2Material::Layers::kShadingNormalLayer);
+
+    RunAndSave(material, "quad");
+}

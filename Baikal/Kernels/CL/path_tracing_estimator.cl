@@ -440,7 +440,14 @@ KERNEL void ShadeSurface(
         }
 
 #ifdef ENABLE_UBERV2
-        UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
+        if (diffgeo.mat.type == kUberV2)
+        {
+            UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
+        }
+        else
+        {
+            DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+        }
 #else
         DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
 #endif
