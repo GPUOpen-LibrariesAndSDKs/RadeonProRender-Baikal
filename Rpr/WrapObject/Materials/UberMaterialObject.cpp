@@ -102,3 +102,35 @@ void UberMaterialObject::SetInputTexture(const std::string & input_name, Texture
         return;
     }
 }
+
+void UberMaterialObject::GetInput(int i, void* out, size_t* out_size)
+{
+    //We have only int values as parameters for now
+    uint32_t *int_out = static_cast<uint32_t*>(out);
+    *out_size = sizeof(uint32_t); 
+
+    switch (i)
+    {
+    case RPR_UBER_MATERIAL_LAYERS:
+        *int_out = m_mat->GetLayers();
+        break;
+    case RPR_UBER_MATERIAL_EMISSION_MODE:
+        *int_out = m_mat->isDoubleSided() ?
+            RPR_UBER_MATERIAL_EMISSION_MODE_DOUBLESIDED :
+            RPR_UBER_MATERIAL_EMISSION_MODE_SINGLESIDED;
+        break;
+    case RPR_UBER_MATERIAL_REFRACTION_IOR_MODE:
+        *int_out = m_mat->IsLinkRefractionIOR() ?
+            RPR_UBER_MATERIAL_REFRACTION_MODE_LINKED :
+            RPR_UBER_MATERIAL_REFRACTION_MODE_SEPARATE;
+        break;
+    case RPR_UBER_MATERIAL_SSS_MULTISCATTER:
+        *int_out = m_mat->IsMultiscatter() ? 1 : 0;
+        break;
+    case RPR_UBER_MATERIAL_REFRACTION_THIN_SURFACE:
+        *int_out = m_mat->IsThin() ? 1 : 0;
+        break;
+    default:
+        MaterialObject::GetInput(i, out, out_size);
+    }
+}

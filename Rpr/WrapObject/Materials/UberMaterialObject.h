@@ -34,6 +34,8 @@ public:
 
     Baikal::Material::Ptr GetMaterial() override;
 
+    // Some UberV2 inputs from RPRX API now become parameters in Baikal API so we need to fill em
+    void GetInput(int i, void* out, size_t* out_size) override;
 protected:
     void SetInputMaterial(const std::string& input_name, MaterialObject* input) override;
     void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;

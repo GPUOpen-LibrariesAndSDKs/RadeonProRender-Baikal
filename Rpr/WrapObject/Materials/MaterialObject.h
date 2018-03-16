@@ -101,7 +101,7 @@ public:
     //rprMaterialGetInfo:
     uint64_t GetInputCount();
     rpr_uint GetInputType(int i);
-    void GetInput(int i, void* out, size_t* out_size);
+    virtual void GetInput(int i, void* out, size_t* out_size);
     //get input by index.
     //Note: RPR related input name
     std::string GetInputName(int i);
