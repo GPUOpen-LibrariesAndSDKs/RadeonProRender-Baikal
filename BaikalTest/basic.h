@@ -37,6 +37,7 @@ THE SOFTWARE.
 #include <algorithm>
 #include <cstdlib>
 #include <sstream>
+#include <iostream>
 
 extern int g_argc;
 extern char** g_argv;
@@ -130,8 +131,13 @@ public:
     {
     }
 
-    virtual void ClearOutput() const
+    virtual void ClearOutput(Baikal::Output* optional_output = nullptr) const
     {
+        if (optional_output != nullptr)
+        {
+            ASSERT_NO_THROW(m_renderer->Clear(RadeonRays::float3(), *optional_output));
+        }
+
         ASSERT_NO_THROW(m_renderer->Clear(RadeonRays::float3(), *m_output));
     }
 
@@ -157,7 +163,7 @@ public:
         m_scene->SetCamera(m_camera);
     }
 
-    void SaveOutput(std::string const& file_name) const
+    void SaveOutput(std::string const& file_name, Baikal::Output* optional_output = nullptr) const
     {
         std::string path = m_generate ? m_reference_path : m_output_path;
         path.append(file_name);
@@ -169,7 +175,15 @@ public:
         auto height = m_output->height();
         std::vector<float3> data(width * height);
         std::vector<float3> data1(width * height);
-        m_output->GetData(&data[0]);
+
+        if (optional_output != nullptr)
+        {
+            optional_output->GetData(&data[0]);
+        }
+        else
+        {
+            m_output->GetData(&data[0]);
+        }
 
         for (auto y = 0u; y < height; ++y)
             for (auto x = 0u; x < width; ++x)
@@ -309,7 +323,7 @@ TEST_F(BasicTest, Init)
 }
 
 TEST_F(BasicTest, RenderTestScene)
-{
+{    
     ClearOutput();
 
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));

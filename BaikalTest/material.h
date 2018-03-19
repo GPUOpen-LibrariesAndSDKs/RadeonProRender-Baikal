@@ -61,6 +61,8 @@ protected:
 
             ApplyMaterialToObject("sphere", material);
 
+            ClearOutput();
+            
             ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
             auto& scene = m_controller->GetCachedScene(m_scene);
