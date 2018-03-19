@@ -24,49 +24,7 @@
 #include "basic.h"
 
 class AovTest : public BasicTest
-{
-public:
-    void SaveAOV(Baikal::Output* aov, std::string const& file_name) const
-    {
-        std::string path = m_generate ? m_reference_path : m_output_path;
-        path.append(file_name);
-        
-        OIIO_NAMESPACE_USING;
-        using namespace RadeonRays;
-        
-        auto width = aov->width();
-        auto height = aov->height();
-        std::vector<float3> data(width * height);
-        std::vector<float3> data1(width * height);
-        aov->GetData(&data[0]);
-        
-        for (auto y = 0u; y < height; ++y)
-        for (auto x = 0u; x < width; ++x)
-        {
-            
-            float3 val = data[(height - 1 - y) * width + x];
-            val *= (1.f / val.w);
-            data1[y * width + x].x = val.x;
-            data1[y * width + x].y = val.y;
-            data1[y * width + x].z = val.z;
-        }
-        
-        ImageOutput* out = ImageOutput::create(path);
-        
-        if (!out)
-        {
-            throw std::runtime_error("Can't create image file on disk");
-        }
-        
-        ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
-        
-        out->open(path, spec);
-        out->write_image(TypeDesc::FLOAT, &data1[0], sizeof(float3));
-        out->close();
-        
-        delete out;
-    }
-};
+{   };
 
 TEST_F(AovTest, Aov_WorldPosition)
 {
@@ -77,7 +35,7 @@ TEST_F(AovTest, Aov_WorldPosition)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kWorldPosition,
                          output_ws.get());
     
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
         
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -89,7 +47,7 @@ TEST_F(AovTest, Aov_WorldPosition)
         
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -102,7 +60,7 @@ TEST_F(AovTest, Aov_WorldNormal)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kWorldGeometricNormal,
                           output_ws.get());
     
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -114,7 +72,7 @@ TEST_F(AovTest, Aov_WorldNormal)
     
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -127,7 +85,7 @@ TEST_F(AovTest, Aov_ShadingNormal)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kWorldShadingNormal,
                           output_ws.get());
     
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -139,7 +97,7 @@ TEST_F(AovTest, Aov_ShadingNormal)
     
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -152,7 +110,7 @@ TEST_F(AovTest, Aov_Tangent)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kWorldTangent,
                           output_ws.get());
     
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -164,7 +122,7 @@ TEST_F(AovTest, Aov_Tangent)
     
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -177,7 +135,7 @@ TEST_F(AovTest, Aov_Bitangent)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kWorldBitangent,
                           output_ws.get());
     
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -189,7 +147,7 @@ TEST_F(AovTest, Aov_Bitangent)
     
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -202,7 +160,7 @@ TEST_F(AovTest, Aov_Albedo)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kAlbedo,
                           output_ws.get());
     
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -214,7 +172,7 @@ TEST_F(AovTest, Aov_Albedo)
     
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -227,7 +185,7 @@ TEST_F(AovTest, Aov_Uv)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kUv,
                           output_ws.get());
 
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
     
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -239,7 +197,7 @@ TEST_F(AovTest, Aov_Uv)
     
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
@@ -252,7 +210,7 @@ TEST_F(AovTest, Aov_Visibility)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kVisibility,
         output_ws.get());
 
-    ClearOutput();
+    ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -264,6 +222,6 @@ TEST_F(AovTest, Aov_Visibility)
 
     std::ostringstream oss;
     oss << test_name() << ".png";
-    SaveAOV(output_ws.get(), oss.str());
+    SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }

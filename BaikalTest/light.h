@@ -619,6 +619,8 @@ TEST_F(LightTest, Light_ImageBasedLight)
 
     ASSERT_TRUE(m_scene->GetNumLights() == 1);
 
+    ClearOutput();
+    
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -644,6 +646,8 @@ TEST_F(LightTest, Light_ImageBasedLight)
     ASSERT_TRUE(m_scene->GetNumLights() == 0);
     m_scene->AttachLight(light);
     ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ClearOutput();
 
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
@@ -692,6 +696,8 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
     point_light->SetPosition(float3(0.f, 6.f, -3.f));
     point_light->SetEmittedRadiance(float3(0.1f, 0.1f, 3.f));
     m_scene->AttachLight(point_light);
+
+    ClearOutput();
 
     ASSERT_TRUE(m_scene->GetNumLights() == 3);
 
@@ -758,6 +764,8 @@ TEST_F(LightTest, Light_ImageBasedLightAndEmissiveQuad)
     light->SetMultiplier(1.f);
     m_scene->AttachLight(light);
 
+    ClearOutput();
+
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
     auto& scene = m_controller->GetCachedScene(m_scene);
@@ -790,6 +798,8 @@ TEST_F(LightTest, Light_ImageBasedLightAndEmissiveQuad)
     auto matrix = translation(float3(0, -2, 0)) * rotation_y(PI / 4);
     shape->SetTransform(matrix);
 
+    ClearOutput();
+    
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
     for (std::uint32_t i = 0; i < kNumIterations; i++)
@@ -830,6 +840,8 @@ TEST_F(LightTest, Light_IblReflectionOverride)
     light->SetMultiplier(1.f);
     m_scene->AttachLight(light);
 
+    ClearOutput();
+
     ASSERT_TRUE(m_scene->GetNumLights() == 1);
 
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
@@ -857,6 +869,8 @@ TEST_F(LightTest, Light_IblReflectionOverride)
     ASSERT_TRUE(m_scene->GetNumLights() == 0);
     m_scene->AttachLight(light);
     ASSERT_TRUE(m_scene->GetNumLights() == 1);
+
+    ClearOutput();
 
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
@@ -897,6 +911,8 @@ TEST_F(LightTest, Light_IblRefractionOverride)
     light->SetRefractionTexture(refraction_texture);
     light->SetMultiplier(1.f);
     m_scene->AttachLight(light);
+
+    ClearOutput();
 
     ASSERT_TRUE(m_scene->GetNumLights() == 1);
 
@@ -964,6 +980,8 @@ TEST_F(LightTest, Light_IblTransparencyOverride)
     light->SetTransparencyTexture(refraction_texture);
     light->SetMultiplier(1.f);
     m_scene->AttachLight(light);
+
+    ClearOutput();
 
     ASSERT_TRUE(m_scene->GetNumLights() == 1);
 
