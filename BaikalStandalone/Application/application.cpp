@@ -86,6 +86,7 @@ namespace Baikal
     static bool     g_is_f10_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
+    static float2   g_scroll_delta = float2(0, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -153,6 +154,11 @@ namespace Baikal
             g_mouse_delta = float2((float)x, (float)y) - g_mouse_pos;
             g_mouse_pos = float2((float)x, (float)y);
         }
+    }
+
+    void Application::OnMouseScroll(GLFWwindow* window, double x, double y)
+    {
+        g_scroll_delta = float2((float)x, (float)y);
     }
 
     void Application::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
@@ -261,18 +267,18 @@ namespace Baikal
         float camroty = 0.f;
 
         const float kMouseSensitivity = 0.001125f;
+        const float kScrollSensitivity = 0.05f;
         auto camera = m_cl->GetCamera();
         if (!m_settings.benchmark && !m_settings.time_benchmark)
         {
             float2 delta = g_mouse_delta * float2(kMouseSensitivity, kMouseSensitivity);
+            float2 scroll_delta = g_scroll_delta * float2(kScrollSensitivity, kScrollSensitivity);
             camrotx = -delta.x;
             camroty = -delta.y;
-
 
             if (std::abs(camroty) > 0.001f)
             {
                 camera->Tilt(camroty);
-                //g_camera->ArcballRotateVertically(float3(0, 0, 0), camroty);
                 update = true;
             }
 
@@ -280,11 +286,16 @@ namespace Baikal
             {
 
                 camera->Rotate(camrotx);
-                //g_camera->ArcballRotateHorizontally(float3(0, 0, 0), camrotx);
                 update = true;
             }
 
             const float kMovementSpeed = m_settings.cspeed;
+            if (std::abs(scroll_delta.y) > 0.001f)
+            {
+                camera->Zoom(scroll_delta.y * kMovementSpeed);
+                g_scroll_delta = float2();
+                update = true;
+            }
             if (g_is_fwd_pressed)
             {
                 camera->MoveForward((float)dt.count() * kMovementSpeed);
@@ -484,6 +495,7 @@ namespace Baikal
                 glfwSetMouseButtonCallback(m_window, Application::OnMouseButton);
                 glfwSetCursorPosCallback(m_window, Application::OnMouseMove);
                 glfwSetKeyCallback(m_window, Application::OnKey);
+                glfwSetScrollCallback(m_window, Application::OnMouseScroll);
             }
             catch (std::runtime_error& err)
             {
