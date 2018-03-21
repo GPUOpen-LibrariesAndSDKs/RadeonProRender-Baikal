@@ -109,6 +109,6 @@ set(SOURCES
 add_library(Baikal STATIC ${SOURCES})
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC ${Baikal_SOURCE_DIR}/Baikal)
-target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO::OpenImageIO)
+target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO  )
 
     
