@@ -50,10 +50,12 @@ namespace Baikal
         
         // Rotate camera around world Z axis
         void Rotate(float angle);
+
         // Tilt camera
         void Tilt(float angle);
         // Move along camera Z direction
         void MoveForward(float distance);
+        void Zoom(float distance);
         // Move along camera X direction
         void MoveRight(float distance);
         // Move along camera Y direction
@@ -68,8 +70,7 @@ namespace Baikal
         // Does not really make sence for physical camera
         void SetDepthRange(RadeonRays::float2 const& range);
         RadeonRays::float2 GetDepthRange() const;
-        
-        
+
         float GetAspectRatio() const;
         
         // Set camera sensor size in meters.
@@ -80,7 +81,8 @@ namespace Baikal
     protected:
         // Rotate camera around world Z axis
         void Rotate(RadeonRays::float3, float angle);
-        
+        void RotateOnOrbit(RadeonRays::float3, float angle);
+
         Camera(RadeonRays::float3 const& eye,
                RadeonRays::float3 const& at,
                RadeonRays::float3 const& up);
@@ -90,6 +92,7 @@ namespace Baikal
         RadeonRays::float3 m_right;
         RadeonRays::float3 m_up;
         RadeonRays::float3 m_p;
+        RadeonRays::float3 m_at;
         
         // Image plane width & hight in scene units
         RadeonRays::float2 m_dim;

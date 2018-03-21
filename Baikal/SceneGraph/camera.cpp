@@ -54,13 +54,15 @@ namespace Baikal
         m_forward = normalize(at - eye);
         m_right = normalize(cross(m_forward, up));
         m_up = cross(m_right, m_forward);
+        m_at = at;
         SetDirty(true);
     }
     
     // Rotate camera around world Z axis, use for FPS camera
     void Camera::Rotate(float angle)
     {
-        Rotate(float3(0.f, 1.f, 0.f), angle);
+        //Rotate(float3(0.f, 1.f, 0.f), angle);
+        RotateOnOrbit(float3(0.f, 1.f, 0.f), angle);
         SetDirty(true);
     }
     
@@ -90,11 +92,31 @@ namespace Baikal
         m_forward = normalize(float3(cam_matrix.m20, cam_matrix.m21, cam_matrix.m22));
         SetDirty(true);
     }
+
+    void Camera::RotateOnOrbit(float3 v, float angle)
+    {
+        /// matrix should have basis vectors in rows
+        /// to be used for quaternion construction
+        /// would be good to add several options
+        /// to quaternion class
+        auto direction = m_p - m_at;
+        auto up = m_up;
+
+        // Rotate camera frame around v
+        auto q = rotation_quaternion(v, angle);
+        auto new_direction = rotate_vector(direction, q);
+        auto new_up = rotate_vector(up, q);
+
+        LookAt(m_at + new_direction, m_at, new_up);
+
+        SetDirty(true);
+    }
     
     // Tilt camera
     void Camera::Tilt(float angle)
     {
-        Rotate(m_right, angle);
+        RotateOnOrbit(m_right, angle);
+        //Rotate(m_right, angle);
         SetDirty(true);
     }
     
@@ -102,13 +124,25 @@ namespace Baikal
     void Camera::MoveForward(float distance)
     {
         m_p += distance * m_forward;
+        m_at += distance * m_forward;
         SetDirty(true);
+    }
+
+    void Camera::Zoom(float distance)
+    {
+        if (distance < 0.f || (m_p - m_at).sqnorm() > 1.f)
+        {
+            m_p += distance * m_forward;
+            LookAt(m_p, m_at, m_up);
+            SetDirty(true);
+        }
     }
     
     // Move along camera X direction
     void Camera::MoveRight(float distance)
     {
         m_p += distance * m_right;
+        m_at += distance * m_right;
         SetDirty(true);
     }
     
@@ -116,6 +150,7 @@ namespace Baikal
     void Camera::MoveUp(float distance)
     {
         m_p += distance * m_up;
+        m_at += distance * m_up;
         SetDirty(true);
     }
     
