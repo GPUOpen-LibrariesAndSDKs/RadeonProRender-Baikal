@@ -74,7 +74,7 @@ namespace Baikal
         // Update shape data only.
         void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const override;
         // Update transform data only
-        void UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
+        void UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& volume_collector, ClwScene& out) const override;
         // Update lights data only.
         void UpdateLights(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update material data.

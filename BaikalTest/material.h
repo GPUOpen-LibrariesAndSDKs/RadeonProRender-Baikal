@@ -1202,7 +1202,7 @@ TEST_F(MaterialTest, Material_MixDiffuseAndTransparencyMask)
         });
 }
 
-TEST_F(MaterialTest, Material_Volume)
+TEST_F(MaterialTest, Material_VolumeScattering)
 {
     using namespace Baikal;
 
@@ -1211,46 +1211,228 @@ TEST_F(MaterialTest, Material_Volume)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    std::vector<RadeonRays::float3> color =
+    std::vector<RadeonRays::float3> scattering =
     {
-        RadeonRays::float3(0.9f, 0.2f, 0.1f)
+        RadeonRays::float3(0.9f, 0.2f, 0.1f),
+        RadeonRays::float3(0.1f, 0.9f, 0.1f),
+        RadeonRays::float3(0.3f, 0.2f, 0.8f)
     };
 
-    ClearOutput();
-
-    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
-    auto volume = VolumeMaterial::Create();
-
-    volume->SetInputValue("absorption", RadeonRays::float4(.5f, .2f, .3f, .0f));
-    volume->SetInputValue("scattering", RadeonRays::float4(.7f, .3f, .1f, .0f));
-    volume->SetInputValue("emission", RadeonRays::float4(.8f, .9f, .4f, .0f));
-    volume->SetInputValue("phase function", static_cast<int>(VolumeMaterial::PhaseFunction::kMieHazy));
-
-    for (auto iter = m_scene->CreateShapeIterator();
-        iter->IsValid();
-        iter->Next())
+    for (auto scatter : scattering)
     {
-        auto mesh = iter->ItemAs<Mesh>();
-        if (mesh->GetName() == "sphere")
+        ClearOutput();
+
+        auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
+        auto volume = VolumeMaterial::Create();
+
+        volume->SetInputValue("absorption", RadeonRays::float4(.1f, .1f, .1f, .1f));
+        volume->SetInputValue("scattering", scatter);
+        volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+        volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
+
+        for (auto iter = m_scene->CreateShapeIterator();
+            iter->IsValid();
+            iter->Next())
         {
-            mesh->SetMaterial(material);
-            mesh->SetVolumeMaterial(volume);
+            auto mesh = iter->ItemAs<Mesh>();
+            if (mesh->GetName() == "sphere")
+            {
+                mesh->SetMaterial(material);
+                mesh->SetVolumeMaterial(volume);
+            }
+        }
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_" << scatter.x << "_" << scatter.y << "_" << scatter.z << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
         }
     }
+}
 
-    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+TEST_F(MaterialTest, Material_VolumeAbsorption)
+{
+    using namespace Baikal;
 
-    auto& scene = m_controller->GetCachedScene(m_scene);
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
 
-    for (auto i = 0u; i < kNumIterations; ++i)
+    std::vector<RadeonRays::float3> absorptions =
     {
-        ASSERT_NO_THROW(m_renderer->Render(scene));
-    }
+        RadeonRays::float3(0.9f, 0.2f, 0.1f),
+        RadeonRays::float3(1.1f, 1.9f, 0.1f),
+        RadeonRays::float3(0.3f, 1.2f, 1.8f)
+    };
 
+    for (auto absorption : absorptions)
     {
-        std::ostringstream oss;
-        oss << test_name() << ".png";
-        SaveOutput(oss.str());
-        ASSERT_TRUE(CompareToReference(oss.str()));
+        ClearOutput();
+
+        auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
+        auto volume = VolumeMaterial::Create();
+
+        volume->SetInputValue("absorption", absorption);
+        volume->SetInputValue("scattering", RadeonRays::float4(.1f, .1f, .1f, .1f));
+        volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+        volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
+
+        for (auto iter = m_scene->CreateShapeIterator();
+            iter->IsValid();
+            iter->Next())
+        {
+            auto mesh = iter->ItemAs<Mesh>();
+            if (mesh->GetName() == "sphere")
+            {
+                mesh->SetMaterial(material);
+                mesh->SetVolumeMaterial(volume);
+            }
+        }
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_" << absorption.x << "_" << absorption.y << "_" << absorption.z << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
     }
 }
+
+TEST_F(MaterialTest, Material_VolumeEmission)
+{
+    using namespace Baikal;
+
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    std::vector<RadeonRays::float3> emissions =
+    {
+        RadeonRays::float3(0.9f, 0.2f, 0.1f),
+        RadeonRays::float3(1.1f, 1.9f, 0.1f),
+        RadeonRays::float3(0.3f, 1.2f, 1.8f)
+    };
+
+    for (auto emission : emissions)
+    {
+        ClearOutput();
+
+        auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
+        auto volume = VolumeMaterial::Create();
+
+        volume->SetInputValue("absorption", RadeonRays::float4(.1f, .1f, .1f, .1f));
+        volume->SetInputValue("scattering", RadeonRays::float4(.1f, .1f, .1f, .1f));
+        volume->SetInputValue("emission", emission);
+        volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
+
+        for (auto iter = m_scene->CreateShapeIterator();
+            iter->IsValid();
+            iter->Next())
+        {
+            auto mesh = iter->ItemAs<Mesh>();
+            if (mesh->GetName() == "sphere")
+            {
+                mesh->SetMaterial(material);
+                mesh->SetVolumeMaterial(volume);
+            }
+        }
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_" << emission.x << "_" << emission.y << "_" << emission.z << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+}
+
+TEST_F(MaterialTest, Material_PhaseFunction)
+{
+    using namespace Baikal;
+
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    std::vector<RadeonRays::float3> gs =
+    {
+        RadeonRays::float3(0.f),
+        RadeonRays::float3(-0.5f),
+        RadeonRays::float3(0.5f),
+        RadeonRays::float3(-1.f),
+        RadeonRays::float3(1.f),
+    };
+
+    for (auto g : gs)
+    {
+        ClearOutput();
+
+        auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
+        auto volume = VolumeMaterial::Create();
+
+        volume->SetInputValue("absorption", RadeonRays::float4(.1f, .1f, .1f, .1f));
+        volume->SetInputValue("scattering", RadeonRays::float4(.1f, .1f, .1f, .1f));
+        volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+        volume->SetInputValue("g", g);
+
+        for (auto iter = m_scene->CreateShapeIterator();
+            iter->IsValid();
+            iter->Next())
+        {
+            auto mesh = iter->ItemAs<Mesh>();
+            if (mesh->GetName() == "sphere")
+            {
+                mesh->SetMaterial(material);
+                mesh->SetVolumeMaterial(volume);
+            }
+        }
+
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_" << g.x << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+}
+

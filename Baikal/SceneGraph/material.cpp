@@ -280,12 +280,12 @@ namespace Baikal
         RegisterInput("absorption", "Absorption of volume material", { InputType::kFloat4 });
         RegisterInput("scattering", "Scattering of light inside of volume material", { InputType::kFloat4 });
         RegisterInput("emission", "Emission of light inside of volume material", { InputType::kFloat4 });
-        RegisterInput("phase function", "Phase function", { InputType::kUint });
+        RegisterInput("g", "Phase function", { InputType::kFloat4 });
 
         SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
         SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
         SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
-        SetInputValue("phase function", 0);
+        SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
     }
 
     // Check if material has emissive components

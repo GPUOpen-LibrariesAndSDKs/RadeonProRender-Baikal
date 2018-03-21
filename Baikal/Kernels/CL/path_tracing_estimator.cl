@@ -155,7 +155,7 @@ KERNEL void ShadeVolume(
 
         // Fetch incoming ray
         float3 o = rays[hit_idx].o.xyz;
-        float3 wi = rays[hit_idx].d.xyz;
+        float3 wi = -rays[hit_idx].d.xyz;
 
         Sampler sampler;
 #if SAMPLER == SOBOL
@@ -186,53 +186,54 @@ KERNEL void ShadeVolume(
         DifferentialGeometry dg;
         // put scattering position in there (it is along the current ray at isect.distance
         // since EvaluateVolume has put it there
-        dg.p = o + wi * Intersection_GetDistance(isects + hit_idx);
+        dg.p = o - wi * Intersection_GetDistance(isects + hit_idx);
         // Get light sample intencity
-        int bxdf_flags = Path_GetBxdfFlags(path);
+        int bxdf_flags = Path_GetBxdfFlags(path); 
         float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &wo, &pdf);
 
         // Generate shadow ray
-        float shadow_ray_length = length(wo);
+        float shadow_ray_length = length(wo); 
         Ray_Init(shadow_rays + global_id, dg.p, normalize(wo), shadow_ray_length, 0.f, 0xFFFFFFFF);
 
         // Evaluate volume transmittion along the shadow ray (it is incorrect if the light source is outside of the
         // current volume, but in this case it will be discarded anyway since the intersection at the outer bound
         // of a current volume), so the result is fully correct.
         float3 tr = Volume_Transmittance(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length);
+        float3 emission = Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length);
 
         // Volume emission is applied only if the light source is in the current volume(this is incorrect since the light source might be
         // outside of a volume and we have to compute fraction of ray in this case, but need to figure out how)
-        float3 r = Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length);
-
+        // float3 r = Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length);
+        float3 r = 0.f;
+        float g = volumes[volume_idx].g;
         // This is the estimate coming from a light source
-        // TODO: remove hardcoded phase func and sigma
-        r += tr * le * volumes[volume_idx].sigma_s * PhaseFunction_Uniform(wi, normalize(wo)) / pdf / selection_pdf;
+        // TODO: remove hardcoded phase func and sigma 
+        r += tr * le  * PhaseFunctionHG(wi, normalize(wo), g) / pdf / selection_pdf; 
+        r += tr * emission;
 
         // Only if we have some radiance compute the visibility ray
-        if (NON_BLACK(tr) && NON_BLACK(r) && pdf > 0.f)
+        if (NON_BLACK(tr) && NON_BLACK(r) && pdf > 0.f) 
         {
             // Put lightsample result
             light_samples[global_id] = REASONABLE_RADIANCE(r * Path_GetThroughput(path));
         }
         else
-        {
+        { 
             // Nothing to compute
             light_samples[global_id] = 0.f;
-            // Otherwise make it incative to save intersector cycles (hopefully)
+            // Otherwise make it incative to save intersector cycles (hopefully) 
             Ray_SetInactive(shadow_rays + global_id);
         }
 
 #ifdef MULTISCATTER
         // This is highly brute-force
-        // TODO: investigate importance sampling techniques here
-        wo = Sample_MapToSphere(Sampler_Sample2D(&sampler, SAMPLER_ARGS));
-        pdf = 1.f / (4.f * PI);
+        float phase = PhaseFunctionHG_Sample(wi, g, Sampler_Sample2D(&sampler, SAMPLER_ARGS), &wo);
 
         // Generate new path segment
         Ray_Init(indirect_rays + global_id, dg.p, normalize(wo), CRAZY_HIGH_DISTANCE, 0.f, 0xFFFFFFFF); 
 
         // Update path throughput multiplying by phase function.
-        Path_MulThroughput(path, PhaseFunction_Uniform(wi, normalize(wo)) / pdf);
+        Path_MulThroughput(path, phase);
 #else
         // Single-scattering mode only,
         // kill the path and compact away on next iteration
@@ -391,6 +392,7 @@ KERNEL void ShadeSurface(
                 // In this case we hit after an application of MIS process at previous step.
                 // That means BRDF weight has been already applied.
                 float3 v = REASONABLE_RADIANCE(Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight);
+
                 int output_index = output_indices[pixel_idx];
                 ADD_FLOAT3(&output[output_index], v);
             }
@@ -414,18 +416,6 @@ KERNEL void ShadeSurface(
             diffgeo.dpdu = -diffgeo.dpdu;
             diffgeo.dpdv = -diffgeo.dpdv;
             s = -s;
-        }
-
-        if (Bxdf_IsBtdf(&diffgeo))
-        {
-            if (backfacing)
-            {
-                Path_SetVolumeIdx(path, INVALID_IDX);
-            }
-            else
-            {
-                Path_SetVolumeIdx(path, Scene_GetVolumeIndex(&scene, isect.shapeid - 1));
-            }
         }
 
         DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
@@ -469,6 +459,15 @@ KERNEL void ShadeSurface(
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));
                 radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * light_weight / light_pdf / selection_pdf;
             }
+
+            // Apply the volume to shadow ray if needed
+            int volume_idx = Path_GetVolumeIdx(path);
+            if (volume_idx != -1)
+            {
+                float3 tr = Volume_Transmittance(&volumes[volume_idx], &shadow_rays[global_id], length(wo));
+                radiance *= tr;
+                radiance += throughput * tr * Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], length(wo));
+            }
         }
 
         // If we have some light here generate a shadow ray
@@ -482,14 +481,6 @@ KERNEL void ShadeSurface(
             int shadow_ray_mask = VISIBILITY_MASK_BOUNCE_SHADOW(bounce);
 
             Ray_Init(shadow_rays + global_id, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
-
-            // Apply the volume to shadow ray if needed
-            int volume_idx = Path_GetVolumeIdx(path);
-            if (volume_idx != -1)
-            {
-                radiance *= Volume_Transmittance(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length);
-                radiance += Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length) * throughput;
-            }
 
             // And write the light sample 
             light_samples[global_id] = REASONABLE_RADIANCE(radiance);
@@ -530,6 +521,18 @@ KERNEL void ShadeSurface(
 
             Ray_Init(indirect_rays + global_id, indirect_ray_o, indirect_ray_dir, CRAZY_HIGH_DISTANCE, 0.f, indirect_ray_mask);
             Ray_SetExtra(indirect_rays + global_id, make_float2(Bxdf_IsSingular(&diffgeo) ? 0.f : bxdf_pdf, 0.f));
+
+            if (Bxdf_IsBtdf(&diffgeo))
+            {
+                if (backfacing)
+                {
+                    Path_SetVolumeIdx(path, INVALID_IDX);
+                }
+                else
+                {
+                    Path_SetVolumeIdx(path, Scene_GetVolumeIndex(&scene, isect.shapeid - 1));
+                }
+            }
         }
         else
         {
@@ -584,15 +587,7 @@ KERNEL void ShadeBackgroundEnvMap(
 
             if (tex != -1)
             {
-                if (volume_idx == -1)
-                    v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
-                else
-                {
-                    v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) *
-                        Volume_Transmittance(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
-
-                    v.xyz += Volume_Emission(&volumes[volume_idx], &rays[global_id], rays[global_id].o.w);
-                }
+                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
             }
         }
 
@@ -635,7 +630,7 @@ KERNEL void GatherLightSamples(
             if (shadow_hits[global_id] == -1)
             {
                 // Add its contribution to radiance accumulator
-                radiance.xyz += light_samples[global_id];  
+                radiance.xyz += light_samples[global_id];
             }
         }
 
@@ -802,7 +797,8 @@ KERNEL void ShadeMiss(
             int tex = EnvironmentLight_GetTexture(&light, bxdf_flags);
             if (tex != -1)
             {
-                v.xyz = REASONABLE_RADIANCE(weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t);
+                v.xyz = weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t;
+                v.xyz = REASONABLE_RADIANCE(v.xyz);
             }
 
             ADD_FLOAT4(&output[output_index], v);
