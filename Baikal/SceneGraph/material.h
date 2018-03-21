@@ -1,16 +1,16 @@
 /**********************************************************************
  Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -37,6 +37,7 @@
 
 #include "scene_object.h"
 #include "texture.h"
+#include "inputmap.h"
 
 namespace Baikal
 {
@@ -45,7 +46,7 @@ namespace Baikal
 
     /**
      \brief High level material interface
-     
+
      \details Base class for all CPU side material supported by the renderer.
      */
     class Material : public SceneObject
@@ -61,7 +62,8 @@ namespace Baikal
             kUint = 0,
             kFloat4,
             kTexture,
-            kMaterial
+            kMaterial,
+            kInputMap
         };
 
         // Input description
@@ -79,18 +81,21 @@ namespace Baikal
         struct InputValue {
             // Current type
             InputType type;
-            
+
             // Possible values (use based on type)
             uint32_t uint_value;
             RadeonRays::float4 float_value;
             Texture::Ptr tex_value;
             Material::Ptr mat_value;
-            
+            InputMap::Ptr input_map_value;
+
             InputValue()
             : type(InputType::kMaterial)
-            , mat_value(nullptr)
-            , tex_value(nullptr)
+            , uint_value()
             , float_value()
+            , tex_value(nullptr)
+            , mat_value(nullptr)
+            , input_map_value(nullptr)
             {
             }
         };
@@ -111,6 +116,10 @@ namespace Baikal
         virtual std::unique_ptr<Iterator> CreateMaterialIterator() const;
         // Iterator of textures (plugged as inputs)
         virtual std::unique_ptr<Iterator> CreateTextureIterator() const;
+        // Iterator of InputMaps
+        virtual std::unique_ptr<Iterator> CreateInputMapsIterator() const;
+        // Iterator of InputMap leafs
+        virtual std::unique_ptr<Iterator> CreateInputMapLeafsIterator() const;
         // Check if material has emissive components
         virtual bool HasEmission() const;
 
@@ -121,6 +130,7 @@ namespace Baikal
                            RadeonRays::float4 const& value);
         void SetInputValue(std::string const& name, Texture::Ptr texture);
         void SetInputValue(std::string const& name, Material::Ptr material);
+        void SetInputValue(std::string const& name, Baikal::InputMap::Ptr inputMap);
 
         InputValue GetInputValue(std::string const& name) const;
 
@@ -140,11 +150,11 @@ namespace Baikal
         Input& GetInput(const std::string& name, InputType type);
 
         Material();
-    
+
         // Register specific input
         void RegisterInput(std::string const& name, std::string const& desc,
                            std::set<InputType>&& supported_types);
-        
+
         // Wipe out all the inputs
         void ClearInputs();
 
@@ -181,7 +191,7 @@ namespace Baikal
             kMicrofacetRefractionGGX,
             kMicrofacetRefractionBeckmann
         };
-        
+
         using Ptr = std::shared_ptr<SingleBxdf>;
         static Ptr Create(BxdfType type);
 
@@ -197,7 +207,7 @@ namespace Baikal
     private:
         BxdfType m_type;
     };
-    
+
     class MultiBxdf : public Material
     {
     public:
@@ -207,7 +217,7 @@ namespace Baikal
             kFresnelBlend,
             kMix
         };
-        
+
         using Ptr = std::shared_ptr<MultiBxdf>;
         static Ptr Create(Type type);
 
@@ -223,13 +233,13 @@ namespace Baikal
     private:
         Type m_type;
     };
-    
+
     class DisneyBxdf : public Material
     {
     public:
         using Ptr = std::shared_ptr<DisneyBxdf>;
         static Ptr Create();
-        
+
         // Check if material has emissive components
         bool HasEmission() const override;
 
@@ -248,41 +258,6 @@ namespace Baikal
 
     protected:
         VolumeMaterial();
-    };
-
-    class UberV2Material : public Material
-    {
-    public:
-        enum RefractionMode
-        {
-            kRefractionSeparate = 1U,
-            kRefractionLinked = 2U
-        };
-        enum EmissionMode
-        {
-            kEmissionSinglesided = 1U,
-            kEmissionDoublesided = 2U
-        };
-
-        enum Layers
-        {
-            kEmissionLayer = 0x1,
-            kTransparencyLayer = 0x2,
-            kCoatingLayer = 0x4,
-            kReflectionLayer = 0x8,
-            kDiffuseLayer = 0x10,
-            kRefractionLayer = 0x20,
-            kSSSLayer = 0x40
-        };
-
-        using Ptr = std::shared_ptr<UberV2Material>;
-        static Ptr Create();
-
-        // Check if material has emissive components
-        bool HasEmission() const override;
-
-    protected:
-        UberV2Material();
     };
 
     class MaterialAccessor

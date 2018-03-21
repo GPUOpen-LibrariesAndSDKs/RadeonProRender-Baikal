@@ -44,7 +44,7 @@ namespace Baikal
     {
     public:
         // Constructor
-        BilateralDenoiser(CLWContext context);
+        BilateralDenoiser(CLWContext context, const CLProgramManager *program_manager);
         // Apply filter
         void Apply(InputSet const& input_set, Output& output) override;
 
@@ -55,8 +55,8 @@ namespace Baikal
         CLWProgram m_program;
     };
 
-    inline BilateralDenoiser::BilateralDenoiser(CLWContext context)
-        : ClwPostEffect(context, "../Baikal/Kernels/CL/denoise.cl")
+    inline BilateralDenoiser::BilateralDenoiser(CLWContext context, const CLProgramManager *program_manager)
+        : ClwPostEffect(program_manager, context, "../Baikal/Kernels/CL/denoise.cl")
     {
         // Add necessary params
         RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));

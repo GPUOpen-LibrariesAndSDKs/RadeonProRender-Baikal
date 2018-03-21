@@ -1,3 +1,5 @@
+#ifndef BXDF_BASIC_CL
+#define BXDF_BASIC_CL
 /*
 Microfacet Beckmann
 */
@@ -937,3 +939,5 @@ float3 Passthrough_Sample(
     //
     return coswo > 1e-5f ? (1.f / coswo) : 0.f;
 }
+
+#endif

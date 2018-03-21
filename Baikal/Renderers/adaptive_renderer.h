@@ -34,13 +34,14 @@ namespace Baikal
 {
     class ClwOutput;
     struct ClwScene;
-
+    
     ///< Renderer implementation
     class AdaptiveRenderer : public MonteCarloRenderer
     {
     public:
         AdaptiveRenderer(
             CLWContext context, 
+            const CLProgramManager *program_manager,
             std::unique_ptr<Estimator> estimator
         );
 
@@ -87,5 +88,5 @@ namespace Baikal
         CLWBuffer<int> m_tile_distribution_buffer;
         Distribution1D m_tile_distribution;
     };
-
+    
 }
