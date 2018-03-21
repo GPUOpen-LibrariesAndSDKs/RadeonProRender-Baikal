@@ -320,7 +320,7 @@ namespace Baikal
         }
 
         // TODO: temporary code, add IBL
-        auto ibl_texture = image_io->LoadImage("../Resources/Textures/HDR_110_Tunnel_Env.hdr");
+        auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
         //auto ibl_texture1 = image_io->LoadImage("../Resources/Textures/sky.hdr");
 
         auto ibl = ImageBasedLight::Create();
