@@ -268,6 +268,70 @@ namespace Baikal
             scene->AttachLight(l1);
             scene->AttachLight(l2);
         }
+        else if (filename == "sphere+plane+area+ibl")
+        {
+            auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
+            scene->AttachShape(mesh);
+
+            auto floor = CreateQuad(
+            {
+                RadeonRays::float3(-8, 0, -8),
+                RadeonRays::float3(8, 0, -8),
+                RadeonRays::float3(8, 0, 8),
+                RadeonRays::float3(-8, 0, 8),
+            }
+            , false);
+            scene->AttachShape(floor);
+
+            auto emissive = SingleBxdf::Create(SingleBxdf::BxdfType::kEmissive);
+            emissive->SetInputValue("albedo", 1.f * float4(3.1f, 3.f, 2.8f, 1.f));
+
+            auto reflect = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
+            reflect->SetInputValue("albedo", float4(0.4f, 0.7f, 0.4f, 1.f));
+            auto transparent = SingleBxdf::Create(SingleBxdf::BxdfType::kPassthrough);
+            transparent->SetInputValue("albedo", float4(0.4f, 0.7f, 0.4f, 1.f));
+            transparent->SetInputValue("ior", float4(1.3f, 1.3f, 1.3f, 1.3f));
+
+            
+            auto mix = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
+            mix->SetInputValue("base_material", transparent);
+            mix->SetInputValue("top_material", reflect);
+            mix->SetInputValue("ior", float4(1.3f, 1.3f, 1.3f, 1.5f));
+            //mix->SetThin(true);
+            
+            mesh->SetMaterial(transparent);
+
+            auto volume = VolumeMaterial::Create();
+            volume->SetInputValue("scattering", float4(0.1f, 0.1f, 0.1f));
+            volume->SetInputValue("absorption", float4(1.25f, 1.25f, 1.25f));
+            volume->SetInputValue("emission", float4(1.2f, 0.2f, 0.2f));
+            mesh->SetVolumeMaterial(volume);
+
+            auto light = CreateQuad(
+            {
+                RadeonRays::float3(-2, 6, -2),
+                RadeonRays::float3(2, 6, -2),
+                RadeonRays::float3(2, 6, 2),
+                RadeonRays::float3(-2, 6, 2),
+            }
+            , true);
+            scene->AttachShape(light);
+
+            light->SetMaterial(emissive);
+
+            auto l1 = AreaLight::Create(light, 0);
+            auto l2 = AreaLight::Create(light, 1);
+
+            scene->AttachLight(l1);
+            scene->AttachLight(l2);
+
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+
+            auto ibl = ImageBasedLight::Create();
+            ibl->SetTexture(ibl_texture);
+            ibl->SetMultiplier(1.f);
+            scene->AttachLight(ibl);
+        }
         else if (filename == "sphere+plane+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.2f, 0.f));

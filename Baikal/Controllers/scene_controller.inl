@@ -405,7 +405,7 @@ namespace Baikal
                 }
                 else if (shapes_changed)
                 {
-                    UpdateShapeProperties(*scene, m_material_collector, m_texture_collector, out);
+                    UpdateShapeProperties(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
                 }
             }
 

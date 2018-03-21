@@ -54,6 +54,7 @@ namespace Baikal
         static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void OnMouseMove(GLFWwindow* window, double x, double y);
         static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
+        static void OnMouseScroll(GLFWwindow* window, double x, double y);
 
         AppSettings m_settings;
         std::unique_ptr<AppClRender> m_cl;

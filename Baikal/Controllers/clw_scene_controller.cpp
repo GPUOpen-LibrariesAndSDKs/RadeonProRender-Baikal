@@ -612,7 +612,7 @@ namespace Baikal
         ReloadIntersector(scene, out);
     }
 
-    void ClwSceneController::UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
+    void ClwSceneController::UpdateShapeProperties(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& volume_collector, ClwScene& out) const
     {
         auto shape_iter = scene.CreateShapeIterator();
 
@@ -640,7 +640,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            current_shape->volume_idx = -1;
+            current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
 
@@ -659,7 +659,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            current_shape->volume_idx = -1;
+            current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
 
@@ -678,7 +678,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
-            current_shape->volume_idx = -1;
+            current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
 
@@ -1562,26 +1562,7 @@ namespace Baikal
         clw_volume->sigma_a = volume.GetInputValue("absorption").float_value;
         clw_volume->sigma_e = volume.GetInputValue("emission").float_value;
         clw_volume->sigma_s = volume.GetInputValue("scattering").float_value;
-
-        // copy phase func
-        auto phase_func = static_cast<VolumeMaterial::PhaseFunction>(volume.GetInputValue("phase function").uint_value);
-        switch (phase_func)
-        {
-        case VolumeMaterial::PhaseFunction::kUniform:
-            clw_volume->phase_func = ClwScene::PhaseFunction::kUniform;
-            break;
-        case VolumeMaterial::PhaseFunction::kRayleigh:
-            clw_volume->phase_func = ClwScene::PhaseFunction::kRayleigh;
-            break;
-        case VolumeMaterial::PhaseFunction::kMieMurky:
-            clw_volume->phase_func = ClwScene::PhaseFunction::kMieMurky;
-            break;
-        case VolumeMaterial::PhaseFunction::kMieHazy:
-            clw_volume->phase_func = ClwScene::PhaseFunction::kMieHazy;
-            break;
-        default:
-            assert(false); // invalid phase function value
-        }
+        clw_volume->g = volume.GetInputValue("g").float_value.x;
     }
 
     int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const

@@ -301,19 +301,11 @@ typedef enum
         kHeterogeneous
     } VolumeType;
 
-typedef enum
-    {
-        kUniform = 0,
-        kRayleigh,
-        kMieMurky,
-        kMieHazy,
-        kHG // this one requires one extra coeff
-    } PhaseFunction;
 
 typedef struct _Volume
     {
         VolumeType type;
-        PhaseFunction phase_func;
+        float g;
 
         // Id of volume data if present
         int data;

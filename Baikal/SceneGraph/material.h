@@ -250,14 +250,6 @@ namespace Baikal
     class VolumeMaterial : public Material
     {
     public:
-        enum class PhaseFunction
-        {
-            kUniform = 0,
-            kRayleigh,
-            kMieMurky,
-            kMieHazy
-        };
-
         using Ptr = std::shared_ptr<VolumeMaterial>;
         static Ptr Create();
 
