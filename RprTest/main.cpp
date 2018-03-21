@@ -3906,12 +3906,18 @@ int main(int argc, char* argv[])
     test_feature_shaderBumpmap();
     test_feature_shaderTypeLayered();
     UpdateMaterial();
-    ArithmeticMul();*/
+    ArithmeticMul();
     OrthoRenderTest();
     BackgroundImageTest();
-    EnvironmentOverrideTest();
+    EnvironmentOverrideTest();*/
     UberV2Test();
     UberV2RPRXTest();
+    UberV2RPRXTest_Arithmetics();
+    UberV2Test_Arithmetics();
+    UberV2Test_Bump();
+    UberV2Test_NormalMap();
+    UberV2RPRXTest_Bump();
+    UberV2RPRXTest_NormalMap();
 
     return 0;
 }

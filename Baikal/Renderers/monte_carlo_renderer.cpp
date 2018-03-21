@@ -38,6 +38,8 @@
 #include "./Kernels/CL/cache/kernels.h"
 #endif
 
+#include "Utils/cl_program_manager.h"
+
 namespace Baikal
 {
     using namespace RadeonRays;
@@ -48,8 +50,8 @@ namespace Baikal
     // Constructor
     MonteCarloRenderer::MonteCarloRenderer(
         CLWContext context,
-        std::unique_ptr<Estimator> estimator,
-        std::string const& cache_path
+        const CLProgramManager *program_manager,
+        std::unique_ptr<Estimator> estimator
     )
 #ifdef BAIKAL_EMBED_KERNELS
         : Baikal::ClwClass( context, 
@@ -58,7 +60,7 @@ namespace Baikal
                             sizeof(g_monte_carlo_renderer_opencl_inc)/sizeof(*g_monte_carlo_renderer_opencl_inc),
                             "", cache_path)
 #else
-        : Baikal::ClwClass(context, "../Baikal/Kernels/CL/monte_carlo_renderer.cl", "", cache_path)
+        : Baikal::ClwClass(context, program_manager, "../Baikal/Kernels/CL/monte_carlo_renderer.cl", "")
 #endif
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
@@ -282,6 +284,7 @@ namespace Baikal
                 fill_kernel.SetArg(argc++, m_estimator->GetRayCountBuffer());
             }
         }
+        fill_kernel.SetArg(argc++, scene.input_map_data);
 
         // Run AOV kernel
         {

@@ -3,11 +3,19 @@
 #include "SceneGraph/iterator.h"
 #include <vector>
 #include <cassert>
+#include <unordered_map>
 
 namespace Baikal
 {
-    using ItemMap = std::map<SceneObject::Ptr, int>;
-    using ItemSet = std::set<SceneObject::Ptr>;
+    struct IdCompare
+    {
+        bool operator() (const SceneObject::Ptr& lhs, const SceneObject::Ptr& rhs) const
+        {
+            return lhs->GetId() < rhs->GetId();
+        }
+    };
+    using ItemMap = std::unordered_map<uint32_t, int>;
+    using ItemSet = std::set<SceneObject::Ptr, IdCompare>;
     
     class BundleImpl : public Bundle
     {
@@ -72,7 +80,7 @@ namespace Baikal
         int idx = 0;
         for (auto& i : m_impl->m_set)
         {
-            m_impl->m_map[i] = idx++;
+            m_impl->m_map[i->GetId()] = idx++;
         }
     }
     
@@ -132,7 +140,7 @@ namespace Baikal
     
     std::uint32_t Collector::GetItemIndex(SceneObject::Ptr item) const
     {
-        auto iter = m_impl->m_map.find(item);
+        auto iter = m_impl->m_map.find(item->GetId());
         
         if (iter == m_impl->m_map.cend())
         {

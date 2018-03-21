@@ -84,7 +84,7 @@ int Bxdf_UberV2_GetSampledComponent(DifferentialGeometry const* dg)
 }
 
 /// Sets BxDF sampled component. Sampled component stored in second byte of bxdf_flags
-int Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
+void Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
 {
     dg->mat.bxdf_flags &= 0xffff00ff; //Reset sampled component
     dg->mat.bxdf_flags |= (sampledComponent << 8); //Set new component
@@ -96,7 +96,9 @@ int Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledCompone
 #include <../Baikal/Kernels/CL/disney.cl>
 #include <../Baikal/Kernels/CL/bxdf_basic.cl>
 #ifdef ENABLE_UBERV2
+
 #include <../Baikal/Kernels/CL/bxdf_uberv2.cl>
+
 #endif
 
 /*
@@ -104,14 +106,17 @@ int Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledCompone
  */
 float3 Bxdf_Evaluate(
     // Geometry
-    DifferentialGeometry const* dg,
+    DifferentialGeometry const* dg
     // Incoming direction
-    float3 wi,
+    ,float3 wi
     // Outgoing direction
-    float3 wo,
+    ,float3 wo
     // Texture args
-    TEXTURE_ARG_LIST
-    )
+    ,TEXTURE_ARG_LIST
+#ifdef ENABLE_UBERV2
+    ,UberV2ShaderData const* shader_data
+#endif
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
@@ -144,7 +149,7 @@ float3 Bxdf_Evaluate(
 #endif
 #ifdef ENABLE_UBERV2
     case kUberV2:
-        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
+        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS, shader_data);
 #endif
     }
 
@@ -153,18 +158,21 @@ float3 Bxdf_Evaluate(
 
 float3 Bxdf_Sample(
     // Geometry
-    DifferentialGeometry const* dg,
+    DifferentialGeometry const* dg
     // Incoming direction
-    float3 wi,
+    ,float3 wi
     // Texture args
-    TEXTURE_ARG_LIST,
+    ,TEXTURE_ARG_LIST
     // RNG
-    float2 sample,
+    ,float2 sample
     // Outgoing  direction
-    float3* wo,
+    ,float3* wo
     // PDF at w
-    float* pdf
-    )
+    ,float* pdf
+#ifdef ENABLE_UBERV2
+    ,UberV2ShaderData const* shader_data
+#endif
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
@@ -209,7 +217,7 @@ float3 Bxdf_Sample(
 #endif
 #ifdef ENABLE_UBERV2
     case kUberV2:
-        res = UberV2_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
+        res = UberV2_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf, shader_data);
         break;
 #endif
     default:
@@ -224,14 +232,17 @@ float3 Bxdf_Sample(
 
 float Bxdf_GetPdf(
     // Geometry
-    DifferentialGeometry const* dg,
+    DifferentialGeometry const* dg
     // Incoming direction
-    float3 wi,
+    ,float3 wi
     // Outgoing direction
-    float3 wo,
+    ,float3 wo
     // Texture args
-    TEXTURE_ARG_LIST
-    )
+    ,TEXTURE_ARG_LIST
+#ifdef ENABLE_UBERV2
+    ,UberV2ShaderData const* shader_data
+#endif
+)
 {
     // Transform vectors into tangent space
     float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
@@ -264,7 +275,7 @@ float Bxdf_GetPdf(
 #endif
 #ifdef ENABLE_UBERV2
     case kUberV2:
-        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
+        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS, shader_data);
 #endif
     }
 

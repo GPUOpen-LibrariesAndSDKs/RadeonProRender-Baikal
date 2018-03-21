@@ -3,10 +3,12 @@
 
 namespace Baikal
 {
+    
     AdaptiveRenderer::AdaptiveRenderer(
         CLWContext context,
+        const CLProgramManager *program_manager,
         std::unique_ptr<Estimator> estimator
-    ) : MonteCarloRenderer(context, std::move(estimator))
+    ) : MonteCarloRenderer(context, program_manager, std::move(estimator))
     {
         auto samples_buffer_size = GetEstimator().GetWorkBufferSize();
         m_sample_buffer = GetContext().CreateBuffer<float3>(samples_buffer_size, CL_MEM_READ_WRITE);
@@ -214,4 +216,5 @@ namespace Baikal
             GetContext().Launch2D(0, gs, ls, generate_kernel);
         }
     }
+    
 }

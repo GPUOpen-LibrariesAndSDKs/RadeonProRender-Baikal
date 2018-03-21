@@ -1,7 +1,9 @@
+#ifndef BXDF_UBERV2_BRICKS
+#define BXDF_UBERV2_BRICKS
 // Diffuse layer
 float3 UberV2_Lambert_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -10,14 +12,12 @@ float3 UberV2_Lambert_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.uberv2.diffuse_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.diffuse_color_map_idx));
-
-    return kd / PI;
+    return shader_data->diffuse_color.xyz / PI;
 }
 
 float UberV2_Lambert_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -31,21 +31,21 @@ float UberV2_Lambert_GetPdf(
 
 /// Lambert BRDF sampling
 float3 UberV2_Lambert_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
     TEXTURE_ARG_LIST,
     // Sample
     float2 sample,
-    // Outgoing  direction
+    // Outgoing direction
     float3* wo,
     // PDF at wo
     float* pdf
 )
 {
-    const float3 kd = UberV2_Lambert_Evaluate(dg, wi, *wo, TEXTURE_ARGS);
+    const float3 kd = UberV2_Lambert_Evaluate(shader_data, wi, *wo, TEXTURE_ARGS);
 
     *wo = Sample_MapToHemisphere(sample, make_float3(0.f, 1.f, 0.f), 1.f);
 
@@ -76,8 +76,8 @@ float UberV2_MicrofacetDistribution_GGX_GetPdf(
     float3 m,
     // Rougness
     float roughness,
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -98,7 +98,7 @@ void UberV2_MicrofacetDistribution_GGX_SampleNormal(
     // Roughness
     float roughness,
     // Differential geometry
-    DifferentialGeometry const* dg,
+    UberV2ShaderData const* shader_data,
     // Texture args
     TEXTURE_ARG_LIST,
     // Sample
@@ -143,8 +143,8 @@ float UberV2_MicrofacetDistribution_GGX_G(float roughness, float3 wi, float3 wo,
 }
 
 float3 UberV2_MicrofacetGGX_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -154,8 +154,6 @@ float3 UberV2_MicrofacetGGX_Evaluate(
     float3 ks
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_map_idx));
-
     // Incident and reflected zenith angles
     float costhetao = fabs(wo.y);
     float costhetai = fabs(wi.y);
@@ -165,13 +163,13 @@ float3 UberV2_MicrofacetGGX_Evaluate(
 
     float denom = (4.f * costhetao * costhetai);
 
-    return denom > DENOM_EPS ? ks * UberV2_MicrofacetDistribution_GGX_G(roughness, wi, wo, wh) * UberV2_MicrofacetDistribution_GGX_D(roughness, wh) / denom : 0.f;
+    return denom > DENOM_EPS ? ks * UberV2_MicrofacetDistribution_GGX_G(shader_data->reflection_roughness, wi, wo, wh) * UberV2_MicrofacetDistribution_GGX_D(shader_data->reflection_roughness, wh) / denom : 0.f;
 }
 
 
 float UberV2_MicrofacetGGX_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -180,16 +178,14 @@ float UberV2_MicrofacetGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_map_idx));
-
     float3 wh = normalize(wo + wi);
 
-    return UberV2_MicrofacetDistribution_GGX_GetPdf(wh, roughness, dg, wi, wo, TEXTURE_ARGS);
+    return UberV2_MicrofacetDistribution_GGX_GetPdf(wh, shader_data->reflection_roughness, shader_data, wi, wo, TEXTURE_ARGS);
 }
 
 float3 UberV2_MicrofacetGGX_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -203,24 +199,22 @@ float3 UberV2_MicrofacetGGX_Sample(
     float3 ks
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.uberv2.reflection_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_roughness_map_idx));
-
     float3 wh;
-    UberV2_MicrofacetDistribution_GGX_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
+    UberV2_MicrofacetDistribution_GGX_SampleNormal(shader_data->reflection_roughness, shader_data, TEXTURE_ARGS, sample, &wh);
 
     *wo = -wi + 2.f*fabs(dot(wi, wh)) * wh;
 
-    *pdf = UberV2_MicrofacetDistribution_GGX_GetPdf(wh, roughness, dg, wi, *wo, TEXTURE_ARGS);
+    *pdf = UberV2_MicrofacetDistribution_GGX_GetPdf(wh, shader_data->reflection_roughness, shader_data, wi, *wo, TEXTURE_ARGS);
 
-    return UberV2_MicrofacetGGX_Evaluate(dg, wi, *wo, TEXTURE_ARGS, ks);
+    return UberV2_MicrofacetGGX_Evaluate(shader_data, wi, *wo, TEXTURE_ARGS, ks);
 }
 
 /*
 Ideal reflection BRDF
 */
 float3 UberV2_IdealReflect_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -233,8 +227,8 @@ float3 UberV2_IdealReflect_Evaluate(
 }
 
 float UberV2_IdealReflect_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -247,8 +241,8 @@ float UberV2_IdealReflect_GetPdf(
 }
 
 float3 UberV2_IdealReflect_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -278,8 +272,8 @@ Ideal refraction BTDF
 */
 
 float3 UberV2_IdealRefract_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -292,8 +286,8 @@ float3 UberV2_IdealRefract_Evaluate(
 }
 
 float UberV2_IdealRefract_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -306,8 +300,8 @@ float UberV2_IdealRefract_GetPdf(
 }
 
 float3 UberV2_IdealRefract_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -320,10 +314,10 @@ float3 UberV2_IdealRefract_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_map_idx));
+    const float3 ks = shader_data->refraction_color.xyz;
 
     float etai = 1.f;
-    float etat = dg->mat.uberv2.refraction_ior;
+    float etat = shader_data->refraction_ior;
     float cosi = wi.y;
 
     bool entering = cosi > 0.f;
@@ -358,8 +352,8 @@ float3 UberV2_IdealRefract_Sample(
 
 
 float3 UberV2_MicrofacetRefractionGGX_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -368,8 +362,8 @@ float3 UberV2_MicrofacetRefractionGGX_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_map_idx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_map_idx)), ROUGHNESS_EPS);
+    const float3 ks = shader_data->refraction_color.xyz;
+    const float roughness = max(shader_data->refraction_roughness, ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -380,7 +374,7 @@ float3 UberV2_MicrofacetRefractionGGX_Evaluate(
     }
 
     float etai = 1.f;
-    float etat = dg->mat.uberv2.refraction_ior;
+    float etat = shader_data->refraction_ior;
 
     // Revert normal and eta if needed
     if (ndotwi < 0.f)
@@ -405,8 +399,8 @@ float3 UberV2_MicrofacetRefractionGGX_Evaluate(
 }
 
 float UberV2_MicrofacetRefractionGGX_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -415,7 +409,7 @@ float UberV2_MicrofacetRefractionGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_map_idx)), ROUGHNESS_EPS);
+    const float roughness = max(shader_data->refraction_roughness, ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -426,7 +420,7 @@ float UberV2_MicrofacetRefractionGGX_GetPdf(
     }
 
     float etai = 1.f;
-    float etat = dg->mat.uberv2.refraction_ior;
+    float etat = shader_data->refraction_ior;
 
     // Revert normal and eta if needed
     if (ndotwi < 0.f)
@@ -453,8 +447,8 @@ float UberV2_MicrofacetRefractionGGX_GetPdf(
 }
 
 float3 UberV2_MicrofacetRefractionGGX_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -467,8 +461,8 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.refraction_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_color_map_idx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.uberv2.refraction_roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.refraction_roughness_map_idx)), ROUGHNESS_EPS);
+    const float3 ks = shader_data->refraction_color.xyz;
+    const float roughness = max(shader_data->refraction_roughness, ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
 
@@ -479,7 +473,7 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
     }
 
     float etai = 1.f;
-    float etat = dg->mat.uberv2.refraction_ior;
+    float etat = shader_data->refraction_ior;
     float s = 1.f;
 
     // Revert normal and eta if needed
@@ -492,7 +486,7 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
     }
 
     float3 wh;
-    UberV2_MicrofacetDistribution_GGX_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
+    UberV2_MicrofacetDistribution_GGX_SampleNormal(roughness, shader_data, TEXTURE_ARGS, sample, &wh);
 
     float c = dot(wi, wh);
     float eta = etai / etat;
@@ -507,14 +501,14 @@ float3 UberV2_MicrofacetRefractionGGX_Sample(
 
     *wo = normalize((eta * c - s * native_sqrt(d)) * wh - eta * wi);
 
-    *pdf = UberV2_MicrofacetRefractionGGX_GetPdf(dg, wi, *wo, TEXTURE_ARGS);
+    *pdf = UberV2_MicrofacetRefractionGGX_GetPdf(shader_data, wi, *wo, TEXTURE_ARGS);
 
-    return UberV2_MicrofacetRefractionGGX_Evaluate(dg, wi, *wo, TEXTURE_ARGS);
+    return UberV2_MicrofacetRefractionGGX_Evaluate(shader_data, wi, *wo, TEXTURE_ARGS);
 }
 
 float3 UberV2_Passthrough_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -538,8 +532,8 @@ float3 UberV2_Passthrough_Sample(
 }
 
 float3 UberV2_Reflection_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -548,21 +542,21 @@ float3 UberV2_Reflection_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
-    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_map_idx));
+    const bool is_singular = (shader_data->reflection_roughness < ROUGHNESS_EPS);
+    const float metalness = shader_data->reflection_metalness;
 
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_map_idx));
+    const float3 ks = shader_data->reflection_color.xyz;
 
     float3 color = mix((float3)(1.0f, 1.0f, 1.0f), ks, metalness);
 
     return is_singular ?
-        UberV2_IdealReflect_Evaluate(dg, wi, wo, TEXTURE_ARGS) :
-        UberV2_MicrofacetGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS, color);
+        UberV2_IdealReflect_Evaluate(shader_data, wi, wo, TEXTURE_ARGS) :
+        UberV2_MicrofacetGGX_Evaluate(shader_data, wi, wo, TEXTURE_ARGS, color);
 }
 
 float3 UberV2_Refraction_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -571,16 +565,16 @@ float3 UberV2_Refraction_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
+    const bool is_singular = shader_data->refraction_roughness;
 
     return is_singular ?
-        UberV2_IdealRefract_Evaluate(dg, wi, wo, TEXTURE_ARGS) :
-        UberV2_MicrofacetRefractionGGX_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        UberV2_IdealRefract_Evaluate(shader_data, wi, wo, TEXTURE_ARGS) :
+        UberV2_MicrofacetRefractionGGX_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
 }
 
 float UberV2_Reflection_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -589,16 +583,16 @@ float UberV2_Reflection_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (shader_data->reflection_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
-        UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS) :
-        UberV2_MicrofacetGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        UberV2_IdealReflect_GetPdf(shader_data, wi, wo, TEXTURE_ARGS) :
+        UberV2_MicrofacetGGX_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
 }
 
 float UberV2_Refraction_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Outgoing direction
@@ -607,16 +601,16 @@ float UberV2_Refraction_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = (dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (shader_data->refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
-        UberV2_IdealRefract_GetPdf(dg, wi, wo, TEXTURE_ARGS) :
-        UberV2_MicrofacetRefractionGGX_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        UberV2_IdealRefract_GetPdf(shader_data, wi, wo, TEXTURE_ARGS) :
+        UberV2_MicrofacetRefractionGGX_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
 }
 
 float3 UberV2_Reflection_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -629,20 +623,20 @@ float3 UberV2_Reflection_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.reflection_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_color_map_idx));
-    const bool is_singular = (dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS);
-    const float metalness = Texture_GetValue1f(dg->mat.uberv2.reflection_metalness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.reflection_metalness_map_idx));
+    const float3 ks = shader_data->reflection_color.xyz;
+    const bool is_singular = (shader_data->reflection_roughness < ROUGHNESS_EPS);
+    const float metalness = shader_data->reflection_metalness;
 
     float3 color = mix((float3)(1.0f, 1.0f, 1.0f), ks, metalness);
-    
+
     return is_singular ?
-        UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, wo, pdf, color) :
-        UberV2_MicrofacetGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf, color);
+        UberV2_IdealReflect_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf, color) :
+        UberV2_MicrofacetGGX_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf, color);
 }
 
 float3 UberV2_Refraction_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -655,16 +649,16 @@ float3 UberV2_Refraction_Sample(
     float* pdf
 )
 {
-    const bool is_singular = (dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS);
+    const bool is_singular = (shader_data->refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
-        UberV2_IdealRefract_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf) :
-        UberV2_MicrofacetRefractionGGX_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        UberV2_IdealRefract_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf) :
+        UberV2_MicrofacetRefractionGGX_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);
 }
 
 float3 UberV2_Coating_Sample(
-    // Geometry
-    DifferentialGeometry const* dg,
+    // Preprocessed shader input data
+    UberV2ShaderData const* shader_data,
     // Incoming direction
     float3 wi,
     // Texture args
@@ -675,8 +669,9 @@ float3 UberV2_Coating_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.uberv2.coating_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.uberv2.coating_color_map_idx));
+    const float3 ks = shader_data->coating_color.xyz;
 
-    return UberV2_IdealReflect_Sample(dg, wi, TEXTURE_ARGS, wo, pdf, ks);
+    return UberV2_IdealReflect_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf, ks);
 }
 
+#endif

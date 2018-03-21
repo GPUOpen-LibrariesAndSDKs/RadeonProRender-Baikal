@@ -10,17 +10,17 @@ namespace Baikal
     : m_thin(false)
     {
     }
-    
+
     void Material::RegisterInput(std::string const& name,
                                  std::string const& desc,
                                  std::set<InputType>&& supported_types)
     {
         Input input {{name, desc, std::move(supported_types)}, InputValue()};
-        
+
         assert(input.info.supported_types.size() > 0);
-        
+
         input.value.type = *input.info.supported_types.begin();
-        
+
         switch (input.value.type)
         {
             case InputType::kFloat4:
@@ -32,13 +32,15 @@ namespace Baikal
             case InputType::kMaterial:
                 input.value.mat_value = nullptr;
                 break;
+            case InputType::kInputMap:
+                input.value.input_map_value = nullptr;
             default:
                 break;
         }
-        
+
         m_inputs.emplace(std::make_pair(name, input));
     }
-    
+
     void Material::ClearInputs()
     {
         m_inputs.clear();
@@ -49,7 +51,7 @@ namespace Baikal
     std::unique_ptr<Iterator> Material::CreateMaterialIterator() const
     {
         std::set<Material::Ptr> materials;
-        
+
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&materials](std::pair<std::string, Input> const& map_entry)
                       {
@@ -60,15 +62,15 @@ namespace Baikal
                           }
                       }
                       );
-        
+
         return std::make_unique<ContainerIterator<std::set<Material::Ptr>>>(std::move(materials));
     }
-    
+
     // Iterator of textures (plugged as inputs)
     std::unique_ptr<Iterator> Material::CreateTextureIterator() const
     {
         std::set<Texture::Ptr> textures;
-        
+
         std::for_each(m_inputs.cbegin(), m_inputs.cend(),
                       [&textures](std::pair<std::string, Input> const& map_entry)
                       {
@@ -77,12 +79,53 @@ namespace Baikal
                           {
                               textures.insert(map_entry.second.value.tex_value);
                           }
+                          else if (map_entry.second.value.type == InputType::kInputMap)
+                          {
+                              map_entry.second.value.input_map_value->CollectTextures(textures);
+                          }
                       }
                       );
-        
+
         return std::make_unique<ContainerIterator<std::set<Texture::Ptr>>>(std::move(textures));
     }
-    
+
+    // Iterator of InputMaps
+    std::unique_ptr<Iterator> Material::CreateInputMapsIterator() const
+    {
+        std::set<Baikal::InputMap::Ptr> input_maps;
+
+        for (auto &input : m_inputs)
+        {
+            if (input.second.value.type == InputType::kInputMap)
+                input_maps.insert(input.second.value.input_map_value);
+        }
+
+        return std::make_unique<ContainerIterator<std::set<Baikal::InputMap::Ptr>>>(std::move(input_maps));
+    }
+
+    // Iterator of InputMap leafs
+    std::unique_ptr<Iterator> Material::CreateInputMapLeafsIterator() const
+    {
+        std::set<Baikal::InputMap::Ptr> input_maps;
+
+        for (auto &input : m_inputs)
+        {
+            if (input.second.value.type == InputType::kInputMap)
+            {
+                if (!input.second.value.input_map_value->IsLeaf())
+                {
+                    input.second.value.input_map_value->GetLeafs(input_maps);
+                }
+                else
+                {
+                    input_maps.insert(input.second.value.input_map_value);
+                }
+            }
+        }
+
+        return std::make_unique<ContainerIterator<std::set<Baikal::InputMap::Ptr>>>(std::move(input_maps));
+    }
+
     // Set input value
     // If specific data type is not supported throws std::runtime_error
 
@@ -135,14 +178,22 @@ namespace Baikal
         SetDirty(true);
     }
 
+    void Material::SetInputValue(std::string const& name, Baikal::InputMap::Ptr inputMap)
+    {
+        auto& input = GetInput(name, InputType::kInputMap);
+        input.value.type = InputType::kInputMap;
+        input.value.input_map_value = inputMap;
+        SetDirty(true);
+    }
+
     Material::InputValue Material::GetInputValue(std::string const& name) const
     {
         auto input_iter = m_inputs.find(name);
-        
+
         if (input_iter != m_inputs.cend())
         {
             auto& input = input_iter->second;
-            
+
             return input.value;
         }
         else
@@ -155,7 +206,7 @@ namespace Baikal
     {
         return m_thin;
     }
-    
+
     void Material::SetThin(bool thin)
     {
         m_thin = thin;
@@ -189,17 +240,17 @@ namespace Baikal
         RegisterInput("ior", "Index of refraction", {InputType::kFloat4});
         RegisterInput("fresnel", "Fresnel flag", {InputType::kFloat4});
         RegisterInput("roughness", "Roughness", {InputType::kFloat4, InputType::kTexture});
-        
+
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
         SetInputValue("normal", static_cast<Texture::Ptr>(nullptr));
         SetInputValue("bump", static_cast<Texture::Ptr>(nullptr));
     }
-    
+
     SingleBxdf::BxdfType SingleBxdf::GetBxdfType() const
     {
         return m_type;
     }
-    
+
     void SingleBxdf::SetBxdfType(BxdfType type)
     {
         m_type = type;
@@ -220,12 +271,12 @@ namespace Baikal
         RegisterInput("ior", "Index of refraction", {InputType::kFloat4});
         RegisterInput("weight", "Blend weight", {InputType::kFloat4, InputType::kTexture});
     }
-    
+
     MultiBxdf::Type MultiBxdf::GetType() const
     {
         return m_type;
     }
-    
+
     void MultiBxdf::SetType(Type type)
     {
         m_type = type;
@@ -260,14 +311,14 @@ namespace Baikal
         RegisterInput("roughness", "Roughness of specular & diffuse layers", {InputType::kFloat4, InputType::kTexture});
         RegisterInput("normal", "Normal map", {InputType::kTexture});
         RegisterInput("bump", "Bump map", { InputType::kTexture });
-        
+
         SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
         SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
         SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
         SetInputValue("normal", Texture::Ptr{nullptr});
         SetInputValue("bump", Texture::Ptr{nullptr});
     }
-    
+
     // Check if material has emissive components
     bool DisneyBxdf::HasEmission() const
     {
@@ -376,123 +427,32 @@ namespace Baikal
             SingleBxdfConcrete(BxdfType type) :
             SingleBxdf(type) {}
         };
-        
+
         struct MultiBxdfConcrete: public MultiBxdf {
             MultiBxdfConcrete(Type type) :
             Baikal::MultiBxdf(type) {}
         };
-        
+
         struct DisneyBxdfConcrete: public DisneyBxdf {
         };
 
         struct VolumeMaterialConcrete : public VolumeMaterial {
         };
-
-        struct UberV2MaterialConcrete : public UberV2Material {
-        };
     }
-    
+
     SingleBxdf::Ptr SingleBxdf::Create(BxdfType type) {
         return std::make_shared<SingleBxdfConcrete>(type);
     }
-    
+
     MultiBxdf::Ptr MultiBxdf::Create(Type type) {
         return std::make_shared<MultiBxdfConcrete>(type);
     }
-    
+
     DisneyBxdf::Ptr DisneyBxdf::Create() {
         return std::make_shared<DisneyBxdfConcrete>();
     }
 
     VolumeMaterial::Ptr VolumeMaterial::Create() {
         return std::make_shared<VolumeMaterialConcrete>();
-    }
-
-    UberV2Material::Ptr UberV2Material::Create() {
-        return std::make_shared<UberV2MaterialConcrete>();
-    }
-
-    UberV2Material::UberV2Material()
-    {
-        using namespace RadeonRays;
-
-        //Layers
-        RegisterInput("uberv2.layers", "base diffuse albedo", { InputType::kUint });
-        SetInputValue("uberv2.layers", 0U);
-
-        //Diffuse
-        RegisterInput("uberv2.diffuse.color", "base diffuse albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.diffuse.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-
-        //Reflection
-        RegisterInput("uberv2.reflection.color", "base reflection albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.color", float4(1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.reflection.roughness", "reflection roughness", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.roughness", float4(0.5f, 0.5f, 0.5f, 0.5f));
-        RegisterInput("uberv2.reflection.anisotropy", "level of anisotropy", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.anisotropy", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.reflection.anisotropy_rotation", "orientation of anisotropic component", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.anisotropy_rotation", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.reflection.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
-        RegisterInput("uberv2.reflection.metalness", "metalness of the material", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.reflection.metalness", float4(0.0f, 0.0f, 0.0f, 0.0f));
-
-        //Coating
-        RegisterInput("uberv2.coating.color", "base coating albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.coating.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.coating.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.coating.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
-
-        //Refraction
-        RegisterInput("uberv2.refraction.color", "base refraction albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.refraction.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.refraction.roughness", "refraction roughness", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.refraction.roughness", float4(0.5f, 0.5f, 0.5f, 0.5f));
-        RegisterInput("uberv2.refraction.ior", "index of refraction", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.refraction.ior", float4(1.5f, 1.5f, 1.5f, 1.5f));
-        RegisterInput("uberv2.refraction.ior_mode", "separate or linked to reflection IOR", { InputType::kUint });
-        SetInputValue("uberv2.refraction.ior_mode", kRefractionSeparate);
-        RegisterInput("uberv2.refraction.thin_surface", "replace refraction with transparency or not", { InputType::kUint });
-        SetInputValue("uberv2.refraction.thin_surface", 0);
-
-        //Emission
-        RegisterInput("uberv2.emission.color", "emission albedo", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.emission.color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.emission.mode", "single or double sided", { InputType::kUint });
-        SetInputValue("uberv2.emission.mode", kEmissionSinglesided);
-
-        //SSS
-        RegisterInput("uberv2.sss.absorption_color", "volume absorption color", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.absorption_color", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.sss.scatter_color", "volume scattering color", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.scatter_color", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.sss.absorption_distance", "maximum distance the light can travel before absorbed in meters", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.absorption_distance", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.sss.scatter_distance", "maximum distance the light can travel before scattered", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.scatter_distance", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.sss.scatter_direction", "scattering direction (G parameter of Henyey-Grenstein scattering function)", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.scatter_direction", float4(0.0f, 0.0f, 0.0f, 0.0f));
-        RegisterInput("uberv2.sss.subsurface_color", "color of diffuse refraction BRDF", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.sss.subsurface_color", float4(1.0f, 1.0f, 1.0f, 1.0f));
-        RegisterInput("uberv2.sss.multiscatter", "multiple or single scattering", { InputType::kUint });
-        SetInputValue("uberv2.sss.multiscatter", 1);
-
-        //Transparency
-        RegisterInput("uberv2.transparency", "level of transparency", { InputType::kFloat4, InputType::kTexture, InputType::kMaterial });
-        SetInputValue("uberv2.transparency", float4(0.0f, 0.0f, 0.0f, 0.0f));
-
-        
-        RegisterInput("uberv2.normal", "normal map texture", { InputType::kTexture });
-        SetInputValue("uberv2.normal", Texture::Ptr{ nullptr });
-        RegisterInput("uberv2.bump", "bump map texture", { InputType::kTexture });
-        SetInputValue("uberv2.bump", Texture::Ptr{ nullptr });
-/*        RegisterInput("uberv2.displacement", "uberv2.displacement", );
-        SetInputValue("uberv2.displacement", );*/
-    }
-
-    bool UberV2Material::HasEmission() const
-    {
-        return false;// (GetInputValue("uberv2.emission.weight").float_value.sqnorm() != 0);
     }
 }

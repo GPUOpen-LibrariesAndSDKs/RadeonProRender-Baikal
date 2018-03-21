@@ -38,6 +38,7 @@ namespace Baikal
 {
     class ClwOutput;
     struct ClwScene;
+    class CLProgramManager;
 
     ///< Renderer implementation
     class MonteCarloRenderer : public Renderer, protected ClwClass
@@ -46,8 +47,8 @@ namespace Baikal
 
         MonteCarloRenderer(
             CLWContext context,
-            std::unique_ptr<Estimator> estimator,
-            std::string const& cache_path=""
+            const CLProgramManager *program_manager,
+            std::unique_ptr<Estimator> estimator
         );
 
         ~MonteCarloRenderer() = default;

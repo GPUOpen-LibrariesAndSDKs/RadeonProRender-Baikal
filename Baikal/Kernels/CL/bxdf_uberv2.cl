@@ -1,3 +1,76 @@
+#ifndef BXDF_UBERV2_CL
+#define BXDF_UBERV2_CL
+
+#include <inputmaps.cl>
+
+typedef struct _UberV2ShaderData
+{
+    float4 diffuse_color;
+    float4 reflection_color;
+    float4 coating_color;
+    float4 refraction_color;
+    float4 emission_color;
+    float4 sss_absorption_color;
+    float4 sss_scatter_color;
+    float4 sss_subsurface_color;
+    float4 shading_normal;
+
+    float reflection_roughness;
+    float reflection_anisotropy;
+    float reflection_anisotropy_rotation;
+    float reflection_ior;
+
+    float reflection_metalness;
+    float coating_ior;
+    float refraction_roughness;
+    float refraction_ior;
+
+    float transparency;
+    float sss_absorption_distance;
+    float sss_scatter_distance;
+    float sss_scatter_direction;
+
+} UberV2ShaderData;
+
+//Temorary code. Will be moved to generator later with UberV2 redesign
+UberV2ShaderData UberV2PrepareInputs(
+    // Geometry
+    DifferentialGeometry const* dg,
+    // Values for input maps
+    GLOBAL InputMapData const* restrict input_map_values,
+    // Texture args
+    TEXTURE_ARG_LIST
+)
+{
+    UberV2ShaderData shader_data;
+
+    shader_data.diffuse_color = GetInputMapFloat4(dg->mat.uberv2.diffuse_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.reflection_color = GetInputMapFloat4(dg->mat.uberv2.reflection_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.coating_color = GetInputMapFloat4(dg->mat.uberv2.coating_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.refraction_color = GetInputMapFloat4(dg->mat.uberv2.refraction_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.emission_color = GetInputMapFloat4(dg->mat.uberv2.emission_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.sss_absorption_color = GetInputMapFloat4(dg->mat.uberv2.sss_absorption_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.sss_scatter_color = GetInputMapFloat4(dg->mat.uberv2.sss_scatter_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.sss_subsurface_color = GetInputMapFloat4(dg->mat.uberv2.sss_subsurface_color_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.shading_normal = GetInputMapFloat4(dg->mat.uberv2.shading_normal_input_id, dg, input_map_values, TEXTURE_ARGS);
+
+    shader_data.reflection_roughness = GetInputMapFloat(dg->mat.uberv2.reflection_roughness_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.reflection_anisotropy = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.reflection_anisotropy_rotation = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_rotation_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.reflection_ior = GetInputMapFloat(dg->mat.uberv2.reflection_ior_input_id, dg, input_map_values, TEXTURE_ARGS);
+
+    shader_data.reflection_metalness = GetInputMapFloat(dg->mat.uberv2.reflection_metalness_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.coating_ior = GetInputMapFloat(dg->mat.uberv2.coating_ior_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.refraction_roughness = GetInputMapFloat(dg->mat.uberv2.refraction_roughness_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.refraction_ior = GetInputMapFloat(dg->mat.uberv2.refraction_ior_input_id, dg, input_map_values, TEXTURE_ARGS);
+
+    shader_data.transparency = GetInputMapFloat(dg->mat.uberv2.transparency_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.sss_absorption_distance = GetInputMapFloat(dg->mat.uberv2.sss_absorption_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.sss_scatter_distance = GetInputMapFloat(dg->mat.uberv2.sss_scatter_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
+    shader_data.sss_scatter_direction = GetInputMapFloat(dg->mat.uberv2.sss_scatter_direction_input_id, dg, input_map_values, TEXTURE_ARGS);
+    return shader_data;
+}
+
 #include <../Baikal/Kernels/CL/bxdf_uberv2_bricks.cl>
 
 /// Calculates Fresnel for provided parameters. Swaps IORs if needed
@@ -45,7 +118,9 @@ void GetMaterialBxDFType(
     // Sampler args
     SAMPLER_ARG_LIST,
     // Geometry
-    DifferentialGeometry* dg
+    DifferentialGeometry* dg,
+    // Shader data
+    UberV2ShaderData const* shader_data
 )
 {
     int bxdf_flags = 0;
@@ -58,7 +133,7 @@ void GetMaterialBxDFType(
     if ((dg->mat.uberv2.layers & kTransparencyLayer) == kTransparencyLayer)
     {
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-        if (sample < dg->mat.uberv2.transparency)
+        if (sample < shader_data->transparency)
         {
             bxdf_flags |= (kBxdfFlagsTransparency | kBxdfFlagsSingular);
             Bxdf_SetFlags(dg, bxdf_flags);
@@ -66,7 +141,7 @@ void GetMaterialBxDFType(
             return;
         }
     }
-    
+
     const int bxdf_type = (dg->mat.uberv2.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer | kDiffuseLayer));
     const float ndotwi = dot(dg->n, wi);
 
@@ -74,11 +149,11 @@ void GetMaterialBxDFType(
     if ((bxdf_type & kRefractionLayer) == kRefractionLayer)
     {
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-        const float fresnel = CalculateFresnel(1.0f, dg->mat.uberv2.refraction_ior, ndotwi);
+        const float fresnel = CalculateFresnel(1.0f, shader_data->refraction_ior, ndotwi);
         if (sample >= fresnel)
         {
             Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleRefraction);
-            if ((dg->mat.uberv2.refraction_roughness_map_idx == -1) && (dg->mat.uberv2.refraction_roughness < ROUGHNESS_EPS))
+            if (shader_data->refraction_roughness < ROUGHNESS_EPS)
             {
                 bxdf_flags |= kBxdfFlagsSingular;
             }
@@ -96,8 +171,8 @@ void GetMaterialBxDFType(
     if ((bxdf_type & kCoatingLayer) == kCoatingLayer)
     {
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-        const float fresnel = CalculateFresnel(top_ior, dg->mat.uberv2.coating_ior, ndotwi);
-        if (sample < fresnel) // Will sample coating layer 
+        const float fresnel = CalculateFresnel(top_ior, shader_data->coating_ior, ndotwi);
+        if (sample < fresnel) // Will sample coating layer
         {
             bxdf_flags |= kBxdfFlagsSingular; // Coating always singular
             Bxdf_SetFlags(dg, bxdf_flags);
@@ -105,17 +180,17 @@ void GetMaterialBxDFType(
             Bxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleCoating);
             return;
         }
-        top_ior = dg->mat.uberv2.coating_ior; 
+        top_ior = shader_data->coating_ior;
     }
 
     // Check reflection layer
     if ((bxdf_type & kReflectionLayer) == kReflectionLayer)
     {
-        const float fresnel = CalculateFresnel(top_ior, dg->mat.uberv2.reflection_ior, ndotwi);
+        const float fresnel = CalculateFresnel(top_ior, shader_data->reflection_ior, ndotwi);
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
-        if (sample < fresnel) // Will sample reflection layer 
+        if (sample < fresnel) // Will sample reflection layer
         {
-            if ((dg->mat.uberv2.reflection_roughness_map_idx == -1) && (dg->mat.uberv2.reflection_roughness < ROUGHNESS_EPS))
+            if (shader_data->reflection_roughness < ROUGHNESS_EPS)
             {
                 bxdf_flags |= kBxdfFlagsSingular;
             }
@@ -171,7 +246,7 @@ float Fresnel_Blend_F(
 /// If we have mix - calculate following result:
 /// result = mix(BxDF, 0.0f, transparency) where
 /// BxDF = F(1.0, refraction_ior) * BRDF + (1.0f - F(1.0, refraction_ior)) * refraction
-/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
 /// (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
 float3 UberV2_Evaluate(
     // Geometry
@@ -181,14 +256,16 @@ float3 UberV2_Evaluate(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST
+    TEXTURE_ARG_LIST,
+    // Shader data
+    UberV2ShaderData const* shader_data
 )
 {
     int layers = dg->mat.uberv2.layers;
-    
+
     int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
     int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
-    
+
     if (fresnel_blend_layers == 0) return 0.0f;
     float3 result;
     // Check if we have single layer material or not
@@ -196,25 +273,25 @@ float3 UberV2_Evaluate(
     {
         if ((layers & kCoatingLayer) == kCoatingLayer)
         {
-            result = UberV2_IdealReflect_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_IdealReflect_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         }
         else if ((layers & kReflectionLayer) == kReflectionLayer)
         {
-            result = UberV2_Reflection_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_Reflection_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         }
         else if ((layers & kRefractionLayer) == kRefractionLayer)
         {
-            result = UberV2_Refraction_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_Refraction_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         }
         else if ((layers & kDiffuseLayer) == kDiffuseLayer)
         {
-            result = UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_Lambert_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         }
-        
+
         // Apply transparency if any
         if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
-            result = mix(result, 0.f, dg->mat.uberv2.transparency);
+            result = mix(result, 0.f, shader_data->transparency);
         }
 
         return result;
@@ -231,26 +308,26 @@ float3 UberV2_Evaluate(
 
     if ((layers & kCoatingLayer) == kCoatingLayer)
     {
-        iors[id + 1] = dg->mat.uberv2.coating_ior;
-        values[id] = UberV2_IdealReflect_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        iors[id + 1] = shader_data->coating_ior;
+        values[id] = UberV2_IdealReflect_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         ++id;
     }
 
     if ((layers & kReflectionLayer) == kReflectionLayer)
     {
-        iors[id + 1] = dg->mat.uberv2.reflection_ior;
-        values[id] = UberV2_Reflection_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        iors[id + 1] = shader_data->reflection_ior;
+        values[id] = UberV2_Reflection_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         ++id;
     }
 
     if ((layers & kDiffuseLayer) == kDiffuseLayer)
     {
-        values[id] = UberV2_Lambert_Evaluate(dg, wi, wo, TEXTURE_ARGS);
+        values[id] = UberV2_Lambert_Evaluate(shader_data, wi, wo, TEXTURE_ARGS);
         ++id;
     }
 
     // Calculate BRDF part. Calculated in reverse order that will give us (if we have all layers)
-    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
     // (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
     result = values[brdf_layers - 1];
     for (int a = brdf_layers - 1; a > 0; --a)
@@ -262,13 +339,13 @@ float3 UberV2_Evaluate(
     // F(1.0f, refraction_ior) * BRDF + (1.0f - F(1.0f, refraction_ior)) * refraction)
     if ((layers & kRefractionLayer) == kRefractionLayer)
     {
-        result = Fresnel_Blend(1.0f, dg->mat.uberv2.refraction_ior, result, UberV2_Refraction_Evaluate(dg, wi, wo, TEXTURE_ARGS), wi);
+        result = Fresnel_Blend(1.0f, shader_data->refraction_ior, result, UberV2_Refraction_Evaluate(shader_data, wi, wo, TEXTURE_ARGS), wi);
     }
-    
+
     // If we have transparency layer - we simply blend it with result
     if ((layers & kTransparencyLayer) == kTransparencyLayer)
     {
-        result = mix(result, 0.f, dg->mat.uberv2.transparency);
+        result = mix(result, 0.f, shader_data->transparency);
         return 0.f;
     }
 
@@ -281,7 +358,7 @@ float3 UberV2_Evaluate(
 /// If we have mix - calculate following result:
 /// result = mix(BxDF, 0.0f, transparency) where
 /// BxDF = F(1.0, refraction_ior) * BRDF + (1.0f - F(1.0, refraction_ior)) * refraction
-/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+/// BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
 /// (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
 float UberV2_GetPdf(
     // Geometry
@@ -291,7 +368,9 @@ float UberV2_GetPdf(
     // Outgoing direction
     float3 wo,
     // Texture args
-    TEXTURE_ARG_LIST
+    TEXTURE_ARG_LIST,
+    // Shader data
+    UberV2ShaderData const* shader_data
 )
 {
     const int layers = dg->mat.uberv2.layers;
@@ -308,25 +387,25 @@ float UberV2_GetPdf(
     {
         if ((layers & kCoatingLayer) == kCoatingLayer)
         {
-            result = UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_IdealReflect_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         }
         else if ((layers & kReflectionLayer) == kReflectionLayer)
         {
-            result = UberV2_Reflection_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_Reflection_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         }
         else if ((layers & kRefractionLayer) == kRefractionLayer)
         {
-            result = UberV2_Refraction_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_Refraction_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         }
         else if ((layers & kDiffuseLayer) == kDiffuseLayer)
         {
-            result = UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+            result = UberV2_Lambert_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         }
 
         // Apply transparency if any
         if ((layers & kTransparencyLayer) == kTransparencyLayer)
         {
-            result = mix(result, 0.f, dg->mat.uberv2.transparency);
+            result = mix(result, 0.f, shader_data->transparency);
         }
 
         return result;
@@ -343,26 +422,26 @@ float UberV2_GetPdf(
 
     if ((layers & kCoatingLayer) == kCoatingLayer)
     {
-        iors[id + 1] = dg->mat.uberv2.coating_ior;
-        values[id] = UberV2_IdealReflect_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        iors[id + 1] = shader_data->coating_ior;
+        values[id] = UberV2_IdealReflect_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         ++id;
     }
 
     if ((layers & kReflectionLayer) == kReflectionLayer)
     {
-        iors[id + 1] = dg->mat.uberv2.reflection_ior;
-        values[id] = UberV2_Reflection_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        iors[id + 1] = shader_data->reflection_ior;
+        values[id] = UberV2_Reflection_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         ++id;
     }
 
     if ((layers & kDiffuseLayer) == kDiffuseLayer)
     {
-        values[id] = UberV2_Lambert_GetPdf(dg, wi, wo, TEXTURE_ARGS);
+        values[id] = UberV2_Lambert_GetPdf(shader_data, wi, wo, TEXTURE_ARGS);
         ++id;
     }
 
     // Calculate BRDF part. Calculated in reverse order that will give us (if we have all layers)
-    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) * 
+    // result = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
     // (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
     result = values[brdf_layers - 1];
     for (int a = brdf_layers - 1; a > 0; --a)
@@ -374,14 +453,14 @@ float UberV2_GetPdf(
     // F(1.0f, refraction_ior) * BRDF + (1.0f - F(1.0f, refraction_ior)) * refraction)
     if ((layers & kRefractionLayer) == kRefractionLayer)
     {
-        result = Fresnel_Blend_F(1.0f, dg->mat.uberv2.refraction_ior, result, UberV2_Refraction_GetPdf(dg, wi, wo, TEXTURE_ARGS), wi);
+        result = Fresnel_Blend_F(1.0f, shader_data->refraction_ior, result, UberV2_Refraction_GetPdf(shader_data, wi, wo, TEXTURE_ARGS), wi);
     }
 
     // If we have transparency layer - we simply blend it with result
     if ((layers & kTransparencyLayer) == kTransparencyLayer)
     {
         return 0.f;
-        result = mix(result, 0.f, dg->mat.uberv2.transparency);
+        result = mix(result, 0.f, shader_data->transparency);
     }
 
     return result;
@@ -401,7 +480,8 @@ float3 UberV2_Sample(
     // Outgoing  direction
     float3* wo,
     // PDF at wo
-    float* pdf
+    float* pdf,
+    UberV2ShaderData const* shader_data
 )
 {
     const int sampledComponent = Bxdf_UberV2_GetSampledComponent(dg);
@@ -409,16 +489,35 @@ float3 UberV2_Sample(
     switch (sampledComponent)
     {
     case kBxdfUberV2SampleTransparency:
-        return UberV2_Passthrough_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        return UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);
     case kBxdfUberV2SampleCoating:
-        return UberV2_Coating_Sample(dg, wi, TEXTURE_ARGS, wo, pdf);
+        return UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);
     case kBxdfUberV2SampleReflection:
-        return UberV2_Reflection_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        return UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);
     case kBxdfUberV2SampleRefraction:
-        return UberV2_Refraction_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        return UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);
     case kBxdfUberV2SampleDiffuse:
-        return UberV2_Lambert_Sample(dg, wi, TEXTURE_ARGS, sample, wo, pdf);
+        return UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);
     }
 
     return 0.f;
 }
+
+void UberV2_ApplyShadingNormal(
+    // Geometry
+    DifferentialGeometry* dg,
+    // Prepared UberV2 shader inputs
+    UberV2ShaderData const* shader_data
+)
+{
+    const int layers = dg->mat.uberv2.layers;
+
+    if ((layers & kShadingNormalLayer) == kShadingNormalLayer)
+    {
+        dg->n = normalize(shader_data->shading_normal.z * dg->n + shader_data->shading_normal.x * dg->dpdu + shader_data->shading_normal.y * dg->dpdv);
+        dg->dpdv = normalize(cross(dg->n, dg->dpdu));
+        dg->dpdu = normalize(cross(dg->dpdv, dg->n));
+    }
+}
+
+#endif

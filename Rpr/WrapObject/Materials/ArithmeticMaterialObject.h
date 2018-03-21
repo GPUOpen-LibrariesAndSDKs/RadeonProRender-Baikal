@@ -22,7 +22,7 @@ THE SOFTWARE.
 #pragma once
 
 #include "MaterialObject.h"
-
+#include "SceneGraph/inputmap.h"
 
 //represent RPR arithmetic with "op" RPR_MATERIAL_NODE_OP_MUL
 class ArithmeticMaterialObject
@@ -33,11 +33,15 @@ public:
 
     void SetInputF(const std::string& input_name, const RadeonRays::float4& val) override;
     Baikal::Material::Ptr GetMaterial() override;
+    Baikal::InputMap::Ptr GetInputMap();
 
 protected:
     void Update(MaterialObject* mat) override;
     void SetInputMaterial(const std::string& input_name, MaterialObject* input) override;
     void SetInputTexture(const std::string& input_name, TextureMaterialObject* input) override;
+    void SetInputU(const std::string& input_name, rpr_uint val) override;
+    void SetInputMap(const std::string& input_name, Baikal::InputMap::Ptr input_map);
+
 private:
-    Baikal::Material::Ptr m_mat;
+    Baikal::InputMap::Ptr m_input_map;
 };

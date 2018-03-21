@@ -73,8 +73,8 @@ namespace Baikal
     PathTracingEstimator::PathTracingEstimator(
         CLWContext context,
         std::shared_ptr<RadeonRays::IntersectionApi> api,
-        std::string const& cache_path
-    ) : 
+        const CLProgramManager *program_manager
+    ) :
 #ifdef BAIKAL_EMBED_KERNELS
         ClwClass(context,
             g_path_tracing_estimator_opencl,
@@ -82,7 +82,7 @@ namespace Baikal
             sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
             "", cache_path)
 #else
-        ClwClass(context, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "", cache_path)
+        ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
 #endif
         , Estimator(api)
         , m_sample_counter(0)
@@ -190,7 +190,7 @@ namespace Baikal
 
         InitPathData(num_estimates);
 
-        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates); 
+        GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, num_estimates);
 
         // Initialize first pass
@@ -198,18 +198,18 @@ namespace Baikal
         {
             // Clear ray hits buffer
             GetContext().FillBuffer(
-                0, 
-                m_render_data->hits, 
-                0, 
+                0,
+                m_render_data->hits,
+                0,
                 m_render_data->hits.GetElementCount()
             );
 
             // Intersect ray batch
             GetIntersector()->QueryIntersection(
-                m_render_data->fr_rays[pass & 0x1], 
-                m_render_data->fr_hitcount, (std::uint32_t)num_estimates, 
-                m_render_data->fr_intersections, 
-                nullptr, 
+                m_render_data->fr_rays[pass & 0x1],
+                m_render_data->fr_hitcount, (std::uint32_t)num_estimates,
+                m_render_data->fr_intersections,
+                nullptr,
                 nullptr
             );
 
@@ -228,10 +228,10 @@ namespace Baikal
 
             // Compact batch
             m_render_data->pp.Compact(
-                0, 
+                0,
                 m_render_data->hits,
-                m_render_data->iota, 
-                m_render_data->compacted_indices, 
+                m_render_data->iota,
+                m_render_data->compacted_indices,
                 (std::uint32_t)num_estimates,
                 m_render_data->hitcount
             );
@@ -263,11 +263,11 @@ namespace Baikal
 
             // Intersect shadow rays
             GetIntersector()->QueryOcclusion(
-                m_render_data->fr_shadowrays, 
-                m_render_data->fr_hitcount, 
+                m_render_data->fr_shadowrays,
+                m_render_data->fr_hitcount,
                 (std::uint32_t)num_estimates,
-                m_render_data->fr_shadowhits, 
-                nullptr, 
+                m_render_data->fr_shadowhits,
+                nullptr,
                 nullptr
             );
 
@@ -345,6 +345,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->paths);
         shadekernel.SetArg(argc++, m_render_data->rays[(pass + 1) & 0x1]);
         shadekernel.SetArg(argc++, output);
+        shadekernel.SetArg(argc++, scene.input_map_data);
 
         // Run shading kernel
         {
@@ -450,7 +451,7 @@ namespace Baikal
     {
         // Fetch kernel
         auto misskernel = GetKernel("ShadeBackgroundEnvMap");
-        
+
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         // Set kernel parameters
@@ -600,7 +601,7 @@ namespace Baikal
     void PathTracingEstimator::SetRandomSeed(std::uint32_t seed)
     {
         std::srand(seed);
-        
+
         auto size = m_render_data->random.GetElementCount();
 
         if (size != 0)
@@ -649,7 +650,7 @@ namespace Baikal
         // Intersect ray batch
         GetIntersector()->QueryIntersection(
             m_render_data->fr_rays[0],
-            m_render_data->fr_hitcount, 
+            m_render_data->fr_hitcount,
             (std::uint32_t)num_estimates,
             m_render_data->fr_intersections,
             nullptr,
@@ -675,11 +676,11 @@ namespace Baikal
         for (auto i = 0u; i < num_passes; ++i)
         {
             GetIntersector()->QueryIntersection(
-                m_render_data->fr_rays[0], 
-                m_render_data->fr_hitcount, 
+                m_render_data->fr_rays[0],
+                m_render_data->fr_hitcount,
                 (std::uint32_t)num_estimates,
-                m_render_data->fr_intersections, 
-                nullptr, 
+                m_render_data->fr_intersections,
+                nullptr,
                 nullptr
             );
         }
@@ -688,9 +689,9 @@ namespace Baikal
 
         auto delta = std::chrono::high_resolution_clock::now() - start;
 
-        stats.primary_throughput = 
-            num_estimates / (((float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() 
-                / num_passes) 
+        stats.primary_throughput =
+            num_estimates / (((float)std::chrono::duration_cast<std::chrono::milliseconds>(delta).count()
+                / num_passes)
                 / 1000.f);
 
         // Convert intersections to predicates
@@ -720,11 +721,11 @@ namespace Baikal
         for (auto i = 0U; i < num_passes; ++i)
         {
             GetIntersector()->QueryOcclusion(
-                m_render_data->fr_shadowrays, 
-                m_render_data->fr_hitcount, 
+                m_render_data->fr_shadowrays,
+                m_render_data->fr_hitcount,
                 (std::uint32_t)num_estimates,
-                m_render_data->fr_shadowhits, 
-                nullptr, 
+                m_render_data->fr_shadowhits,
+                nullptr,
                 nullptr);
         }
 
@@ -784,9 +785,9 @@ namespace Baikal
     }
 
     void PathTracingEstimator::AdvanceIterationCount(
-        int pass, 
-        std::size_t size, 
-        CLWBuffer<RadeonRays::float3> output, 
+        int pass,
+        std::size_t size,
+        CLWBuffer<RadeonRays::float3> output,
         bool use_output_indices)
     {
         auto misskernel = GetKernel("AdvanceIterationCount");

@@ -63,7 +63,7 @@ if os.is("windows") then
     buildoptions { "/MP"  } --multiprocessor build
     defines {"_CRT_SECURE_NO_WARNINGS"}
 elseif os.is("linux") then
-    buildoptions {"-fvisibility=hidden"}
+    buildoptions {"-fvisibility=hidden -Wno-ignored-attributes"}
 end
 
 --make configuration specific definitions
