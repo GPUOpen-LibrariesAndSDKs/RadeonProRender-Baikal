@@ -9,9 +9,8 @@ option(BAIKAL_ENABLE_GLTF "Enable glTF import" OFF)
 option(BAIKAL_ENABLE_RPR "Enable RadeonProRender API lib" OFF)
 #option(BAIKAL_EMBED_KERNELS "Embed CL kernels into binary module" OFF)
 option(BAIKAL_ENABLE_UBERV2 "Enable UberV2 support" OFF)
-option(BAIKAL_ENABLE_TESTS "Enable Baikal tests" ON)
+option(BAIKAL_ENABLE_TESTS "Enable tests" ON)
 option(BAIKAL_ENABLE_STANDALONE "Enable standalone application build" ON)
-option(BAIKAL_ENABLE_RPR_TESTS "Enable RPR API tests build (requires BAIKAL_ENABLE_RPR to be turned on)" ON)
 
 
 
@@ -19,7 +18,7 @@ option(BAIKAL_ENABLE_RPR_TESTS "Enable RPR API tests build (requires BAIKAL_ENAB
 if (WIN32)
     add_definitions(/MP -D_CRT_SECURE_NO_WARNINGS)
 elseif (UNIX)
-    add_definitions(-fvisibility=hidden)
+    add_definitions(-fvisibility=hidden -Wno-ignored-attributes)
 endif (WIN32)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -30,6 +29,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 #Find required packages
 find_package(Threads REQUIRED)
 find_package(OIIO REQUIRED)
+
+if (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_RPR)
+    find_package(OpenGL REQUIRED)
+endif (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_RPR)
 
 #Configure RadeonRays build
 set(RR_EMBED_KERNELS ON CACHE BOOL "Embed CL kernels into binary module")
@@ -50,9 +53,21 @@ add_subdirectory(Baikal)
 
 if (BAIKAL_ENABLE_STANDALONE)
     find_package(GLFW3 REQUIRED)
-    find_package(OpenGL REQUIRED)
-
     find_package(GLEW REQUIRED)
+
     add_subdirectory(BaikalStandalone)
 endif (BAIKAL_ENABLE_STANDALONE)
 
+if (BAIKAL_ENABLE_RPR)
+    set(RprSupport_HEADER "${Baikal_SOURCE_DIR}/3rdparty/RprSupport/include/")
+    add_subdirectory(Rpr)
+    add_subdirectory(RprSupport)
+endif (BAIKAL_ENABLE_RPR)
+
+if (BAIKAL_ENABLE_TESTS)
+    add_subdirectory(Gtest)
+    add_subdirectory(BaikalTest)
+    if (BAIKAL_ENABLE_RPR)
+        add_subdirectory(RprTest)
+    endif (BAIKAL_ENABLE_RPR)
+endif (BAIKAL_ENABLE_TESTS)

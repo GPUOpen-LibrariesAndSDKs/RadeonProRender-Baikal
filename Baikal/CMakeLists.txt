@@ -46,7 +46,13 @@ set(UTILS_SOURCES
     Utils/sobol.h
     Utils/tiny_obj_loader.h
     Utils/toFloat.h
-    Utils/version.h)
+    Utils/version.h
+    Utils/cl_inputmap_generator.cpp
+    Utils/cl_inputmap_generator.h
+    Utils/cl_program.cpp
+    Utils/cl_program.h
+    Utils/cl_program_manager.cpp
+    Utils/cl_program_manager.h)
 
 set(SCENEGRAPH_SOURCES
     SceneGraph/camera.cpp
@@ -64,7 +70,11 @@ set(SCENEGRAPH_SOURCES
     SceneGraph/shape.cpp
     SceneGraph/shape.h
     SceneGraph/texture.cpp
-    SceneGraph/texture.h)
+    SceneGraph/texture.h
+    SceneGraph/uberv2material.cpp
+    SceneGraph/uberv2material.h
+    SceneGraph/inputmap.h
+    SceneGraph/inputmaps.h)
     
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
@@ -88,12 +98,6 @@ set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
 
-if (BAIKAL_ENABLE_FBX)
-endif (BAIKAL_ENABLE_FBX)
-
-if (BAIKAL_ENABLE_GLTF)
-endif (BAIKAL_ENABLE_GLTF)
-    
 set(SOURCES
     ${CONTROLLERS_SOURCES}
     ${ESTIMATORS_SOURCES}
@@ -108,8 +112,31 @@ set(SOURCES
     ${XML_SOURCES})
     
 add_library(Baikal STATIC ${SOURCES})
+
+if (BAIKAL_ENABLE_FBX)
+    target_compile_definitions(Baikal PUBLIC ENABLE_FBX)
+endif (BAIKAL_ENABLE_FBX)
+
+if (BAIKAL_ENABLE_GLTF)
+    target_compile_definitions(Baikal PUBLIC ENABLE_GLTF)
+endif (BAIKAL_ENABLE_GLTF)
+
+if (BAIKAL_ENABLE_DENOISER)
+    target_compile_definitions(Baikal PUBLIC ENABLE_DENOISER)
+endif(BAIKAL_ENABLE_DENOISER)
+
+if (BAIKAL_ENABLE_RAYMASK)
+    target_compile_options(Baikal PUBLIC ENABLE_RAYMASK)
+endif (BAIKAL_ENABLE_RAYMASK)
+
+if (BAIKAL_ENABLE_UBERV2)
+    target_compile_options(Baikal PUBLIC ENABLE_UBERV2)
+endif (BAIKAL_ENABLE_UBERV2)
+
+
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC ${Baikal_SOURCE_DIR}/Baikal)
-target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO)
+target_link_libraries(Baikal PUBLIC RadeonRays)
+target_link_libraries(Baikal PUBLIC OpenImageIO::OpenImageIO)
 
     

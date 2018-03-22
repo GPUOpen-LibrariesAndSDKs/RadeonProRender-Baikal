@@ -24,7 +24,7 @@
 //methods to export baikal classes from RPR wrap
 
 #include "RadeonProRender.h"
-#include "Baikal/SceneGraph/scene1.h"
+#include "SceneGraph/scene1.h"
 
 #include "WrapObject/SceneObject.h"
 

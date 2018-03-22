@@ -19,7 +19,16 @@
 #ifndef __RADEONPRORENDER_H
 #define __RADEONPRORENDER_H
 
-#define RPR_API_ENTRY
+#ifdef WIN32
+    #ifdef RPR_EXPORT_API
+        #define RPR_API_ENTRY __declspec(dllexport)
+    #else
+        #define RPR_API_ENTRY __declspec(dllimport)
+    #endif
+#else
+        #define RPR_API_ENTRY __attribute__((visibility ("default")))
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
