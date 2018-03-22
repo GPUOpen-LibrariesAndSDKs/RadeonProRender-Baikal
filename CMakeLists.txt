@@ -28,8 +28,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 #Find required packages
-find_package(Threads)
-find_package(OIIO)
+find_package(Threads REQUIRED)
+find_package(OIIO REQUIRED)
 
 #Configure RadeonRays build
 set(RR_EMBED_KERNELS ON CACHE BOOL "Embed CL kernels into binary module")
@@ -48,4 +48,11 @@ add_subdirectory(RadeonRays)
 
 add_subdirectory(Baikal)
 
+if (BAIKAL_ENABLE_STANDALONE)
+    find_package(GLFW3 REQUIRED)
+    find_package(OpenGL REQUIRED)
+
+    find_package(GLEW REQUIRED)
+    add_subdirectory(BaikalStandalone)
+endif (BAIKAL_ENABLE_STANDALONE)
 

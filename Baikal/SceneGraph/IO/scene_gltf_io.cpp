@@ -1,5 +1,5 @@
 
-#include "Baikal/SceneGraph/IO/scene_io.h"
+#include "scene_io.h"
 
 #ifdef ENABLE_GLTF
 #include <cassert>

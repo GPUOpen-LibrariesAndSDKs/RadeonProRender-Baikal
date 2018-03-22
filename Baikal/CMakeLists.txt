@@ -79,18 +79,19 @@ set(SCENEGRAPH_IO_SOURCES
     SceneGraph/IO/scene_binary_io.h
     SceneGraph/IO/scene_io.cpp
     SceneGraph/IO/scene_io.h
-    SceneGraph/IO/scene_test_io.cpp)
+    SceneGraph/IO/scene_test_io.cpp
+    SceneGraph/IO/scene_fbx_io.cpp
+    SceneGraph/IO/scene_gltf_io.cpp
+    )
     
 set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
-    
+
 if (BAIKAL_ENABLE_FBX)
-    list(APPEND SCENEGRAPH_IO_SOURCES SceneGraph/IO/scene_fbx_io.cpp)
 endif (BAIKAL_ENABLE_FBX)
 
 if (BAIKAL_ENABLE_GLTF)
-    list(APPEND SCENEGRAPH_IO_SOURCES SceneGraph/IO/scene_gltf_io.cpp)
 endif (BAIKAL_ENABLE_GLTF)
     
 set(SOURCES
@@ -109,6 +110,6 @@ set(SOURCES
 add_library(Baikal STATIC ${SOURCES})
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC ${Baikal_SOURCE_DIR}/Baikal)
-target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO  )
+target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO)
 
     
