@@ -90,8 +90,8 @@ namespace Baikal
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    Application::MaterialSelector::MaterialSelector(Material::Ptr root, VolumeMaterial::Ptr volume) :
-        m_root(root), m_current(m_root), m_volume(volume)
+    Application::MaterialSelector::MaterialSelector(Material::Ptr root) :
+        m_root(root), m_current(m_root)
     {  }
 
     bool Application::MaterialSelector::IsRoot() const
@@ -105,16 +105,6 @@ namespace Baikal
     void Application::MaterialSelector::SelectMaterial(Material::Ptr material)
     {
         m_current = material;
-    }
-
-    VolumeMaterial::Ptr Application::MaterialSelector::GetVolume()
-    {
-        return m_volume;
-    }
-
-    void Application::MaterialSelector::SetVolume(VolumeMaterial::Ptr volume)
-    {
-        m_volume = volume;
     }
 
     void Application::MaterialSelector::GetParent()
@@ -646,6 +636,8 @@ namespace Baikal
                 input.value.float_value.x / mult,
                 input.value.float_value.y / mult,
                 input.value.float_value.z / mult));
+
+            material->SetInputValue(input.info.name, input_info.GetColor());
         }
 
         auto mult = input_info.GetMultiplier();
@@ -688,7 +680,15 @@ namespace Baikal
 
         auto input_info = settings.inputs_info[input_idx];
 
-        strcpy(text_buffer, input_info.GetTexturePath().c_str());
+        if (input_info.GetTexturePath().empty() && 
+           (input.value.tex_value != nullptr))
+        {
+            strcpy(text_buffer, input.info.name.c_str());
+        }
+        else
+        {
+            strcpy(text_buffer, input_info.GetTexturePath().c_str());
+        }
 
         if (ImGui::InputText((name + std::string("_texture")).c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
         {
@@ -920,11 +920,14 @@ namespace Baikal
                     material_settings.id = m_current_shape_id;
                     m_material_settings.push_back(material_settings);
                     // set volume material settings
-                    MaterialSettings volume_settings;
-                    volume_settings.id = m_current_shape_id;
-                    m_volume_settings.push_back(volume_settings);
+                    if (shape->GetVolumeMaterial())
+                    {
+                        MaterialSettings volume_settings;
+                        volume_settings.id = m_current_shape_id;
+                        m_volume_settings.push_back(volume_settings);
+                    }
 
-                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial(), shape->GetVolumeMaterial()));
+                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial()));
                     m_object_name = shape->GetName();
                 }
             }
@@ -946,6 +949,9 @@ namespace Baikal
                     ImGui::Text(m_object_name.c_str());
                 }
 
+                ImGui::Separator();
+                ImGui::Text("Material:");
+
                 bool is_scene_changed = false;
 
                 auto settings = std::find_if(m_material_settings.begin(), m_material_settings.end(),
@@ -964,7 +970,7 @@ namespace Baikal
                     ImGui::Separator();
                     auto input = material->GetInput(i);
 
-                    if (settings->inputs_info.size() < i)
+                    if (settings->inputs_info.size() <= i)
                     {
                         settings->inputs_info.push_back(InputSettings());
                     }
@@ -977,12 +983,14 @@ namespace Baikal
                         {
                             case Material::InputType::kFloat4:
                             {
-                                is_scene_changed = ReadFloatInput(material, *settings, i);
+                                auto result = ReadFloatInput(material, *settings, i);
+                                is_scene_changed = is_scene_changed ? is_scene_changed : result;
                                 break;
                             }
                             case Material::InputType::kTexture:
                             {
-                                is_scene_changed = ReadTextruePath(material, *settings, i);
+                                auto result = ReadTextruePath(material, *settings, i);
+                                is_scene_changed = is_scene_changed ? is_scene_changed : result;
                                 break;
                             }
                             case Material::InputType::kUint:
@@ -1039,7 +1047,8 @@ namespace Baikal
                     is_scene_changed = true;
                 }
 
-                ImGui::Separator();
+                // process volume materials
+                auto volume = m_cl->GetShapeById(m_current_shape_id)->GetVolumeMaterial();
 
                 auto volume_settings = std::find_if(m_volume_settings.begin(), m_volume_settings.end(),
                     [&](const MaterialSettings& settings)
@@ -1047,26 +1056,25 @@ namespace Baikal
                     return (settings.id == m_current_shape_id);
                 });
 
-                // process volume materials
-                auto volume = m_material_selector->GetVolume();
+                if (volume && volume_settings == m_volume_settings.end())
+                    throw std::runtime_error(
+                        "Application::UpdateGui(...): there is no volume settings");
 
-                if ((volume != nullptr) &&
-                    (volume_settings == m_volume_settings.end()))
+                if ((volume == nullptr) && (ImGui::Button("Create volume")))
                 {
-                    for (auto i = 0u; i < volume->GetNumInputs(); i++)
-                    {
-                        if (volume_settings->inputs_info.size() < i)
-                        {
-                            volume_settings->inputs_info.push_back(InputSettings());
-                        }
+                    auto volume = VolumeMaterial::Create();
 
-                        auto supported_types = material->GetInput(i).info.supported_types;
-                        if (supported_types.find(Material::InputType::kFloat4) != supported_types.end())
-                        {
-                            is_scene_changed = ReadFloatInput(material, *volume_settings, i);
-                        }
-                        break;
-                    }
+                    volume->SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    volume->SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
+
+                    m_cl->GetShapeById(m_current_shape_id)->SetVolumeMaterial(volume);
+
+                    MaterialSettings volume_settings;
+                    volume_settings.id = m_current_shape_id;
+                    m_volume_settings.push_back(volume_settings);
+                    volume = m_cl->GetShapeById(m_current_shape_id)->GetVolumeMaterial();
                 }
 
                 ImGui::Separator();
@@ -1076,13 +1084,35 @@ namespace Baikal
                     material_io->SaveMaterialsFromScene(m_settings.path + "/materials.xml", *m_cl->GetScene());
                     material_io->SaveIdentityMapping(m_settings.path + "/mapping.xml", *m_cl->GetScene());
                 }
+                
+                ImGui::End();
+
+                if (volume != nullptr)
+                {
+                    ImGui::Begin("Volume info");
+
+                    for (auto i = 0u; i < volume->GetNumInputs(); i++)
+                    {
+                        if (volume_settings->inputs_info.size() <= i)
+                        {
+                            volume_settings->inputs_info.push_back(InputSettings());
+                        }
+
+                        auto supported_types = material->GetInput(i).info.supported_types;
+                        if (supported_types.find(Material::InputType::kFloat4) != supported_types.end())
+                        {
+                            auto result = ReadFloatInput(material, *volume_settings, i);
+                            is_scene_changed = is_scene_changed ? is_scene_changed : result;
+                        }
+                    }
+
+                    ImGui::End();
+                }
 
                 if (is_scene_changed)
                 {
                     m_cl->UpdateScene();
                 }
-
-                ImGui::End();
             }
 
 

@@ -74,14 +74,11 @@ namespace Baikal
         class MaterialSelector
         {
         public:
-            MaterialSelector(Material::Ptr root, VolumeMaterial::Ptr volume = nullptr);
+            MaterialSelector(Material::Ptr root);
 
             void GetParent();
             void SelectMaterial(Material::Ptr);
             Material::Ptr Get();
-            VolumeMaterial::Ptr GetVolume();
-            // instead simple materials, volume materials could be createed from GUI
-            void SetVolume(VolumeMaterial::Ptr);
 
             bool IsRoot() const;
 
