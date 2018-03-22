@@ -74,33 +74,62 @@ namespace Baikal
         class MaterialSelector
         {
         public:
-            MaterialSelector(Material::Ptr root);
+            MaterialSelector(Material::Ptr root, VolumeMaterial::Ptr volume = nullptr);
 
             void GetParent();
             void SelectMaterial(Material::Ptr);
             Material::Ptr Get();
+            VolumeMaterial::Ptr GetVolume();
+            // instead simple materials, volume materials could be createed from GUI
+            void SetVolume(VolumeMaterial::Ptr);
+
             bool IsRoot() const;
 
         private:
 
             Material::Ptr m_root;
             Material::Ptr m_current;
+            VolumeMaterial::Ptr  m_volume;
+        };
+
+        class InputSettings
+        {
+        public:
+            bool HasMultiplier() const;
+            float GetMultiplier() const;
+            void SetMultiplier(float multiplier);
+
+            RadeonRays::float3 GetColor() const;
+            void SetColor(RadeonRays::float3 color);
+
+            std::uint32_t GetInteger() const;
+            void SetInteger(std::uint32_t integer);
+
+            std::string GetTexturePath() const;
+            void SetTexturePath(std::string texture_path);
+
+        private:
+            std::pair<bool, float> m_multiplier;
+            std::pair<bool, RadeonRays::float3> m_color;
+            std::pair<bool, std::uint32_t> m_integer_input;
+            std::pair<bool, std::string> m_texture_path;
         };
 
         // this struct needs to save material parametrs from gui
         struct MaterialSettings
         {
-            int id;
-            std::vector<std::string> texture_paths;
-            std::vector<float> multipliers;
-            std::vector<RadeonRays::float3> colors;
-            std::vector<std::uint32_t> integer_inputs;
+            int id; // shape id
+            std::vector<InputSettings> inputs_info;
 
             void Clear();
         };
 
+        bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
+        bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
+
         std::unique_ptr<MaterialSelector> m_material_selector;
         std::unique_ptr<ImageIo> m_image_io;
         std::vector<MaterialSettings> m_material_settings;
+        std::vector<MaterialSettings> m_volume_settings;
     };
 }

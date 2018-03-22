@@ -90,8 +90,9 @@ namespace Baikal
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    Application::MaterialSelector::MaterialSelector(Material::Ptr root) : m_root(root), m_current(m_root)
-    {   }
+    Application::MaterialSelector::MaterialSelector(Material::Ptr root, VolumeMaterial::Ptr volume) :
+        m_root(root), m_current(m_root), m_volume(volume)
+    {  }
 
     bool Application::MaterialSelector::IsRoot() const
     { return (m_root == m_current); }
@@ -104,6 +105,16 @@ namespace Baikal
     void Application::MaterialSelector::SelectMaterial(Material::Ptr material)
     {
         m_current = material;
+    }
+
+    VolumeMaterial::Ptr Application::MaterialSelector::GetVolume()
+    {
+        return m_volume;
+    }
+
+    void Application::MaterialSelector::SetVolume(VolumeMaterial::Ptr volume)
+    {
+        m_volume = volume;
     }
 
     void Application::MaterialSelector::GetParent()
@@ -139,12 +150,49 @@ namespace Baikal
         return;
     }
 
+    bool Application::InputSettings::HasMultiplier() const
+    { return m_multiplier.first; }
+
+    float Application::InputSettings::GetMultiplier() const
+    { return m_multiplier.second; }
+
+    void Application::InputSettings::SetMultiplier(float multiplier)
+    {
+        m_multiplier.first = true;
+        m_multiplier.second = multiplier;
+    }
+
+    RadeonRays::float3  Application::InputSettings::GetColor() const
+    { return m_color.second; }
+
+    void Application::InputSettings::SetColor(RadeonRays::float3  color)
+    {
+        m_color.first = true;
+        m_color.second = color;
+    }
+
+    std::uint32_t Application::InputSettings::GetInteger() const
+    { return m_integer_input.second; }
+
+    void Application::InputSettings::SetInteger(std::uint32_t integer)
+    {
+        m_integer_input.first= true;
+        m_integer_input.second = integer;
+    }
+
+    std::string Application::InputSettings::GetTexturePath() const
+    { return m_texture_path.second; }
+
+    void Application::InputSettings::SetTexturePath(std::string texture_path)
+    {
+        m_texture_path.first = true;
+        m_texture_path.second = texture_path;
+    }
+
+
     void Application::MaterialSettings::Clear()
     {
-        texture_paths.clear();
-        multipliers.clear();
-        colors.clear();
-        integer_inputs.clear();;
+        inputs_info.clear();
     }
 
     void Application::OnMouseMove(GLFWwindow* window, double x, double y)
@@ -578,6 +626,97 @@ namespace Baikal
         }
     }
 
+    bool Application::ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx)
+    {
+        auto input = material->GetInput(input_idx);
+        auto name = input.info.name;
+        auto input_info = settings.inputs_info[input_idx];
+        
+        if (!settings.inputs_info[input_idx].HasMultiplier())
+        {
+            auto mult = std::max(
+                std::max(input.value.float_value.x, input.value.float_value.y),
+                input.value.float_value.z);
+
+            mult = (mult > 1) ? (mult) : (1.f);
+
+            input_info.SetMultiplier(mult);
+
+            input_info.SetColor(RadeonRays::float3(
+                input.value.float_value.x / mult,
+                input.value.float_value.y / mult,
+                input.value.float_value.z / mult));
+        }
+
+        auto mult = input_info.GetMultiplier();
+        float color[3] = { 0 };
+        auto input_color = input_info.GetColor();
+
+        color[0] = input_color.x;
+        color[1] = input_color.y;
+        color[2] = input_color.z;
+
+        ImGui::InputFloat(name.c_str(), &mult, .0f, .0f, -1, ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::ColorEdit3(name.c_str(), color);
+
+        if ((input.value.tex_value == nullptr) &&
+            ((input_color.x != color[0]) ||
+             (input_color.y != color[1]) ||
+             (input_color.z != color[2]) ||
+             (input_info.GetMultiplier() != mult)))
+        {
+            RadeonRays::float4 value(
+                mult * color[0],
+                mult * color[1],
+                mult * color[2],
+                0);
+            input_info.SetColor(RadeonRays::float3(color[0], color[1], color[2]));
+            input_info.SetMultiplier(mult);
+            settings.inputs_info[input_idx] = input_info;
+            material->SetInputValue(input.info.name, value);
+            return true;
+        }
+        return false;
+    }
+
+    bool Application::ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx)
+    {
+        const size_t buffer_size = 2048;
+        char text_buffer[buffer_size] = { 0 };
+        auto input = material->GetInput(input_idx);
+        auto name = input.info.name;
+
+        auto input_info = settings.inputs_info[input_idx];
+
+        strcpy(text_buffer, input_info.GetTexturePath().c_str());
+
+        if (ImGui::InputText((name + std::string("_texture")).c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            Texture::Ptr texture = nullptr;
+            if (strlen(text_buffer) != 0)
+            {
+                try
+                {
+                    texture = m_image_io->LoadImage(text_buffer);
+                    material->SetInputValue(input.info.name, texture);
+                }
+                catch (std::exception&)
+                {
+                    printf("WARNING: Can not load texture by specified path\n");
+                }
+            }
+            else
+            {
+                material->SetInputValue(name, texture);
+            }
+            input_info.SetTexturePath(text_buffer);
+            settings.inputs_info[input_idx] = input_info;
+
+            return true;
+        }
+        return false;
+    }
+
     bool Application::UpdateGui()
     {
         static float aperture = 0.0f;
@@ -776,10 +915,16 @@ namespace Baikal
 
                 if (shape)
                 {
-                    MaterialSettings settings;
-                    settings.id = m_current_shape_id;
-                    m_material_settings.push_back(settings);
-                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial()));
+                    // set basic material settings
+                    MaterialSettings material_settings;
+                    material_settings.id = m_current_shape_id;
+                    m_material_settings.push_back(material_settings);
+                    // set volume material settings
+                    MaterialSettings volume_settings;
+                    volume_settings.id = m_current_shape_id;
+                    m_volume_settings.push_back(volume_settings);
+
+                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial(), shape->GetVolumeMaterial()));
                     m_object_name = shape->GetName();
                 }
             }
@@ -813,14 +958,18 @@ namespace Baikal
                     throw std::runtime_error(
                         "Application::UpdateGui(...): there is no such shape id in material settings");
 
-                size_t uint_counter = 0;
-                size_t float_counter = 0;
-                size_t texture_counter = 0;
                 auto material = m_material_selector->Get();
                 for (size_t i = 0; i < material->GetNumInputs(); i++)
                 {
                     ImGui::Separator();
                     auto input = material->GetInput(i);
+
+                    if (settings->inputs_info.size() < i)
+                    {
+                        settings->inputs_info.push_back(InputSettings());
+                    }
+
+                    auto input_info = settings->inputs_info[i];
                     for (const auto& supported_type : input.info.supported_types)
                     {
                         auto name = input.info.name;
@@ -828,89 +977,12 @@ namespace Baikal
                         {
                             case Material::InputType::kFloat4:
                             {
-                                if (settings->multipliers.size() <= float_counter + 1)
-                                {
-                                    auto mult = std::max(
-                                        std::max(input.value.float_value.x, input.value.float_value.y),
-                                        input.value.float_value.z);
-
-                                    mult = (mult > 1) ? (mult) : (1.f);
-
-                                    settings->multipliers.push_back(mult);
-
-                                    RadeonRays::float3 init_color(
-                                        input.value.float_value.x / mult,
-                                        input.value.float_value.y / mult,
-                                        input.value.float_value.z / mult);
-                                    settings->colors.push_back(init_color);
-                                }
-
-                                auto mult = settings->multipliers[float_counter];
-                                float color[3] = { 0 };
-                                color[0] = settings->colors[float_counter].x;
-                                color[1] = settings->colors[float_counter].y;
-                                color[2] = settings->colors[float_counter].z;
-
-                                ImGui::InputFloat(name.c_str(), &mult, .0f, .0f, -1, ImGuiInputTextFlags_EnterReturnsTrue);
-                                ImGui::ColorEdit3(name.c_str(), color);
-
-                                if ((input.value.tex_value == nullptr) &&
-                                    ((settings->colors[float_counter].x != color[0]) ||
-                                     (settings->colors[float_counter].y != color[1]) ||
-                                     (settings->colors[float_counter].z != color[2]) ||
-                                     (settings->multipliers[float_counter] != mult)))
-                                {
-                                    RadeonRays::float4 value(
-                                        mult * color[0],
-                                        mult * color[1],
-                                        mult * color[2],
-                                        0);
-                                    settings->colors[float_counter] = RadeonRays::float3(color[0], color[1], color[2]);
-                                    settings->multipliers[float_counter] = mult;
-                                    material->SetInputValue(input.info.name, value);
-                                    is_scene_changed = true;
-                                }
-                                float_counter++;
+                                is_scene_changed = ReadFloatInput(material, *settings, i);
                                 break;
                             }
                             case Material::InputType::kTexture:
                             {
-                                const size_t buffer_size = 2048;
-                                char text_buffer[buffer_size] = { 0 };
-
-                                if (settings->texture_paths.size() < texture_counter + 1)
-                                {
-                                    std::string texture_path;
-                                    texture_path.resize(buffer_size);
-                                    settings->texture_paths.push_back(texture_path);
-                                }
-
-                                strcpy(text_buffer, settings->texture_paths[texture_counter].c_str());
-
-                                if (ImGui::InputText((name + std::string("_texture")).c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
-                                {
-                                    Texture::Ptr texture = nullptr;
-                                    if (strlen(text_buffer) != 0)
-                                    {
-                                        try
-                                        {
-                                            texture = m_image_io->LoadImage(text_buffer);
-                                            material->SetInputValue(input.info.name, texture);
-                                        }
-                                        catch (std::exception&)
-                                        {
-                                            printf("WARNING: Can not load texture by specified path\n");
-                                        }
-                                    }
-                                    else
-                                    {
-                                        material->SetInputValue(name, texture);
-                                    }
-                                    settings->texture_paths[texture_counter] = text_buffer;
-
-                                    is_scene_changed = true;
-                                }
-                                texture_counter++;
+                                is_scene_changed = ReadTextruePath(material, *settings, i);
                                 break;
                             }
                             case Material::InputType::kUint:
@@ -918,15 +990,10 @@ namespace Baikal
                                 std::uint32_t input_value = input.value.uint_value;
                                 ImGui::InputInt(name.c_str(), (int*)(&input_value));
 
-                                if (settings->integer_inputs.size() < uint_counter + 1)
-                                {
-                                    settings->integer_inputs.push_back(0);
-                                }
-
                                 if ((input.value.uint_value != input_value) &&
                                     (input.value.tex_value == nullptr))
                                 {
-                                    uint_counter++;
+                                    settings->inputs_info[i].SetInteger(input_value);
                                     material->SetInputValue(input.info.name, input_value);
                                     is_scene_changed = true;
                                 }
@@ -970,6 +1037,36 @@ namespace Baikal
                 {
                     material_accessor.SetType(material_type_output);
                     is_scene_changed = true;
+                }
+
+                ImGui::Separator();
+
+                auto volume_settings = std::find_if(m_volume_settings.begin(), m_volume_settings.end(),
+                    [&](const MaterialSettings& settings)
+                {
+                    return (settings.id == m_current_shape_id);
+                });
+
+                // process volume materials
+                auto volume = m_material_selector->GetVolume();
+
+                if ((volume != nullptr) &&
+                    (volume_settings == m_volume_settings.end()))
+                {
+                    for (auto i = 0u; i < volume->GetNumInputs(); i++)
+                    {
+                        if (volume_settings->inputs_info.size() < i)
+                        {
+                            volume_settings->inputs_info.push_back(InputSettings());
+                        }
+
+                        auto supported_types = material->GetInput(i).info.supported_types;
+                        if (supported_types.find(Material::InputType::kFloat4) != supported_types.end())
+                        {
+                            is_scene_changed = ReadFloatInput(material, *volume_settings, i);
+                        }
+                        break;
+                    }
                 }
 
                 ImGui::Separator();
