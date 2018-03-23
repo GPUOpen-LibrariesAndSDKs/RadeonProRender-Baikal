@@ -91,12 +91,12 @@ if (WIN32)
         "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-        DESTINATION "${Baikal_BINARY_DIR}/Bin/${CMAKE_BUILD_TYPE}")
+        DESTINATION "${Baikal_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
     #installation to Bin required when builded with nmake
     file(INSTALL
         "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-        DESTINATION "${Baikal_BINARY_DIR}/Bin")
+        DESTINATION "${Baikal_BINARY_DIR}/bin")
 endif(WIN32)
