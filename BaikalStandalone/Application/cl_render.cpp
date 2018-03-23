@@ -176,9 +176,17 @@ namespace Baikal
             bool is_gltf = filename.find(".gltf") != std::string::npos;
             std::unique_ptr<Baikal::SceneIo> scene_io;
             if (is_gltf)
-                scene_io = Baikal::SceneIo::CreateSceneIoGltf();
+            {
+                assert(!"glTF loading not supported");
+            }
+            else if(is_fbx)
+            {
+                assert(!"FBX loading not supported");
+            }
             else
-                scene_io = is_fbx ? Baikal::SceneIo::CreateSceneIoFbx() : Baikal::SceneIo::CreateSceneIoObj();
+            {
+                scene_io = Baikal::SceneIo::CreateSceneIoObj();
+            }
             auto scene_io1 = Baikal::SceneIo::CreateSceneIoTest();
             m_scene = scene_io->LoadScene(filename, basepath);
             //m_scene = scene_io1->LoadScene(/*"uberv2_test_spheres"*/"shere+plane_uberv2+ibl+normalmap", basepath);

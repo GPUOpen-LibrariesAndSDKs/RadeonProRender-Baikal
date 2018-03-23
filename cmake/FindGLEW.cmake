@@ -24,26 +24,25 @@
 #   GLEW_LIBRARIES - libraries to link against GLEW
 #   GLEW_FOUND - true if GLEW has been found and can be used
 
-set(GLEW_DIR ${Baikal_SOURCE_DIR}/3rdparty/glew)
+set(GLEW_DIR "${Baikal_SOURCE_DIR}/3rdparty/glew")
 
 find_path(GLEW_INCLUDE_DIR GL/glew.h PATHS "${GLEW_DIR}/include")
 
 if(NOT GLEW_LIBRARY)
-  find_library(GLEW_LIBRARY_RELEASE NAMES GLEW glew32 glew glew32s PATH_SUFFIXES lib64 PATHS ${GLEW_DIR}/lib/x64)
-  find_library(GLEW_LIBRARY_DEBUG NAMES GLEWd glew32d glewd PATH_SUFFIXES lib64 PATHS ${GLEW_DIR}/lib/x64)
+  find_library(GLEW_LIBRARY_RELEASE NAMES GLEW glew32 glew glew32s PATH_SUFFIXES lib64 PATHS "${GLEW_DIR}/lib/x64")
+  find_library(GLEW_LIBRARY_DEBUG NAMES GLEWd glew32d glewd PATH_SUFFIXES lib64 PATHS "${GLEW_DIR}/lib/x64")
 
   include(SelectLibraryConfigurations)
   select_library_configurations(GLEW)
 endif ()
 
-find_package_handle_standard_args(GLEW
-                                  REQUIRED_VARS GLEW_INCLUDE_DIR GLEW_LIBRARY)
+find_package_handle_standard_args(GLEW REQUIRED_VARS GLEW_INCLUDE_DIR GLEW_LIBRARY)
 
 if(GLEW_FOUND)
-  set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
+  set(GLEW_INCLUDE_DIRS "${GLEW_INCLUDE_DIR}")
 
   if(NOT GLEW_LIBRARIES)
-    set(GLEW_LIBRARIES ${GLEW_LIBRARY})
+    set(GLEW_LIBRARIES "${GLEW_LIBRARY}")
   endif()
 
   if (NOT TARGET GLEW::GLEW)

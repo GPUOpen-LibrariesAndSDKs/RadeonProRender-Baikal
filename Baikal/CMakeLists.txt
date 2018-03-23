@@ -90,8 +90,6 @@ set(SCENEGRAPH_IO_SOURCES
     SceneGraph/IO/scene_io.cpp
     SceneGraph/IO/scene_io.h
     SceneGraph/IO/scene_test_io.cpp
-    SceneGraph/IO/scene_fbx_io.cpp
-    SceneGraph/IO/scene_gltf_io.cpp
     )
     
 set(XML_SOURCES
@@ -113,30 +111,21 @@ set(SOURCES
     
 add_library(Baikal STATIC ${SOURCES})
 
-if (BAIKAL_ENABLE_FBX)
-    target_compile_definitions(Baikal PUBLIC ENABLE_FBX)
-endif (BAIKAL_ENABLE_FBX)
-
-if (BAIKAL_ENABLE_GLTF)
-    target_compile_definitions(Baikal PUBLIC ENABLE_GLTF)
-endif (BAIKAL_ENABLE_GLTF)
-
 if (BAIKAL_ENABLE_DENOISER)
     target_compile_definitions(Baikal PUBLIC ENABLE_DENOISER)
 endif(BAIKAL_ENABLE_DENOISER)
 
 if (BAIKAL_ENABLE_RAYMASK)
-    target_compile_options(Baikal PUBLIC ENABLE_RAYMASK)
+    target_compile_definitions(Baikal PUBLIC ENABLE_RAYMASK)
 endif (BAIKAL_ENABLE_RAYMASK)
 
 if (BAIKAL_ENABLE_UBERV2)
-    target_compile_options(Baikal PUBLIC ENABLE_UBERV2)
+    target_compile_definitions(Baikal PUBLIC ENABLE_UBERV2)
 endif (BAIKAL_ENABLE_UBERV2)
 
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC ${Baikal_SOURCE_DIR}/Baikal)
-target_link_libraries(Baikal PUBLIC RadeonRays)
-target_link_libraries(Baikal PUBLIC OpenImageIO::OpenImageIO)
+target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO::OpenImageIO)
 
     

@@ -19,8 +19,6 @@
 #ifndef __RADEONPRORENDER_GL_H
 #define __RADEONPRORENDER_GL_H
 
-#define RPR_API_ENTRY
-
 #ifdef __cplusplus
 extern "C" {
 #endif

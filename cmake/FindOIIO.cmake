@@ -1,8 +1,8 @@
-set(OIIO_DIR ${Baikal_SOURCE_DIR}/3rdparty/oiio)
+set(OIIO_DIR "${Baikal_SOURCE_DIR}/3rdparty/oiio")
 
 
-find_library(OIIO_LIBRARY_RELEASE NAMES OpenImageIO PATH_SUFFIXES lib64 PATHS ${OIIO_DIR}/lib/x64)
-find_library(OIIO_LIBRARY_DEBUG NAMES OpenImageIOD PATH_SUFFIXES lib64 PATHS ${OIIO_DIR}/lib/x64)
+find_library(OIIO_LIBRARY_RELEASE NAMES OpenImageIO PATH_SUFFIXES lib64 PATHS "${OIIO_DIR}/lib/x64")
+find_library(OIIO_LIBRARY_DEBUG NAMES OpenImageIOD PATH_SUFFIXES lib64 PATHS "${OIIO_DIR}/lib/x64")
 find_path(OIIO_INCLUDE_DIR NAMES OpenImageIO/oiioversion.h PATHS "${OIIO_DIR}/include")
 
 include(SelectLibraryConfigurations)
@@ -12,7 +12,7 @@ find_package_handle_standard_args(OIIO DEFAULT_MSG OIIO_LIBRARY OIIO_INCLUDE_DIR
 
 add_library(OpenImageIO::OpenImageIO UNKNOWN IMPORTED)
 
-set_target_properties(OpenImageIO::OpenImageIO PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${OIIO_INCLUDE_DIR})
+set_target_properties(OpenImageIO::OpenImageIO PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${OIIO_INCLUDE_DIR}")
 
 if (OIIO_LIBRARY_RELEASE)
     set_property(TARGET OpenImageIO::OpenImageIO APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
