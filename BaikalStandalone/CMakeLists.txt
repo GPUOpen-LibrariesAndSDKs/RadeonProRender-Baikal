@@ -49,5 +49,3 @@ target_link_libraries(BaikalStandalone PRIVATE Baikal glfw3::glfw3 OpenGL::GL GL
 if (BAIKAL_ENABLE_GLTF)
     target_link_libraries(BaikalStandalone PRIVATE RadeonProRender RprSupport)
 endif (BAIKAL_ENABLE_GLTF)
-
-    
