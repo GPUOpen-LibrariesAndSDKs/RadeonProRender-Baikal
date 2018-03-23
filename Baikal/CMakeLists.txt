@@ -109,6 +109,18 @@ set(SOURCES
     ${SCENEGRAPH_IO_SOURCES}
     ${XML_SOURCES})
     
+source_group("controllers" FILES ${CONTROLLERS_SOURCES})
+source_group("estimators" FILES ${ESTIMATORS_SOURCES})
+source_group("output" FILES ${OUTPUT_SOURCES})
+source_group("posteffect" FILES ${POSTEFFECT_SOURCES})
+source_group("renderers" FILES ${RENDERERS_SOURCES})
+source_group("renderfactory" FILES ${RENDERFACTORY_SOURCES})
+source_group("utils" FILES ${UTILS_SOURCES})
+source_group("scenegraph" FILES ${SCENEGRAPH_SOURCES})
+source_group("scenegraph\\collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
+source_group("scenegraph\\io" FILES ${SCENEGRAPH_IO_SOURCES})
+source_group("xml" FILES ${XML_SOURCES})
+
 add_library(Baikal STATIC ${SOURCES})
 
 if (BAIKAL_ENABLE_DENOISER)

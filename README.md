@@ -17,10 +17,13 @@ The renderer is cross-platform and the following compilers are supported:
 
 - GCC 4.8 and later
 
+- CMake 3.8 and later
+
 The following packages are required to build the renderer:
 
 - Python 2.7
 - OpenImageIO (for MacOS/Linux builds)
+- glew (for MacOS/Linux builds)
 - GLFW3 (for MacOS/Linux builds)
 - AMD APP SDK or CUDA SDK
 
@@ -35,7 +38,7 @@ git clone --recursive https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRende
 ### Windows
 - Create Visual Studio 2015 Solution
 
-`Tools\premake\win\premake5.exe vs2015`
+`cmake -G "Visual Studio 14 2015 Win64"`
 
 ### OSX
 
@@ -51,15 +54,15 @@ git clone --recursive https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRende
 
 `brew install glfw3`
 
-- Create Xcode project
+- Make build folder and generate make files
 
-`./Tools/premake/osx/premake5 xcode4`
+`mkdir build`
 
-- Alternatively use gmake version
+`cd build`
 
-`./Tools/premake/osx/premake5 gmake`
+`cmake -DCMAKE_BUILD_TYPE=<Release or Debug> ..`
 
-`make config=release_x64`
+`make`
 
 ### Linux(Ubuntu)
 
@@ -73,24 +76,28 @@ git clone --recursive https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRende
 
 - Create the Makefile and build
 
-`./Tools/premake/linux64/premake5 gmake`
+`mkdir build`
 
-`make config=release_x64`
+`cd build`
+
+`cmake -DCMAKE_BUILD_TYPE=<Release ro Debug> ..`
+
+`make`
 
 ### Options
 
 Available premake options:
 
-- `--denoiser` enables EAW denoiser in interactive output:
+- `BAIKAL_ENABLE_DENOISER` enables EAW denoiser in interactive output:
 
-- `--rpr` generates RadeonProRender API implemenatiton C-library and couple of RPR tutorials.
+- `BAIKAL_ENABLE_RPR` generates RadeonProRender API implemenatiton C-library and couple of RPR tutorials.
 
 ## Run
 
 ## Run Baikal standalone app
- - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/Bin/Release/x64/:${LD_LIBRARY_PATH}`
+ - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/build/bin/:${LD_LIBRARY_PATH}`
  - `cd BaikalStandalone`
- - `../Bin/Release/x64/BaikalStandalone64`
+ - `../build/bin/BaikalStandalone`
 
 Possible command line args:
 - `-platform index` select specific OpenCL platform
@@ -119,9 +126,9 @@ The list of supported texture formats:
 - tga
 
 ## Run unit tests
-- `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/Bin/Release/x64/:${LD_LIBRARY_PATH}`
+- `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/build/bin/:${LD_LIBRARY_PATH}`
  - `cd BaikalTest`
- - `../Bin/Release/x64/BaikalTest64`
+ - `../build/bin/BaikalTest`
 
 Unit tests are producing test images into BaikalTest/OutputImages and compare them to reference images expected to be at BaikalTest/ReferenceImages.
 

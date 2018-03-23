@@ -33,6 +33,10 @@ set(SOURCES
     ${IMGUI_SORUCES}
     ${MAIN_SOURCES}
     ${UTILS_SOURCES})
+
+source_group("application" FILES ${APPLICATION_SOURCES})
+source_group("ImGUI" FILES ${IMGUI_SORUCES})
+source_group("utils" FILES ${UTILS_SOURCES})
     
 add_executable(BaikalStandalone ${SOURCES})
 target_compile_features(BaikalStandalone PRIVATE cxx_std_14)
