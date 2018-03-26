@@ -450,7 +450,7 @@ namespace Baikal
             // Initialize GLFW
             {
                 auto err = glfwInit();
-                if (err != GLFW_TRUE)
+                if (err != GL_TRUE)
                 {
                     std::cout << "GLFW initialization failed\n";
                     exit(-1);
