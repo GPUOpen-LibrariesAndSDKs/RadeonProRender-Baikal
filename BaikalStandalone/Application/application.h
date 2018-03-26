@@ -121,7 +121,7 @@ namespace Baikal
             void Clear();
         };
 
-        bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
+        bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix = std::string());
         bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
 
         std::unique_ptr<MaterialSelector> m_material_selector;

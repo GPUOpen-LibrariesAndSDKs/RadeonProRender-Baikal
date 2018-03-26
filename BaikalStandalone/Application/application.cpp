@@ -616,7 +616,7 @@ namespace Baikal
         }
     }
 
-    bool Application::ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx)
+    bool Application::ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix)
     {
         auto input = material->GetInput(input_idx);
         auto name = input.info.name;
@@ -648,8 +648,14 @@ namespace Baikal
         color[1] = input_color.y;
         color[2] = input_color.z;
 
+        if (!id_suffix.empty())
+            ImGui::PushID(id_suffix.c_str());
+
         ImGui::InputFloat(name.c_str(), &mult, .0f, .0f, -1, ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::ColorEdit3(name.c_str(), color);
+
+        if (!id_suffix.empty())
+            ImGui::PopID();
 
         if ((input.value.tex_value == nullptr) &&
             ((input_color.x != color[0]) ||
@@ -942,7 +948,8 @@ namespace Baikal
             // draw material props
             if (m_material_selector)
             {
-                ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 290), ImVec2(380, 290));
+                ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
                 if (!m_object_name.empty())
                 {
@@ -1062,19 +1069,18 @@ namespace Baikal
 
                 if ((volume == nullptr) && (ImGui::Button("Create volume")))
                 {
-                    auto volume = VolumeMaterial::Create();
+                    auto new_volume = VolumeMaterial::Create();
 
-                    volume->SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
-                    volume->SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
-                    volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
-                    volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    new_volume->SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    new_volume->SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    new_volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+                    new_volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
 
-                    m_cl->GetShapeById(m_current_shape_id)->SetVolumeMaterial(volume);
+                    m_cl->GetShapeById(m_current_shape_id)->SetVolumeMaterial(new_volume);
 
                     MaterialSettings volume_settings;
                     volume_settings.id = m_current_shape_id;
                     m_volume_settings.push_back(volume_settings);
-                    volume = m_cl->GetShapeById(m_current_shape_id)->GetVolumeMaterial();
                 }
 
                 ImGui::Separator();
@@ -1084,12 +1090,11 @@ namespace Baikal
                     material_io->SaveMaterialsFromScene(m_settings.path + "/materials.xml", *m_cl->GetScene());
                     material_io->SaveIdentityMapping(m_settings.path + "/mapping.xml", *m_cl->GetScene());
                 }
-                
-                ImGui::End();
 
                 if (volume != nullptr)
                 {
-                    ImGui::Begin("Volume info");
+                    ImGui::Separator();
+                    ImGui::Text("Volumes:");
 
                     for (auto i = 0u; i < volume->GetNumInputs(); i++)
                     {
@@ -1098,16 +1103,16 @@ namespace Baikal
                             volume_settings->inputs_info.push_back(InputSettings());
                         }
 
-                        auto supported_types = material->GetInput(i).info.supported_types;
+                        auto supported_types = volume->GetInput(i).info.supported_types;
                         if (supported_types.find(Material::InputType::kFloat4) != supported_types.end())
                         {
-                            auto result = ReadFloatInput(material, *volume_settings, i);
+                            auto result = ReadFloatInput(volume, *volume_settings, i, "volume");
                             is_scene_changed = is_scene_changed ? is_scene_changed : result;
                         }
                     }
-
-                    ImGui::End();
                 }
+
+                ImGui::End();
 
                 if (is_scene_changed)
                 {
