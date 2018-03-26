@@ -23,6 +23,6 @@
 
 
 #include "RadeonProRender.h"
-#include "Baikal/SceneGraph/scene1.h"
+#include "SceneGraph/scene1.h"
 
 Baikal::Scene1::Ptr ExportFromRpr(rpr_scene scene);
