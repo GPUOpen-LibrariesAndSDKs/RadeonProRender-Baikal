@@ -45,8 +45,12 @@ set(UTILS_SOURCES
     Utils/config_manager.cpp
     Utils/config_manager.h
 )
+
+source_group("WrapObject" FILES ${WRAP_OBJECT_SOURCES})
+source_group("Utils" FILES ${UTILS_SOURCES})
+
 list(APPEND SOURCES ${WRAP_OBJECT_SOURCES} ${UTILS_SOURCES})
-    
+
 add_library(RadeonProRender SHARED ${SOURCES})
 target_compile_definitions(RadeonProRender PRIVATE RPR_EXPORT_API)
 target_compile_features(RadeonProRender PRIVATE cxx_std_14)
