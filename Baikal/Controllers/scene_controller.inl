@@ -160,6 +160,32 @@ namespace Baikal
                                   return textures;
                               });
 
+        // Now we need to collect textures from volumes
+        // Create volume iterator
+        auto vol_iter = m_volume_collector.CreateIterator();
+
+        // Collect textures from materials
+        m_texture_collector.Collect(*vol_iter,
+            [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
+        {
+            // Texture set
+            std::set<SceneObject::Ptr> textures;
+
+            auto volume = std::static_pointer_cast<VolumeMaterial>(item);
+
+            // Create texture dependency iterator
+            auto tex_iter = volume->CreateTextureIterator();
+
+            // Emplace all dependent textures
+            for (; tex_iter->IsValid(); tex_iter->Next())
+            {
+                textures.emplace(tex_iter->ItemAs<Texture>());
+            }
+
+            // Return resulting set
+            return textures;
+        });
+
         // Collect textures from lights
         m_texture_collector.Collect(*light_iter,
                                     [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>

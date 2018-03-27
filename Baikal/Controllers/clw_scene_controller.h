@@ -91,7 +91,7 @@ namespace Baikal
         // If m_current_scene changes
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
         // Update volume materiuals
-        void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const override;
+        void UpdateVolumes(Scene1 const& scene, Collector& volume_collector, Collector& tex_collector, ClwScene& out) const override;
         // If scene attributes changed
         void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const override;
 
@@ -110,13 +110,14 @@ namespace Baikal
         // Write out texture data at data pointer.
         void WriteTextureData(Texture const& texture, void* data) const;
         // Write single volume at data pointer
-        void WriteVolume(const VolumeMaterial& volume, void* data) const;
+        void WriteVolume(VolumeMaterial const& volume, Collector& tex_collector, void* data) const;
         // Write single input map leaf at data pointer
         // Collectore is required to convert texture pointers into indices.
         void WriteInputMapLeaf(InputMap const& leaf, Collector& tex_collector, void* data) const;
 
     private:
         int GetMaterialIndex(Collector const& collector, Material::Ptr material) const;
+        int GetTextureIndex(Collector const& collector, Texture::Ptr material) const;
         int GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const;
 
         // Context

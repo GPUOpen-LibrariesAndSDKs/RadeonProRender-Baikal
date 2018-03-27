@@ -66,7 +66,8 @@ float3 Volume_Transmittance(GLOBAL Volume const* volume, GLOBAL ray const* ray, 
         case kHomogeneous:
         {
             // For homogeneous it is e(-sigma * dist)
-            float3 sigma_t = volume->sigma_a + volume->sigma_s;
+            float3 sigma_t = TEXTURED_INPUT_GET_COLOR(volume->sigma_a) +
+                             TEXTURED_INPUT_GET_COLOR(volume->sigma_s);
             return native_exp(-sigma_t * dist);
         }
     }
@@ -81,7 +82,7 @@ float3 Volume_Emission(GLOBAL Volume const* volume, GLOBAL ray const* ray, float
     {
         case kHomogeneous:
         {
-            return volume->sigma_e * dist;
+            return TEXTURED_INPUT_GET_COLOR(volume->sigma_e) * dist;
         }
     }
     
@@ -92,8 +93,9 @@ float3 Volume_Emission(GLOBAL Volume const* volume, GLOBAL ray const* ray, float
 float Volume_SampleDistance(GLOBAL Volume const* volume, GLOBAL ray const* ray, float maxdist, float2 sample, float* pdf)
 {
     // Sample component
-    float sigma = sample.x < 0.33f ? volume->sigma_s.x :
-                  sample.x < 0.66f ? volume->sigma_s.y : volume->sigma_s.z;
+    float3 sigma_s = TEXTURED_INPUT_GET_COLOR(volume->sigma_s);
+    float sigma = sample.x < 0.33f ? sigma_s.x :
+                  sample.x < 0.66f ? sigma_s.y : sigma_s.z;
 
     switch (volume->type)
     {
@@ -101,9 +103,9 @@ float Volume_SampleDistance(GLOBAL Volume const* volume, GLOBAL ray const* ray, 
         {
             
             float d = sigma > 0.f ? (-native_log(sample.y) / sigma) : -1.f;
-            float temp = (1.f / 3.f) * (volume->sigma_s.x * native_exp(-volume->sigma_s.x * d)
-                + volume->sigma_s.y * native_exp(-volume->sigma_s.y * d)
-                + volume->sigma_s.z * native_exp(-volume->sigma_s.z * d));
+            float temp = (1.f / 3.f) * (sigma_s.x * native_exp(-sigma_s.x * d)
+                + sigma_s.y * native_exp(-sigma_s.y * d)
+                + sigma_s.z * native_exp(-sigma_s.z * d));
             *pdf = sigma > 0.f ? temp : 0.f;
             return d;
         }
@@ -119,9 +121,10 @@ float Volume_GetDistancePdf(GLOBAL Volume const* volume, float dist)
     {
     case kHomogeneous:
     {
-        return (1.f / 3.f) * (native_exp(-volume->sigma_s.x * dist)
-                            + native_exp(-volume->sigma_s.y * dist)
-                            + native_exp(-volume->sigma_s.z * dist));
+        float3 sigma_s = TEXTURED_INPUT_GET_COLOR(volume->sigma_s);
+        return (1.f / 3.f) * (native_exp(-sigma_s.x * dist)
+                            + native_exp(-sigma_s.y * dist)
+                            + native_exp(-sigma_s.z * dist));
     }
     }
 
@@ -222,7 +225,8 @@ KERNEL void EvaluateVolume(
                 // Set scattering flag to notify ShadeVolume kernel to handle this path
                 Path_SetScatterFlag(path);
                 // Update the throughput
-                Path_MulThroughput(path, volumes[volidx].sigma_s * (Volume_Transmittance(&volumes[volidx], &rays[globalid], d) / pdf));
+                float3 sigma_s = TEXTURED_INPUT_GET_COLOR(volumes[volidx].sigma_s);
+                Path_MulThroughput(path, sigma_s * (Volume_Transmittance(&volumes[volidx], &rays[globalid], d) / pdf));
                 // Emission contribution accounting for a throughput we have so far
                 Path_AddContribution(path, output, output_indices[pixelidx], Volume_Emission(&volumes[volidx], &rays[globalid], d) / pdf);
                 // Put fake shape to prevent from being compacted away

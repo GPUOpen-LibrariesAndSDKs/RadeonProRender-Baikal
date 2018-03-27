@@ -731,7 +731,7 @@ namespace Baikal
 
     }
 
-    void ClwSceneController::UpdateVolumes(Scene1 const& scene, Collector& volume_collector, ClwScene& out) const
+    void ClwSceneController::UpdateVolumes(Scene1 const& scene, Collector& volume_collector, Collector& tex_collector, ClwScene& out) const
     {
         if (!volume_collector.GetNumItems())
             return;
@@ -760,7 +760,7 @@ namespace Baikal
         size_t num_volumes_copied = 0;
         for (; volume_iter->IsValid(); volume_iter->Next())
         {
-            WriteVolume(*volume_iter->ItemAs<VolumeMaterial>(), volumes + num_volumes_copied);
+            WriteVolume(*volume_iter->ItemAs<VolumeMaterial>(), tex_collector, volumes + num_volumes_copied);
             ++num_volumes_copied;
         }
 
@@ -1541,6 +1541,7 @@ namespace Baikal
 
         clw_texture->w = dim.x;
         clw_texture->h = dim.y;
+        clw_texture->d = dim.z;
         clw_texture->fmt = GetTextureFormat(texture);
         clw_texture->dataoffset = static_cast<int>(data_offset);
     }
@@ -1552,17 +1553,43 @@ namespace Baikal
         std::copy(begin, end, static_cast<char*>(data));
     }
 
-    void ClwSceneController::WriteVolume(const VolumeMaterial& volume, void* data) const
+    void ClwSceneController::WriteVolume(VolumeMaterial const& volume, Collector& tex_collector, void* data) const
     {
         auto clw_volume = reinterpret_cast<ClwScene::Volume*>(data);
 
         clw_volume->type = ClwScene::VolumeType::kHomogeneous;
         clw_volume->data = -1;
         clw_volume->extra = -1;
-        clw_volume->sigma_a = volume.GetInputValue("absorption").float_value;
-        clw_volume->sigma_e = volume.GetInputValue("emission").float_value;
-        clw_volume->sigma_s = volume.GetInputValue("scattering").float_value;
+
+        auto absorption_value = volume.GetInputValue("absorption");
+
+        if (absorption_value.type == Material::InputType::kFloat4)
+        {
+            clw_volume->sigma_a.float_value.value = absorption_value.float_value;
+            clw_volume->sigma_a.int_value.value[3] = -1;
+        }
+        else if (absorption_value.type == Material::InputType::kTexture)
+        {
+            clw_volume->sigma_a.float_value.value = absorption_value.float_value;
+            clw_volume->sigma_a.int_value.value[3] = tex_collector.GetItemIndex(absorption_value.tex_value)
+        }
+        else
+        {
+            // TODO: should not happen
+            assert(false);
+        }
+
+        
+        clw_volume->sigma_e.float_value.value = volume.GetInputValue("emission").float_value;
+        clw_volume->sigma_e.int_value.value[3] = -1;
+        clw_volume->sigma_s.float_value.value = volume.GetInputValue("scattering").float_value;
+        clw_volume->sigma_s.int_value.value[3] = -1;
         clw_volume->g = volume.GetInputValue("g").float_value.x;
+    }
+
+    int ClwSceneController::GetTextureIndex(Collector const& collector, Texture::Ptr texture) const
+    {
+        return texture ? collector.GetItemIndex(texture) : (-1);
     }
 
     int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const
@@ -1573,7 +1600,7 @@ namespace Baikal
 
     int ClwSceneController::GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const
     {
-        return (volume) ? collector.GetItemIndex(volume) : (-1);
+        return volume ? collector.GetItemIndex(volume) : (-1);
     }
 
     void ClwSceneController::UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const

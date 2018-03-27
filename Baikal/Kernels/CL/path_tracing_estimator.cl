@@ -213,7 +213,7 @@ KERNEL void ShadeVolume(
         r += tr * le  * PhaseFunctionHG(wi, normalize(wo), g) / pdf / selection_pdf; 
         r += tr * emission;
 
-        // Only if we have some radiance compute the visibility ray
+        // Only if we have some radiance compute the visibility ray  
         if (NON_BLACK(tr) && NON_BLACK(r) && pdf > 0.f) 
         {
             // Put lightsample result
