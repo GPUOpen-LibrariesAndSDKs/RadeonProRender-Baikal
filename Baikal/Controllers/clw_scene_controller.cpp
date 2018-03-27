@@ -1571,7 +1571,7 @@ namespace Baikal
         else if (absorption_value.type == Material::InputType::kTexture)
         {
             clw_volume->sigma_a.float_value.value = absorption_value.float_value;
-            clw_volume->sigma_a.int_value.value[3] = tex_collector.GetItemIndex(absorption_value.tex_value)
+            clw_volume->sigma_a.int_value.value[3] = tex_collector.GetItemIndex(absorption_value.tex_value);
         }
         else
         {

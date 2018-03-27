@@ -451,7 +451,7 @@ namespace Baikal
             // If volumes need an update, do it.
             if (should_update_volumes)
             {
-                UpdateVolumes(*scene, m_volume_collector, out);
+                UpdateVolumes(*scene, m_volume_collector, m_texture_collector, out);
             }
 
             if (should_update_leafs_data)
@@ -537,7 +537,7 @@ namespace Baikal
 
         UpdateInputMaps(scene, m_input_maps_collector, m_input_map_leafs_collector, out);
 
-        UpdateVolumes(scene, vol_collector, out);
+        UpdateVolumes(scene, vol_collector, m_texture_collector, out);
 
         UpdateSceneAttributes(scene, m_texture_collector, out);
     }
