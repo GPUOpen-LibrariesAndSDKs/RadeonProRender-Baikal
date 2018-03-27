@@ -96,6 +96,33 @@ set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
 
+set(KERNELS_SOURCES
+    Kernels/CL/bxdf.cl
+    Kernels/CL/bxdf_basic.cl
+    Kernels/CL/bxdf_uberv2.cl
+    Kernels/CL/bxdf_uberv2_bricks.cl
+    Kernels/CL/common.cl
+    Kernels/CL/denoise.cl
+    Kernels/CL/disney.cl
+    Kernels/CL/integrator_bdpt.cl
+    Kernels/CL/isect.cl
+    Kernels/CL/light.cl
+    Kernels/CL/material.cl
+    Kernels/CL/monte_carlo_renderer.cl
+    Kernels/CL/normalmap.cl
+    Kernels/CL/path.cl
+    Kernels/CL/path_tracing_estimator.cl
+    Kernels/CL/payload.cl
+    Kernels/CL/ray.cl
+    Kernels/CL/sampling.cl
+    Kernels/CL/scene.cl
+    Kernels/CL/sh.cl
+    Kernels/CL/texture.cl
+    Kernels/CL/utils.cl
+    Kernels/CL/vertex.cl
+    Kernels/CL/volumetrics.cl
+    Kernels/CL/wavelet_denoise.cl)
+
 set(SOURCES
     ${CONTROLLERS_SOURCES}
     ${ESTIMATORS_SOURCES}
@@ -107,19 +134,22 @@ set(SOURCES
     ${SCENEGRAPH_SOURCES}
     ${SCENEGRAPH_COLLECTOR_SOURCES}
     ${SCENEGRAPH_IO_SOURCES}
-    ${XML_SOURCES})
+    ${XML_SOURCES}
+    ${KERNELS_SOURCES}
+    )
     
-source_group("controllers" FILES ${CONTROLLERS_SOURCES})
-source_group("estimators" FILES ${ESTIMATORS_SOURCES})
-source_group("output" FILES ${OUTPUT_SOURCES})
-source_group("posteffect" FILES ${POSTEFFECT_SOURCES})
-source_group("renderers" FILES ${RENDERERS_SOURCES})
-source_group("renderfactory" FILES ${RENDERFACTORY_SOURCES})
-source_group("utils" FILES ${UTILS_SOURCES})
-source_group("scenegraph" FILES ${SCENEGRAPH_SOURCES})
-source_group("scenegraph\\collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
-source_group("scenegraph\\io" FILES ${SCENEGRAPH_IO_SOURCES})
-source_group("xml" FILES ${XML_SOURCES})
+source_group("Controllers" FILES ${CONTROLLERS_SOURCES})
+source_group("Estimators" FILES ${ESTIMATORS_SOURCES})
+source_group("Output" FILES ${OUTPUT_SOURCES})
+source_group("Posteffect" FILES ${POSTEFFECT_SOURCES})
+source_group("Renderers" FILES ${RENDERERS_SOURCES})
+source_group("RenderFactory" FILES ${RENDERFACTORY_SOURCES})
+source_group("Utils" FILES ${UTILS_SOURCES})
+source_group("SceneGraph" FILES ${SCENEGRAPH_SOURCES})
+source_group("SceneGraph\\Collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
+source_group("SceneGraph\\IO" FILES ${SCENEGRAPH_IO_SOURCES})
+source_group("XML" FILES ${XML_SOURCES})
+source_group("Kernels\\CL" FILES ${KERNELS_SOURCES})
 
 add_library(Baikal STATIC ${SOURCES})
 
@@ -137,7 +167,7 @@ endif (BAIKAL_ENABLE_UBERV2)
 
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
-target_include_directories(Baikal PUBLIC ${Baikal_SOURCE_DIR}/Baikal)
+target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
 target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO::OpenImageIO)
 
     

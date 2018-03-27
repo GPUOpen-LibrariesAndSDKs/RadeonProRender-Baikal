@@ -74,6 +74,7 @@ if (BAIKAL_ENABLE_STANDALONE)
     find_package(GLFW3 REQUIRED)
 
     add_subdirectory(BaikalStandalone)
+    set(3RDPARTY_DST $<TARGET_FILE_DIR:BaikalStandalone>)
 endif (BAIKAL_ENABLE_STANDALONE)
 
 if (BAIKAL_ENABLE_TESTS)
@@ -82,21 +83,15 @@ if (BAIKAL_ENABLE_TESTS)
     if (BAIKAL_ENABLE_RPR)
         add_subdirectory(RprTest)
     endif (BAIKAL_ENABLE_RPR)
+    set(3RDPARTY_DST $<TARGET_FILE_DIR:BaikalTest>)
 endif (BAIKAL_ENABLE_TESTS)
 
-#Install 3rdparty binaries
-if (WIN32)
-    file(INSTALL
-        "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-        DESTINATION "${Baikal_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
-    #installation to Bin required when builded with nmake
-    file(INSTALL
-        "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-        DESTINATION "${Baikal_BINARY_DIR}/bin")
-endif(WIN32)
+if (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_TESTS)
+    add_custom_target(Baikal_copy_3rdparty ALL
+        COMMAND "${CMAKE_COMMAND}" -E copy
+            "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
+            "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
+            "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
+            "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
+        "${3RDPARTY_DST}")
+endif (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_TESTS)
