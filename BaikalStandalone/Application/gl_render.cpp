@@ -41,7 +41,7 @@ namespace Baikal
                 glClear(GL_COLOR_BUFFER_BIT); CHECK_GL_ERROR;
                 glBindVertexArray(m_vao); CHECK_GL_ERROR;
 
-                GLuint program = m_shader_manager->GetProgram("../Baikal/Kernels/GLSL/simple");
+                GLuint program = m_shader_manager->GetProgram("../BaikalStandalone/Kernels/GLSL/simple");
                 glUseProgram(program); CHECK_GL_ERROR;
 
                 GLuint texloc = glGetUniformLocation(program, "g_Texture");

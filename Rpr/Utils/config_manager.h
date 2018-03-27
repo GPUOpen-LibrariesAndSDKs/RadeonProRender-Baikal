@@ -19,31 +19,67 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include "gtest/gtest.h"
+#ifndef CONFIG_MANAGER_H
+#define CONFIG_MANAGER_H
 
-#include "Utils/distribution1d.h"
-#include "math/mathutils.h"
+#include "CLW.h"
+#include "RenderFactory/clw_render_factory.h"
+#include "Renderers/renderer.h"
+#include <vector>
+#include <memory>
 
-class InternalTest : public ::testing::Test
+namespace Baikal
 {
+    class Renderer;
+}
+
+class ConfigManager
+{
+public:
+
+    enum DeviceType
+    {
+        kPrimary,
+        kSecondary
+    };
+
+    enum Mode
+    {
+        kUseAll,
+        kUseGpus,
+        kUseSingleGpu,
+        kUseSingleCpu,
+        kUseCpus
+    };
+
+    struct Config
+    {
+        DeviceType type;
+        std::unique_ptr<Baikal::Renderer> renderer;
+        std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> controller;
+        std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> factory;
+        CLWContext context;
+        bool caninterop;
+
+        Config() = default;
+
+        Config(Config&& cfg) = default;
+
+        ~Config()
+        {
+        }
+    };
+
+    static void CreateConfigs(
+        Mode mode,
+        bool interop,
+        std::vector<Config>& renderers,
+        int initial_num_bounces,
+        int req_platform_index = -1,
+        int req_device_index = -1);
+
+private:
 
 };
 
-TEST_F(InternalTest, Distribuiton1D)
-{
-    float vals[] = { 2, 4, 6, 8 };
-    Baikal::Distribution1D dist(vals, 4);
-
-    int cnts[]{ 0, 0, 0, 0 };
-
-    for (auto i = 0u; i < 1000; ++i)
-    {
-        float pdf = 0.f;
-        float v = dist.Sample1D(RadeonRays::rand_float(), pdf);
-
-        int idx = std::min((int)(v * 4), 3);
-        ++cnts[idx];
-    }
-
-    cnts[0] += cnts[1];
-}
+#endif // CONFIG_MANAGER_H
