@@ -328,9 +328,9 @@ namespace Baikal
     // VolumeMaterial implementation
     VolumeMaterial::VolumeMaterial()
     {
-        RegisterInput("absorption", "Absorption of volume material", { InputType::kFloat4 });
-        RegisterInput("scattering", "Scattering of light inside of volume material", { InputType::kFloat4 });
-        RegisterInput("emission", "Emission of light inside of volume material", { InputType::kFloat4 });
+        RegisterInput("absorption", "Absorption of volume material", { InputType::kFloat4, InputType::kTexture });
+        RegisterInput("scattering", "Scattering of light inside of volume material", { InputType::kFloat4, InputType::kTexture });
+        RegisterInput("emission", "Emission of light inside of volume material", { InputType::kFloat4, InputType::kTexture });
         RegisterInput("g", "Phase function", { InputType::kFloat4 });
 
         SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));

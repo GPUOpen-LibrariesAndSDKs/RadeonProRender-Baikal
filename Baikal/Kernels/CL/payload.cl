@@ -22,6 +22,10 @@ THE SOFTWARE.
 #ifndef PAYLOAD_CL
 #define PAYLOAD_CL
 
+#define TEXTURED_INPUT(x) union { struct { float4 value; } float_value; struct { int value[4]; } int_value; } x
+#define TEXTURED_INPUT_HAS_TEXTURE(x) ((x).int_value.value[3] != -1)
+#define TEXTURED_INPUT_GET_COLOR(x) ((x).float_value.value.xyz)
+
 // Matrix
 typedef struct
 {
@@ -33,25 +37,25 @@ typedef struct
 
 // Camera
 typedef struct
-    {
-        // Coordinate frame
-        float3 forward;
-        float3 right;
-        float3 up;
-        // Position
-        float3 p;
+{
+    // Coordinate frame
+    float3 forward;
+    float3 right;
+    float3 up;
+    // Position
+    float3 p;
 
-        // Image plane width & height in current units
-        float2 dim;
-        // Near and far Z
-        float2 zcap;
-        // Focal lenght
-        float focal_length;
-        // Camera aspect_ratio ratio
-        float aspect_ratio;
-        float focus_distance;
-        float aperture;
-    } Camera;
+    // Image plane width & height in current units
+    float2 dim;
+    // Near and far Z
+    float2 zcap;
+    // Focal lenght
+    float focal_length;
+    // Camera aspect_ratio ratio
+    float aspect_ratio;
+    float focus_distance;
+    float aperture;
+} Camera;
 
 // Shape description
 typedef struct
@@ -303,21 +307,21 @@ typedef enum
 
 
 typedef struct _Volume
-    {
-        VolumeType type;
-        float g;
+{
+    VolumeType type;
+    float g;
 
-        // Id of volume data if present
-        int data;
-        int extra;
+    // Id of volume data if present
+    int data;
+    int extra;
 
-        // Absorbtion
-        float3 sigma_a;
-        // Scattering
-        float3 sigma_s;
-        // Emission
-        float3 sigma_e;
-    } Volume;
+    // Absorbtion
+    TEXTURED_INPUT(sigma_a);
+    // Scattering
+    TEXTURED_INPUT(sigma_s);
+    // Emission
+    TEXTURED_INPUT(sigma_e);
+} Volume;
 
 /// Supported formats
 enum TextureFormat
@@ -330,18 +334,18 @@ enum TextureFormat
 
 /// Texture description
 typedef
-    struct _Texture
-    {
-        // Width, height and depth
-        int w;
-        int h;
-        int d;
-        // Offset in texture data array
-        int dataoffset;
-        // Format
-        int fmt;
-        int extra;
-    } Texture;
+struct _Texture
+{
+    // Width, height and depth
+    int w;
+    int h;
+    int d;
+    // Offset in texture data array
+    int dataoffset;
+    // Format
+    int fmt;
+    int extra;
+} Texture;
 
 
 // Hit data

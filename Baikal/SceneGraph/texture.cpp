@@ -12,7 +12,7 @@ namespace Baikal
         case Format::kRgba8:
         {
             auto data = reinterpret_cast<std::uint8_t*>(m_data.get());
-            auto num_elements = m_size.x * m_size.y;
+            auto num_elements = m_size.x * m_size.y * m_size.z;
 
 
             for (auto i = 0; i < num_elements; ++i)
@@ -29,7 +29,7 @@ namespace Baikal
         case Format::kRgba16:
         {
             auto data = reinterpret_cast<std::uint16_t*>(m_data.get());
-            auto num_elements = m_size.x * m_size.y;
+            auto num_elements = m_size.x * m_size.y * m_size.z;
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -37,7 +37,7 @@ namespace Baikal
                 auto g = data[4 * i + 1];
                 auto b = data[4 * i + 2];
 
-                half hr, hg, hb; 
+                half hr, hg, hb;
                 hr.setBits(r);
                 hg.setBits(g);
                 hb.setBits(b);
@@ -51,7 +51,7 @@ namespace Baikal
         case Format::kRgba32:
         {
             auto data = reinterpret_cast<float*>(m_data.get());
-            auto num_elements = m_size.x * m_size.y;
+            auto num_elements = m_size.x * m_size.y * m_size.z;
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -73,18 +73,18 @@ namespace Baikal
     }
 
     namespace {
-        struct TextureConcrete: public Texture {
+        struct TextureConcrete : public Texture {
             TextureConcrete() = default;
-            TextureConcrete(char* data, RadeonRays::int2 size, Format format) :
-            Texture(data, size, format){}
+            TextureConcrete(char* data, RadeonRays::int3 size, Format format) :
+                Texture(data, size, format) {}
         };
     }
-    
+
     Texture::Ptr Texture::Create() {
         return std::make_shared<TextureConcrete>();
     }
-    
-    Texture::Ptr Texture::Create(char* data, RadeonRays::int2 size, Format format) {
+
+    Texture::Ptr Texture::Create(char* data, RadeonRays::int3 size, Format format) {
         return std::make_shared<TextureConcrete>(data, size, format);
     }
 }
