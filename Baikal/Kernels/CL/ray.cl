@@ -43,6 +43,11 @@ INLINE void Ray_SetInactive(GLOBAL ray* r)
     r->extra.y = 0;
 }
 
+INLINE bool Ray_IsActive(GLOBAL ray* r)
+{
+    return r->extra.y != 0;
+}
+
 // Set extra data for ray
 INLINE void Ray_SetExtra(GLOBAL ray* r, float2 extra)
 {

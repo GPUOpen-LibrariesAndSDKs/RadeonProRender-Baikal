@@ -766,6 +766,9 @@ namespace Baikal
 
         // Unmap serial buffer
         m_context.UnmapBuffer(0, out.volumes, volumes);
+
+        // Update number of volumes
+        out.num_volumes = num_volumes_copied;
     }
 
     void ClwSceneController::ReloadIntersector(Scene1 const& scene, ClwScene& inout) const

@@ -48,6 +48,7 @@ namespace Baikal
         std::unique_ptr<Bundle> input_map_bundle;
 
         int num_lights;
+        int num_volumes;
         int envmapidx;
         int background_idx;
         CameraType camera_type;

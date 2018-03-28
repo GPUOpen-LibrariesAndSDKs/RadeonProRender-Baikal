@@ -196,7 +196,7 @@ namespace Baikal
             bool use_output_indices
         );
 
-        void EvaluateVolume(
+        void SampleVolume(
             ClwScene const& scene,
             int pass,
             std::size_t size,
@@ -243,6 +243,15 @@ namespace Baikal
             CLWBuffer<RadeonRays::float3> output,
             bool use_output_indices
         );
+
+        void ApplyVolumeTransmission(
+            ClwScene const& scene,
+            int pass,
+            std::size_t size,
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
+        );
+
 
         void AdvanceIterationCount(int pass, std::size_t size, CLWBuffer<RadeonRays::float3> output, bool use_output_indices);
 

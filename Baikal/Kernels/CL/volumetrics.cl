@@ -138,7 +138,7 @@ float Volume_GetDistancePdf(GLOBAL Volume const* volume, float dist)
 // In case ray has missed geometry (has shapeid < 0) and has been scattered,
 // we put FAKE_SHAPE_SENTINEL into shapeid to prevent ray from being compacted away.
 //
-KERNEL void EvaluateVolume(
+KERNEL void SampleVolume(
     // Ray batch
     GLOBAL ray const* rays,
     // Pixel indices
@@ -205,7 +205,8 @@ KERNEL void EvaluateVolume(
             float pdf = 0.f;
             float maxdist = Intersection_GetDistance(isects + globalid);
             float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
-            float d = Volume_SampleDistance(&volumes[volidx], &rays[globalid], maxdist, sample, &pdf);
+            float2 sample1 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
+            float d = Volume_SampleDistance(&volumes[volidx], &rays[globalid], maxdist, make_float2(sample.x, sample1.y), &pdf);
             
             // Check if we shall skip the event (it is either outside of a volume or not happened at all)
             bool skip = d < 0 || d > maxdist || pdf <= 0.f;
