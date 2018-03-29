@@ -4,7 +4,7 @@ Baikal initiative has been started as a sample application demonstrating the usa
 
 Baikal is fast and efficient GPU-based global illumination renderer implemented using OpenCL and relying on AMD® RadeonRays intersection engine. It is cross-platform and vendor independent. The only requirement it imposes on the hardware is OpenCL 1.2 support. Baikal maintains high level of performance across all vendors, but it is specifically optimized for AMD® GPUs and APUs.
 
-![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/1.jpg)
+![Image](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Baikal/blob/master/Doc/Images/5.jpg)
 “Science Fiction” scene is a courtesy of Juan Carlos Silva, 3drender.com.
 
 # Build
