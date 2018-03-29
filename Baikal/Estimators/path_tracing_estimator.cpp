@@ -188,7 +188,7 @@ namespace Baikal
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
         auto visibility_buffer = GetIntermediateValueBuffer(IntermediateValue::kVisibility);
 
-        InitPathData(num_estimates);
+        InitPathData(num_estimates, scene.camera_volume_index);
 
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, num_estimates);
@@ -197,6 +197,7 @@ namespace Baikal
         for (auto pass = 0u; pass < GetMaxBounces(); ++pass)
         {
             // Clear ray hits buffer
+            // TODO: make it a kernel
             GetContext().FillBuffer(
                 0,
                 m_render_data->hits,
@@ -213,8 +214,14 @@ namespace Baikal
                 nullptr
             );
 
-            // Apply scattering
-            EvaluateVolume(scene, pass, num_estimates, output, use_output_indices);
+
+            // Apply scattering only if we have volumes
+            bool has_some_volume = scene.num_volumes > 0;
+
+            if (has_some_volume)
+            {
+                SampleVolume(scene, pass, num_estimates, output, use_output_indices);
+            }
 
             bool has_some_environment = scene.envmapidx > -1;
 
@@ -239,12 +246,6 @@ namespace Baikal
             // Advance indices to keep pixel indices up to date
             RestorePixelIndices(pass, num_estimates);
 
-            // Shade hits
-            ShadeVolume(scene, pass, num_estimates, output, use_output_indices);
-
-            // Shade hits
-            ShadeSurface(scene, pass, num_estimates, output, use_output_indices);
-
             // Shade missing rays
             if (pass == 0)
             {
@@ -259,6 +260,32 @@ namespace Baikal
                     ShadeBackground(scene, 0, num_estimates, output, use_output_indices);
                 else
                     AdvanceIterationCount(0, num_estimates, output, use_output_indices);
+            }
+
+            if (has_some_volume)
+            {
+                // Shade hits
+                ShadeVolume(scene, pass, num_estimates, output, use_output_indices);
+            }
+
+            // Shade hits
+            ShadeSurface(scene, pass, num_estimates, output, use_output_indices);
+
+
+            if (has_some_volume && GetMaxShadowRayTransmissionSteps() > 0)
+            {
+                for (auto i = 0u; i < GetMaxShadowRayTransmissionSteps(); ++i)
+                {
+                    // Intersect ray batch
+                    GetIntersector()->QueryIntersection(m_render_data->fr_shadowrays,
+                                                        m_render_data->fr_hitcount,
+                                                        (std::uint32_t)num_estimates,
+                                                        m_render_data->fr_intersections,
+                                                        nullptr,
+                                                        nullptr);
+
+                    ApplyVolumeTransmission(scene, pass, num_estimates, output, use_output_indices);
+                }
             }
 
             // Intersect shadow rays
@@ -286,7 +313,7 @@ namespace Baikal
         ++m_sample_counter;
     }
 
-    void PathTracingEstimator::InitPathData(std::size_t size)
+    void PathTracingEstimator::InitPathData(std::size_t size, int volume_idx)
     {
         auto init_kernel = GetKernel("InitPathData");
 
@@ -294,6 +321,7 @@ namespace Baikal
         init_kernel.SetArg(argc++, m_render_data->pixelindices[0]);
         init_kernel.SetArg(argc++, m_render_data->pixelindices[1]);
         init_kernel.SetArg(argc++, m_render_data->hitcount);
+        init_kernel.SetArg(argc++, (cl_int)volume_idx);
         init_kernel.SetArg(argc++, m_render_data->paths);
 
         {
@@ -404,7 +432,7 @@ namespace Baikal
         }
     }
 
-    void PathTracingEstimator::EvaluateVolume(
+    void PathTracingEstimator::SampleVolume(
         ClwScene const& scene,
         int pass,
         std::size_t size,
@@ -413,31 +441,31 @@ namespace Baikal
     )
     {
         // Fetch kernel
-        auto evalkernel = GetKernel("EvaluateVolume");
+        auto sample_kernel = GetKernel("SampleVolume");
 
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
         // Set kernel parameters
         int argc = 0;
-        evalkernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
-        evalkernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
-        evalkernel.SetArg(argc++, output_indices);
-        evalkernel.SetArg(argc++, m_render_data->hitcount);
-        evalkernel.SetArg(argc++, scene.volumes);
-        evalkernel.SetArg(argc++, scene.textures);
-        evalkernel.SetArg(argc++, scene.texturedata);
-        evalkernel.SetArg(argc++, rand_uint());
-        evalkernel.SetArg(argc++, m_render_data->random);
-        evalkernel.SetArg(argc++, m_render_data->sobolmat);
-        evalkernel.SetArg(argc++, pass);
-        evalkernel.SetArg(argc++, m_sample_counter);
-        evalkernel.SetArg(argc++, m_render_data->intersections);
-        evalkernel.SetArg(argc++, m_render_data->paths);
-        evalkernel.SetArg(argc++, output);
+        sample_kernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
+        sample_kernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        sample_kernel.SetArg(argc++, output_indices);
+        sample_kernel.SetArg(argc++, m_render_data->hitcount);
+        sample_kernel.SetArg(argc++, scene.volumes);
+        sample_kernel.SetArg(argc++, scene.textures);
+        sample_kernel.SetArg(argc++, scene.texturedata);
+        sample_kernel.SetArg(argc++, rand_uint());
+        sample_kernel.SetArg(argc++, m_render_data->random);
+        sample_kernel.SetArg(argc++, m_render_data->sobolmat);
+        sample_kernel.SetArg(argc++, pass);
+        sample_kernel.SetArg(argc++, m_sample_counter);
+        sample_kernel.SetArg(argc++, m_render_data->intersections);
+        sample_kernel.SetArg(argc++, m_render_data->paths);
+        sample_kernel.SetArg(argc++, output);
 
         // Run shading kernel
         {
-            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, evalkernel);
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, sample_kernel);
         }
     }
 
@@ -500,6 +528,44 @@ namespace Baikal
         // Run shading kernel
         {
             GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, gatherkernel);
+        }
+    }
+
+    void PathTracingEstimator::ApplyVolumeTransmission(
+        ClwScene const& scene,
+        int pass,
+        std::size_t size,
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
+    )
+    {
+        // Fetch kernel
+        auto volumekernel = GetKernel("ApplyVolumeTransmission");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
+        // Set kernel parameters
+        int argc = 0;
+        volumekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
+        volumekernel.SetArg(argc++, output_indices);
+        volumekernel.SetArg(argc++, m_render_data->shadowrays);
+        volumekernel.SetArg(argc++, m_render_data->hitcount);
+        volumekernel.SetArg(argc++, m_render_data->intersections);
+        volumekernel.SetArg(argc++, m_render_data->paths);
+        volumekernel.SetArg(argc++, scene.vertices);
+        volumekernel.SetArg(argc++, scene.normals);
+        volumekernel.SetArg(argc++, scene.uvs);
+        volumekernel.SetArg(argc++, scene.indices);
+        volumekernel.SetArg(argc++, scene.shapes);
+        volumekernel.SetArg(argc++, scene.materials);
+        volumekernel.SetArg(argc++, scene.volumes);
+        volumekernel.SetArg(argc++, m_render_data->lightsamples);
+        volumekernel.SetArg(argc++, m_render_data->shadowhits);
+        volumekernel.SetArg(argc++, output);
+
+        // Run shading kernel
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, volumekernel);
         }
     }
 

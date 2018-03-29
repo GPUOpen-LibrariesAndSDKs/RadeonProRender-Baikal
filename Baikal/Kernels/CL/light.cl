@@ -400,7 +400,7 @@ float3 DirectionalLight_Sample(// Emissive object
     // PDF
     float* pdf)
 {
-    *wo = 100000.f * -light->d;
+    *wo = CRAZY_HIGH_DISTANCE * -light->d;
     *pdf = 1.f;
     return light->intensity;
 }

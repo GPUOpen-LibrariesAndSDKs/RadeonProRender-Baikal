@@ -328,7 +328,7 @@ namespace Baikal
         m_api->Commit();
     }
 
-    void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
+    void ClwSceneController::UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const
     {
         // TODO: support different camera types here
         auto camera = scene.GetCamera();
@@ -368,6 +368,9 @@ namespace Baikal
 
         // Unmap camera buffer
         m_context.UnmapBuffer(0, out.camera, data);
+
+        // Update volume index
+        out.camera_volume_index = GetVolumeIndex(vol_collector, camera->GetVolume());
     }
 
     void ClwSceneController::UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const
@@ -766,6 +769,9 @@ namespace Baikal
 
         // Unmap serial buffer
         m_context.UnmapBuffer(0, out.volumes, volumes);
+
+        // Update number of volumes
+        out.num_volumes = num_volumes_copied;
     }
 
     void ClwSceneController::ReloadIntersector(Scene1 const& scene, ClwScene& inout) const

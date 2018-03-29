@@ -32,6 +32,7 @@
 #include "math/float2.h"
 
 #include "scene_object.h"
+#include "material.h"
 
 namespace Baikal
 {
@@ -77,7 +78,11 @@ namespace Baikal
         // This distinguishes APC-S vs full-frame, etc
         void SetSensorSize(RadeonRays::float2 const& size);
         RadeonRays::float2 GetSensorSize() const;
-        
+
+        // Get/Set camera volume index
+        void SetVolume(VolumeMaterial::Ptr shape);
+        VolumeMaterial::Ptr GetVolume() const;
+
     protected:
         // Rotate camera around world Z axis
         void Rotate(RadeonRays::float3, float angle);
@@ -99,6 +104,9 @@ namespace Baikal
         
         // Near and far Z
         RadeonRays::float2 m_zcap;
+
+        // Volume index
+        VolumeMaterial::Ptr m_volume;
     };
     
     class OrthographicCamera : public Camera
@@ -221,5 +229,17 @@ namespace Baikal
     {
         return m_zcap;
     }
+
+    inline void Camera::SetVolume(VolumeMaterial::Ptr volume)
+    {
+        m_volume = volume;
+        SetDirty(true);
+    }
     
+
+    inline VolumeMaterial::Ptr Camera::GetVolume() const
+    {
+        return m_volume;
+    }
+
 }

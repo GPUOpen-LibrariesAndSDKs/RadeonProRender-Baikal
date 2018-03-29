@@ -28,6 +28,15 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/bxdf.cl>
 
+
+bool Material_IsTransmissive(GLOBAL Material const* material)
+{
+    return material->type == kPassthrough ||
+        material->type == kTranslucent ||
+        material->type == kMicrofacetRefractionGGX ||
+        material->type == kMicrofacetRefractionBeckmann;
+}
+
 void Material_Select(
     // Scene data
     Scene const* scene,

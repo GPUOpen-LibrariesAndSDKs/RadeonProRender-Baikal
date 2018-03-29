@@ -33,7 +33,8 @@ namespace Baikal
 {
     using namespace RadeonRays;
     
-    Camera::Camera(float3 const& eye, float3 const& at, float3 const& up)
+    Camera::Camera(float3 const& eye, float3 const& at, float3 const& up) 
+        : m_volume(nullptr)
     {
         LookAt(eye, at, up);
     }
