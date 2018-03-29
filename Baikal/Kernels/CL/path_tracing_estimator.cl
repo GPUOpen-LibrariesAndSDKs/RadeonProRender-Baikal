@@ -42,7 +42,7 @@ KERNEL
 void InitPathData(
     GLOBAL int const* restrict src_index,
     GLOBAL int* restrict dst_index,
-    GLOBAL int const* restrict num_elements,
+    GLOBAL int const* restrict num_elements, 
     int world_volume_idx,
     GLOBAL Path* restrict paths
 )
@@ -192,7 +192,7 @@ KERNEL void ShadeVolume(
         dg.p = o - wi * Intersection_GetDistance(isects + hit_idx);
         // Get light sample intencity
         int bxdf_flags = Path_GetBxdfFlags(path); 
-        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &wo, &pdf);
+        float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, kLightInteractionVolume, &wo, &pdf);
 
         // Generate shadow ray
         float shadow_ray_length = length(wo); 
@@ -477,7 +477,7 @@ KERNEL void ShadeSurface(
         {
             // Sample light
             int bxdf_flags = Path_GetBxdfFlags(path);
-            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, &lightwo, &light_pdf);
+            float3 le = Light_Sample(light_idx, &scene, &diffgeo, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, kLightInteractionSurface, &lightwo, &light_pdf);
 #ifdef ENABLE_UBERV2
             light_bxdf_pdf = Bxdf_GetPdf(&diffgeo, wi, normalize(lightwo), TEXTURE_ARGS, &uber_shader_data);
 #else
@@ -961,7 +961,7 @@ KERNEL void ShadeMiss(
             // Apply MIS
             int bxdf_flags = Path_GetBxdfFlags(path);
             float selection_pdf = Distribution1D_GetPdfDiscreet(env_light_idx, light_distribution);
-            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, bxdf_flags, rays[global_id].d.xyz, TEXTURE_ARGS);
+            float light_pdf = EnvironmentLight_GetPdf(&light, 0, 0, bxdf_flags, kLightInteractionSurface, rays[global_id].d.xyz, TEXTURE_ARGS);
             float2 extra = Ray_GetExtra(&rays[global_id]);
             float weight = extra.x > 0.f ? BalanceHeuristic(1, extra.x, 1, light_pdf * selection_pdf) : 1.f;
 
