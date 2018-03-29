@@ -1081,6 +1081,8 @@ namespace Baikal
                     MaterialSettings volume_settings;
                     volume_settings.id = m_current_shape_id;
                     m_volume_settings.push_back(volume_settings);
+
+                    is_scene_changed = true;
                 }
 
                 ImGui::Separator();
@@ -1109,6 +1111,12 @@ namespace Baikal
                             auto result = ReadFloatInput(volume, *volume_settings, i, "volume");
                             is_scene_changed = is_scene_changed ? is_scene_changed : result;
                         }
+                    }
+
+                    if (ImGui::Button("Make world volume"))
+                    {
+                        m_cl->GetCamera()->SetVolume(volume);
+                        is_scene_changed = true;
                     }
                 }
 

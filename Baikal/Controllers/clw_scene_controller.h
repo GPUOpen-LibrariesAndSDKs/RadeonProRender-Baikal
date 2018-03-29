@@ -71,7 +71,7 @@ namespace Baikal
 
     public:
         // Update camera data only.
-        void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
+        void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const override;
         // Update shape data only.
         void UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const override;
         // Update transform data only

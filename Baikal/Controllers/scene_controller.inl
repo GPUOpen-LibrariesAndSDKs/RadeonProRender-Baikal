@@ -360,7 +360,7 @@ namespace Baikal
             // Update camera if needed
             if (dirty & Scene1::kCamera || camera_changed)
             {
-                UpdateCamera(*scene, m_material_collector, m_texture_collector, out);
+                UpdateCamera(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
                 DropCameraDirty(*scene);
             }
 
@@ -518,7 +518,7 @@ namespace Baikal
         Scene1 const& scene, Collector& m_material_collector, Collector& m_texture_collector, Collector& vol_collector,
         Collector& input_maps_collector, Collector& input_map_leafs_collector, CompiledScene& out) const
     {
-        UpdateCamera(scene, m_material_collector, m_texture_collector, out);
+        UpdateCamera(scene, m_material_collector, m_texture_collector, m_volume_collector, out);
         DropCameraDirty(scene);
 
         UpdateLights(scene, m_material_collector, m_texture_collector, out);
