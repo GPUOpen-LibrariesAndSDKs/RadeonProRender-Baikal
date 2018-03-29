@@ -77,7 +77,11 @@ namespace Baikal
         // This distinguishes APC-S vs full-frame, etc
         void SetSensorSize(RadeonRays::float2 const& size);
         RadeonRays::float2 GetSensorSize() const;
-        
+
+        // Get/Set camera volume index
+        void SetVolumeIndex(int volume_index);
+        int GetVolumeIndex() const;
+
     protected:
         // Rotate camera around world Z axis
         void Rotate(RadeonRays::float3, float angle);
@@ -99,6 +103,9 @@ namespace Baikal
         
         // Near and far Z
         RadeonRays::float2 m_zcap;
+
+        // Volume index
+        int m_volume_index;
     };
     
     class OrthographicCamera : public Camera
@@ -221,5 +228,17 @@ namespace Baikal
     {
         return m_zcap;
     }
+
+    inline void Camera::SetVolumeIndex(int volume_index)
+    {
+        m_volume_index = volume_index;
+        SetDirty(true);
+    }
     
+
+    inline int Camera::GetVolumeIndex() const
+    {
+        return m_volume_index;
+    }
+
 }

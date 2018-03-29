@@ -368,6 +368,9 @@ namespace Baikal
 
         // Unmap camera buffer
         m_context.UnmapBuffer(0, out.camera, data);
+
+        // Update volume index
+        out.camera_volume_index = camera->GetVolumeIndex();
     }
 
     void ClwSceneController::UpdateShapes(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const

@@ -144,7 +144,7 @@ INLINE void Scene_InterpolateVerticesFromIntersection(Scene const* scene, Inters
     // Extract shape data
     int shape_idx = isect->shapeid - 1;
     int prim_idx = isect->primid;
-    float2 barycentrics = isect->uvwt.w;
+    float2 barycentrics = isect->uvwt.xy;
 
     Shape shape = scene->shapes[shape_idx];
 
@@ -168,7 +168,7 @@ INLINE void Scene_InterpolateNormalsFromIntersection(Scene const* scene, Interse
     // Extract shape data
     int shape_idx = isect->shapeid - 1;
     int prim_idx = isect->primid;
-    float2 barycentrics = isect->uvwt.w;
+    float2 barycentrics = isect->uvwt.xy;
 
     Shape shape = scene->shapes[shape_idx];
 

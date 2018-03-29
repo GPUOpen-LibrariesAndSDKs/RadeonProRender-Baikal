@@ -186,7 +186,7 @@ namespace Baikal
         bool SupportsIntermediateValue(IntermediateValue value) const override;
 
     private:
-        void InitPathData(std::size_t size);
+        void InitPathData(std::size_t size, int volume_idx);
 
         void ShadeSurface(
             ClwScene const& scene,

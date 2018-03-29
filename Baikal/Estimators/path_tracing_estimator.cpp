@@ -188,7 +188,7 @@ namespace Baikal
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
         auto visibility_buffer = GetIntermediateValueBuffer(IntermediateValue::kVisibility);
 
-        InitPathData(num_estimates);
+        InitPathData(num_estimates, scene.camera_volume_index);
 
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[1], 0, 0, num_estimates);
@@ -213,6 +213,7 @@ namespace Baikal
                 nullptr,
                 nullptr
             );
+
 
             // Apply scattering only if we have volumes
             bool has_some_volume = scene.num_volumes > 0;
@@ -270,19 +271,18 @@ namespace Baikal
             // Shade hits
             ShadeSurface(scene, pass, num_estimates, output, use_output_indices);
 
+
             if (has_some_volume && GetMaxShadowRayTransmissionSteps() > 0)
             {
                 for (auto i = 0u; i < GetMaxShadowRayTransmissionSteps(); ++i)
                 {
                     // Intersect ray batch
-                    GetIntersector()->QueryIntersection(
-                        m_render_data->fr_shadowrays,
-                        m_render_data->fr_hitcount,
-                        (std::uint32_t)num_estimates,
-                        m_render_data->fr_intersections,
-                        nullptr,
-                        nullptr
-                    );
+                    GetIntersector()->QueryIntersection(m_render_data->fr_shadowrays,
+                                                        m_render_data->fr_hitcount,
+                                                        (std::uint32_t)num_estimates,
+                                                        m_render_data->fr_intersections,
+                                                        nullptr,
+                                                        nullptr);
 
                     ApplyVolumeTransmission(scene, pass, num_estimates, output, use_output_indices);
                 }
@@ -313,7 +313,7 @@ namespace Baikal
         ++m_sample_counter;
     }
 
-    void PathTracingEstimator::InitPathData(std::size_t size)
+    void PathTracingEstimator::InitPathData(std::size_t size, int volume_idx)
     {
         auto init_kernel = GetKernel("InitPathData");
 
@@ -321,6 +321,7 @@ namespace Baikal
         init_kernel.SetArg(argc++, m_render_data->pixelindices[0]);
         init_kernel.SetArg(argc++, m_render_data->pixelindices[1]);
         init_kernel.SetArg(argc++, m_render_data->hitcount);
+        init_kernel.SetArg(argc++, (cl_int)volume_idx);
         init_kernel.SetArg(argc++, m_render_data->paths);
 
         {

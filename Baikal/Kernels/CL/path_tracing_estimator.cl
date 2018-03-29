@@ -43,6 +43,7 @@ void InitPathData(
     GLOBAL int const* restrict src_index,
     GLOBAL int* restrict dst_index,
     GLOBAL int const* restrict num_elements,
+    int world_volume_idx,
     GLOBAL Path* restrict paths
 )
 {
@@ -56,7 +57,7 @@ void InitPathData(
 
         // Initalize path data
         my_path->throughput = make_float3(1.f, 1.f, 1.f);
-        my_path->volume = INVALID_IDX;
+        my_path->volume = world_volume_idx;
         my_path->flags = 0;
         my_path->active = 0xFF;
     }
@@ -495,15 +496,6 @@ KERNEL void ShadeSurface(
                 radiance = le * ndotwo * Bxdf_Evaluate(&diffgeo, wi, normalize(wo), TEXTURE_ARGS) * throughput * light_weight / light_pdf / selection_pdf;
 #endif
             }
-
-            // Apply the volume to shadow ray if needed
-            //int volume_idx = Path_GetVolumeIdx(path);
-            //if (volume_idx != -1)
-            //{
-                //float3 tr = Volume_Transmittance(&volumes[volume_idx], &shadow_rays[global_id], length(wo));
-                //radiance *= tr;
-                //radiance += throughput * tr * Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], length(wo));
-            //}
         }
 
         // If we have some light here generate a shadow ray
@@ -518,14 +510,6 @@ KERNEL void ShadeSurface(
 
             Ray_Init(shadow_rays + global_id, shadow_ray_o, shadow_ray_dir, shadow_ray_length, 0.f, shadow_ray_mask);
             Ray_SetExtra(shadow_rays + global_id, make_float2(1.f, 0.f));
-
-            // Apply the volume to shadow ray if needed
-            //int volume_idx = Path_GetVolumeIdx(path);
-            //if (volume_idx != -1)
-            //{
-                //radiance *= Volume_Transmittance(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length);
-                //radiance += Volume_Emission(&volumes[volume_idx], &shadow_rays[global_id], shadow_ray_length) * throughput;
-            //}
 
             light_samples[global_id] = REASONABLE_RADIANCE(radiance);
         }
@@ -716,13 +700,14 @@ KERNEL void ApplyVolumeTransmission(
     // Shadow predicates
     GLOBAL int* restrict shadow_hits,
     // Radiance sample buffer
-    GLOBAL float4* restrict output
-)
+    GLOBAL float4* restrict output)
 {
     int global_id = get_global_id(0);
 
     if (global_id < *num_rays)
     {
+        int pixel_idx = pixel_indices[global_id];
+
         // Ray might be inactive, in this case we just 
         // fail an intersection test, nothing has been added for this ray.
         if (Ray_IsActive(&shadow_rays[global_id]))
@@ -805,7 +790,9 @@ KERNEL void ApplyVolumeTransmission(
                 // TODO: this goes directly to output, not affected by a shadow ray, fix me
                 if (length(emission) > 0.f)
                 {
-                    output[output_indices[pixel_idx]].xyz += Path_GetThroughput(path) * emission * tr * shadow_ray_throughput;
+                    int output_index = output_indices[pixel_idx];
+                    float3 v = Path_GetThroughput(path) * emission * tr * shadow_ray_throughput;
+                    ADD_FLOAT3(&output[output_index], v);
                 }
 
                 shadow_rays[global_id].o.xyz = p;
@@ -816,7 +803,6 @@ KERNEL void ApplyVolumeTransmission(
             }
             else
             {
-
                 float3 old_target = shadow_ray.o.xyz + (shadow_ray.o.w) * shadow_ray.d.xyz;
                 float3 p = shadow_ray.o.xyz + (t + CRAZY_LOW_DISTANCE) * shadow_ray.d.xyz;
 

@@ -51,6 +51,7 @@ namespace Baikal
         int num_volumes;
         int envmapidx;
         int background_idx;
+        int camera_volume_index;
         CameraType camera_type;
 
         std::vector<RadeonRays::Shape*> isect_shapes;
