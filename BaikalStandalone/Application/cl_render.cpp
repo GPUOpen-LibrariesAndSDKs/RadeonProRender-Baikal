@@ -172,26 +172,7 @@ namespace Baikal
         std::string filename = basepath + settings.modelname;
 
         {
-            // Load OBJ scene
-            /*bool is_fbx = filename.find(".fbx") != std::string::npos;
-            bool is_gltf = filename.find(".gltf") != std::string::npos;
-            std::unique_ptr<Baikal::SceneIo> scene_io;
-            if (is_gltf)
-            {
-                assert(!"glTF loading not supported");
-            }
-            else if(is_fbx)
-            {
-                assert(!"FBX loading not supported");
-            }
-            else
-            {
-                scene_io = Baikal::SceneIo::CreateSceneIoObj();
-            }
-            auto scene_io1 = Baikal::SceneIo::CreateSceneIoTest();*/
             m_scene = Baikal::SceneIo::LoadScene(filename, basepath);
-            //m_scene = scene_io1->LoadScene(/*"uberv2_test_spheres"*/"shere+plane_uberv2+ibl+normalmap", basepath);
-
             // Enable this to generate new materal mapping for a model
 #if 0
             auto material_io{Baikal::MaterialIo::CreateMaterialIoXML()};
