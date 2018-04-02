@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "SceneGraph/light.h"
 #include "SceneGraph/shape.h"
 #include "SceneGraph/material.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>

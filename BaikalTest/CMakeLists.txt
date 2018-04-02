@@ -13,6 +13,6 @@ set(SOURCES
 add_executable(BaikalTest ${SOURCES})
 target_compile_features(BaikalTest PRIVATE cxx_std_14)
 target_include_directories(BaikalTest PRIVATE .)
-target_link_libraries(BaikalTest PRIVATE Baikal GTest)
+target_link_libraries(BaikalTest PRIVATE Baikal BaikalIO GTest)
 set_target_properties(BaikalTest
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalTest)

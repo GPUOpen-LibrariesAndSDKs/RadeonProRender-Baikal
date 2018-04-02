@@ -1,5 +1,5 @@
 #include "image_io.h"
-#include "../texture.h"
+#include "SceneGraph/texture.h"
 
 #include "OpenImageIO/imageio.h"
 

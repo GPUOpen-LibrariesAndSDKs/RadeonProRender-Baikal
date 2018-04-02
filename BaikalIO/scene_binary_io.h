@@ -29,7 +29,7 @@ THE SOFTWARE.
 namespace Baikal
 {
     // Create fake test IO
-    class SceneBinaryIo : public SceneIo
+    class SceneBinaryIo : public SceneIo::Loader
     {
     public:
         SceneBinaryIo() = default;
