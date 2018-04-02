@@ -39,8 +39,7 @@ protected:
 
     void LoadTestScene() override
     {
-        auto io = Baikal::SceneIo::CreateSceneIoTest();
-        m_scene = io->LoadScene("sphere+plane+ibl", "");
+        m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
     }
 
     void MaterialTestHelperFunction(
