@@ -13,6 +13,9 @@
 
 namespace Baikal
 {
+    // Create static object to register loader. This object will be used as loader
+    static SceneBinaryIo scene_binary_io_loader;
+
     Scene1::Ptr SceneBinaryIo::LoadScene(std::string const& filename, std::string const& basepath) const
     {
         auto scene = Scene1::Create();

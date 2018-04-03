@@ -26,6 +26,8 @@ namespace Baikal
         SceneIoTest() : SceneIo::Loader("test", this)
         {}
     };
+
+    // Create static object to register loader. This object will be used as loader
     static SceneIoTest scene_io_test_loader;
 
     // Create spehere mesh

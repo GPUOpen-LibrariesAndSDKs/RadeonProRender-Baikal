@@ -60,6 +60,7 @@ namespace Baikal
         mutable std::map<std::string, Material::Ptr> m_material_cache;
     };
 
+    // Create static object to register loader. This object will be used as loader
     static SceneIoObj obj_loader;
 
 
