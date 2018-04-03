@@ -121,7 +121,10 @@ set(KERNELS_SOURCES
     Kernels/CL/utils.cl
     Kernels/CL/vertex.cl
     Kernels/CL/volumetrics.cl
-    Kernels/CL/wavelet_denoise.cl)
+    Kernels/CL/wavelet_denoise.cl
+    Kernels/CL/path_tracing_estimator_uberv2.cl
+    Kernels/CL/fill_aovs_uberv2.cl
+    )
 
 set(SOURCES
     ${CONTROLLERS_SOURCES}

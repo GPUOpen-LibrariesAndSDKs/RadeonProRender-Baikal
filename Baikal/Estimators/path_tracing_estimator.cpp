@@ -87,6 +87,7 @@ namespace Baikal
         , Estimator(api)
         , m_sample_counter(0)
         , m_render_data(new RenderData)
+        , m_uberv2_kernels(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator_uberv2.cl", "")
     {
         // Create parallel primitives
         m_render_data->pp = CLWParallelPrimitives(context, GetFullBuildOpts().c_str());
@@ -338,7 +339,7 @@ namespace Baikal
     )
     {
         // Fetch kernel
-        auto shadekernel = GetKernel("ShadeSurface");
+        auto shadekernel = m_uberv2_kernels.GetKernel("ShadeSurfaceUberV2");
 
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
@@ -390,7 +391,7 @@ namespace Baikal
     )
     {
         // Fetch kernel
-        auto shadekernel = GetKernel("ShadeVolume");
+        auto shadekernel = m_uberv2_kernels.GetKernel("ShadeVolumeUberV2");
 
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
