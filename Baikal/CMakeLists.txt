@@ -17,7 +17,9 @@ set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
     PostEffects/post_effect.h
     PostEffects/bilateral_denoiser.h
-    PostEffects/wavelet_denoiser.h)
+    PostEffects/wavelet_denoiser.h
+    PostEffects/AreaMap33.h
+    )
     
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp

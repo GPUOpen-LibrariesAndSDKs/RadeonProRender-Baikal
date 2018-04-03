@@ -32,7 +32,7 @@ namespace Baikal
     class SceneBinaryIo : public SceneIo::Loader
     {
     public:
-        SceneBinaryIo() : SceneIo::Loader(".bin", this)
+        SceneBinaryIo() : SceneIo::Loader("bin", this)
         {}
         // Load scene (this class uses filename to determine what scene to generate)
         Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath) const override;

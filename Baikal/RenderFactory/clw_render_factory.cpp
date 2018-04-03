@@ -5,7 +5,7 @@
 #include "Renderers/adaptive_renderer.h"
 #include "Estimators/path_tracing_estimator.h"
 
-#ifdef BAIKAL_ENABLE_DENOISER
+#ifdef ENABLE_DENOISER
 #include "PostEffects/bilateral_denoiser.h"
 #include "PostEffects/wavelet_denoiser.h"
 #endif
@@ -60,7 +60,7 @@ namespace Baikal
     {
         switch (type)
         {
-#ifdef BAIKAL_ENABLE_DENOISER
+#ifdef ENABLE_DENOISER
             case PostEffectType::kBilateralDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new BilateralDenoiser(m_context, &m_program_manager));

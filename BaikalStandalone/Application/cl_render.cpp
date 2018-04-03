@@ -39,7 +39,7 @@ THE SOFTWARE.
 #include <thread>
 #include <chrono>
 
-#ifdef BAIKAL_ENABLE_DENOISER
+#ifdef ENABLE_DENOISER
 #include "PostEffects/wavelet_denoiser.h"
 #endif
 #include "Utils/clw_class.h"
