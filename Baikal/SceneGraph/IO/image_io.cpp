@@ -50,25 +50,26 @@ namespace Baikal
         ImageSpec const& spec = input->spec();
         
         auto fmt = GetTextureFormat(spec);
-        char* texturedata = nullptr;
+        std::unique_ptr<char[]> texture_data = nullptr;
+
 
         if (fmt == Texture::Format::kRgba8)
         {
             auto size = spec.width * spec.height * spec.depth * 4;
-            
-            texturedata = new char[size];
+
+            texture_data.reset(new char[size]);
 
             // Read data to storage
-            input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
+            input->read_image(TypeDesc::UINT8, texture_data.get(), sizeof(char) * 4);
 
             if (spec.nchannels == 1)
             {
                 // set B, G and A components to 
-                for (auto i = 0u; i < size; i += 4)
+                for (auto i = 0; i < size; i += 4)
                 {
-                    texturedata[i + 1] = texturedata[i];
-                    texturedata[i + 2] = texturedata[i];
-                    texturedata[i + 3] = texturedata[i];
+                    texture_data.get()[i + 1] = texture_data.get()[i];
+                    texture_data.get()[i + 2] = texture_data.get()[i];
+                    texture_data.get()[i + 3] = texture_data.get()[i];
                 }
 
             }
@@ -81,10 +82,10 @@ namespace Baikal
             auto size = spec.width * spec.height * spec.depth * sizeof(float) * 2;
             
             // Resize storage
-            texturedata = new char[size];
+            texture_data.reset(new char[size]);
             
             // Read data to storage
-            input->read_image(TypeDesc::HALF, texturedata, sizeof(float) * 2);
+            input->read_image(TypeDesc::HALF, texture_data.get(), sizeof(float) * 2);
             
             // Close handle
             input->close();
@@ -94,17 +95,17 @@ namespace Baikal
             auto size = spec.width * spec.height * spec.depth * sizeof(RadeonRays::float3);
 
             // Resize storage
-            texturedata = new char[size];
+            texture_data.reset(new char[size]);
 
             // Read data to storage
-            input->read_image(TypeDesc::FLOAT, texturedata, sizeof(RadeonRays::float3));
+            input->read_image(TypeDesc::FLOAT, texture_data.get(), sizeof(RadeonRays::float3));
 
             // Close handle
             input->close();
         }
 
         //
-        return Texture::Create(texturedata, RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
+        return Texture::Create(texture_data.get(), RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
     }
 
     void Oiio::SaveImage(std::string const& filename, Texture::Ptr texture) const
