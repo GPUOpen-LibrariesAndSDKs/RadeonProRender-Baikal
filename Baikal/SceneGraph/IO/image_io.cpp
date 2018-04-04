@@ -46,66 +46,76 @@ namespace Baikal
         {
             throw std::runtime_error("Can't load " + filename + " image");
         }
-        
-        ImageSpec const& spec = input->spec();
-        
+
+        ImageSpec spec = input->spec();
         auto fmt = GetTextureFormat(spec);
-        std::unique_ptr<char[]> texture_data = nullptr;
 
+        int texture_data_size = 0;
+        int mip_level = 0;
 
-        if (fmt == Texture::Format::kRgba8)
+        // first pass through mipmap levels to find necessary size for texture buffer (holds all mipmap levels)
+        while (input->seek_subimage(0, mip_level, spec))
         {
-            auto size = spec.width * spec.height * spec.depth * 4;
+            if (fmt == Texture::Format::kRgba8)
+                texture_data_size += spec.width * spec.height * spec.depth * 4;
+            else if (fmt == Texture::Format::kRgba16)
+                texture_data_size  += spec.width * spec.height * spec.depth * sizeof(float) * 2;
+            else
+                texture_data_size += spec.width * spec.height * spec.depth * sizeof(RadeonRays::float3);
 
-            texture_data.reset(new char[size]);
+            mip_level++;
+        }
+        
+        std::unique_ptr<char[]> texture_data (new char[texture_data_size]);
+        auto data_inplace = texture_data.get();
 
-            // Read data to storage
-            input->read_image(TypeDesc::UINT8, texture_data.get(), sizeof(char) * 4);
-
-            if (spec.nchannels == 1)
+        // second pass through mipmap to copy image data from mipmap levels
+        mip_level = 0; // reset counter to zero
+        while (input->seek_subimage(0, mip_level, spec))
+        {
+            int size = 0;
+            if (fmt == Texture::Format::kRgba8)
             {
-                // set B, G and A components to 
-                for (auto i = 0; i < size; i += 4)
+                size = spec.width * spec.height * spec.depth * 4;
+
+                // Read data to storage
+                input->read_image(TypeDesc::UINT8, data_inplace, sizeof(char) * 4);
+
+                if (spec.nchannels == 1)
                 {
-                    texture_data.get()[i + 1] = texture_data.get()[i];
-                    texture_data.get()[i + 2] = texture_data.get()[i];
-                    texture_data.get()[i + 3] = texture_data.get()[i];
+                    // set B, G and A components to R component value
+                    for (auto i = 0; i < size; i += 4)
+                    {
+                        data_inplace[i + 1] = data_inplace[i];
+                        data_inplace[i + 2] = data_inplace[i];
+                        data_inplace[i + 3] = data_inplace[i];
+                    }
                 }
-
             }
+            else if (fmt == Texture::Format::kRgba16)
+            {
+                size = spec.width * spec.height * spec.depth * sizeof(float) * 2;
 
-            // Close handle
-            input->close();
-        }
-        else if (fmt == Texture::Format::kRgba16)
-        {
-            auto size = spec.width * spec.height * spec.depth * sizeof(float) * 2;
-            
-            // Resize storage
-            texture_data.reset(new char[size]);
-            
-            // Read data to storage
-            input->read_image(TypeDesc::HALF, texture_data.get(), sizeof(float) * 2);
-            
-            // Close handle
-            input->close();
-        }
-        else
-        {
-            auto size = spec.width * spec.height * spec.depth * sizeof(RadeonRays::float3);
+                // Read data to storage
+                input->read_image(TypeDesc::HALF, data_inplace, sizeof(float) * 2);
+            }
+            else
+            {
+                size = spec.width * spec.height * spec.depth * sizeof(RadeonRays::float3);
 
-            // Resize storage
-            texture_data.reset(new char[size]);
-
-            // Read data to storage
-            input->read_image(TypeDesc::FLOAT, texture_data.get(), sizeof(RadeonRays::float3));
-
-            // Close handle
-            input->close();
+                // Read data to storage
+                input->read_image(TypeDesc::FLOAT, data_inplace, sizeof(RadeonRays::float3));
+            }
+            data_inplace += size;
+            mip_level++;
         }
 
-        //
-        return Texture::Create(texture_data.get(), RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
+        // Close handle
+        input->close();
+
+        // FIXME, delete after changing Texture interface
+        spec = input->spec();
+        return Texture::Create(texture_data.release(), RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
     }
 
     void Oiio::SaveImage(std::string const& filename, Texture::Ptr texture) const
