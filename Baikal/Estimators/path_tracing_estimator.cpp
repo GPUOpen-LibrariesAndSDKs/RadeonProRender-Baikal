@@ -356,7 +356,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.uvs);
         shadekernel.SetArg(argc++, scene.indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materials);
+        shadekernel.SetArg(argc++, scene.material_attributes);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
         shadekernel.SetArg(argc++, scene.envmapidx);
@@ -408,7 +408,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.uvs);
         shadekernel.SetArg(argc++, scene.indices);
         shadekernel.SetArg(argc++, scene.shapes);
-        shadekernel.SetArg(argc++, scene.materials);
+        shadekernel.SetArg(argc++, scene.material_attributes);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
         shadekernel.SetArg(argc++, scene.envmapidx);
@@ -541,7 +541,7 @@ namespace Baikal
     )
     {
         // Fetch kernel
-        auto volumekernel = GetKernel("ApplyVolumeTransmission");
+        auto volumekernel = m_uberv2_kernels.GetKernel("ApplyVolumeTransmissionUberV2");
 
         auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
 
@@ -558,7 +558,7 @@ namespace Baikal
         volumekernel.SetArg(argc++, scene.uvs);
         volumekernel.SetArg(argc++, scene.indices);
         volumekernel.SetArg(argc++, scene.shapes);
-        volumekernel.SetArg(argc++, scene.materials);
+        volumekernel.SetArg(argc++, scene.material_attributes);
         volumekernel.SetArg(argc++, scene.volumes);
         volumekernel.SetArg(argc++, m_render_data->lightsamples);
         volumekernel.SetArg(argc++, m_render_data->shadowhits);

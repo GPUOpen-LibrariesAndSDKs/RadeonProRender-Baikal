@@ -99,6 +99,9 @@ namespace Baikal
         // If scene attributes changed
         virtual void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, CompiledScene& out) const = 0;
 
+        // Resolves host material pointer to device offset
+        virtual int32_t ResolveMaterialPtr(Material::Ptr material) const = 0;
+
     private:
         mutable Scene1::Ptr m_current_scene;
         // Scene cache map (CPU scene -> GPU scene mapping)

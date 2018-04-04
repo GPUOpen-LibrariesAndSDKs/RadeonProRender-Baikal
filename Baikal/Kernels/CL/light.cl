@@ -230,11 +230,12 @@ float3 AreaLight_GetLe(// Emissive object
         float3 d = p - dg->p;
         *wo = d;
 
-        int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
-        Material mat = scene->materials[mat_idx];
+        /*int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+        Material mat = scene->materials[mat_idx];*/
 
-        const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
-        return ke;
+        //const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
+        
+        return make_float3(1.0f, 1.0f, 1.f);
     }
     else
     {
@@ -279,11 +280,11 @@ float3 AreaLight_Sample(// Emissive object
 
     *wo = p - dg->p;
 
-    int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+    /*int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
     const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
-
+    */
     float3 v = -normalize(*wo);
 
     float ndotv = dot(n, v);
@@ -293,7 +294,7 @@ float3 AreaLight_Sample(// Emissive object
         float dist2 = dot(*wo, *wo);
         float denom = fabs(ndotv) * area;
         *pdf = denom > 0.f ? dist2 / denom : 0.f;
-        return ke;
+        return 1.f;
     }
     else
     {
@@ -380,11 +381,11 @@ float3 AreaLight_SampleVertex(
     float area;
     Scene_InterpolateAttributes(scene, shapeidx, primidx, uv, p, n, &tx, &area);
 
-    int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
-    Material mat = scene->materials[mat_idx];
+    /*int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
+    Material mat = scene->materials[mat_idx];*/
 
-    const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
-
+    //const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
+    const float3 ke = make_float3(1.0f, 1.0f, 1.0f);
     *wo = Sample_MapToHemisphere(sample1, *n, 1.f);
     *pdf = (1.f / area) * fabs(dot(*n, *wo)) / PI;
 

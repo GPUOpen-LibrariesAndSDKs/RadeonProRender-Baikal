@@ -38,36 +38,62 @@ UberV2ShaderData UberV2PrepareInputs(
     DifferentialGeometry const* dg,
     // Values for input maps
     GLOBAL InputMapData const* restrict input_map_values,
+    // Material attributes
+    GLOBAL int const* restrict material_attributes,
     // Texture args
     TEXTURE_ARG_LIST
 )
 {
     UberV2ShaderData shader_data;
 
-    shader_data.diffuse_color = GetInputMapFloat4(dg->mat.uberv2.diffuse_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.reflection_color = GetInputMapFloat4(dg->mat.uberv2.reflection_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.coating_color = GetInputMapFloat4(dg->mat.uberv2.coating_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.refraction_color = GetInputMapFloat4(dg->mat.uberv2.refraction_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.emission_color = GetInputMapFloat4(dg->mat.uberv2.emission_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.sss_absorption_color = GetInputMapFloat4(dg->mat.uberv2.sss_absorption_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.sss_scatter_color = GetInputMapFloat4(dg->mat.uberv2.sss_scatter_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.sss_subsurface_color = GetInputMapFloat4(dg->mat.uberv2.sss_subsurface_color_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.shading_normal = GetInputMapFloat4(dg->mat.uberv2.shading_normal_input_id, dg, input_map_values, TEXTURE_ARGS);
+    const uint layers = dg->mat.layers;
+    int offset = dg->mat.offset + 1;
 
-    shader_data.reflection_roughness = GetInputMapFloat(dg->mat.uberv2.reflection_roughness_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.reflection_anisotropy = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.reflection_anisotropy_rotation = GetInputMapFloat(dg->mat.uberv2.reflection_anisotropy_rotation_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.reflection_ior = GetInputMapFloat(dg->mat.uberv2.reflection_ior_input_id, dg, input_map_values, TEXTURE_ARGS);
-
-    shader_data.reflection_metalness = GetInputMapFloat(dg->mat.uberv2.reflection_metalness_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.coating_ior = GetInputMapFloat(dg->mat.uberv2.coating_ior_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.refraction_roughness = GetInputMapFloat(dg->mat.uberv2.refraction_roughness_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.refraction_ior = GetInputMapFloat(dg->mat.uberv2.refraction_ior_input_id, dg, input_map_values, TEXTURE_ARGS);
-
-    shader_data.transparency = GetInputMapFloat(dg->mat.uberv2.transparency_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.sss_absorption_distance = GetInputMapFloat(dg->mat.uberv2.sss_absorption_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.sss_scatter_distance = GetInputMapFloat(dg->mat.uberv2.sss_scatter_distance_input_id, dg, input_map_values, TEXTURE_ARGS);
-    shader_data.sss_scatter_direction = GetInputMapFloat(dg->mat.uberv2.sss_scatter_direction_input_id, dg, input_map_values, TEXTURE_ARGS);
+    if ((layers & kCoatingLayer) == kCoatingLayer)
+    {
+        shader_data.coating_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.coating_ior = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kReflectionLayer) == kReflectionLayer)
+    {
+        shader_data.reflection_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.reflection_roughness = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.reflection_anisotropy = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.reflection_anisotropy_rotation = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.reflection_ior = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.reflection_metalness = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kDiffuseLayer) == kDiffuseLayer)
+    {
+        shader_data.diffuse_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kRefractionLayer) == kRefractionLayer)
+    {
+        shader_data.refraction_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.refraction_roughness = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.refraction_ior = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kEmissionLayer) == kEmissionLayer)
+    {
+        shader_data.emission_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kTransparencyLayer) == kTransparencyLayer)
+    {
+        shader_data.transparency = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kShadingNormalLayer) == kShadingNormalLayer)
+    {
+        shader_data.shading_normal = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
+    if ((layers & kSSSLayer) == kSSSLayer)
+    {
+        shader_data.sss_absorption_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.sss_scatter_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.sss_subsurface_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.sss_absorption_distance = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.sss_scatter_distance = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+        shader_data.sss_scatter_direction = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
     return shader_data;
 }
 
@@ -124,13 +150,13 @@ void GetMaterialBxDFType(
 )
 {
     int bxdf_flags = 0;
-    if ((dg->mat.uberv2.layers & kEmissionLayer) == kEmissionLayer) // Emissive flag
+    if ((dg->mat.layers & kEmissionLayer) == kEmissionLayer) // Emissive flag
     {
         bxdf_flags = kBxdfFlagsEmissive;
     }
 
     /// Set transparency flag if we have transparency layer and plan to sample it
-    if ((dg->mat.uberv2.layers & kTransparencyLayer) == kTransparencyLayer)
+    if ((dg->mat.layers & kTransparencyLayer) == kTransparencyLayer)
     {
         float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
         if (sample < shader_data->transparency)
@@ -142,7 +168,7 @@ void GetMaterialBxDFType(
         }
     }
 
-    const int bxdf_type = (dg->mat.uberv2.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer | kDiffuseLayer));
+    const int bxdf_type = (dg->mat.layers & (kCoatingLayer | kReflectionLayer | kRefractionLayer | kDiffuseLayer));
     const float ndotwi = dot(dg->n, wi);
 
     /// Check refraction layer. If we have it and plan to sample it - set flags and sampled component
@@ -261,7 +287,7 @@ float3 UberV2_Evaluate(
     UberV2ShaderData const* shader_data
 )
 {
-    int layers = dg->mat.uberv2.layers;
+    int layers = dg->mat.layers;
 
     int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
     int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
@@ -373,7 +399,7 @@ float UberV2_GetPdf(
     UberV2ShaderData const* shader_data
 )
 {
-    const int layers = dg->mat.uberv2.layers;
+    const int layers = dg->mat.layers;
 
     const int fresnel_blend_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer | kRefractionLayer));
     const int brdf_layers = popcount(layers & (kCoatingLayer | kReflectionLayer | kDiffuseLayer));
@@ -510,7 +536,7 @@ void UberV2_ApplyShadingNormal(
     UberV2ShaderData const* shader_data
 )
 {
-    const int layers = dg->mat.uberv2.layers;
+    const int layers = dg->mat.layers;
 
     if ((layers & kShadingNormalLayer) == kShadingNormalLayer)
     {

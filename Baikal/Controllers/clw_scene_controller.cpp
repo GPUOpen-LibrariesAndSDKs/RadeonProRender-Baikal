@@ -498,7 +498,9 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+
             shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
 
             shape_data[mesh] = shape;
@@ -553,7 +555,9 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            shape.material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            shape.material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+
             shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
 
             shape_data[mesh] = shape;
@@ -595,7 +599,9 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            shape.material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            shape.material.offset = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            shape.material.layers = std::static_pointer_cast<UberV2Material>(instance->GetMaterial())->GetLayers();
+
             shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
 
             shapes[num_shapes_written++] = shape;
@@ -642,7 +648,9 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
@@ -661,7 +669,9 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            current_shape->material_idx = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
+            current_shape->material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
@@ -680,7 +690,9 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            current_shape->material_idx = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            current_shape->material.offset = GetMaterialIndex(mat_collector, instance->GetMaterial());
+            current_shape->material.layers = std::static_pointer_cast<UberV2Material>(instance->GetMaterial())->GetLayers();
+
             current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
@@ -699,22 +711,10 @@ namespace Baikal
     void ClwSceneController::UpdateMaterials(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const
     {
         // Get new buffer size
-        std::size_t mat_buffer_size = mat_collector.GetNumItems();
+        std::vector<int> mat_buffer;
+        mat_buffer.reserve(1024 * 1024); //Reserv 1M of ints for material buffer.
 
-        // Recreate material buffer if it needs resize
-        if (mat_buffer_size > out.materials.GetElementCount())
-        {
-            // Create material buffer
-            out.materials = m_context.CreateBuffer<ClwScene::Material>(mat_buffer_size, CL_MEM_READ_ONLY);
-        }
-
-        ClwScene::Material* materials = nullptr;
-        std::size_t num_materials_written = 0;
-
-        // Map GPU materials buffer
-        m_context.MapBuffer(0, out.materials, CL_MAP_WRITE, &materials).Wait();
-
-        // Serialize
+        // Serialize materials
         {
             // Update material bundle first to be able to track differences
             out.material_bundle.reset(mat_collector.CreateBundle());
@@ -725,13 +725,26 @@ namespace Baikal
             // Iterate and serialize
             for (; mat_iter->IsValid(); mat_iter->Next())
             {
-                WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, materials + num_materials_written);
-                ++num_materials_written;
+                WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, mat_buffer);
             }
         }
-        // Unmap material buffer
-        m_context.UnmapBuffer(0, out.materials, materials);
 
+        // Recreate material buffer if it needs resize
+        if (mat_buffer.size() > out.material_attributes.GetElementCount())
+        {
+            // Create material buffer
+            out.material_attributes = m_context.CreateBuffer<int32_t>(mat_buffer.size(), CL_MEM_READ_ONLY);
+        }
+
+        int32_t *materials = nullptr;
+
+        // Map GPU materials buffer
+        m_context.MapBuffer(0, out.material_attributes, CL_MAP_WRITE, &materials).Wait();
+
+        memcpy(materials, mat_buffer.data(), mat_buffer.size() * sizeof(int32_t));
+
+        // Unmap material buffer
+        m_context.UnmapBuffer(0, out.material_attributes, materials);
     }
 
     void ClwSceneController::UpdateVolumes(Scene1 const& scene, Collector& volume_collector, Collector& tex_collector, ClwScene& out) const
@@ -771,7 +784,7 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.volumes, volumes);
 
         // Update number of volumes
-        out.num_volumes = num_volumes_copied;
+        out.num_volumes = static_cast<int>(num_volumes_copied);
     }
 
     void ClwSceneController::ReloadIntersector(Scene1 const& scene, ClwScene& inout) const
@@ -904,440 +917,93 @@ namespace Baikal
         return ClwScene::Bxdf::kZero;
     }
 
-    void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, void* data) const
+    void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<int32_t> &material_data) const
     {
-        auto clw_material = reinterpret_cast<ClwScene::Material*>(data);
-
         // Convert material type and sidedness
         auto type = GetMaterialType(material);
+        assert(type == ClwScene::Bxdf::kUberV2);
 
-        clw_material->type = type;
-        clw_material->thin = material.IsThin() ? 1 : 0;
+        const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
 
-        switch (type)
+        uint32_t layers = uber_material.GetLayers();
+        
+        m_materialid_to_offset[material.GetId()] = static_cast<int>(material_data.size());
+
+        // Pack material parameters
+        int32_t params;
+        params |= ((uber_material.IsLinkRefractionIOR()) ? 1 : 0) << 0;
+        params |= ((uber_material.IsThin()) ? 1 : 0) << 1;
+        params |= ((uber_material.isDoubleSided()) ? 1 : 0) << 2;
+        params |= ((uber_material.IsMultiscatter()) ? 1 : 0) << 3;
+        material_data.push_back(params);
+
+        // Describe order of fields and layers
+        static const std::vector<std::pair<UberV2Material::Layers, std::vector<std::string>>> uberv2_ordered_fields =
         {
-            case ClwScene::Bxdf::kZero:
-            clw_material->simple.kx = RadeonRays::float4();
-            break;
-
-            // We need to convert roughness for the following materials
-            case ClwScene::Bxdf::kMicrofacetGGX:
-            case ClwScene::Bxdf::kMicrofacetBeckmann:
-            case ClwScene::Bxdf::kMicrofacetRefractionGGX:
-            case ClwScene::Bxdf::kMicrofacetRefractionBeckmann:
             {
-                auto value = material.GetInputValue("roughness");
-
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->simple.ns = value.float_value.x;
-                    clw_material->simple.nsmapidx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->simple.nsmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                // Intentionally missing break here
-            }
-
-            // For the rest we need to conver albedo, normal map, fresnel factor, ior
-            case ClwScene::Bxdf::kLambert:
-            case ClwScene::Bxdf::kEmissive:
-            case ClwScene::Bxdf::kPassthrough:
-            case ClwScene::Bxdf::kTranslucent:
-            case ClwScene::Bxdf::kIdealRefract:
-            case ClwScene::Bxdf::kIdealReflect:
+                UberV2Material::Layers::kCoatingLayer,
+                { "uberv2.coating.color", "uberv2.coating.ior"}
+            },
             {
-                auto value = material.GetInputValue("albedo");
-
-                if (value.type == Material::InputType::kFloat4)
+                UberV2Material::Layers::kReflectionLayer,
                 {
-                    clw_material->simple.kx = value.float_value;
-                    clw_material->simple.kxmapidx = -1;
+                    "uberv2.reflection.color",
+                    "uberv2.reflection.roughness",
+                    "uberv2.reflection.anisotropy",
+                    "uberv2.reflection.anisotropy_rotation",
+                    "uberv2.reflection.ior",
+                    "uberv2.reflection.metalness",
                 }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->simple.kxmapidx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("normal");
-
-                if (value.type == Material::InputType::kTexture && value.tex_value)
-                {
-                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
-                    clw_material->bump_flag = 0;
-                }
-                else
-                {
-                    value = material.GetInputValue("bump");
-
-                    if (value.type == Material::InputType::kTexture && value.tex_value)
-                    {
-                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
-                        clw_material->bump_flag = 1;
-                    }
-                    else
-                    {
-                        clw_material->nmapidx = -1;
-                        clw_material->bump_flag = 0;
-                    }
-                }
-
-                value = material.GetInputValue("fresnel");
-
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->simple.fresnel = value.float_value.x > 0 ? 1.f : 0.f;
-                }
-                else
-                {
-                    clw_material->simple.fresnel = 0.f;
-                }
-
-                value = material.GetInputValue("ior");
-
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->simple.ni = value.float_value.x;
-                }
-                else
-                {
-                    clw_material->simple.ni = 1.f;
-                }
-
-                value = material.GetInputValue("roughness");
-
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->simple.ns = value.float_value.x;
-                }
-                else
-                {
-                    clw_material->simple.ns = 0.99f;
-                }
-
-                break;
-            }
-
-            // For compound materials we need to convert dependencies
-            // and weights.
-            case ClwScene::Bxdf::kMix:
-            case ClwScene::Bxdf::kFresnelBlend:
+            },
             {
-                auto value0 = material.GetInputValue("base_material");
-                auto value1 = material.GetInputValue("top_material");
-
-                if (value0.type == Material::InputType::kMaterial &&
-                    value1.type == Material::InputType::kMaterial)
-                {
-                    clw_material->compound.base_brdf_idx = mat_collector.GetItemIndex(value0.mat_value);
-                    clw_material->compound.top_brdf_idx = mat_collector.GetItemIndex(value1.mat_value);
-                }
-                else
-                {
-                    // Should not happen
-                    assert(false);
-                }
-
-                if (type == ClwScene::Bxdf::kMix)
-                {
-                    clw_material->simple.fresnel = 0.f;
-
-                    auto value = material.GetInputValue("weight");
-
-                    if (value.type == Material::InputType::kTexture)
-                    {
-                        clw_material->compound.weight_map_idx = tex_collector.GetItemIndex(value.tex_value);
-                    }
-                    else
-                    {
-                        clw_material->compound.weight_map_idx = -1;
-                        clw_material->compound.weight = value.float_value.x;
-                    }
-                }
-                else
-                {
-                    clw_material->simple.fresnel = 1.f;
-
-                    auto value = material.GetInputValue("ior");
-
-                    if (value.type == Material::InputType::kFloat4)
-                    {
-                        clw_material->compound.weight = value.float_value.x;
-                    }
-                    else
-                    {
-                        // Should not happen
-                        assert(false);
-                    }
-                }
-
-                break;
-            }
-
-            case ClwScene::Bxdf::kDisney:
+                UberV2Material::Layers::kDiffuseLayer,
+                { "uberv2.diffuse.color"}
+            },
             {
-                auto value = material.GetInputValue("albedo");
-
-                if (value.type == Material::InputType::kFloat4)
+                UberV2Material::Layers::kRefractionLayer,
                 {
-                    clw_material->disney.base_color = value.float_value;
-                    clw_material->disney.base_color_map_idx = -1;
+                    "uberv2.refraction.color",
+                    "uberv2.refraction.roughness",
+                    "uberv2.refraction.ior"
                 }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.base_color_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("metallic");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.metallic = value.float_value.x;
-                    clw_material->disney.metallic_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.metallic_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("subsurface");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.subsurface = value.float_value.x;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("specular");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.specular = value.float_value.x;
-                    clw_material->disney.specular_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.specular_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("specular_tint");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.specular_tint = value.float_value.x;
-                    clw_material->disney.specular_tint_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.specular_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("anisotropy");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.anisotropy = value.float_value.x;
-                    clw_material->disney.anisotropy_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.anisotropy_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("sheen");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.sheen = value.float_value.x;
-                    clw_material->disney.sheen_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.sheen_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("sheen_tint");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.sheen_tint = value.float_value.x;
-                    clw_material->disney.sheen_tint_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.sheen_tint_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("clearcoat");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.clearcoat = value.float_value.x;
-                    clw_material->disney.clearcoat_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.clearcoat_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("clearcoat_gloss");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.clearcoat_gloss = value.float_value.x;
-                    clw_material->disney.clearcoat_gloss_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.clearcoat_gloss_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("roughness");
-                if (value.type == Material::InputType::kFloat4)
-                {
-                    clw_material->disney.roughness = value.float_value.x;
-                    clw_material->disney.roughness_map_idx = -1;
-                }
-                else if (value.type == Material::InputType::kTexture)
-                {
-                    clw_material->disney.roughness_map_idx = value.tex_value ? tex_collector.GetItemIndex(value.tex_value) : -1;
-                }
-                else
-                {
-                    // TODO: should not happen
-                    assert(false);
-                }
-
-                value = material.GetInputValue("normal");
-
-                if (value.type == Material::InputType::kTexture && value.tex_value)
-                {
-                    clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
-                    clw_material->bump_flag = 0;
-                }
-                else
-                {
-                    value = material.GetInputValue("bump");
-
-                    if (value.type == Material::InputType::kTexture && value.tex_value)
-                    {
-                        clw_material->nmapidx = tex_collector.GetItemIndex(value.tex_value);
-                        clw_material->bump_flag = 1;
-                    }
-                    else
-                    {
-                        clw_material->nmapidx = -1;
-                        clw_material->bump_flag = 0;
-                    }
-                }
-
-                // Intentionally missing break here
-                break;
-            }
-#ifdef ENABLE_UBERV2
-            case ClwScene::Bxdf::kUberV2:
+            },
             {
-                const std::vector<std::pair<std::string, int*>> input_map =
+                UberV2Material::Layers::kEmissionLayer,
+                { "uberv2.emission.color"}
+            },
+            {
+                UberV2Material::Layers::kTransparencyLayer,
+                { "uberv2.transparency" }
+            },
+            {
+                UberV2Material::Layers::kShadingNormalLayer,
+                { "uberv2.shading_normal" }
+            },
+            {
+                UberV2Material::Layers::kSSSLayer,
                 {
-                    { "uberv2.diffuse.color" , &(clw_material->uberv2.diffuse_color_input_id) },
-                    { "uberv2.reflection.color", &(clw_material->uberv2.reflection_color_input_id) },
-                    { "uberv2.reflection.roughness",  &(clw_material->uberv2.reflection_roughness_input_id) },
-                    { "uberv2.reflection.anisotropy",  &(clw_material->uberv2.reflection_anisotropy_input_id) },
-                    { "uberv2.reflection.anisotropy_rotation",  &(clw_material->uberv2.reflection_anisotropy_rotation_input_id) },
-                    { "uberv2.reflection.ior",  &(clw_material->uberv2.reflection_ior_input_id) },
-                    { "uberv2.reflection.metalness",  &(clw_material->uberv2.reflection_metalness_input_id) },
-                    { "uberv2.coating.color",   &(clw_material->uberv2.coating_color_input_id) },
-                    { "uberv2.coating.ior",  &(clw_material->uberv2.coating_ior_input_id) },
-                    { "uberv2.emission.color",  &(clw_material->uberv2.emission_color_input_id) },
-                    { "uberv2.transparency",  &(clw_material->uberv2.transparency_input_id) },
-                    { "uberv2.sss.absorption_color",   &(clw_material->uberv2.sss_absorption_color_input_id) },
-                    { "uberv2.sss.scatter_color",   &(clw_material->uberv2.sss_scatter_color_input_id) },
-                    { "uberv2.sss.absorption_distance",  &(clw_material->uberv2.sss_absorption_distance_input_id) },
-                    { "uberv2.sss.scatter_distance",  &(clw_material->uberv2.sss_scatter_distance_input_id) },
-                    { "uberv2.sss.scatter_direction",  &(clw_material->uberv2.sss_scatter_direction_input_id) },
-                    { "uberv2.sss.subsurface_color",   &(clw_material->uberv2.sss_subsurface_color_input_id) },
-                    { "uberv2.refraction.color",   &(clw_material->uberv2.refraction_color_input_id) },
-                    { "uberv2.refraction.roughness",  &(clw_material->uberv2.refraction_roughness_input_id) },
-                    { "uberv2.refraction.ior",  &(clw_material->uberv2.refraction_ior_input_id) },
-                    { "uberv2.shading_normal", &(clw_material->uberv2.shading_normal_input_id) }
-                };
+                    "uberv2.sss.absorption_color",
+                    "uberv2.sss.scatter_color",
+                    "uberv2.sss.subsurface_color",
+                    "uberv2.sss.absorption_distance",
+                    "uberv2.sss.scatter_distance",
+                    "uberv2.sss.scatter_direction"
+                }
+            },
+        };
 
-                for (const auto &entry : input_map)
+        // Write material layers. Order matters.
+        for (auto &layer_info : uberv2_ordered_fields)
+        {
+            if ((layers & layer_info.first) == layer_info.first)
+            {
+                for (auto &layer_param : layer_info.second)
                 {
-                    auto value = material.GetInputValue(entry.first);
+                    auto value = material.GetInputValue(layer_param);
                     assert(value.type == Material::InputType::kInputMap);
-                    *(entry.second) = value.input_map_value ? value.input_map_value->GetId() : -1;
+                    material_data.push_back(value.input_map_value ? value.input_map_value->GetId() : -1);
                 }
-
-                // fill parameters as integer values
-                const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
-                clw_material->uberv2.layers = uber_material.GetLayers();
-                clw_material->uberv2.refraction_ior_mode = uber_material.IsLinkRefractionIOR();
-                clw_material->uberv2.refraction_thin_surface = uber_material.IsThin();
-                clw_material->uberv2.emission_mode = uber_material.isDoubleSided();
-                clw_material->uberv2.sss_multiscatter = uber_material.IsMultiscatter();
-
-                // UberV2 uses own normal/bump map implementation. Just fill default values.
-                clw_material->nmapidx = -1;
-                clw_material->bump_flag = 0;
-                break;
             }
-#endif
-
-            default:
-            break;
         }
     }
 
@@ -1601,7 +1267,7 @@ namespace Baikal
     int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const
     {
         auto m = material ? material : m_default_material;
-        return collector.GetItemIndex(m);
+        return ResolveMaterialPtr(m);
     }
 
     int ClwSceneController::GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const
@@ -1709,4 +1375,9 @@ namespace Baikal
         }
     }
 
+    int32_t ClwSceneController::ResolveMaterialPtr(Material::Ptr material) const
+    {
+        auto it = m_materialid_to_offset.find(material->GetId());
+        return (it == m_materialid_to_offset.end()) ? -1 : it->second;
+    }
 }
