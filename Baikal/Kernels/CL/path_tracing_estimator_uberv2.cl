@@ -94,7 +94,8 @@ KERNEL void ShadeVolumeUberV2(
     // Indirect rays (next path segment)
     GLOBAL ray* restrict indirect_rays,
     // Radiance
-    GLOBAL float3* restrict output
+    GLOBAL float3* restrict output,
+    GLOBAL InputMapData const* restrict input_map_values
 )
 {
     int global_id = get_global_id(0);
@@ -106,6 +107,8 @@ KERNEL void ShadeVolumeUberV2(
         uvs,
         indices,
         shapes,
+        material_attributes,
+        input_map_values,
         lights,
         env_light_idx,
         num_lights,
@@ -291,6 +294,8 @@ KERNEL void ShadeSurfaceUberV2(
         uvs,
         indices,
         shapes,
+        material_attributes,
+        input_map_values,
         lights,
         env_light_idx,
         num_lights,
@@ -540,7 +545,9 @@ KERNEL void ApplyVolumeTransmissionUberV2(
     // Shadow predicates
     GLOBAL int* restrict shadow_hits,
     // Radiance sample buffer
-    GLOBAL float4* restrict output)
+    GLOBAL float4* restrict output,
+    GLOBAL InputMapData const* restrict input_map_values
+)
 {
     int global_id = get_global_id(0);
 
@@ -559,6 +566,8 @@ KERNEL void ApplyVolumeTransmissionUberV2(
                 uvs,
                 indices,
                 shapes,
+                material_attributes,
+                input_map_values,
                 0,
                 0,
                 0,

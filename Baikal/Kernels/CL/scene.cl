@@ -38,6 +38,10 @@ typedef struct
     GLOBAL int const* restrict indices;
     // Shapes
     GLOBAL Shape const* restrict shapes;
+    // Material attributes
+    GLOBAL int const* restrict material_attributes;
+    // Input map values
+    GLOBAL InputMapData const* restrict input_map_values;
     // Emissive objects
     GLOBAL Light const* restrict lights;
     // Envmap idx

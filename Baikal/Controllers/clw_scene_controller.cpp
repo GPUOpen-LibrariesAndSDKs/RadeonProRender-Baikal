@@ -941,6 +941,10 @@ namespace Baikal
         static const std::vector<std::pair<UberV2Material::Layers, std::vector<std::string>>> uberv2_ordered_fields =
         {
             {
+                UberV2Material::Layers::kEmissionLayer,
+                { "uberv2.emission.color" }
+            },
+            {
                 UberV2Material::Layers::kCoatingLayer,
                 { "uberv2.coating.color", "uberv2.coating.ior"}
             },
@@ -966,10 +970,6 @@ namespace Baikal
                     "uberv2.refraction.roughness",
                     "uberv2.refraction.ior"
                 }
-            },
-            {
-                UberV2Material::Layers::kEmissionLayer,
-                { "uberv2.emission.color"}
             },
             {
                 UberV2Material::Layers::kTransparencyLayer,

@@ -162,7 +162,6 @@ typedef struct
             int shapeidx;
             int primidx;
             int padding0;
-            Material mat;
         };
 
         // IBL

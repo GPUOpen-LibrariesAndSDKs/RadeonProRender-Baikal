@@ -32,6 +32,22 @@ typedef struct _UberV2ShaderData
 
 } UberV2ShaderData;
 
+float4 GetUberV2EmissionColor(
+    // Material offset
+    int offset,
+    // Geometry
+    DifferentialGeometry const* dg,
+    // Values for input maps
+    GLOBAL InputMapData const* restrict input_map_values,
+    // Material attributes
+    GLOBAL int const* restrict material_attributes,
+    // Texture args
+    TEXTURE_ARG_LIST
+)
+{
+    return GetInputMapFloat4(material_attributes[offset+1], dg, input_map_values, TEXTURE_ARGS);
+}
+
 //Temorary code. Will be moved to generator later with UberV2 redesign
 UberV2ShaderData UberV2PrepareInputs(
     // Geometry
@@ -49,6 +65,10 @@ UberV2ShaderData UberV2PrepareInputs(
     const uint layers = dg->mat.layers;
     int offset = dg->mat.offset + 1;
 
+    if ((layers & kEmissionLayer) == kEmissionLayer)
+    {
+        shader_data.emission_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
+    }
     if ((layers & kCoatingLayer) == kCoatingLayer)
     {
         shader_data.coating_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
@@ -72,10 +92,6 @@ UberV2ShaderData UberV2PrepareInputs(
         shader_data.refraction_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
         shader_data.refraction_roughness = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
         shader_data.refraction_ior = GetInputMapFloat(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
-    }
-    if ((layers & kEmissionLayer) == kEmissionLayer)
-    {
-        shader_data.emission_color = GetInputMapFloat4(material_attributes[offset++], dg, input_map_values, TEXTURE_ARGS);
     }
     if ((layers & kTransparencyLayer) == kTransparencyLayer)
     {

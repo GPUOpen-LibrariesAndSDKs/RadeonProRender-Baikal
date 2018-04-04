@@ -280,11 +280,9 @@ float3 AreaLight_Sample(// Emissive object
 
     *wo = p - dg->p;
 
-    /*int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
-    Material mat = scene->materials[mat_idx];
+    int material_offset = scene->shapes[shapeidx].material.offset;
 
-    const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
-    */
+    const float3 ke = GetUberV2EmissionColor(material_offset, dg, scene->input_map_values, scene->material_attributes, TEXTURE_ARGS).xyz;
     float3 v = -normalize(*wo);
 
     float ndotv = dot(n, v);
@@ -294,7 +292,7 @@ float3 AreaLight_Sample(// Emissive object
         float dist2 = dot(*wo, *wo);
         float denom = fabs(ndotv) * area;
         *pdf = denom > 0.f ? dist2 / denom : 0.f;
-        return 1.f;
+        return ke;
     }
     else
     {
