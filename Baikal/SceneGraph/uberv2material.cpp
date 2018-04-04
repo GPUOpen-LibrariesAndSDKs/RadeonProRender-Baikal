@@ -108,5 +108,5 @@ UberV2Material::UberV2Material()
 
 bool UberV2Material::HasEmission() const
 {
-    return false;// (GetInputValue("uberv2.emission.weight").float_value.sqnorm() != 0);
+    return (layers_ & Layers::kEmissionLayer) == Layers::kEmissionLayer;
 }

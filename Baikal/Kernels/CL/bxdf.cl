@@ -170,10 +170,10 @@ float3 Emissive_GetLe(
     // Geometry
     DifferentialGeometry const* dg,
     // Texture args
-    TEXTURE_ARG_LIST)
+    TEXTURE_ARG_LIST,
+    UberV2ShaderData const* shader_data)
 {
-    //const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    return make_float3(1.0f, 1.0f, 1.0f);
+    return shader_data->emission_color.xyz;
 }
 
 /// BxDF singularity check

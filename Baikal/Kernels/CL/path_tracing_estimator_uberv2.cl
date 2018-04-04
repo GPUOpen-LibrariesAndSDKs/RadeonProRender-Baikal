@@ -364,7 +364,7 @@ KERNEL void ShadeSurfaceUberV2(
 
                 // In this case we hit after an application of MIS process at previous step.
                 // That means BRDF weight has been already applied.
-                float3 v = REASONABLE_RADIANCE(Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS) * weight);
+                float3 v = REASONABLE_RADIANCE(Path_GetThroughput(path) * Emissive_GetLe(&diffgeo, TEXTURE_ARGS, &uber_shader_data) * weight);
 
                 int output_index = output_indices[pixel_idx];
                 ADD_FLOAT3(&output[output_index], v);
