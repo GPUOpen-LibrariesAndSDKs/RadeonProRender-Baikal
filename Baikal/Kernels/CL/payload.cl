@@ -332,6 +332,14 @@ enum TextureFormat
     RGBA32
 };
 
+/// mipmap pyramid layout description
+typedef
+struct _Mipmap
+{
+    #define MIP_LEVELS_NUM (12)
+    int mip_level_offsets[MIP_LEVELS_NUM] = { 0 };
+} Mipmap;
+
 /// Texture description
 typedef
 struct _Texture
@@ -345,6 +353,10 @@ struct _Texture
     // Format
     int fmt;
     int extra;
+    // flag to indicate mipmap mode
+    int mipmap_enabled;
+    // mipmap memory layout info
+    Mipmap* mipmap;
 } Texture;
 
 
