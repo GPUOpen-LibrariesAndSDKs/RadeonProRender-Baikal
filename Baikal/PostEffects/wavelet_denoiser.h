@@ -133,7 +133,10 @@ namespace Baikal
         m_prev_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
 
         // Area map for MLAA weight coefficients
-        Texture::Ptr area_map = Texture::Create(area_map_33, RadeonRays::int3(165, 165, 1), Texture::Format::kRgba8);
+        // Texture object takes ownership on texture data, so we need to copy area map into temporary buffer
+        char *buf = new char[sizeof(area_map_33)];
+        memcpy(buf, area_map_33, sizeof(area_map_33));
+        Texture::Ptr area_map = Texture::Create(buf, RadeonRays::int3(165, 165, 1), Texture::Format::kRgba8);
 
         if (area_map == nullptr)
             throw std::runtime_error("AreaMap33.dds is missing");

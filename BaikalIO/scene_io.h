@@ -90,12 +90,7 @@ namespace Baikal
         static void RegisterLoader(const std::string& ext, SceneIo::Loader *loader);
         // Deregisters extension handler
         static void UnregisterLoader(const std::string& ext);
-
-        // Constructor
-        SceneIo() = default;
-        // Destructor
-        virtual ~SceneIo() = default;
-        
+      
         // Load the scene from file using resourse base path
         static Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath);
         // Saves scene to file using resource base path
@@ -103,10 +98,17 @@ namespace Baikal
 
 
     private:
+        static SceneIo* GetInstance();
+        
+        // Constructor
+        SceneIo() = default;
+        // Destructor
+        virtual ~SceneIo() = default;
+
         // Disallow copying
         SceneIo(SceneIo const&) = delete;
         SceneIo& operator = (SceneIo const&) = delete;
 
-        static std::map<std::string, SceneIo::Loader*> m_loaders;
+        std::map<std::string, SceneIo::Loader*> m_loaders;
     };
 }

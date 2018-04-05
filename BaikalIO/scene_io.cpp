@@ -16,24 +16,29 @@
 
 namespace Baikal
 {
-    std::map<std::string, SceneIo::Loader*> SceneIo::m_loaders;
+    SceneIo* SceneIo::GetInstance()
+    {
+        static SceneIo instance;
+        return &instance;
+    }
 
     void SceneIo::RegisterLoader(const std::string& ext, SceneIo::Loader *loader)
     {
-        m_loaders[ext] = loader;
+        GetInstance()->m_loaders[ext] = loader;
     }
 
     void SceneIo::UnregisterLoader(const std::string& ext)
     {
-        m_loaders.erase(ext);
+        GetInstance()->m_loaders.erase(ext);
     }
 
     Scene1::Ptr SceneIo::LoadScene(std::string const& filename, std::string const& basepath)
     {
         auto ext = filename.substr(filename.rfind(".") + 1);
 
-        auto loader_it = m_loaders.find(ext);
-        if (loader_it == m_loaders.end())
+        SceneIo *instance = GetInstance();
+        auto loader_it = instance->m_loaders.find(ext);
+        if (loader_it == instance->m_loaders.end())
         {
             throw std::runtime_error("No loader for \"" + filename + "\" has been found.");
         }
@@ -45,8 +50,9 @@ namespace Baikal
     {
         auto ext = filename.substr(filename.rfind("."));
 
-        auto loader_it = m_loaders.find(ext);
-        if (loader_it == m_loaders.end())
+        SceneIo *instance = GetInstance();
+        auto loader_it = instance->m_loaders.find(ext);
+        if (loader_it == instance->m_loaders.end())
         {
             throw std::runtime_error("No serializer for \"" + filename + "\" has been found.");
         }

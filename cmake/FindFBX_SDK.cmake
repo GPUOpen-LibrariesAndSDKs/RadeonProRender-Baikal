@@ -1,7 +1,7 @@
 set(FBX_SDK_DIR "C:/Program Files/Autodesk/FBX/FBX SDK/2017.0.1")
 
 if (WIN32)
-    set(FBX_SDK_LIB_NAME libfbxsdk)
+    set(FBX_SDK_LIB_NAME libfbxsdk-md)
 else ()
     set(FBX_SDK_LIB_NAME fbxsdk)
 endif (WIN32)
