@@ -13,6 +13,7 @@
 #include "Utils/log.h"
 #include "Utils/cl_inputmap_generator.h"
 #include "Utils/cl_program_manager.h"
+#include "Utils/cl_uberv2_generator.h"
 
 
 #include <chrono>
@@ -714,6 +715,8 @@ namespace Baikal
         std::vector<int> mat_buffer;
         mat_buffer.reserve(1024 * 1024); //Reserv 1M of ints for material buffer.
 
+        CLUberV2Generator uberv2_generator;
+
         // Serialize materials
         {
             // Update material bundle first to be able to track differences
@@ -727,6 +730,8 @@ namespace Baikal
             {
                 WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, mat_buffer);
             }
+
+            uberv2_generator.AddMaterial(mat_iter->ItemAs<UberV2Material>());
         }
 
         // Recreate material buffer if it needs resize

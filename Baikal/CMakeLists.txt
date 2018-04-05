@@ -52,7 +52,10 @@ set(UTILS_SOURCES
     Utils/cl_program.cpp
     Utils/cl_program.h
     Utils/cl_program_manager.cpp
-    Utils/cl_program_manager.h)
+    Utils/cl_program_manager.h
+    Utils/cl_uberv2_generator.h
+    Utils/cl_uberv2_generator.cpp
+)
 
 set(SCENEGRAPH_SOURCES
     SceneGraph/camera.cpp
