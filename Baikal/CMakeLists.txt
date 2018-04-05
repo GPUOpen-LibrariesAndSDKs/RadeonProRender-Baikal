@@ -49,6 +49,8 @@ set(UTILS_SOURCES
     Utils/version.h
     Utils/cl_inputmap_generator.cpp
     Utils/cl_inputmap_generator.h
+    Utils/cl_mip_map_builder.h
+    Utils/cl_mip_map_builder.cpp
     Utils/cl_program.cpp
     Utils/cl_program.h
     Utils/cl_program_manager.cpp
@@ -121,7 +123,8 @@ set(KERNELS_SOURCES
     Kernels/CL/utils.cl
     Kernels/CL/vertex.cl
     Kernels/CL/volumetrics.cl
-    Kernels/CL/wavelet_denoise.cl)
+    Kernels/CL/wavelet_denoise.cl
+    Kernels/CL/mipmap_level_scaler.cl)
 
 set(SOURCES
     ${CONTROLLERS_SOURCES}
