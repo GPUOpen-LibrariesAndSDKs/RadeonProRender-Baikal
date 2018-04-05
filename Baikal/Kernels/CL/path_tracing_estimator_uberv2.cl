@@ -600,6 +600,7 @@ KERNEL void ApplyVolumeTransmissionUberV2(
             float t = isect.uvwt.w;
 
             int volume_idx = Scene_GetVolumeIndex(&scene, shape_idx);
+            /// @FIXME need to get material params from material_attributes
             //int material_idx = Scene_GetMaterialIndex(&scene, shape_idx, prim_idx);
 
             // If shape does not have volume, it is a surface intersection
