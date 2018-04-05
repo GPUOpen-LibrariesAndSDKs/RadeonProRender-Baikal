@@ -65,7 +65,7 @@ void TextureMaterialObject::CopyData(MaterialObject* in)
     //copy image data
     auto tex = in->GetTexture();
     const char* data = tex->GetData();
-    RadeonRays::int2 size = tex->GetSize();
+    auto size = tex->GetSize();
     auto format = tex->GetFormat();
     char* tex_data = new char[tex->GetSizeInBytes()];
     memcpy(tex_data, data, tex->GetSizeInBytes());
@@ -75,7 +75,7 @@ void TextureMaterialObject::CopyData(MaterialObject* in)
 
 rpr_image_desc TextureMaterialObject::GetImageDesc() const
 {
-    RadeonRays::int2 size = m_tex->GetSize();
+    auto size = m_tex->GetSize();
     rpr_uint depth = (rpr_uint)m_tex->GetSizeInBytes() / size.x / size.y;
     return{ (rpr_uint)size.x, (rpr_uint)size.y, depth, 0, 0 };
 }
