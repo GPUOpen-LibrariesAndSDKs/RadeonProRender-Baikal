@@ -81,11 +81,21 @@ namespace Baikal
         Texture(Texture const&) = delete;
         Texture& operator = (Texture const&) = delete;
 
+        // marks that texture Baikal should build mipmap for this texture
+        bool MipmapEnabled() const
+        { return m_mip_generate_mode; }
+
     protected:
         // Constructor
         Texture();
         // Note, that texture takes ownership of its data array
-        Texture(char* data, RadeonRays::int3 size, Format format);
+        Texture(
+            char* data,
+            RadeonRays::int3 size,
+            Format format,
+            bool mip_generate_mode = false,
+            int* mip_sizes = nullptr,
+            std::uint32_t mip_num = 0);
 
     private:
         // Image data
@@ -94,12 +104,19 @@ namespace Baikal
         RadeonRays::int3 m_size;
         // Format
         Format m_format;
+        // flag to specify that mipmap should be 
+        // generate for this texture by Baikal
+        bool m_mip_generate_mode;
+        // mipmap pyramid level sizes
+        std::unique_ptr<int[]> m_level_sizes;
+
     };
 
     inline Texture::Texture()
         : m_data(new char[16])
         , m_size(2, 2, 1)
         , m_format(Format::kRgba8)
+        , m_mip_generate_mode(false)
     {
         // Create checkerboard by default
         m_data[0] = m_data[1] = m_data[2] = m_data[3] = (char)0xFF;
@@ -108,14 +125,31 @@ namespace Baikal
         m_data[12] = m_data[13] = m_data[14] = m_data[15] = (char)0x00;
     }
 
-    inline Texture::Texture(char* data, RadeonRays::int3 size, Format format)
+    inline Texture::Texture(
+        char* data,
+        RadeonRays::int3 size,
+        Format format,
+        bool mip_generate_mode,
+        int* mip_sizes,
+        std::uint32_t mip_num)
+
         : m_data(data)
         , m_size(size)
         , m_format(format)
+        , m_mip_generate_mode(mip_generate_mode)
     {
         if (size.z == 0)
         {
             m_size.z = 1;
+        }
+
+        if (mip_sizes != nullptr)
+        {
+            m_level_sizes.reset(new int[mip_num]);
+            memcpy(
+                (void*)m_level_sizes.get(),
+                (void*)mip_sizes,
+                sizeof(int) * mip_num);
         }
     }
 
