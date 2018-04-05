@@ -28,11 +28,9 @@ class TestScenesTest : public BasicTest
 protected:
     bool PrepeareScene(const std::string &file_name, const std::string file_path)
     {
-        auto io = Baikal::SceneIo::CreateSceneIoObj();
-
         try
         {
-            m_scene = io->LoadScene(file_name, file_path);
+            m_scene = Baikal::SceneIo::LoadScene(file_name, file_path);
         }
         catch (std::exception)
         {

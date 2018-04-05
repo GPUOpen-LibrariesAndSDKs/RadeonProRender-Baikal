@@ -17,7 +17,9 @@ set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
     PostEffects/post_effect.h
     PostEffects/bilateral_denoiser.h
-    PostEffects/wavelet_denoiser.h)
+    PostEffects/wavelet_denoiser.h
+    PostEffects/AreaMap33.h
+    )
     
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp
@@ -79,19 +81,7 @@ set(SCENEGRAPH_SOURCES
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
     SceneGraph/Collector/collector.h)
-    
-set(SCENEGRAPH_IO_SOURCES
-    SceneGraph/IO/image_io.cpp
-    SceneGraph/IO/image_io.h
-    SceneGraph/IO/material_io.cpp
-    SceneGraph/IO/material_io.h
-    SceneGraph/IO/scene_binary_io.cpp
-    SceneGraph/IO/scene_binary_io.h
-    SceneGraph/IO/scene_io.cpp
-    SceneGraph/IO/scene_io.h
-    SceneGraph/IO/scene_test_io.cpp
-    )
-    
+       
 set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
@@ -147,7 +137,6 @@ source_group("RenderFactory" FILES ${RENDERFACTORY_SOURCES})
 source_group("Utils" FILES ${UTILS_SOURCES})
 source_group("SceneGraph" FILES ${SCENEGRAPH_SOURCES})
 source_group("SceneGraph\\Collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
-source_group("SceneGraph\\IO" FILES ${SCENEGRAPH_IO_SOURCES})
 source_group("XML" FILES ${XML_SOURCES})
 source_group("Kernels\\CL" FILES ${KERNELS_SOURCES})
 
@@ -168,6 +157,6 @@ endif (BAIKAL_ENABLE_UBERV2)
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
-target_link_libraries(Baikal PUBLIC RadeonRays OpenImageIO::OpenImageIO)
+target_link_libraries(Baikal PUBLIC RadeonRays)
 
     

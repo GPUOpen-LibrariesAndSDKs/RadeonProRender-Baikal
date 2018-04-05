@@ -5,7 +5,7 @@
 #include "SceneGraph/material.h"
 #include "SceneGraph/light.h"
 #include "SceneGraph/texture.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 #include "math/mathutils.h"
 #include "Utils/log.h"
 
@@ -13,10 +13,8 @@
 
 namespace Baikal
 {
-    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoBinary()
-    {
-        return std::unique_ptr<SceneIo>(new SceneBinaryIo());
-    }
+    // Create static object to register loader. This object will be used as loader
+    static SceneBinaryIo scene_binary_io_loader;
 
     Scene1::Ptr SceneBinaryIo::LoadScene(std::string const& filename, std::string const& basepath) const
     {

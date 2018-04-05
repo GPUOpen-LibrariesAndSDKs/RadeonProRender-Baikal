@@ -25,7 +25,7 @@
 #include "Application/app_utils.h"
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 
 #include <future>
 #include <memory>

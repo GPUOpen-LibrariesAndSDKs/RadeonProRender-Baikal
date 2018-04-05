@@ -25,7 +25,7 @@
 #include "SceneGraph/light.h"
 #include "SceneGraph/shape.h"
 #include "SceneGraph/material.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 #include "SceneGraph/uberv2material.h"
 #include "SceneGraph/inputmaps.h"
 
@@ -43,8 +43,7 @@ protected:
 
     void LoadTestScene() override
     {
-        auto io = Baikal::SceneIo::CreateSceneIoTest();
-        m_scene = io->LoadScene("sphere+plane+ibl", "");
+        m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
     }
 
     void SetUp() override

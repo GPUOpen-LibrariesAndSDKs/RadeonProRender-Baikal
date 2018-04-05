@@ -29,10 +29,11 @@ THE SOFTWARE.
 namespace Baikal
 {
     // Create fake test IO
-    class SceneBinaryIo : public SceneIo
+    class SceneBinaryIo : public SceneIo::Loader
     {
     public:
-        SceneBinaryIo() = default;
+        SceneBinaryIo() : SceneIo::Loader("bin", this)
+        {}
         // Load scene (this class uses filename to determine what scene to generate)
         Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath) const override;
         void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const override;

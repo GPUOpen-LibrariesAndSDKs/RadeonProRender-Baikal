@@ -34,6 +34,17 @@
 #include "SceneGraph/texture.h"
 #include "SceneGraph/scene1.h"
 
+#ifdef WIN32
+#ifdef BAIKAL_EXPORT_API
+#define BAIKAL_API_ENTRY __declspec(dllexport)
+#else
+#define BAIKAL_API_ENTRY __declspec(dllimport)
+#endif
+#else
+#define BAIKAL_API_ENTRY __attribute__((visibility ("default")))
+#endif
+
+
 namespace Baikal
 {
     class Scene1;
@@ -45,40 +56,59 @@ namespace Baikal
      
      SceneIO implementation is responsible for translation of various scene formats into Baikal.
      */
-    class SceneIo
+    class BAIKAL_API_ENTRY SceneIo
     {
     public:
-        // Create OBJ scene loader
-        static std::unique_ptr<SceneIo> CreateSceneIoObj();
-        // Create test scene loader
-        static std::unique_ptr<SceneIo> CreateSceneIoTest();
-        //
-        static std::unique_ptr<SceneIo> CreateSceneIoBinary();
-        //
-        static std::unique_ptr<SceneIo> CreateSceneIoFbx();
+        /**
+        \brief Interface for file format handler
 
-		//gltf 
-		static std::unique_ptr<SceneIo> CreateSceneIoGltf();
+        SceneIo::Loader is responsible for translation of various scene formats into Baikal.
+        */
+        class Loader
+        {
+        public:
+            // Load the scene from file using resourse base path
+            virtual Scene1::Ptr LoadScene(const std::string &filename, const std::string &basepath) const = 0;
 
+            virtual void SaveScene(const Scene1 &scene, const std::string &filename, const std::string &basepath) const {};
+
+            Loader(const std::string& ext, SceneIo::Loader *loader);
+            virtual ~Loader();
+
+        protected:
+            Texture::Ptr LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
+
+        private:
+            Loader(const Loader &) = delete;
+            Loader& operator= (const Loader &) = delete;
+
+            std::string m_ext;
+            mutable std::map<std::string, Texture::Ptr> m_texture_cache;
+        };
+
+        // Registers extension handler
+        static void RegisterLoader(const std::string& ext, SceneIo::Loader *loader);
+        // Deregisters extension handler
+        static void UnregisterLoader(const std::string& ext);
+      
+        // Load the scene from file using resourse base path
+        static Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath);
+        // Saves scene to file using resource base path
+        static void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath);
+
+
+    private:
+        static SceneIo* GetInstance();
+        
         // Constructor
         SceneIo() = default;
         // Destructor
         virtual ~SceneIo() = default;
-        
-        // Load the scene from file using resourse base path
-        virtual Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath) const = 0;
 
-        virtual void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath) const {};
-
-    protected:
-        Texture::Ptr LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const;
-
-    private:
         // Disallow copying
         SceneIo(SceneIo const&) = delete;
         SceneIo& operator = (SceneIo const&) = delete;
 
-        mutable std::map<std::string, Texture::Ptr> m_texture_cache;
-
+        std::map<std::string, SceneIo::Loader*> m_loaders;
     };
 }

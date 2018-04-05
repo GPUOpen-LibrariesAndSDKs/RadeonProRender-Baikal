@@ -1,10 +1,32 @@
+/**********************************************************************
+Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+********************************************************************/
+
 #include "scene_io.h"
 #include "image_io.h"
-#include "../scene1.h"
-#include "../shape.h"
-#include "../material.h"
-#include "../light.h"
-#include "../texture.h"
+#include "SceneGraph/scene1.h"
+#include "SceneGraph/shape.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/light.h"
+#include "SceneGraph/texture.h"
 #include "math/mathutils.h"
 
 #include <string>
@@ -18,47 +40,29 @@
 namespace Baikal
 {
     // Obj scene loader
-    class SceneIoObj : public SceneIo
+    class SceneIoObj : public SceneIo::Loader
     {
     public:
         // Load scene from file
         Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath) const override;
+        SceneIoObj() : SceneIo::Loader("obj", this)
+        {
+            SceneIo::RegisterLoader("objm", this);
+        }
+        ~SceneIoObj()
+        {
+            SceneIo::UnregisterLoader("objm");
+        }
+
     private:
         Material::Ptr TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
 
         mutable std::map<std::string, Material::Ptr> m_material_cache;
     };
 
-    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoObj()
-    {
-        return std::make_unique<SceneIoObj>();
-    }
+    // Create static object to register loader. This object will be used as loader
+    static SceneIoObj obj_loader;
 
-    Texture::Ptr SceneIo::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
-    {
-        auto iter = m_texture_cache.find(name);
-
-        if (iter != m_texture_cache.cend())
-        {
-            return iter->second;
-        }
-        else
-        {
-            try
-            {
-                LogInfo("Loading ", name, "\n");
-                auto texture = io.LoadImage(basepath + name);
-                texture->SetName(name);
-                m_texture_cache[name] = texture;
-                return texture;
-            }
-            catch (std::runtime_error)
-            {
-                LogInfo("Missing texture: ", name, "\n");
-                return nullptr;
-            }
-        }
-    }
 
     Material::Ptr SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
     {
@@ -346,4 +350,6 @@ namespace Baikal
 
         return scene;
     }
+
+
 }
