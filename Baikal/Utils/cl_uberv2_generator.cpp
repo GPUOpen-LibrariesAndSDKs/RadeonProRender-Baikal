@@ -165,7 +165,7 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
 {
     uint32_t layers = material->GetLayers();
     sources->m_sample =
-        "float3 UberV2_Sample(DifferentialGeometry const* dg, float3 wi, TEXTURE_ARG_LIST, float2 sample, float3* wo, float* pdf,
+        "float3 UberV2_Sample" + std::to_string(layers) + "(DifferentialGeometry const* dg, float3 wi, TEXTURE_ARG_LIST, float2 sample, float3* wo, float* pdf,"
         "UberV2ShaderData const* shader_data)\n"
         "{\n"
         "\tconst int sampledComponent = Bxdf_UberV2_GetSampledComponent(dg);\n";
@@ -176,8 +176,7 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
 
 
 
-
-    soruces->m_sample +=
+    sources->m_sample +=
         "\treturn 0.f;\n"
         "}\n";
 
