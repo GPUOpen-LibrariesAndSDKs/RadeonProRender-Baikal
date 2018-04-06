@@ -23,110 +23,146 @@ THE SOFTWARE.
 #define MIPMAP_LEVEL_SCALER_CL
 
 #include <../Baikal/Kernels/CL/common.cl>
+#include <../Baikal/Kernels/CL/payload.cl>
+#include <../Baikal/Kernels/CL/texture.cl>
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-// Downscale image in x dimension by 2, with rounding up
 KERNEL
-void ScaleX(
-    // destination image
-    GLOBAL uchar* dst_img,
-    // source image
-    GLOBAL uchar* src_img,
-    // weights for convolution with image rows
-    float3* weights,
-    // src image width
-    int width,
-    // src image height
-    int height,
-    // src image step
-    int step
-)
-{
-    int id = get_global_id(0);     
-    int x = id % step;
-
-    if (x > width)
-    {
-        return;
-    }
-
-    // power of two case
-    if (width % 2 == 0)
-    {
-        dst_img[id] =  weights[x].y * src_img[2 * id] + weights[x].z * src_img[2 * id + 1];
-        return;
-    }
-
-    // rounding up case
-    // if there is first pixel in row
-    if (x == 0)
-    {
-        dst_img[id] = weights[0].y * src_img[2 * id] + weights[0].z * src_img[2 * id + 1];
-        return;
-    }
-
-    // if there is the last pixel in row
-    if (x == width - 1)
-    {
-        dst_img[id] = weights[width - 1].x * src_img[2 * id - 1] + weights[width - 1].y * src_img[2 * id];
-        return;
-    }
-
-    // if there is the middle pixel in row
-    dst_img[id] = 
-        weights[x].x * src_img[2 * id - 1] +
-        weights[x].y * src_img[2 * id] +
-        weights[x].z * src_img[2 * id + 1];
-}
-
-// Downscale image in y dimension by 2, with rounding up
-KERNEL
-void ScaleY(
-    // destination image
-    GLOBAL uchar* dst_img,
-    // source image
-    GLOBAL uchar* src_img,
-    // weights for convolution with image rows
-    float3* weights,
-    // src image width
-    int width,
-    // src image height
-    int height,
-    // src image step
-    int step
-)
+void ComputeWeights_NoRounding(
+    GLOBAL float3* restrict weights,
+    // size of weight vector
+    const int size)
 {
     int id = get_global_id(0);
-    int x = id % step;
-    int y = (int)floor(id / step);
 
-    if (x > width)
+    if (id < size)
     {
+        weights[id].x = .0f;
+        weights[id].y = .5f;
+        weights[id].z = .5f;
+    }
+}
+
+KERNEL
+void ComputeWeights_RoundingUp(
+    GLOBAL float3* restrict weights,
+    // size of weight vector
+    const int size)
+{
+    int id = get_global_id(0);
+
+    float denominator = 2.f * size - 1;
+
+    // first weight
+    if (id == 0)
+    {
+        weights[id].x = .0f;
+        weights[id].y = size / denominator;
+        weights[id].z = (size - 1) / denominator;
         return;
     }
 
-    // if there is the first row
-    if (y == 0)
+    // last weight
+    if (id == size - 1)
     {
-        dst_img[x] = weights[0].w1 * src_img[x] + weights[0].w2 * (src_img + step)[x]);
+        weights[id].x = (size - 1) / denominator;
+        weights[id].y = size / denominator;
+        weights[id].z = 0;
         return;
     }
 
-    // if there is the last row
-    if (y == height - 1)
+    if (id < size - 1)
     {
-        dst_img[id] = 
-            weights[height - 1].x * src_img[(height - 2) * step + x] +
-            weights[height - 1].y * src_img[(height - 1) * step + x];
+        weights[id].x = (size - id - 1) / denominator;
+        weights[id].y = size / denominator;
+        weights[id].z = id / denominator;
+    }
+}
+
+KERNEL
+void ScaleX(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float3 const* restrict weights,
+    const int dst_width, const int dst_height,
+    GLOBAL uchar* restrict src_buf,
+    const int src_width, const int src_height
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = 2 * dst_col;
+    int src_row = dst_row;
+
+    // first pixel in row
+    if (dst_col == 0)
+    {
+        dst_buf[id] = 
+                    weights[dst_col].y * src_buf[src_row * src_width + src_col] +
+                    weights[dst_col].z * src_buf[src_row * src_width + src_col + 1];
         return;
     }
 
-    // process middle rows
-    dst_img[id] =
-        weights[y].x * src_img[(y - 1) * step + x] +
-        weights[y].y * src_img[y * step + x] +
-        weights[y].x * src_img[(y + 1) * step + x]
+    // last pixel in row
+    if (dst_col == dst_width - 1)
+    {
+        dst_buf[id] = 
+                    weights[dst_col].x * src_buf[src_row * src_width + src_col - 1] +
+                    weights[dst_col].y * src_buf[src_row * src_width + src_col];
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf[id] = 
+                    weights[dst_col].x * src_buf[src_row * src_width + src_col - 1] + 
+                    weights[dst_col].y * src_buf[src_row * src_width + src_col] + 
+                    weights[dst_col].z * src_buf[src_row * src_width + src_col + 1];
+    }
+}
+
+
+KERNEL
+void ScaleY(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float3 const* restrict weights,
+    const int dst_width, const int dst_height,
+    GLOBAL uchar* restrict src_buf,
+    const int src_width, const int src_height
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = 2 * dst_col;
+    int src_row = dst_row;
+
+    // first row
+    if (dst_row == 0)
+    {
+        dst_buf[id] = 
+                    weights[dst_row].y * src_buf[src_row * src_width + src_col] +
+                    weights[dst_row].z * src_buf[(src_row + 1) * src_width + src_col];
+        return;
+    }
+
+    // last row
+    if (dst_col == dst_width - 1)
+    {
+        dst_buf[id] = 
+                    weights[dst_row].x * src_buf[(src_row - 1)* src_width + src_col] +
+                    weights[dst_row].y * src_buf[src_row * src_width + src_col];
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf[id] = 
+                    weights[dst_row].x * src_buf[(src_row - 1)* src_width + src_col] + 
+                    weights[dst_row].y * src_buf[src_row * src_width + src_col] + 
+                    weights[dst_row].z * src_buf[(src_row + 1) * src_width + src_col];
+    }
 }
 
 #endif // MIPMAP_LEVEL_SCALER_CL
