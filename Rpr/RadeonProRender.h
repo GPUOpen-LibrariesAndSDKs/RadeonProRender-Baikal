@@ -19,6 +19,8 @@
 #ifndef __RADEONPRORENDER_H
 #define __RADEONPRORENDER_H
 
+#include <cstddef>
+
 #ifdef WIN32
     #ifdef RPR_EXPORT_API
         #define RPR_API_ENTRY __declspec(dllexport)
@@ -32,8 +34,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "cstddef"
 
 #define RPR_API_VERSION 0x010028300 
 
