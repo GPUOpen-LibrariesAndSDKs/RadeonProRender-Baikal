@@ -32,6 +32,10 @@ typedef struct _UberV2ShaderData
 
 } UberV2ShaderData;
 
+
+#include <uberv2_generated.cl>
+
+
 float4 GetUberV2EmissionColor(
     // Material offset
     int offset,

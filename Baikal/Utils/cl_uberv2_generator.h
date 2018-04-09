@@ -41,6 +41,17 @@ namespace Baikal
          */
         void AddMaterial(UberV2Material::Ptr material);
 
+        /**
+         * @brief generates source for uber material implementation
+         *
+         * Generates full source code of UberV2 material. It generates following things:
+         *  - All per-material type functions
+         *  - All selectors for per-material type functions
+         *
+         * @return generated source
+         */
+        std::string BuildSource();
+
     private:
         struct UberV2Sources
         {

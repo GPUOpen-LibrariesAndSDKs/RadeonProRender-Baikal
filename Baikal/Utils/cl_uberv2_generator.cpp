@@ -414,7 +414,7 @@ void CLUberV2Generator::MaterialGenerateEvaluate(UberV2Material::Ptr material, U
 {
 uint32_t layers = material->GetLayers();
 
-    sources->m_get_pdf = "float3 UberV2_Evaluate" + std::to_string(layers) + "("
+    sources->m_evaluate = "float3 UberV2_Evaluate" + std::to_string(layers) + "("
         "DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
         "{\n";
 
@@ -450,5 +450,24 @@ uint32_t layers = material->GetLayers();
             blend.m_transparency_value = "shader_data->transparency";
         }
 
-        sources->m_get_pdf += "\treturn " + GenerateBlend(blend, false) + ";\n}\n";
+        sources->m_evaluate += "\treturn " + GenerateBlend(blend, false) + ";\n}\n";
 }
+
+std::string Baikal::CLUberV2Generator::BuildSource()
+{
+    std::string source;
+    source.reserve(10240); //10k should be enought
+
+    // Merge all per-material sources
+    for(auto material : m_materials)
+    {
+        source += material.second.m_get_bxdf_type + "\n";
+        source += material.second.m_evaluate + "\n";
+        source += material.second.m_get_pdf + "\n";
+        source += material.second.m_prepare_inputs + "\n";
+        source += material.second.m_sample + "\n";
+    }
+
+    return source;
+}
+

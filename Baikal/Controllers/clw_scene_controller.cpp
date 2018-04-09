@@ -729,10 +729,15 @@ namespace Baikal
             for (; mat_iter->IsValid(); mat_iter->Next())
             {
                 WriteMaterial(*mat_iter->ItemAs<Material>(), mat_collector, tex_collector, mat_buffer);
+
+                uberv2_generator.AddMaterial(mat_iter->ItemAs<UberV2Material>());
             }
 
-            uberv2_generator.AddMaterial(mat_iter->ItemAs<UberV2Material>());
         }
+
+        std::string uberv2_source = uberv2_generator.BuildSource();
+        m_program_manager->AddHeader("uberv2_generated.cl", uberv2_source);
+
 
         // Recreate material buffer if it needs resize
         if (mat_buffer.size() > out.material_attributes.GetElementCount())
