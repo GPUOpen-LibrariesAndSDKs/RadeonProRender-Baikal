@@ -24,6 +24,16 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
+inline int popcount(uint32_t value)
+{
+  int count = value ? 1 : 0;
+  while (value &= (value - 1))
+  {
+      ++count;
+  }
+  return count;
+}
+
 CLUberV2Generator::CLUberV2Generator()
 {
 
@@ -156,9 +166,111 @@ void CLUberV2Generator::MaterialGeneratePrepareInputs(UberV2Material::Ptr materi
     sources->m_prepare_inputs += "\treturn shader_data;\n}";
 }
 
+std::string CLUberV2Generator::GenerateBlend(const BlendData &blend_data, bool is_float)
+{
+    std::string fresnel_function = is_float ? "Fresnel_Blend_F" : "Fresnel_Blend";
+
+    std::string result;
+    result.reserve(1024); //1k should be enought
+
+    std::string brdf;
+    brdf.reserve(1024);
+
+    auto GenerateFresnelBlend = [&](const std::string &top_ior, const std::string &bottom_ior,
+                                    const std::string &top_value, const std::string &bottom_value) -> std::string
+    {
+        std::string value = fresnel_function;
+        value += "(" + top_ior + ", " + bottom_ior + ", " + top_value + ", " + bottom_value + ", wi)";
+        return value;
+    };
+
+    // Generate BRDF first
+    if (!blend_data.m_brdf_values.empty())
+    {
+        brdf = "(" + blend_data.m_brdf_values[blend_data.m_brdf_values.size() - 1] + ")";
+        for (size_t a = blend_data.m_brdf_iors.size() - 1; a > 0 ; --a)
+        {
+            brdf = "(" + GenerateFresnelBlend(blend_data.m_brdf_iors[a - 1], blend_data.m_brdf_iors[a],
+                                              blend_data.m_brdf_values[a -1], brdf) + ")";
+        }
+    }
+
+    // Btdf
+    std::string bxdf;
+    bxdf.reserve(1024);
+
+    if (!blend_data.m_btdf_ior.empty())
+    {
+        if (brdf.empty())
+        {
+            bxdf = "(" + blend_data.m_btdf_value + ")";
+        }
+        else
+        {
+            bxdf = "(" + GenerateFresnelBlend("1.0f", blend_data.m_btdf_ior, brdf, blend_data.m_btdf_value) + ")";
+        }
+    }
+
+    // Mix for transparency
+    if (!blend_data.m_transparency_value.empty())
+    {
+        if (!bxdf.empty())
+        {
+            result = "mix(" + bxdf + ", 0.f" + ", " + blend_data.m_transparency_value + ")";
+        }
+        else if (!brdf.empty())
+        {
+            result = "mix(" + brdf + ", 0.f" + ", " + blend_data.m_transparency_value + ")";
+        }
+        else
+        {
+            result = "0.f";
+        }
+    }
+    return result;
+}
+
 void CLUberV2Generator::MaterialGenerateGetPdf(UberV2Material::Ptr material, UberV2Sources *sources)
 {
+    uint32_t layers = material->GetLayers();
 
+    sources->m_get_pdf = "float UberV2_GetPdf" + std::to_string(layers) + "("
+        "DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
+        "{\n";
+
+        BlendData blend;
+        blend.m_brdf_iors.push_back("1.0f");
+
+        // BRDF layers
+        if ((layers & UberV2Material::Layers::kCoatingLayer) == UberV2Material::Layers::kCoatingLayer)
+        {
+            blend.m_brdf_iors.push_back("shader_data->coating_ior");
+            blend.m_brdf_values.push_back("UberV2_IdealReflect_GetPdf(shader_data, wi, wo, TEXTURE_ARGS)");
+        }
+        if ((layers & UberV2Material::Layers::kReflectionLayer) == UberV2Material::Layers::kReflectionLayer)
+        {
+            blend.m_brdf_iors.push_back("shader_data->reflection_ior");
+            blend.m_brdf_values.push_back("UberV2_Reflection_GetPdf(shader_data, wi, wo, TEXTURE_ARGS)");
+        }
+        if ((layers & UberV2Material::Layers::kDiffuseLayer) == UberV2Material::Layers::kDiffuseLayer)
+        {
+            blend.m_brdf_values.push_back("UberV2_Lambert_GetPdf(shader_data, wi, wo, TEXTURE_ARGS)");
+        }
+
+        // BTDF
+        if ((layers & UberV2Material::Layers::kRefractionLayer) == UberV2Material::Layers::kRefractionLayer)
+        {
+            blend.m_btdf_ior = "shader_data->refraction_ior";
+            blend.m_btdf_value = "UberV2_Refraction_GetPdf(shader_data, wi, wo, TEXTURE_ARGS)";
+        }
+
+        //Transparency
+        if ((layers & UberV2Material::Layers::kTransparencyLayer) == UberV2Material::Layers::kTransparencyLayer)
+        {
+            blend.m_transparency_value = "shader_data->transparency";
+        }
+
+        sources->m_get_pdf += "\treturn " + GenerateBlend(blend, true) + ";\n}\n";
 }
 
 void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, UberV2Sources *sources)
@@ -168,16 +280,34 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
         "float3 UberV2_Sample" + std::to_string(layers) + "(DifferentialGeometry const* dg, float3 wi, TEXTURE_ARG_LIST, float2 sample, float3* wo, float* pdf,"
         "UberV2ShaderData const* shader_data)\n"
         "{\n"
-        "\tconst int sampledComponent = Bxdf_UberV2_GetSampledComponent(dg);\n";
+        "\tconst int sampledComponent = Bxdf_UberV2_GetSampledComponent(dg);\n"
+        "\tswitch(sampledComponent)\n"
+        "\t{\n";
 
+    static const std::vector<std::pair<uint32_t, std::string>> component_sampling =
+    {
+        {UberV2Material::Layers::kTransparencyLayer,
+            "\t\tcase kBxdfUberV2SampleTransparency: UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+        {UberV2Material::Layers::kCoatingLayer,
+            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n"},
+        {UberV2Material::Layers::kReflectionLayer,
+            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+        {UberV2Material::Layers::kRefractionLayer,
+            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+        {UberV2Material::Layers::kDiffuseLayer,
+            "\t\tcase kBxdfUberV2SampleDiffuse: UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+    };
 
-
-
-
-
+    for (auto &component : component_sampling)
+    {
+        if ((layers & component.first) == component.first)
+        {
+            sources->m_sample += component.second;
+        }
+    }
 
     sources->m_sample +=
-        "\treturn 0.f;\n"
+        "\t}\n\treturn 0.f;\n"
         "}\n";
 
 }
@@ -187,7 +317,7 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     uint32_t layers = material->GetLayers();
     sources->m_get_bxdf_type = "void GetMaterialBxDFType" + std::to_string(layers) + "("
         "float3 wi, Sampler* sampler, SAMPLER_ARG_LIST, DifferentialGeometry* dg, UberV2ShaderData const* shader_data)\n"
-        "{\n";
+        "{\n"
         "\tint bxdf_flags = 0;\n";
 
     // If we have layer that requires fresnel blend (reflection/refraction/coating)
@@ -282,5 +412,43 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
 
 void CLUberV2Generator::MaterialGenerateEvaluate(UberV2Material::Ptr material, UberV2Sources *sources)
 {
+uint32_t layers = material->GetLayers();
 
+    sources->m_get_pdf = "float3 UberV2_Evaluate" + std::to_string(layers) + "("
+        "DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
+        "{\n";
+
+        BlendData blend;
+        blend.m_brdf_iors.push_back("1.0f");
+
+        // BRDF layers
+        if ((layers & UberV2Material::Layers::kCoatingLayer) == UberV2Material::Layers::kCoatingLayer)
+        {
+            blend.m_brdf_iors.push_back("shader_data->coating_ior");
+            blend.m_brdf_values.push_back("UberV2_IdealReflect_Evaluate(shader_data, wi, wo, TEXTURE_ARGS)");
+        }
+        if ((layers & UberV2Material::Layers::kReflectionLayer) == UberV2Material::Layers::kReflectionLayer)
+        {
+            blend.m_brdf_iors.push_back("shader_data->reflection_ior");
+            blend.m_brdf_values.push_back("UberV2_Reflection_Evaluate(shader_data, wi, wo, TEXTURE_ARGS)");
+        }
+        if ((layers & UberV2Material::Layers::kDiffuseLayer) == UberV2Material::Layers::kDiffuseLayer)
+        {
+            blend.m_brdf_values.push_back("UberV2_Lambert_Evaluate(shader_data, wi, wo, TEXTURE_ARGS)");
+        }
+
+        // BTDF
+        if ((layers & UberV2Material::Layers::kRefractionLayer) == UberV2Material::Layers::kRefractionLayer)
+        {
+            blend.m_btdf_ior = "shader_data->refraction_ior";
+            blend.m_btdf_value = "UberV2_Refraction_Evaluate(shader_data, wi, wo, TEXTURE_ARGS)";
+        }
+
+        //Transparency
+        if ((layers & UberV2Material::Layers::kTransparencyLayer) == UberV2Material::Layers::kTransparencyLayer)
+        {
+            blend.m_transparency_value = "shader_data->transparency";
+        }
+
+        sources->m_get_pdf += "\treturn " + GenerateBlend(blend, false) + ";\n}\n";
 }
