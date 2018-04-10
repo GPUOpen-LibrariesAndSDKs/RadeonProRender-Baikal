@@ -124,8 +124,13 @@ namespace Baikal
          *    BRDF = F(1.0, coating_ior) * coating + (1.0f - F(1.0f, coating_ior) *
          *    (F(coating_ior, reflection_ior) * reflection + (1.0f - F(coating_ior, reflection_ior)) * diffuse)
          */
-
         void MaterialGenerateEvaluate(UberV2Material::Ptr material, UberV2Sources *sources);
+
+        std::string GenerateGetPdfDispatcher();
+        std::string GenerateEvaluateDispatcher();
+        std::string GenerateSampleDispatcher();
+        std::string GenerateGetBxDFTypeDispatcher();
+        std::string GeneratePrepareInputsDispatcher();
 
         std::map<uint32_t, UberV2Sources> m_materials;
     };

@@ -88,8 +88,6 @@ void CLUberV2Generator::MaterialGeneratePrepareInputs(UberV2Material::Ptr materi
         {
             UberV2Material::Layers::kReflectionLayer,
             {
-                {"shader_data.coating_color", "GetInputMapFloat4"},
-                {"shader_data.coating_ior", "GetInputMapFloat"},
                 {"shader_data.reflection_color", "GetInputMapFloat4"},
                 {"shader_data.reflection_roughness", "GetInputMapFloat"},
                 {"shader_data.reflection_anisotropy", "GetInputMapFloat"},
@@ -170,7 +168,7 @@ std::string CLUberV2Generator::GenerateBlend(const BlendData &blend_data, bool i
 {
     std::string fresnel_function = is_float ? "Fresnel_Blend_F" : "Fresnel_Blend";
 
-    std::string result;
+    std::string result = is_float ? "0.0f" : "(float3)(0.0f)";
     result.reserve(1024); //1k should be enought
 
     std::string brdf;
@@ -196,9 +194,7 @@ std::string CLUberV2Generator::GenerateBlend(const BlendData &blend_data, bool i
     }
 
     // Btdf
-    std::string bxdf;
-    bxdf.reserve(1024);
-
+    std::string bxdf(brdf);
     if (!blend_data.m_btdf_ior.empty())
     {
         if (brdf.empty())
@@ -211,16 +207,21 @@ std::string CLUberV2Generator::GenerateBlend(const BlendData &blend_data, bool i
         }
     }
 
+    if (!bxdf.empty())
+    {
+        result = bxdf;
+    }
+
     // Mix for transparency
     if (!blend_data.m_transparency_value.empty())
     {
         if (!bxdf.empty())
         {
-            result = "mix(" + bxdf + ", 0.f" + ", " + blend_data.m_transparency_value + ")";
+            result = "mix(" + result + ", 0.f" + ", " + blend_data.m_transparency_value + ")";
         }
         else if (!brdf.empty())
         {
-            result = "mix(" + brdf + ", 0.f" + ", " + blend_data.m_transparency_value + ")";
+            result = "mix(" + result + ", 0.f" + ", " + blend_data.m_transparency_value + ")";
         }
         else
         {
@@ -287,15 +288,15 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
     static const std::vector<std::pair<uint32_t, std::string>> component_sampling =
     {
         {UberV2Material::Layers::kTransparencyLayer,
-            "\t\tcase kBxdfUberV2SampleTransparency: UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+            "\t\tcase kBxdfUberV2SampleTransparency: return UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
         {UberV2Material::Layers::kCoatingLayer,
-            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n"},
+            "\t\tcase kBxdfUberV2SampleCoating: return UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n"},
         {UberV2Material::Layers::kReflectionLayer,
-            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+            "\t\tcase kBxdfUberV2SampleCoating: return UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
         {UberV2Material::Layers::kRefractionLayer,
-            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+            "\t\tcase kBxdfUberV2SampleCoating: return UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
         {UberV2Material::Layers::kDiffuseLayer,
-            "\t\tcase kBxdfUberV2SampleDiffuse: UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
+            "\t\tcase kBxdfUberV2SampleDiffuse: return UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n"},
     };
 
     for (auto &component : component_sampling)
@@ -467,7 +468,136 @@ std::string Baikal::CLUberV2Generator::BuildSource()
         source += material.second.m_prepare_inputs + "\n";
         source += material.second.m_sample + "\n";
     }
+    source += GeneratePrepareInputsDispatcher();
+    source += GenerateGetBxDFTypeDispatcher();
+    source += GenerateGetPdfDispatcher();
+    source += GenerateEvaluateDispatcher();
+    source += GenerateSampleDispatcher();
 
     return source;
 }
+
+std::string Baikal::CLUberV2Generator::GenerateEvaluateDispatcher()
+{
+    std::string source;
+    source.reserve(1024); //10k should be enought
+
+    source = "float3 UberV2_Evaluate"
+        "(DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
+        "{\n"
+        "\tfloat3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);\n"
+        "\tfloat3 wo_t = matrix_mul_vector3(dg->world_to_tangent, wo);\n"
+        "\tswitch (dg->mat.layers)\n"
+        "\t{\n";
+
+    for(auto material : m_materials)
+    {
+        source += "\t\tcase " + std::to_string(material.first) + ":\n" +
+            "\t\t\treturn UberV2_Evaluate" + std::to_string(material.first) + "(dg, wi_t, wo_t, TEXTURE_ARGS, shader_data);\n";
+    }
+
+    source += "\t}\n\treturn (float3)(0.0f);\n}\n";
+
+    return source;
+}
+
+std::string Baikal::CLUberV2Generator::GenerateGetPdfDispatcher()
+{
+    std::string source;
+    source.reserve(1024); //10k should be enought
+
+    source = "float UberV2_GetPdf"
+        "(DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
+        "{\n"
+        "\tfloat3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);\n"
+        "\tfloat3 wo_t = matrix_mul_vector3(dg->world_to_tangent, wo);\n"
+        "\tswitch (dg->mat.layers)\n"
+        "\t{\n";
+
+    for(auto material : m_materials)
+    {
+        source += "\t\tcase " + std::to_string(material.first) + ":\n" +
+            "\t\t\treturn UberV2_GetPdf" + std::to_string(material.first) + "(dg, wi_t, wo_t, TEXTURE_ARGS, shader_data);\n";
+    }
+
+    source += "\t}\n\treturn 0.0f;\n}\n";
+
+    return source;
+}
+
+std::string Baikal::CLUberV2Generator::GenerateSampleDispatcher()
+{
+    std::string source;
+    source.reserve(1024); //10k should be enought
+
+    source = "float3 UberV2_Sample"
+        "(DifferentialGeometry const* dg, float3 wi, TEXTURE_ARG_LIST, float2 sample, "
+        "float3 *wo, float *pdf, UberV2ShaderData const* shader_data)\n"
+        "{\n"
+        "\tfloat3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);\n"
+        "\tfloat3 wo_t;\n"
+        "\tfloat3 res = 0.f;\n"
+        "\tswitch (dg->mat.layers)\n"
+        "\t{\n";
+
+    for(auto material : m_materials)
+    {
+        source += "\t\tcase " + std::to_string(material.first) + ":\n" +
+            "\t\t\tres = UberV2_Sample" + std::to_string(material.first) + "(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf, shader_data);\n"
+            "\t\t\tbreak;\n";
+    }
+
+    source += "\t}\n"
+        "\t*wo = matrix_mul_vector3(dg->tangent_to_world, wo_t);"
+        "\treturn res;\n"
+        "}\n";
+
+    return source;
+}
+
+std::string Baikal::CLUberV2Generator::GenerateGetBxDFTypeDispatcher()
+{
+    std::string source =
+        "UberV2ShaderData UberV2PrepareInputs("
+        "DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values,"
+        "GLOBAL int const* restrict material_attributes, TEXTURE_ARG_LIST)\n"
+        "{\n"
+        "\tswitch(dg->mat.layers)\n"
+        "\t{\n";
+
+    for(auto material : m_materials)
+    {
+        source += "\t\tcase " + std::to_string(material.first) + ":\n" +
+            "\t\t\treturn UberV2PrepareInputs" + std::to_string(material.first) + "(dg, input_map_values, material_attributes, TEXTURE_ARGS);\n";
+    }
+
+    source += "\t}\n"
+        "}\n";
+
+    return source;
+
+}
+
+std::string Baikal::CLUberV2Generator::GeneratePrepareInputsDispatcher()
+{
+    std::string source =
+        "void GetMaterialBxDFType("
+        "float3 wi, Sampler* sampler, SAMPLER_ARG_LIST, DifferentialGeometry* dg, UberV2ShaderData const* shader_data)"
+        "{\n"
+        "\tswitch(dg->mat.layers)\n"
+        "\t{\n";
+
+    for(auto material : m_materials)
+    {
+        source += "\t\tcase " + std::to_string(material.first) + ":\n" +
+            "\t\t\treturn GetMaterialBxDFType" + std::to_string(material.first) + "(wi, sampler, SAMPLER_ARGS, dg, shader_data);\n"
+            "\t\t\tbreak;\n";
+    }
+
+    source += "\t}\n"
+        "}\n";
+
+    return source;
+}
+
 
