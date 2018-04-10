@@ -75,62 +75,62 @@ void CLUberV2Generator::MaterialGeneratePrepareInputs(UberV2Material::Ptr materi
         {
             UberV2Material::Layers::kEmissionLayer,
             {
-                {"shader_data.emission_color", "GetInputMapFloat4"}
+                {"data->emission_color", "GetInputMapFloat4"}
             }
         },
         {
             UberV2Material::Layers::kCoatingLayer,
             {
-                {"shader_data.coating_color", "GetInputMapFloat4"},
-                {"shader_data.coating_ior", "GetInputMapFloat"}
+                {"data->coating_color", "GetInputMapFloat4"},
+                {"data->coating_ior", "GetInputMapFloat"}
             }
         },
         {
             UberV2Material::Layers::kReflectionLayer,
             {
-                {"shader_data.reflection_color", "GetInputMapFloat4"},
-                {"shader_data.reflection_roughness", "GetInputMapFloat"},
-                {"shader_data.reflection_anisotropy", "GetInputMapFloat"},
-                {"shader_data.reflection_anisotropy_rotation", "GetInputMapFloat"},
-                {"shader_data.reflection_ior", "GetInputMapFloat"},
-                {"shader_data.reflection_metalness", "GetInputMapFloat"}
+                {"data->reflection_color", "GetInputMapFloat4"},
+                {"data->reflection_roughness", "GetInputMapFloat"},
+                {"data->reflection_anisotropy", "GetInputMapFloat"},
+                {"data->reflection_anisotropy_rotation", "GetInputMapFloat"},
+                {"data->reflection_ior", "GetInputMapFloat"},
+                {"data->reflection_metalness", "GetInputMapFloat"}
             }
         },
         {
             UberV2Material::Layers::kDiffuseLayer,
             {
-                {"shader_data.diffuse_color", "GetInputMapFloat4"}
+                {"data->diffuse_color", "GetInputMapFloat4"}
             }
         },
         {
             UberV2Material::Layers::kRefractionLayer,
             {
-                {"shader_data.refraction_color", "GetInputMapFloat4"},
-                {"shader_data.refraction_roughness", "GetInputMapFloat"},
-                {"shader_data.refraction_ior", "GetInputMapFloat"}
+                {"data->refraction_color", "GetInputMapFloat4"},
+                {"data->refraction_roughness", "GetInputMapFloat"},
+                {"data->refraction_ior", "GetInputMapFloat"}
             }
         },
         {
             UberV2Material::Layers::kTransparencyLayer,
             {
-                {"shader_data.transparency", "GetInputMapFloat"}
+                {"data->transparency", "GetInputMapFloat"}
             }
         },
         {
             UberV2Material::Layers::kShadingNormalLayer,
             {
-                {"shader_data.shading_normal", "GetInputMapFloat4"},
+                {"data->shading_normal", "GetInputMapFloat4"},
             }
         },
         {
             UberV2Material::Layers::kSSSLayer,
             {
-                {"shader_data.sss_absorption_color", "GetInputMapFloat4"},
-                {"shader_data.sss_scatter_color", "GetInputMapFloat4"},
-                {"shader_data.sss_subsurface_color", "GetInputMapFloat4"},
-                {"shader_data.sss_absorption_distance", "GetInputMapFloat"},
-                {"shader_data.sss_scatter_distance", "GetInputMapFloat"},
-                {"shader_data.sss_scatter_direction", "GetInputMapFloat"},
+                {"data->sss_absorption_color", "GetInputMapFloat4"},
+                {"data->sss_scatter_color", "GetInputMapFloat4"},
+                {"data->sss_subsurface_color", "GetInputMapFloat4"},
+                {"data->sss_absorption_distance", "GetInputMapFloat"},
+                {"data->sss_scatter_distance", "GetInputMapFloat"},
+                {"data->sss_scatter_direction", "GetInputMapFloat"},
             }
         }
     };
@@ -141,11 +141,10 @@ void CLUberV2Generator::MaterialGeneratePrepareInputs(UberV2Material::Ptr materi
     // Write base code
     uint32_t layers = material->GetLayers();
     sources->m_prepare_inputs =
-        "UberV2ShaderData UberV2PrepareInputs" + std::to_string(layers) + "("
+        "void UberV2PrepareInputs" + std::to_string(layers) + "("
         "DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values,"
-        "GLOBAL int const* restrict material_attributes, TEXTURE_ARG_LIST)\n"
+        "GLOBAL int const* restrict material_attributes, TEXTURE_ARG_LIST, UberV2ShaderData *data)\n"
         "{\n"
-        "\tUberV2ShaderData shader_data;\n"
         "\tint offset = dg->mat.offset + 1;\n";
 
     // Write code for each layer
@@ -161,7 +160,7 @@ void CLUberV2Generator::MaterialGeneratePrepareInputs(UberV2Material::Ptr materi
         }
     }
 
-    sources->m_prepare_inputs += "\treturn shader_data;\n}";
+    sources->m_prepare_inputs += "\n}";
 }
 
 std::string CLUberV2Generator::GenerateBlend(const BlendData &blend_data, bool is_float)
@@ -555,12 +554,12 @@ std::string Baikal::CLUberV2Generator::GenerateSampleDispatcher()
     return source;
 }
 
-std::string Baikal::CLUberV2Generator::GenerateGetBxDFTypeDispatcher()
+std::string Baikal::CLUberV2Generator::GeneratePrepareInputsDispatcher()
 {
     std::string source =
-        "UberV2ShaderData UberV2PrepareInputs("
+        "void UberV2PrepareInputs("
         "DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values,"
-        "GLOBAL int const* restrict material_attributes, TEXTURE_ARG_LIST)\n"
+        "GLOBAL int const* restrict material_attributes, TEXTURE_ARG_LIST, UberV2ShaderData *shader_data)\n"
         "{\n"
         "\tswitch(dg->mat.layers)\n"
         "\t{\n";
@@ -568,7 +567,7 @@ std::string Baikal::CLUberV2Generator::GenerateGetBxDFTypeDispatcher()
     for(auto material : m_materials)
     {
         source += "\t\tcase " + std::to_string(material.first) + ":\n" +
-            "\t\t\treturn UberV2PrepareInputs" + std::to_string(material.first) + "(dg, input_map_values, material_attributes, TEXTURE_ARGS);\n";
+            "\t\t\treturn UberV2PrepareInputs" + std::to_string(material.first) + "(dg, input_map_values, material_attributes, TEXTURE_ARGS, shader_data);\n";
     }
 
     source += "\t}\n"
@@ -578,7 +577,7 @@ std::string Baikal::CLUberV2Generator::GenerateGetBxDFTypeDispatcher()
 
 }
 
-std::string Baikal::CLUberV2Generator::GeneratePrepareInputsDispatcher()
+std::string Baikal::CLUberV2Generator::GenerateGetBxDFTypeDispatcher()
 {
     std::string source =
         "void GetMaterialBxDFType("
