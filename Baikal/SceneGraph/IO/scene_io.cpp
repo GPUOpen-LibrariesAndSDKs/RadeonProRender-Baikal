@@ -227,9 +227,9 @@ namespace Baikal
         light1->SetDirection(d);
         light1->SetEmittedRadiance(3.f * RadeonRays::float3(1.f, 0.8f, 0.65f));*/
 
-//        scene->AttachLight(light);
+        scene->AttachLight(light);
         //scene->AttachLight(light1);
-//        scene->AttachLight(ibl);
+        scene->AttachLight(ibl);
 
         return scene;
     }

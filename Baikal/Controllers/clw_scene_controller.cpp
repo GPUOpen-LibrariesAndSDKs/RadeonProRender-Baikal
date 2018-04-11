@@ -52,7 +52,7 @@ namespace Baikal
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
-    : m_default_material(SingleBxdf::Create(SingleBxdf::BxdfType::kLambert))
+    : m_default_material(UberV2Material::Create())
     , m_context(context)
     , m_api(api)
     , m_program_manager(program_manager)
@@ -500,7 +500,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            shape.material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+            shape.material.layers = GetMaterialLayers(mesh->GetMaterial());
 
             shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
 
@@ -557,7 +557,7 @@ namespace Baikal
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
             shape.material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            shape.material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+            shape.material.layers = GetMaterialLayers(mesh->GetMaterial());
 
             shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
 
@@ -650,7 +650,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            current_shape->material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+            current_shape->material.layers = GetMaterialLayers(mesh->GetMaterial());
 
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
@@ -671,7 +671,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            current_shape->material.layers = std::static_pointer_cast<UberV2Material>(mesh->GetMaterial())->GetLayers();
+            current_shape->material.layers = GetMaterialLayers(mesh->GetMaterial());
 
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
@@ -1390,4 +1390,11 @@ namespace Baikal
         auto it = m_materialid_to_offset.find(material->GetId());
         return (it == m_materialid_to_offset.end()) ? -1 : it->second;
     }
+
+    int ClwSceneController::GetMaterialLayers(Material::Ptr material) const
+    {
+        auto m = material ? material : m_default_material;
+        return std::static_pointer_cast<UberV2Material>(m)->GetLayers();
+    }
+
 }

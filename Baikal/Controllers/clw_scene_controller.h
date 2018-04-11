@@ -122,6 +122,7 @@ namespace Baikal
         int GetMaterialIndex(Collector const& collector, Material::Ptr material) const;
         int GetTextureIndex(Collector const& collector, Texture::Ptr material) const;
         int GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const;
+        int GetMaterialLayers(Material::Ptr material) const;
 
         // Context
         CLWContext m_context;

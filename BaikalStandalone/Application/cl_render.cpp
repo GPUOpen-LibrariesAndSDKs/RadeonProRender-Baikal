@@ -202,7 +202,7 @@ namespace Baikal
             std::ifstream in_materials(basepath + "materials.xml");
             std::ifstream in_mapping(basepath + "mapping.xml");
 
-            if (in_materials && in_mapping)
+            if (false && in_materials && in_mapping)
             {
                 in_materials.close();
                 in_mapping.close();
