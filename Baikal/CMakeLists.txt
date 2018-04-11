@@ -49,8 +49,8 @@ set(UTILS_SOURCES
     Utils/version.h
     Utils/cl_inputmap_generator.cpp
     Utils/cl_inputmap_generator.h
-    Utils/cl_mip_map_builder.h
-    Utils/cl_mip_map_builder.cpp
+    Utils/cl_mipmap.h
+    Utils/cl_mipmap.cpp
     Utils/cl_program.cpp
     Utils/cl_program.h
     Utils/cl_program_manager.cpp

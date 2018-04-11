@@ -26,6 +26,9 @@ THE SOFTWARE.
 #define TEXTURED_INPUT_HAS_TEXTURE(x) ((x).int_value.value[3] != -1)
 #define TEXTURED_INPUT_GET_COLOR(x) ((x).float_value.value.xyz)
 
+// maximun number of mimmap pyramid levels
+#define MAX_LEVEL_NUM (12)
+
 // Matrix
 typedef struct
 {
@@ -334,10 +337,10 @@ enum TextureFormat
 
 /// mipmap description
 typedef
-struct _Mipmap
+struct _MipmapOffsets
 {
-    int offsets[12];
-} Mipmap;
+    int offsets[MAX_LEVEL_NUM];
+} MipmapOffsets;
 
 /// Texture description
 typedef
