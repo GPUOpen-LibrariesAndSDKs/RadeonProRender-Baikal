@@ -259,7 +259,9 @@ namespace Baikal
                 {
                     auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
                     material->SetInputValue("uberv2.emission.color",
-                        InputMap_Sampler::Create(texture));
+                        InputMap_Pow::Create(
+                            InputMap_Sampler::Create(texture),
+                            InputMap_ConstantFloat::Create(2.2f)));
                 }
                 else
                 {
@@ -297,7 +299,9 @@ namespace Baikal
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
                         material->SetInputValue("uberv2.diffuse.color",
-                            InputMap_Sampler::Create(texture));
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
                     }
                     else
                     {
@@ -310,7 +314,9 @@ namespace Baikal
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
                         material->SetInputValue("uberv2.reflecton.color",
-                            InputMap_Sampler::Create(texture));
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
                     }
                     else
                     {
@@ -351,7 +357,9 @@ namespace Baikal
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
                         material->SetInputValue("uberv2.reflecton.color",
-                            InputMap_Sampler::Create(texture));
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
                     }
                     else
                     {
@@ -390,7 +398,9 @@ namespace Baikal
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
                         material->SetInputValue("uberv2.diffuse.color",
-                            InputMap_Sampler::Create(texture));
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
                     }
                     else
                     {
@@ -403,7 +413,9 @@ namespace Baikal
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
                         material->SetInputValue("uberv2.reflection.color",
-                            InputMap_Sampler::Create(texture));
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
                     }
                     else
                     {
@@ -437,7 +449,9 @@ namespace Baikal
                     {
                         auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
                         material->SetInputValue("uberv2.diffuse.color",
-                            InputMap_Sampler::Create(texture));
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
                     }
                     else
                     {
