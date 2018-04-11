@@ -50,9 +50,16 @@ namespace Baikal
     public:
         enum class Format
         {
-            kRgba8,
+            kRgba8 = 0,
             kRgba16,
             kRgba32
+        };
+
+        enum class MipmapType
+        {
+            kNone = 0,
+            kGeneratedMip,
+            kBaikalMip
         };
 
         using Ptr = std::shared_ptr<Texture>;
@@ -81,9 +88,9 @@ namespace Baikal
         Texture(Texture const&) = delete;
         Texture& operator = (Texture const&) = delete;
 
-        // marks that texture Baikal should build mipmap for this texture
-        bool MipmapEnabled() const
-        { return m_mip_generate_mode; }
+        // returns 
+        MipmapType MipmapMode() const
+        { return m_mip_type; }
 
     protected:
         // Constructor
@@ -93,7 +100,7 @@ namespace Baikal
             char* data,
             RadeonRays::int3 size,
             Format format,
-            bool mip_generate_mode = false,
+            MipmapType mip_type = MipmapType::kNone,
             int* mip_sizes = nullptr,
             std::uint32_t mip_num = 0);
 
@@ -104,9 +111,9 @@ namespace Baikal
         RadeonRays::int3 m_size;
         // Format
         Format m_format;
-        // flag to specify that mipmap should be 
-        // generate for this texture by Baikal
-        bool m_mip_generate_mode;
+        // flag to specify that mipmap should be
+        // generated for this texture by Baikal
+        MipmapType m_mip_type;
         // mipmap pyramid level sizes
         std::unique_ptr<int[]> m_level_sizes;
 
@@ -116,7 +123,7 @@ namespace Baikal
         : m_data(new char[16])
         , m_size(2, 2, 1)
         , m_format(Format::kRgba8)
-        , m_mip_generate_mode(false)
+        , m_mip_type(MipmapType::kNone)
     {
         // Create checkerboard by default
         m_data[0] = m_data[1] = m_data[2] = m_data[3] = (char)0xFF;
@@ -129,14 +136,14 @@ namespace Baikal
         char* data,
         RadeonRays::int3 size,
         Format format,
-        bool mip_generate_mode,
+        MipmapType mip_type,
         int* mip_sizes,
         std::uint32_t mip_num)
 
         : m_data(data)
         , m_size(size)
         , m_format(format)
-        , m_mip_generate_mode(mip_generate_mode)
+        , m_mip_type(mip_type)
     {
         if (size.z == 0)
         {
