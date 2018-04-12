@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#ifndef PATH_TRACING_ESTIMATOR_CL
-#define PATH_TRACING_ESTIMATOR_CL
+#ifndef PATH_TRACING_ESTIMATOR_UBERV2_CL
+#define PATH_TRACING_ESTIMATOR_UBERV2_CL
 
 #include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/ray.cl>

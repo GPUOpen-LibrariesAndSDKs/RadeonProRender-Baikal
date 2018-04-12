@@ -57,7 +57,7 @@ KERNEL void FillAOVsUberV2(
     // Shapes
     GLOBAL Shape const* restrict shapes,
     // Materials
-    GLOBAL Material const* restrict materials,
+    GLOBAL int const* restrict material_attributes,
     // Textures
     TEXTURE_ARG_LIST,
     // Environment texture index
@@ -138,7 +138,8 @@ KERNEL void FillAOVsUberV2(
         uvs,
         indices,
         shapes,
-        materials,
+        material_attributes,
+        input_map_values,
         lights,
         env_light_idx,
         num_lights
@@ -179,7 +180,7 @@ KERNEL void FillAOVsUberV2(
             {
                 aov_world_position[idx].xyz += diffgeo.p;
                 aov_world_position[idx].w += 1.f;
-            }
+            }*/
 
             if (world_shading_normal_enabled)
             {
@@ -187,20 +188,10 @@ KERNEL void FillAOVsUberV2(
                 bool backfacing = ngdotwi < 0.f;
 
                 // Select BxDF
-#ifdef ENABLE_UBERV2
                 UberV2ShaderData uber_shader_data;
-                if (diffgeo.mat.type == kUberV2)
-                {
-                    uber_shader_data = UberV2PrepareInputs(&diffgeo, input_map_values, TEXTURE_ARGS);
-                    GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
-                }
-                else
-                {
-                    Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
-                }
-#else
-                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
-#endif
+                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
+                GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
+
                 float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
                 if (backfacing && !Bxdf_IsBtdf(&diffgeo))
                 {
@@ -212,18 +203,7 @@ KERNEL void FillAOVsUberV2(
                     diffgeo.dpdu = -diffgeo.dpdu;
                     diffgeo.dpdv = -diffgeo.dpdv;
                 }
-#ifdef ENABLE_UBERV2
-                if (diffgeo.mat.type == kUberV2)
-                {
-                    UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
-                }
-                else
-                {
-                    DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
-                }
-#else
-                DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
-#endif
+                UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
                 aov_world_shading_normal[idx].xyz += diffgeo.n;
@@ -250,7 +230,7 @@ KERNEL void FillAOVsUberV2(
                 aov_uv[idx].w += 1.f;
             }
 
-            if (albedo_enabled)
+/*            if (albedo_enabled)
             {
                 float ngdotwi = dot(diffgeo.ng, wi);
                 bool backfacing = ngdotwi < 0.f;

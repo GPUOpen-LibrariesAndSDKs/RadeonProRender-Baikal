@@ -214,7 +214,7 @@ namespace Baikal
         ibl->SetTexture(ibl_texture);
         //ibl->SetReflectionTexture(ibl_texture1);
         ibl->SetBackgroundTexture(ibl_texture);
-        ibl->SetMultiplier(1.f);
+        ibl->SetMultiplier(15.f);
 
         // TODO: temporary code to add directional light
         auto light = DirectionalLight::Create();
@@ -277,7 +277,7 @@ namespace Baikal
                 auto r = RadeonRays::float3(mat.transmittance[0], mat.transmittance[1], mat.transmittance[2]);
                 auto d = RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]);
 
-                auto default_ior = Baikal::InputMap_ConstantFloat::Create(1.5f);
+                auto default_ior = Baikal::InputMap_ConstantFloat::Create(3.0f);
                 auto default_roughness = Baikal::InputMap_ConstantFloat::Create(0.01f);
                 auto default_one = Baikal::InputMap_ConstantFloat::Create(1.0f);
                 if ((r.sqnorm() > 0) && (s.sqnorm() > 0))
@@ -402,7 +402,7 @@ namespace Baikal
                                 InputMap_Sampler::Create(texture),
                                 InputMap_ConstantFloat::Create(2.2f)));
                     }
-                    else
+//                    else
                     {
                         material->SetInputValue("uberv2.diffuse.color",
                             InputMap_ConstantFloat3::Create(d));
@@ -417,7 +417,7 @@ namespace Baikal
                                 InputMap_Sampler::Create(texture),
                                 InputMap_ConstantFloat::Create(2.2f)));
                     }
-                    else
+//                    else
                     {
                         material->SetInputValue("uberv2.reflection.color",
                             InputMap_ConstantFloat3::Create(s));

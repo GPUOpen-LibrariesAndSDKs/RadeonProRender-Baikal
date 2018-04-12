@@ -61,6 +61,7 @@ protected:
         ClearOutput();
 
         ApplyMaterialToObject(object_name, material);
+        ApplyMaterialToObject("sphere", material);
 
         ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
@@ -597,7 +598,7 @@ TEST_F(InputMapsTest, InputMap_MatMul)
 TEST_F(InputMapsTest, InputMap_Bump)
 {
     auto image_io(Baikal::ImageIo::CreateImageIo());
-    auto bump_texture= image_io->LoadImage("../Resources/Textures/test_bump.jpg");
+    auto bump_texture= image_io->LoadImage("../Resources/Textures/test_bump.png");
 
     auto material = Baikal::UberV2Material::Create();
     auto bump_sampler = Baikal::InputMap_SamplerBumpMap::Create(bump_texture);
