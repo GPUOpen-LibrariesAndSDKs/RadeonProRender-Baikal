@@ -28,7 +28,7 @@ namespace Baikal
     Mipmap::Mipmap(CLWContext context) :
         m_context(context)
     {
-        m_program = CLWProgram::CreateFromFile("LevelScaler.cl", nullptr, m_context);
+        m_program = CLWProgram::CreateFromFile("../LevelScaler.cl", nullptr, m_context);
     }
 
     void Mipmap::ComputeWeights(CLWBuffer<float> weights, int size, bool is_rounding_necessary)
@@ -98,7 +98,7 @@ namespace Baikal
                 m_tmp_buffer,
                 src_offset,
                 0,
-                src_pitch * src_height);
+                src_pitch * src_height).Wait();
         }
 
         // downscale in y direction
@@ -142,47 +142,58 @@ namespace Baikal
         std::uint32_t img_height,
         std::uint32_t img_pitch)
     {
-        int level_num = (int)std::floor(std::log(std::max(img_width, img_height))) + 1;
+        int level_num = (int)std::ceilf(std::log2(std::max(img_width, img_height))) + 1;
         if (level_num > MAX_LEVEL_NUM)
         {
             throw std::exception(
                 "Mipmap::BuildMipPyramid(...): too big resolution for mipmapping");
         }
 
-        // initialize mip
-        m_cpu_level_offsets.offsets[0] = texture_info.dataoffset;
-        for (auto i = 0u; i < MAX_LEVEL_NUM; i++)
-        {
-            m_cpu_level_offsets.offsets[i] = -1;
-        }
+        // initialize first mip level
+        m_cpu_mip_levels.level_info[0].width = img_width;
+        m_cpu_mip_levels.level_info[0].height = img_height;
+        m_cpu_mip_levels.level_info[0].pitch = img_pitch;
+        m_cpu_mip_levels.level_info[0].offset = texture_info.dataoffset;
 
         int level_counter = 0;
-        int level_data_offset = m_cpu_level_offsets.offsets[0];
+        int level_data_offset = m_cpu_mip_levels.level_info[0].offset;
 
         for (int i = 1u; i < level_num; i++)
         {
-            auto dst_width = (std::uint32_t)ceilf(img_width / 2.f);
-            auto dst_height = (std::uint32_t)ceilf(img_height / 2.f);
+            // compute level size for current level
+            auto dst_width = (std::uint32_t)ceilf(m_cpu_mip_levels.level_info[i - 1].width / 2.f);
+            auto dst_height = (std::uint32_t)ceilf(m_cpu_mip_levels.level_info[i - 1].height / 2.f);
+            auto dst_pitch = (std::uint32_t)PixelBytes(texture_info.fmt) * dst_width;
 
-            auto dst_pitch = (std::uint32_t)PixelBytes(texture_info) * dst_width;
-
+            // downscale current level in x and y dimensions
             Downscale(
-                level_data_offset + img_pitch * img_height, dst_width,
-                dst_pitch, dst_height,
-                level_data_offset, img_width,
-                img_pitch, img_height);
+                level_data_offset + m_cpu_mip_levels.level_info[i - 1].pitch * m_cpu_mip_levels.level_info[i - 1].height,
+                dst_width,
+                dst_pitch,
+                dst_height,
+                level_data_offset,
+                m_cpu_mip_levels.level_info[i - 1].width,
+                m_cpu_mip_levels.level_info[i - 1].pitch,
+                m_cpu_mip_levels.level_info[i - 1].height);
 
-            level_data_offset += img_pitch * img_height;
-            m_cpu_level_offsets.offsets[i] = level_data_offset;
+            // update mip levels offsets
+            level_data_offset += m_cpu_mip_levels.level_info[i - 1].pitch * m_cpu_mip_levels.level_info[i - 1].height;
+
+            // update mip levels info
+            m_cpu_mip_levels.level_info[i].width = dst_width;
+            m_cpu_mip_levels.level_info[i].height = dst_height;
+            m_cpu_mip_levels.level_info[i].pitch = dst_pitch;
+            m_cpu_mip_levels.level_info[i].offset = level_data_offset;
+
             level_counter++;
         }
 
         m_context.WriteBuffer<char>(
             0,
             m_mipmap_info,
-            (char*)&m_cpu_level_offsets,
-            sizeof(ClwScene::MipmapOffsets) * texture_info.mipmap_index,
-            sizeof(ClwScene::MipmapOffsets));
+            (char*)&m_cpu_mip_levels,
+            sizeof(ClwScene::MipmapPyramid) * texture_info.mipmap_index,
+            sizeof(ClwScene::MipmapPyramid)).Wait();
     }
 
     void Mipmap::Build(CLWBuffer<char> texture_info, CLWBuffer<char> mipmap_info, CLWBuffer<char> texture_data)
@@ -192,31 +203,31 @@ namespace Baikal
         m_mipmap_info = mipmap_info;
         m_texture_data = texture_data;
 
-        m_cpu_texture_info.resize(m_texture_data.GetElementCount());
+        m_cpu_texture_info.resize(texture_info.GetElementCount() / sizeof(Texture));
 
-        m_context.WriteBuffer<char>(
+        m_context.ReadBuffer<char>(
             0,
             m_texture_info,
-            (char*)m_cpu_texture_info.data(),
-            sizeof(Texture) * m_texture_data.GetElementCount());
+            (char*)&m_cpu_texture_info[0],
+            m_texture_info.GetElementCount()).Wait();
 
         for (const auto& texture : m_cpu_texture_info)
         {
             if (texture.mipmap_enabled)
             {
-                BuildMipPyramid(texture, texture.w, texture.h, PixelBytes(texture) * texture.w);
+                BuildMipPyramid(texture, texture.w, texture.h, PixelBytes(texture.fmt) * texture.w);
             }
         }
     }
 
-    int Mipmap::PixelBytes(const ClwScene::Texture& texture) const
+    int Mipmap::PixelBytes(int format)
     {
         int pixel_in_bytes = 0;
-        if (texture.fmt == ClwScene::RGBA32)
+        if (format == ClwScene::RGBA32)
         {
             pixel_in_bytes = 16;
         }
-        else if (texture.fmt == ClwScene::RGBA16)
+        else if (format == ClwScene::RGBA16)
         {
             pixel_in_bytes = 8;
         }
@@ -226,5 +237,22 @@ namespace Baikal
         }
 
         return pixel_in_bytes;
+    }
+
+    std::uint32_t Mipmap::ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, std::uint32_t pitch, int format)
+    {
+        std::uint32_t pyramid_size = height * pitch;
+        int level_num = (int)std::ceilf(std::log2(std::max(width, height))) + 1;
+        int level_width = (int)std::ceill(width / 2.f);
+        int level_height = (int)std::ceill(height / 2.f);;
+
+        for (int i = 1; i < level_num; i++)
+        {
+            pyramid_size += level_width * level_height * PixelBytes(format);
+            level_width = (level_width != 1) ? (int)std::ceill(level_width / 2.f) : (1);
+            level_height = (level_height != 1) ? (int)std::ceill(level_height / 2.f) : (1);
+        }
+
+        return pyramid_size;
     }
 }

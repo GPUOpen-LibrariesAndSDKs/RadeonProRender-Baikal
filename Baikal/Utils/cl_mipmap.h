@@ -35,6 +35,10 @@ namespace Baikal
 
         void Build(CLWBuffer<char> texture_info, CLWBuffer<char> mipmap_info, CLWBuffer<char> texture_data);
 
+        // computes size in bytes of the mipmap pyramid for one given image specs
+        // inluding original image as base level
+        static std::uint32_t ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, std::uint32_t pitch, int format);
+
     private:
         void BuildMipPyramid(
             const ClwScene::Texture& texture_info,
@@ -50,7 +54,7 @@ namespace Baikal
 
         void ComputeWeights(CLWBuffer<float> weights, int size, bool is_rounding_necessary);
 
-        int PixelBytes(const ClwScene::Texture& texture) const;
+        static int PixelBytes(int format);
 
         // OpenCL context
         CLWContext m_context;
@@ -69,7 +73,7 @@ namespace Baikal
         CLWBuffer<char> m_texture_data;
         // CPU buffer to store mipmap offset and texture index
         std::vector<ClwScene::Texture> m_cpu_texture_info;
-        ClwScene::MipmapOffsets m_cpu_level_offsets;
+        ClwScene::MipmapPyramid m_cpu_mip_levels;
     };
 }
 #endif //__MIPMAP_BUILDER__

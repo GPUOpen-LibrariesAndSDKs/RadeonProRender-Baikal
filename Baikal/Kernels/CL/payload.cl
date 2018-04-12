@@ -335,12 +335,22 @@ enum TextureFormat
     RGBA32
 };
 
+/// mipmap level description
+typedef
+struct _MipLevel
+{
+    int width;
+    int height;
+    int pitch;
+    int offset;
+} MipLevel;
+
 /// mipmap description
 typedef
-struct _MipmapOffsets
+struct _MipmapPyramid
 {
-    int offsets[MAX_LEVEL_NUM];
-} MipmapOffsets;
+    MipLevel level_info[MAX_LEVEL_NUM];
+} MipmapPyramid;
 
 /// Texture description
 typedef
