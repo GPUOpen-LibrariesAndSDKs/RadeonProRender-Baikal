@@ -75,8 +75,12 @@ namespace Baikal
     namespace {
         struct TextureConcrete : public Texture {
             TextureConcrete() = default;
-            TextureConcrete(char* data, RadeonRays::int3 size, Format format) :
-                Texture(data, size, format) {}
+            TextureConcrete(char* data, RadeonRays::int3 size, Format format,
+                const std::vector<MipLevel> &mip_levels) :
+                Texture(data, size, format, mip_levels) {}
+
+            TextureConcrete(char* data, RadeonRays::int3 size, Format format, bool generate_mipmap) :
+                Texture(data, size, format, generate_mipmap) {}
         };
     }
 
@@ -84,7 +88,93 @@ namespace Baikal
         return std::make_shared<TextureConcrete>();
     }
 
-    Texture::Ptr Texture::Create(char* data, RadeonRays::int3 size, Format format) {
-        return std::make_shared<TextureConcrete>(data, size, format);
+    Texture::Ptr Texture::Create(char* data, RadeonRays::int3 size, Format format, const std::vector<MipLevel> &mip_levels)
+    {
+        return std::make_shared<TextureConcrete>(data, size, format, mip_levels);
+    }
+
+    Texture::Ptr Texture::Create(char* data, RadeonRays::int3 size, Format format, bool generate_mipmap)
+    {
+        return std::make_shared<TextureConcrete>(data, size, format, generate_mipmap);
+    }
+
+    Texture::Texture(
+        char* data,
+        RadeonRays::int3 size,
+        Format format,
+        const std::vector<MipLevel>& mip_levels)
+        : m_data(data)
+        , m_size(size)
+        , m_format(format)
+        , m_generate_mipmap(false)
+    {
+        if (size.z == 0)
+        {
+            m_size.z = 1;
+        }
+
+        if (!mip_levels.empty())
+        {
+            m_mip_level = mip_levels;
+        }
+    }
+
+    Texture::Texture(
+        char* data,
+        RadeonRays::int3 size,
+        Format format,
+        bool generate_mipmap)
+        : m_data(data)
+        , m_size(size)
+        , m_format(format)
+        , m_generate_mipmap(generate_mipmap)
+    {
+        if (size.z == 0)
+        {
+            m_size.z = 1;
+        }
+
+        if (generate_mipmap)
+        {
+            int width = size.x;
+            int height = size.y;
+            int pitch = GetPixelSize(format) * width;
+
+            while ((width != 1) && (height != 1))
+            {
+                m_mip_level.push_back(MipLevel
+                {
+                    width,
+                    height,
+                    pitch
+                });
+
+                width = (int)std::max(1.f, std::ceilf(width / 2.f));
+                height = (int)std::max(1.f, std::ceilf(height / 2.f));
+                pitch = GetPixelSize(format) * width;
+            }
+
+            m_mip_level.push_back(MipLevel{ 1, 1, GetPixelSize(format) });
+        }
+    }
+
+    int Texture::GetPixelSize(Texture::Format format)
+    {
+        int pixel_size = 0;
+        switch (format)
+        {
+        case Texture::Format::kRgba8:
+            pixel_size = 4;
+            break;
+        case Texture::Format::kRgba16:
+            pixel_size = 8;
+            break;
+        case Texture::Format::kRgba32:
+            pixel_size = 16;
+            break;
+        default:
+            throw std::runtime_error("Texture::Texture(...): unsupported format");
+        }
+        return pixel_size;
     }
 }

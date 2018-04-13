@@ -349,7 +349,10 @@ struct _MipLevel
 typedef
 struct _MipmapPyramid
 {
+    int level_num;
     MipLevel level_info[MAX_LEVEL_NUM];
+    // unused field for alignment
+    int alignment;
 } MipmapPyramid;
 
 /// Texture description
@@ -367,7 +370,10 @@ struct _Texture
     int extra;
     // mipmap info
     int mipmap_enabled;
+    int mipmap_gen_required; // specify that baikal should generate on its own
     int mipmap_index;
+    // unused field for alignment
+    int alignment;
 } Texture;
 
 

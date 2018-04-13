@@ -28,7 +28,10 @@ namespace Baikal
     Mipmap::Mipmap(CLWContext context) :
         m_context(context)
     {
-        m_program = CLWProgram::CreateFromFile("../LevelScaler.cl", nullptr, m_context);
+        m_program = CLWProgram::CreateFromFile(
+            "../Baikal/Kernels/CL/mipmap_level_scaler.cl",
+            nullptr,
+            m_context);
     }
 
     void Mipmap::ComputeWeights(CLWBuffer<float> weights, int size, bool is_rounding_necessary)
@@ -136,12 +139,12 @@ namespace Baikal
         }
     }
 
-    void Mipmap::BuildMipPyramid(
-        const ClwScene::Texture& texture_info,
-        std::uint32_t img_width,
-        std::uint32_t img_height,
-        std::uint32_t img_pitch)
+    void Mipmap::BuildMipPyramid(const ClwScene::Texture& texture)
     {
+        int img_width = texture.w;
+        int img_height = texture.h;
+        int img_pitch = PixelBytes(texture.fmt) * texture.w;
+
         int level_num = (int)std::ceilf(std::log2(std::max(img_width, img_height))) + 1;
         if (level_num > MAX_LEVEL_NUM)
         {
@@ -196,24 +199,26 @@ namespace Baikal
             sizeof(ClwScene::MipmapPyramid)).Wait();
     }
 
-    void Mipmap::Build(CLWBuffer<char> texture_info, CLWBuffer<char> mipmap_info, CLWBuffer<char> texture_data)
+    void Mipmap::Build(Collector& texture_collector, CLWBuffer<char> mipmap_info, CLWBuffer<char> texture_data)
     {
         // reset buffers
-        m_texture_info = texture_info;
         m_mipmap_info = mipmap_info;
         m_texture_data = texture_data;
 
-        m_cpu_texture_info.resize(texture_info.GetElementCount() / sizeof(Texture));
+        auto texture_iter = texture_collector.CreateIterator();
+        for (; texture_iter->IsValid(); texture_iter->Next())
+        {
+            auto texture = texture_iter->ItemAs<Texture>();
 
-        m_context.ReadBuffer<char>(
-            0,
-            m_texture_info,
-            (char*)&m_cpu_texture_info[0],
-            m_texture_info.GetElementCount()).Wait();
+            if (texture->MipmapGenerationReq())
+            {
+                BuildMipPyramid(texture, )
+            }
+        }
 
         for (const auto& texture : m_cpu_texture_info)
         {
-            if (texture.mipmap_enabled)
+            if (texture.mipmap_gen_required)
             {
                 BuildMipPyramid(texture, texture.w, texture.h, PixelBytes(texture.fmt) * texture.w);
             }

@@ -36,6 +36,7 @@ namespace Baikal
         CLWBuffer<Volume> volumes;
         CLWBuffer<Texture> textures;
         CLWBuffer<char> texturedata;
+        CLWBuffer<MipmapPyramid> mipmap;
 
         CLWBuffer<Camera> camera;
         CLWBuffer<int> light_distributions;

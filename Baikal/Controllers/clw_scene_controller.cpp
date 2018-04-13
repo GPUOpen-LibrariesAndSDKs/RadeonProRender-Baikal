@@ -791,6 +791,7 @@ namespace Baikal
         // Get new buffer size
         std::size_t tex_buffer_size = tex_collector.GetNumItems();
         std::size_t tex_data_buffer_size = 0;
+        std::size_t mipmap_buffer_size = 0;
 
         if (tex_buffer_size == 0)
         {
@@ -804,18 +805,22 @@ namespace Baikal
         {
             // Create material buffer
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(tex_buffer_size, CL_MEM_READ_ONLY);
+            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(tex_buffer_size, CL_MEM_READ_ONLY);
         }
 
         ClwScene::Texture* textures = nullptr;
+        ClwScene::MipmapPyramid* mipmaps = nullptr;
+
         std::size_t num_textures_written = 0;
 
         // Map GPU materials buffer
         m_context.MapBuffer(0, out.textures, CL_MAP_WRITE, &textures).Wait();
+        m_context.MapBuffer(0, out.mipmap, CL_MAP_WRITE, &mipmaps).Wait();
 
         // Update material bundle first to be able to track differences
         out.texture_bundle.reset(tex_collector.CreateBundle());
 
-        // Create material iterator
+        // Create texture iterator
         std::unique_ptr<Iterator> tex_iter(tex_collector.CreateIterator());
 
         // Iterate and serialize
@@ -1539,9 +1544,10 @@ namespace Baikal
         }
     }
 
-    void ClwSceneController::WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const
+    void ClwSceneController::WriteTexture(Texture const& texture, std::size_t data_offset, void* texture_data, void* mipmap_data) const
     {
-        auto clw_texture = reinterpret_cast<ClwScene::Texture*>(data);
+        auto clw_texture = reinterpret_cast<ClwScene::Texture*>(texture_data);
+        auto clw_mipmap = reinterpret_cast<ClwScene::Texture*>(mipmap_data);
 
         auto dim = texture.GetSize();
 
@@ -1550,6 +1556,12 @@ namespace Baikal
         clw_texture->d = dim.z;
         clw_texture->fmt = GetTextureFormat(texture);
         clw_texture->dataoffset = static_cast<int>(data_offset);
+
+        // if texture support mipmapping
+        if (!texture.GetMipLevelsInfo().empty())
+        {
+
+        }
     }
 
     void ClwSceneController::WriteTextureData(Texture const& texture, void* data) const

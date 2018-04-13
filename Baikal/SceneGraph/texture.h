@@ -55,15 +55,18 @@ namespace Baikal
             kRgba32
         };
 
-        enum class MipmapType
+        struct MipLevel
         {
-            kNone = 0,
-            kGeneratedMip,
-            kBaikalMip
+            int width;
+            int height;
+            int pitch;
         };
 
         using Ptr = std::shared_ptr<Texture>;
-        static Ptr Create(char* data, RadeonRays::int3 size, Format format);
+
+        static Ptr Create(char* data, RadeonRays::int3 size, Format format, bool generate_mipmap = false);
+        static Ptr Create(char* data, RadeonRays::int3 size, Format format, const std::vector<MipLevel> &mip_levels);
+
         static Ptr Create();
 
         // Destructor (the data is destroyed as well)
@@ -88,10 +91,16 @@ namespace Baikal
         Texture(Texture const&) = delete;
         Texture& operator = (Texture const&) = delete;
 
-        // returns 
-        MipmapType MipmapMode() const
-        { return m_mip_type; }
+        // returns specs of each mipmap level for this texture
+        std::vector<MipLevel> GetMipLevelsInfo() const
+        { return m_mip_level; }
 
+        // marks that generation of the mipmap is required
+        bool MipmapGenerationReq() const
+        { m_generate_mipmap; }
+
+        // helper function, returns pixel (texel) size depends on format
+        static int GetPixelSize(Texture::Format format);
     protected:
         // Constructor
         Texture();
@@ -100,9 +109,13 @@ namespace Baikal
             char* data,
             RadeonRays::int3 size,
             Format format,
-            MipmapType mip_type = MipmapType::kNone,
-            int* mip_sizes = nullptr,
-            std::uint32_t mip_num = 0);
+            const std::vector<MipLevel> &mip_levels = std::vector<MipLevel>()); // collection of mip levels infos
+
+        Texture(
+            char* data,
+            RadeonRays::int3 size,
+            Format format,
+            bool generate_mipmap = false); // collection of mip levels infos
 
     private:
         // Image data
@@ -111,53 +124,23 @@ namespace Baikal
         RadeonRays::int3 m_size;
         // Format
         Format m_format;
-        // flag to specify that mipmap should be
-        // generated for this texture by Baikal
-        MipmapType m_mip_type;
         // mipmap pyramid level sizes
-        std::unique_ptr<int[]> m_level_sizes;
-
+        std::vector<MipLevel> m_mip_level;
+        // flag to determine that mipmap generation is required
+        bool m_generate_mipmap;
     };
 
     inline Texture::Texture()
         : m_data(new char[16])
         , m_size(2, 2, 1)
         , m_format(Format::kRgba8)
-        , m_mip_type(MipmapType::kNone)
+        , m_generate_mipmap (false)
     {
         // Create checkerboard by default
         m_data[0] = m_data[1] = m_data[2] = m_data[3] = (char)0xFF;
         m_data[4] = m_data[5] = m_data[6] = m_data[7] = (char)0x00;
         m_data[8] = m_data[9] = m_data[10] = m_data[11] = (char)0xFF;
         m_data[12] = m_data[13] = m_data[14] = m_data[15] = (char)0x00;
-    }
-
-    inline Texture::Texture(
-        char* data,
-        RadeonRays::int3 size,
-        Format format,
-        MipmapType mip_type,
-        int* mip_sizes,
-        std::uint32_t mip_num)
-
-        : m_data(data)
-        , m_size(size)
-        , m_format(format)
-        , m_mip_type(mip_type)
-    {
-        if (size.z == 0)
-        {
-            m_size.z = 1;
-        }
-
-        if (mip_sizes != nullptr)
-        {
-            m_level_sizes.reset(new int[mip_num]);
-            memcpy(
-                (void*)m_level_sizes.get(),
-                (void*)mip_sizes,
-                sizeof(int) * mip_num);
-        }
     }
 
     inline void Texture::SetData(char* data, RadeonRays::int3 size, Format format)
