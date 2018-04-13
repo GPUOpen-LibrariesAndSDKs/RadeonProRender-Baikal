@@ -118,7 +118,6 @@ bool Bxdf_IsEmissive(DifferentialGeometry const* dg)
     return (dg->mat.flags & kBxdfFlagsEmissive) == kBxdfFlagsEmissive;
 }
 
-/// BxDF singularity check
 bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
     return (dg->mat.flags & kBxdfFlagsBrdf) == 0;

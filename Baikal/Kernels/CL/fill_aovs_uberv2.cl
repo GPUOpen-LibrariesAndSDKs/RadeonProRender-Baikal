@@ -176,11 +176,11 @@ KERNEL void FillAOVsUberV2(
             DifferentialGeometry diffgeo;
             Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
-/*            if (world_position_enabled)
+            if (world_position_enabled)
             {
                 aov_world_position[idx].xyz += diffgeo.p;
                 aov_world_position[idx].w += 1.f;
-            }*/
+            }
 
             if (world_shading_normal_enabled)
             {
@@ -230,15 +230,17 @@ KERNEL void FillAOVsUberV2(
                 aov_uv[idx].w += 1.f;
             }
 
-/*            if (albedo_enabled)
+            if (albedo_enabled)
             {
                 float ngdotwi = dot(diffgeo.ng, wi);
                 bool backfacing = ngdotwi < 0.f;
 
                 // Select BxDF
-                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+                UberV2ShaderData uber_shader_data;
+                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
 
-                const float3 kd = Texture_GetValue3f(diffgeo.mat.simple.kx.xyz, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.kxmapidx));
+                const float3 kd = ((diffgeo.mat.layers & kDiffuseLayer) == kDiffuseLayer) ?
+                    uber_shader_data.diffuse_color.xyz : (float3)(0.0f);
 
                 aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
@@ -250,7 +252,9 @@ KERNEL void FillAOVsUberV2(
                 bool backfacing = ngdotwi < 0.f;
 
                 // Select BxDF
-                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+                UberV2ShaderData uber_shader_data;
+                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
+                GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
                 float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
                 if (backfacing && !Bxdf_IsBtdf(&diffgeo))
@@ -264,7 +268,7 @@ KERNEL void FillAOVsUberV2(
                     diffgeo.dpdv = -diffgeo.dpdv;
                 }
 
-                DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+                UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
                 aov_world_tangent[idx].xyz += diffgeo.dpdu;
@@ -277,7 +281,9 @@ KERNEL void FillAOVsUberV2(
                 bool backfacing = ngdotwi < 0.f;
 
                 // Select BxDF
-                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+                UberV2ShaderData uber_shader_data;
+                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
+                GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
                 float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
                 if (backfacing && !Bxdf_IsBtdf(&diffgeo))
@@ -291,20 +297,22 @@ KERNEL void FillAOVsUberV2(
                     diffgeo.dpdv = -diffgeo.dpdv;
                 }
 
-                DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
+                UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
                 aov_world_bitangent[idx].xyz += diffgeo.dpdv;
                 aov_world_bitangent[idx].w += 1.f;
             }
 
-            if (gloss_enabled)
+/*            if (gloss_enabled)
             {
                 float ngdotwi = dot(diffgeo.ng, wi);
                 bool backfacing = ngdotwi < 0.f;
 
                 // Select BxDF
-                Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
+                UberV2ShaderData uber_shader_data;
+                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
+                GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
                 float gloss = 0.f;
 
@@ -322,7 +330,7 @@ KERNEL void FillAOVsUberV2(
 
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
-            }
+            }*/
             
             if (mesh_id_enabled)
             {
@@ -348,7 +356,6 @@ KERNEL void FillAOVsUberV2(
             {
                 aov_shape_ids[idx].x = shapes[isect.shapeid - 1].id;
             }
-            */
         }
     }
 }
