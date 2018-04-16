@@ -345,6 +345,10 @@ KERNEL void ShadeSurfaceUberV2(
         // Select BxDF
         UberV2ShaderData uber_shader_data;
         UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
+
+        UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
+        DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
+
         GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
         // Set surface interaction flags
@@ -395,9 +399,6 @@ KERNEL void ShadeSurfaceUberV2(
             diffgeo.dpdv = -diffgeo.dpdv;
             s = -s;
         }
-
-        UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
-        DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
         float ndotwi = fabs(dot(diffgeo.n, wi));
 

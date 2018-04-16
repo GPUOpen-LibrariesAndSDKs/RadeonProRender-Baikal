@@ -304,7 +304,7 @@ KERNEL void FillAOVsUberV2(
                 aov_world_bitangent[idx].w += 1.f;
             }
 
-/*            if (gloss_enabled)
+            if (gloss_enabled)
             {
                 float ngdotwi = dot(diffgeo.ng, wi);
                 bool backfacing = ngdotwi < 0.f;
@@ -315,22 +315,26 @@ KERNEL void FillAOVsUberV2(
                 GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
                 float gloss = 0.f;
-
-                int type = diffgeo.mat.type;
-                if (type == kIdealReflect || type == kIdealReflect || type == kPassthrough)
+                if ((diffgeo.mat.layers & kCoatingLayer) == kCoatingLayer)
                 {
-                    gloss = 1.f;
+                    gloss = 1.0f;
                 }
-                else if (type == kMicrofacetGGX || type == kMicrofacetBeckmann ||
-                    type == kMicrofacetRefractionGGX || type == kMicrofacetRefractionBeckmann)
+                else if ((diffgeo.mat.layers & kReflectionLayer) == kReflectionLayer)
                 {
-                    gloss = 1.f - Texture_GetValue1f(diffgeo.mat.simple.ns, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.nsmapidx));
+                    gloss = 1.0f - uber_shader_data.reflection_roughness;
+                    if ((diffgeo.mat.layers & kRefractionLayer) == kRefractionLayer)
+                    {
+                        gloss = max(gloss, 1.0f - uber_shader_data.refraction_roughness);
+                    }
                 }
-
+                else if ((diffgeo.mat.layers & kRefractionLayer) == kRefractionLayer)
+                {
+                    gloss = 1.0f - uber_shader_data.refraction_roughness;
+                }
 
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
-            }*/
+            }
             
             if (mesh_id_enabled)
             {

@@ -213,8 +213,8 @@ namespace Baikal
         auto ibl = ImageBasedLight::Create();
         ibl->SetTexture(ibl_texture);
         //ibl->SetReflectionTexture(ibl_texture1);
-        ibl->SetBackgroundTexture(ibl_texture);
-        ibl->SetMultiplier(15.f);
+        //ibl->SetBackgroundTexture(ibl_texture);
+        ibl->SetMultiplier(1.f);
 
         // TODO: temporary code to add directional light
         auto light = DirectionalLight::Create();
@@ -402,7 +402,7 @@ namespace Baikal
                                 InputMap_Sampler::Create(texture),
                                 InputMap_ConstantFloat::Create(2.2f)));
                     }
-//                    else
+                    else
                     {
                         material->SetInputValue("uberv2.diffuse.color",
                             InputMap_ConstantFloat3::Create(d));
@@ -417,7 +417,7 @@ namespace Baikal
                                 InputMap_Sampler::Create(texture),
                                 InputMap_ConstantFloat::Create(2.2f)));
                     }
-//                    else
+                    else
                     {
                         material->SetInputValue("uberv2.reflection.color",
                             InputMap_ConstantFloat3::Create(s));
