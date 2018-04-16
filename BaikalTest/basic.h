@@ -28,7 +28,7 @@ THE SOFTWARE.
 #include "RenderFactory/clw_render_factory.h"
 #include "Output/output.h"
 #include "SceneGraph/camera.h"
-#include "SceneGraph/IO/scene_io.h"
+#include "scene_io.h"
 
 #include "OpenImageIO/imageio.h"
 
@@ -143,8 +143,7 @@ public:
 
     virtual void LoadTestScene()
     {
-        auto io = Baikal::SceneIo::CreateSceneIoTest();
-        m_scene = io->LoadScene("sphere+ibl", "");
+        m_scene = Baikal::SceneIo::LoadScene("sphere+ibl.test", "");
     }
 
     virtual  void SetupCamera()

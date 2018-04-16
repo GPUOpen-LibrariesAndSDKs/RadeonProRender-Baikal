@@ -33,6 +33,16 @@
 
 #include "SceneGraph/texture.h"
 
+#ifdef WIN32
+#ifdef BAIKAL_EXPORT_API
+#define BAIKAL_API_ENTRY __declspec(dllexport)
+#else
+#define BAIKAL_API_ENTRY __declspec(dllimport)
+#endif
+#else
+#define BAIKAL_API_ENTRY __attribute__((visibility ("default")))
+#endif
+
 namespace Baikal
 {
     class Texture;
@@ -42,7 +52,7 @@ namespace Baikal
      
      ImageIO is responsible for texture loading from disk and keeping track of image reuse.
      */
-    class ImageIo
+    class BAIKAL_API_ENTRY ImageIo
     {
     public:
         // Create default image IO

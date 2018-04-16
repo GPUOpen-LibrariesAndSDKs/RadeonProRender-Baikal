@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "SceneGraph/light.h"
 #include "SceneGraph/shape.h"
 #include "SceneGraph/material.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -37,8 +37,7 @@ class LightTest: public BasicTest
 public:
     void LoadTestScene() override
     {
-        auto io = Baikal::SceneIo::CreateSceneIoTest();
-        m_scene = io->LoadScene("sphere+plane", "");
+        m_scene = Baikal::SceneIo::LoadScene("sphere+plane.test", "");
     }
 };
 
@@ -313,8 +312,7 @@ TEST_F(LightTest, Light_AreaLight)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane+area", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+area.test", "");
     m_scene->SetCamera(m_camera);
 
     ClearOutput();
@@ -344,8 +342,7 @@ TEST_F(LightTest, Light_DirectionalAndAreaLight)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane+area", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+area.test", "");
     m_scene->SetCamera(m_camera);
 
     std::vector<float3> direction{
@@ -394,8 +391,7 @@ TEST_F(LightTest, Light_PointAndAreaLight)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane+area", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+area.test", "");
     m_scene->SetCamera(m_camera);
 
     std::vector<float3> positions{
@@ -444,8 +440,7 @@ TEST_F(LightTest, Light_SpotAndAreaLight)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane+area", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+area.test", "");
     m_scene->SetCamera(m_camera);
 
     std::vector<float3> direction{
@@ -503,8 +498,7 @@ TEST_F(LightTest, Light_EmissiveSphere)
 
     ClearOutput();
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane.test", "");
     m_scene->SetCamera(m_camera);
 
     auto emission = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kEmissive);
@@ -551,8 +545,7 @@ TEST_F(LightTest, Light_DirectionalAndEmissiveSphere)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane.test", "");
     m_scene->SetCamera(m_camera);
 
     auto light = Baikal::DirectionalLight::Create();
@@ -752,8 +745,7 @@ TEST_F(LightTest, Light_ImageBasedLightAndEmissiveQuad)
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
-    auto io = Baikal::SceneIo::CreateSceneIoTest();
-    m_scene = io->LoadScene("sphere+plane+area", "");
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+area.test", "");
     m_scene->SetCamera(m_camera);
 
     auto image_io(Baikal::ImageIo::CreateImageIo());

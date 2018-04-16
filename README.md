@@ -124,6 +124,12 @@ The list of supported texture formats:
 - dds (limited support)
 - tga
 
+You can download additional test scenes from [RadeonProRender-Tests](https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRender-Tests). Once extracted, you can load e.g. the Classroom example like this:
+
+`../build/bin/BaikalStandalone -p /path/to/extracted/folder/Classroom/ -f classroom.obj`
+
+The path can be absolute or relative to `BaikalStandalone`.
+
 ## Run unit tests
 - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/build/bin/:${LD_LIBRARY_PATH}`
  - `cd BaikalTest`

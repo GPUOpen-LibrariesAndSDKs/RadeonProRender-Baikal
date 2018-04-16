@@ -4,8 +4,11 @@
 #include "Renderers/monte_carlo_renderer.h"
 #include "Renderers/adaptive_renderer.h"
 #include "Estimators/path_tracing_estimator.h"
+
+#ifdef ENABLE_DENOISER
 #include "PostEffects/bilateral_denoiser.h"
 #include "PostEffects/wavelet_denoiser.h"
+#endif
 
 #include <memory>
 
@@ -57,12 +60,14 @@ namespace Baikal
     {
         switch (type)
         {
+#ifdef ENABLE_DENOISER
             case PostEffectType::kBilateralDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new BilateralDenoiser(m_context, &m_program_manager));
             case PostEffectType::kWaveletDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new WaveletDenoiser(m_context, &m_program_manager));
+#endif
             default:
                 throw std::runtime_error("PostEffect not supported");
         }

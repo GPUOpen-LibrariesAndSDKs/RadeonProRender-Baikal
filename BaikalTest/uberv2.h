@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "SceneGraph/light.h"
 #include "SceneGraph/shape.h"
 #include "SceneGraph/material.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -39,8 +39,7 @@ protected:
 
     void LoadTestScene() override
     {
-        auto io = Baikal::SceneIo::CreateSceneIoTest();
-        m_scene = io->LoadScene("uberv2_test_spheres", "");
+        m_scene = Baikal::SceneIo::LoadScene("uberv2_test_spheres.test", "");
     }
 };
 

@@ -5,10 +5,9 @@
 #include "SceneGraph/material.h"
 #include "SceneGraph/light.h"
 #include "SceneGraph/texture.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 #include "math/mathutils.h"
 
-#ifdef ENABLE_FBX
 #include "math/matrix.h"
 #include "Utils/log.h"
 
@@ -24,26 +23,24 @@
 namespace Baikal
 {
     // Create fake test IO
-    class SceneFbxIo : public SceneIo
+    class SceneFbxIo : public SceneIo::Loader
     {
     public:
-        SceneFbxIo() = default;
+        SceneFbxIo() : SceneIo::Loader("fbx", this)
+        {}
         // Load scene (this class uses filename to determine what scene to generate)
-        std::unique_ptr<Scene1> LoadScene(std::string const& filename, std::string const& basepath) const override;
+        Scene1::Ptr LoadScene(const std::string &filename, const std::string &basepath) const override;
 
     private:
         void LoadMesh(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const;
         void LoadLight(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const;
-        Material const* TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const;
-        Texture const* GetTexture(FbxSurfaceMaterial* material, const char* textureType, std::string const& basepath, Scene1& scene, ImageIo& io) const;
+        Material::Ptr TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const;
+        Texture::Ptr GetTexture(FbxSurfaceMaterial* material, const char* textureType, std::string const& basepath, Scene1& scene, ImageIo& io) const;
 
-        mutable std::map<FbxSurfaceMaterial*, Material const*> m_material_cache;
+        mutable std::map<FbxSurfaceMaterial*, Material::Ptr> m_material_cache;
     };
 
-    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoFbx()
-    {
-        return std::unique_ptr<SceneIo>(new SceneFbxIo());
-    }
+    static SceneFbxIo scene_fbx_io_loader;
 
     static RadeonRays::matrix FbxToBaikalTransform(FbxAMatrix const& fbx_matrix)
     {
@@ -61,7 +58,7 @@ namespace Baikal
         return res;
     }
 
-    Texture const* SceneFbxIo::GetTexture(FbxSurfaceMaterial* material, const char* slot, std::string const& basepath, Scene1& scene, ImageIo& io) const
+    Texture::Ptr SceneFbxIo::GetTexture(FbxSurfaceMaterial* material, const char* slot, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
         //return nullptr;
         FbxProperty prop = material->FindProperty(slot);
@@ -98,16 +95,15 @@ namespace Baikal
         return nullptr;
     }
 
-    Material const* SceneFbxIo::TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const
+    Material::Ptr SceneFbxIo::TranslateMaterial(FbxSurfaceMaterial* material, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
         auto iter = m_material_cache.find(material);
 
         if (iter == m_material_cache.cend())
         {
-            auto base = new SingleBxdf(SingleBxdf::BxdfType::kLambert);
-            scene.AttachAutoreleaseObject(base);
+            auto base = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
 
-            Material* res = base;
+            Material::Ptr res = base;
             base->SetName(material->GetName());
 
             auto albedo = material->FindProperty(FbxSurfaceMaterial::sDiffuse).Get<FbxDouble3>();
@@ -142,7 +138,7 @@ namespace Baikal
             if (specular_mul > 0.f && (specular_albedo[0] > 0.f ||
                 specular_albedo[1] > 0.f || specular_albedo[2] > 0.f))
             {
-                auto top = new SingleBxdf(shininess > 0.99f ?
+                auto top = SingleBxdf::Create(shininess > 0.99f ?
                     SingleBxdf::BxdfType::kMicrofacetGGX :
                     SingleBxdf::BxdfType::kIdealReflect);
 
@@ -161,7 +157,7 @@ namespace Baikal
                 auto r = RadeonRays::clamp(1.f - shininess / 10.f, 0.001f, 999.f);
                 top->SetInputValue("roughness", RadeonRays::float3(r,r,r));
 
-                auto layered = new MultiBxdf(MultiBxdf::Type::kFresnelBlend);
+                auto layered = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
                 layered->SetInputValue("base_material", base);
                 layered->SetInputValue("top_material", top);
                 layered->SetInputValue("ior", RadeonRays::float3(1.5f, 1.5f, 1.5f, 1.5f));
@@ -176,8 +172,6 @@ namespace Baikal
                     top->SetInputValue("bump", normal);
                 }
 
-                scene.AttachAutoreleaseObject(layered);
-                scene.AttachAutoreleaseObject(top);
             }
 
             m_material_cache[material] = res;
@@ -208,9 +202,8 @@ namespace Baikal
         {
         case FbxLight::ePoint:
         {
-            auto light = new PointLight();
+            auto light = PointLight::Create();
             light->SetName(node->GetName());
-            scene.AttachAutoreleaseObject(light);
 
             light->SetEmittedRadiance(intensity * RadeonRays::float3(color[0], color[1], color[2]));
             light->SetPosition(RadeonRays::float3(position[0], position[1], position[2]));
@@ -220,9 +213,8 @@ namespace Baikal
         }
         case FbxLight::eDirectional:
         {
-            auto light = new DirectionalLight();
+            auto light = DirectionalLight::Create();
             light->SetName(node->GetName());
-            scene.AttachAutoreleaseObject(light);
 
             light->SetEmittedRadiance(intensity * RadeonRays::float3(color[0], color[1], color[2]));
             light->SetDirection(rotation_matrix * RadeonRays::float3(0, -1, 0, 0));
@@ -232,9 +224,8 @@ namespace Baikal
         }
         case FbxLight::eSpot:
         {
-            auto light = new SpotLight();
+            auto light = SpotLight::Create();
             light->SetName(node->GetName());
-            scene.AttachAutoreleaseObject(light);
 
             light->SetEmittedRadiance(intensity * RadeonRays::float3(color[0], color[1], color[2]));
             light->SetPosition(RadeonRays::float3(position[0], position[1], position[2]));
@@ -252,7 +243,7 @@ namespace Baikal
 
     void SceneFbxIo::LoadMesh(FbxNode* node, std::string const& basepath, Scene1& scene, ImageIo& io) const
     {
-        auto mesh = new Mesh();
+        auto mesh = Mesh::Create();
         auto fbx_mesh = node->GetMesh();
 
         auto transform = FbxMatrix(node->EvaluateGlobalTransform());
@@ -335,13 +326,12 @@ namespace Baikal
             mesh->SetIndices(std::move(indices));
 
             scene.AttachShape(mesh);
-            scene.AttachAutoreleaseObject(mesh);
         }
     }
 
-    std::unique_ptr<Scene1> SceneFbxIo::LoadScene(std::string const& filename, std::string const& basepath) const
+    Scene1::Ptr SceneFbxIo::LoadScene(std::string const& filename, std::string const& basepath) const
     {
-        Scene1* scene = new Scene1;
+        Scene1::Ptr scene = Scene1::Create();
         auto image_io(ImageIo::CreateImageIo());
 
         auto fbx_manager = FbxManager::Create();
@@ -349,7 +339,10 @@ namespace Baikal
         auto fbx_scene = FbxScene::Create(fbx_manager, "Scene");
 
         LogInfo("Loading FBX ", filename, "... ");
-        fbx_importer->Initialize(filename.c_str());
+        if (!fbx_importer->Initialize(filename.c_str()))
+        {
+            throw std::runtime_error(std::string("Unable to initialize FBX importer. Error: ") + fbx_importer->GetStatus().GetErrorString());
+        }
         if (!fbx_importer->Import(fbx_scene))
         {
             throw std::runtime_error("Cannot load file: " + filename + "\n");
@@ -398,42 +391,26 @@ namespace Baikal
         fbx_manager->Destroy();
 
 
-        Texture* ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
-        scene->AttachAutoreleaseObject(ibl_texture);
+        Texture::Ptr ibl_texture = image_io->LoadImage("../Resources/Textures/Canopus_Ground_4k.exr");
 
-        ImageBasedLight* ibl = new ImageBasedLight();
+        auto ibl = ImageBasedLight::Create();
         ibl->SetTexture(ibl_texture);
         ibl->SetMultiplier(3.f);
-        scene->AttachAutoreleaseObject(ibl);
 
         // TODO: temporary code to add directional light
-        DirectionalLight* light = new DirectionalLight();
+        auto light = DirectionalLight::Create();
         light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.4f)));
         light->SetEmittedRadiance(7.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
-        scene->AttachAutoreleaseObject(light);
 
-        DirectionalLight* light1 = new DirectionalLight();
+        auto light1 = DirectionalLight::Create();
         light1->SetDirection(RadeonRays::float3(0.3f, -1.f, -0.5f));
         light1->SetEmittedRadiance(RadeonRays::float3(1.f, 0.8f, 0.65f));
-        scene->AttachAutoreleaseObject(light1);
 
         scene->AttachLight(light);
         //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 
-        return std::unique_ptr<Scene1>(scene);
+        return scene;
     }
 }
 
-#else
-
-namespace Baikal
-{
-    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoFbx()
-    {
-        throw std::runtime_error("FBX support is disabled. Please build with --fbx premake option.\n");
-        return nullptr;
-    }
-}
-
-#endif

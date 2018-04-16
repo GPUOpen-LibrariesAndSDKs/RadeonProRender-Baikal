@@ -1,13 +1,13 @@
 #include "scene_io.h"
 #include "image_io.h"
-#include "../scene1.h"
-#include "../shape.h"
-#include "../material.h"
-#include "../light.h"
-#include "../texture.h"
+#include "SceneGraph/scene1.h"
+#include "SceneGraph/shape.h"
+#include "SceneGraph/material.h"
+#include "SceneGraph/light.h"
+#include "SceneGraph/texture.h"
+#include "SceneGraph/uberv2material.h"
+#include "SceneGraph/inputmaps.h"
 #include "math/mathutils.h"
-#include "../uberv2material.h"
-#include "../inputmaps.h"
 
 #include <vector>
 #include <memory>
@@ -18,18 +18,17 @@
 namespace Baikal
 {
     // Create fake test IO
-    class SceneIoTest : public SceneIo
+    class SceneIoTest : public SceneIo::Loader
     {
     public:
         // Load scene (this class uses filename to determine what scene to generate)
         Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath) const override;
+        SceneIoTest() : SceneIo::Loader("test", this)
+        {}
     };
 
-    // Create test IO
-    std::unique_ptr<SceneIo> SceneIo::CreateSceneIoTest()
-    {
-        return std::unique_ptr<SceneIo>(new SceneIoTest());
-    }
+    // Create static object to register loader. This object will be used as loader
+    static SceneIoTest scene_io_test_loader;
 
     // Create spehere mesh
     auto CreateSphere(std::uint32_t lat, std::uint32_t lon, float r, RadeonRays::float3 const& c)
@@ -148,8 +147,10 @@ namespace Baikal
 
         auto scene = Scene1::Create();
         auto image_io(ImageIo::CreateImageIo());
+        std::string fname = filename.substr(0, filename.rfind(".test"));
+        fname = fname.substr(fname.find(basepath) + basepath.length());
 
-        if (filename == "quad+spot")
+        if (fname == "quad+spot")
         {
             auto quad = CreateQuad(
             {
@@ -171,7 +172,7 @@ namespace Baikal
             //light->SetConeShape
             scene->AttachLight(light);
         }
-        else if (filename == "quad+ibl")
+        else if (fname == "quad+ibl")
         {
             auto quad = CreateQuad(
             {
@@ -205,7 +206,7 @@ namespace Baikal
 
             quad->SetMaterial(mix);
         }
-        else if (filename == "sphere+ibl")
+        else if (fname == "sphere+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
@@ -217,7 +218,7 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
         }
-        else if (filename == "sphere+plane")
+        else if (fname == "sphere+plane")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
             scene->AttachShape(mesh);
@@ -232,7 +233,7 @@ namespace Baikal
             , false);
             scene->AttachShape(floor);
         }
-        else if (filename == "sphere+plane+area")
+        else if (fname == "sphere+plane+area")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
             scene->AttachShape(mesh);
@@ -268,7 +269,7 @@ namespace Baikal
             scene->AttachLight(l1);
             scene->AttachLight(l2);
         }
-        else if (filename == "sphere+plane+area+ibl")
+        else if (fname == "sphere+plane+area+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
             scene->AttachShape(mesh);
@@ -332,7 +333,7 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
         }
-        else if (filename == "sphere+plane+ibl")
+        else if (fname == "sphere+plane+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.2f, 0.f));
             scene->AttachShape(mesh);
@@ -372,7 +373,7 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
         }
-        else if (filename == "100spheres+plane+ibl+disney")
+        else if (fname == "100spheres+plane+ibl+disney")
         {
             auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
             scene->AttachShape(mesh);
@@ -474,7 +475,7 @@ namespace Baikal
             ibl->SetTexture(ibl_texture);
             ibl->SetMultiplier(1.f);
         }
-        else if (filename == "uberv2_test_spheres")
+        else if (fname == "uberv2_test_spheres")
         {
             auto mesh = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
             scene->AttachShape(mesh);
@@ -544,7 +545,7 @@ namespace Baikal
             ibl->SetMultiplier(1.f);
             scene->AttachLight(ibl);
         }
-        else if (filename == "sphere+uberv2+ibl")
+        else if (fname == "sphere+uberv2+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3());
             scene->AttachShape(mesh);
@@ -573,7 +574,7 @@ namespace Baikal
             scene->AttachLight(ibl);
 
         }
-        else if (filename == "shere+plane_uberv2+ibl+normalmap")
+        else if (fname == "shere+plane_uberv2+ibl+normalmap")
         {
             auto image_io(Baikal::ImageIo::CreateImageIo());
             auto bump_texture = image_io->LoadImage("../Resources/Textures/test_normal.jpg");

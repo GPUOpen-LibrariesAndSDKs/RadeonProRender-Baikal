@@ -69,7 +69,7 @@ THE SOFTWARE.
 
 #include "math/mathutils.h"
 #include "Application/application.h"
-#include "SceneGraph/IO/material_io.h"
+#include "material_io.h"
 
 using namespace RadeonRays;
 
