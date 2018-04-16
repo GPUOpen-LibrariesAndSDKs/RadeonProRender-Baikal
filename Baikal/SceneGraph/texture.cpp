@@ -12,7 +12,7 @@ namespace Baikal
         case Format::kRgba8:
         {
             auto data = reinterpret_cast<std::uint8_t*>(m_data.get());
-            auto num_elements = m_size.x * m_size.y * m_size.z;
+            auto num_elements = m_levels[0].x * m_levels[0].y * m_levels[0].z;
 
 
             for (auto i = 0; i < num_elements; ++i)
@@ -29,7 +29,7 @@ namespace Baikal
         case Format::kRgba16:
         {
             auto data = reinterpret_cast<std::uint16_t*>(m_data.get());
-            auto num_elements = m_size.x * m_size.y * m_size.z;
+            auto num_elements = m_levels[0].x * m_levels[0].y * m_levels[0].z;
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -51,7 +51,7 @@ namespace Baikal
         case Format::kRgba32:
         {
             auto data = reinterpret_cast<float*>(m_data.get());
-            auto num_elements = m_size.x * m_size.y * m_size.z;
+            auto num_elements = m_levels[0].x * m_levels[0].y * m_levels[0].z;
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -75,9 +75,11 @@ namespace Baikal
     namespace {
         struct TextureConcrete : public Texture {
             TextureConcrete() = default;
-            TextureConcrete(char* data, RadeonRays::int3 size, Format format,
-                const std::vector<MipLevel> &mip_levels) :
-                Texture(data, size, format, mip_levels) {}
+            TextureConcrete(
+                char* data,
+                const std::vector<RadeonRays::int3> &levels,
+                Format format) :
+                Texture(data, levels, format) {}
 
             TextureConcrete(char* data, RadeonRays::int3 size, Format format, bool generate_mipmap) :
                 Texture(data, size, format, generate_mipmap) {}
@@ -88,9 +90,9 @@ namespace Baikal
         return std::make_shared<TextureConcrete>();
     }
 
-    Texture::Ptr Texture::Create(char* data, RadeonRays::int3 size, Format format, const std::vector<MipLevel> &mip_levels)
+    Texture::Ptr Texture::Create(char* data, const std::vector<RadeonRays::int3> &levels, Format format)
     {
-        return std::make_shared<TextureConcrete>(data, size, format, mip_levels);
+        return std::make_shared<TextureConcrete>(data, levels, format);
     }
 
     Texture::Ptr Texture::Create(char* data, RadeonRays::int3 size, Format format, bool generate_mipmap)
@@ -100,23 +102,23 @@ namespace Baikal
 
     Texture::Texture(
         char* data,
-        RadeonRays::int3 size,
-        Format format,
-        const std::vector<MipLevel>& mip_levels)
+        const std::vector<RadeonRays::int3> &levels,
+        Format format)
         : m_data(data)
-        , m_size(size)
         , m_format(format)
         , m_generate_mipmap(false)
     {
-        if (size.z == 0)
-        {
-            m_size.z = 1;
-        }
+        if (levels.empty())
+            throw std::logic_error("Texture::Texture(...): texture 'levels' is empty");
 
-        if (!mip_levels.empty())
-        {
-            m_mip_level = mip_levels;
-        }
+        m_levels = levels;
+
+        std::transform(m_levels.begin(), m_levels.end(), m_levels.begin(),
+            [](RadeonRays::int3 size)
+            {
+                size.z = std::max(1, size.z);
+                return size;
+            });
     }
 
     Texture::Texture(
@@ -125,56 +127,56 @@ namespace Baikal
         Format format,
         bool generate_mipmap)
         : m_data(data)
-        , m_size(size)
         , m_format(format)
         , m_generate_mipmap(generate_mipmap)
     {
-        if (size.z == 0)
+        m_levels.push_back(
         {
-            m_size.z = 1;
-        }
+            size.x,
+            size.y,
+            std::max(1, size.z)
+        });
 
         if (generate_mipmap)
         {
-            int width = size.x;
-            int height = size.y;
-            int pitch = GetPixelSize(format) * width;
+            int width = (int)std::max(1.f, std::ceilf(m_levels[0].x / 2.f));
+            int height = (int)std::max(1.f, std::ceilf(m_levels[0].y / 2.f));
 
             while ((width != 1) && (height != 1))
             {
-                m_mip_level.push_back(MipLevel
+                m_levels.push_back(
                 {
                     width,
                     height,
-                    pitch
+                    1
                 });
 
                 width = (int)std::max(1.f, std::ceilf(width / 2.f));
                 height = (int)std::max(1.f, std::ceilf(height / 2.f));
-                pitch = GetPixelSize(format) * width;
             }
 
-            m_mip_level.push_back(MipLevel{ 1, 1, GetPixelSize(format) });
+            m_levels.push_back({ 1, 1, 1});
         }
     }
 
     int Texture::GetPixelSize(Texture::Format format)
     {
-        int pixel_size = 0;
-        switch (format)
-        {
-        case Texture::Format::kRgba8:
-            pixel_size = 4;
+        std::uint32_t component_size = 1;
+
+        switch (format) {
+        case Format::kRgba8:
+            component_size = 1;
             break;
-        case Texture::Format::kRgba16:
-            pixel_size = 8;
+        case Format::kRgba16:
+            component_size = 2;
             break;
-        case Texture::Format::kRgba32:
-            pixel_size = 16;
+        case Format::kRgba32:
+            component_size = 4;
             break;
         default:
             throw std::runtime_error("Texture::Texture(...): unsupported format");
         }
-        return pixel_size;
+
+        return 4 * component_size;
     }
 }

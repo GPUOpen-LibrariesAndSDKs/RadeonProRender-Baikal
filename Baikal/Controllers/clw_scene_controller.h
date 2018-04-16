@@ -35,6 +35,8 @@
 
 #include "radeon_rays_cl.h"
 
+#include "Utils/cl_mipmap.h"
+
 namespace Baikal
 {
     class Scene1;
@@ -106,7 +108,7 @@ namespace Baikal
         void WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const;
         // Write out single texture header at data pointer.
         // Header requires texture data offset, so it is passed in.
-        void WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const;
+        void WriteTexture(Texture const& texture, std::size_t data_offset, void* texture_data, int mipmap_index = -1) const;
         // Write out texture data at data pointer.
         void WriteTextureData(Texture const& texture, void* data) const;
         // Write single volume at data pointer
@@ -128,5 +130,7 @@ namespace Baikal
         Material::Ptr m_default_material;
         // CL Program manager
         const CLProgramManager *m_program_manager;
+        // mipmap builder
+        Mipmap::Ptr m_mipmap;
     };
 }

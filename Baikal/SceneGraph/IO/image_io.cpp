@@ -47,50 +47,17 @@ namespace Baikal
             throw std::runtime_error("Can't load " + filename + " image");
         }
 
-        std::vector<Texture::MipLevel> mip_levels_spec;
+        std::vector<RadeonRays::int3> levels_spec;
         ImageSpec spec = input->spec();
         auto fmt = GetTextureFormat(spec);
 
         int texture_data_size = 0;
-        int mip_level_count = 0;
 
-        // first pass through mipmap levels to find necessary size for texture buffer (holds all mipmap levels)
-        while (input->seek_subimage(0, mip_level_count, spec))
-        {
-            if (fmt == Texture::Format::kRgba8)
-                mip_levels_spec.push_back(
-                    Texture::MipLevel
-                    { 
-                        spec.width,
-                        spec.height,
-                        spec.width * spec.depth * 4
-                    });
-            else if (fmt == Texture::Format::kRgba16)
-                mip_levels_spec.push_back(
-                    Texture::MipLevel
-                    {
-                        spec.width,
-                        spec.height,
-                        2 * (int)sizeof(float) * spec.width * spec.depth
-                    });
-            else
-                mip_levels_spec.push_back(
-                    Texture::MipLevel
-                    {
-                        spec.width,
-                        spec.height,
-                        (int)sizeof(RadeonRays::float3) * spec.width * spec.depth
-                    });
-
-            mip_level_count++;
-        }
-        
         std::unique_ptr<char[]> texture_data (new char[texture_data_size]);
         auto data_inplace = texture_data.get();
 
-        // second pass through mipmap to copy image data from mipmap levels
-        mip_level_count = 0; // reset counter to zero
-        while (input->seek_subimage(0, mip_level_count, spec))
+        int level_counter = 0; // reset counter to zero
+        while (input->seek_subimage(0, level_counter, spec))
         {
             int size = 0;
             if (fmt == Texture::Format::kRgba8)
@@ -125,8 +92,16 @@ namespace Baikal
                 // Read data to storage
                 input->read_image(TypeDesc::FLOAT, data_inplace, sizeof(RadeonRays::float3));
             }
+
+            levels_spec.push_back(
+            {
+                spec.width,
+                spec.height,
+                spec.depth
+            });
+
             data_inplace += size;
-            mip_level_count++;
+            level_counter++;
         }
 
         // Close handle
@@ -134,16 +109,21 @@ namespace Baikal
 
         spec = input->spec(); // size of original level
 
-        auto texture = (mip_level_count > 1) ?
-            Texture::Create(
+        Texture::Ptr texture;
+        if (levels_spec.size() == 1)
+        {
+            texture = Texture::Create(
                 texture_data.release(),
-                RadeonRays::int3(spec.width, spec.height, spec.depth),
-                fmt,
-                mip_levels_spec) :
-            Texture::Create(
-                texture_data.release(),
-                RadeonRays::int3(spec.width, spec.height, spec.depth),
+                levels_spec[0],
                 fmt);
+        }
+        else
+        {
+            texture = Texture::Create(
+                texture_data.release(),
+                levels_spec,
+                fmt);
+        }
 
         return texture;
     }

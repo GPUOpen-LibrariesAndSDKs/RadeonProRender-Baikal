@@ -27,7 +27,7 @@ THE SOFTWARE.
 #define TEXTURED_INPUT_GET_COLOR(x) ((x).float_value.value.xyz)
 
 // maximun number of mimmap pyramid levels
-#define MAX_LEVEL_NUM (12)
+#define MAX_LEVEL_NUM (14)
 
 // Matrix
 typedef struct

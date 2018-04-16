@@ -31,18 +31,32 @@ namespace Baikal
     class Mipmap
     {
     public:
-        Mipmap(CLWContext context);
+        using Ptr = std::shared_ptr<Mipmap>;
 
-        void Build(Collector& texture_collector, CLWBuffer<char> mipmap_info, CLWBuffer<char> texture_data);
+        static Ptr Create(CLWContext context);
+
+        // generates images in mipmap levels
+        // note: texture already should contain correct mipmap indexes
+        // the function only generates images and save result with correct offsets in texture_data
+        void Build(
+            ClwScene::Texture* texture,
+            std::uint32_t texture_num,
+            CLWBuffer<ClwScene::MipmapPyramid> mipmap_info,
+            CLWBuffer<char> texture_data);
 
         // computes size in bytes of the mipmap pyramid for one given image specs
         // inluding original image as base level
-        static std::uint32_t ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, std::uint32_t pitch, int format);
+        static std::uint32_t ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, int format);
+
+    protected:
+        Mipmap(CLWContext context);
 
     private:
-        void BuildMipPyramid(const ClwScene::Texture& texture);
+
+        void BuildMipPyramid(const ClwScene::Texture& texture, CLWBuffer<char> texture_data);
 
         void Downscale(
+            CLWBuffer<char> texture_data,
             std::uint32_t dst_offset, std::uint32_t dst_width,
             std::uint32_t dst_pitch, std::uint32_t dst_height,
             std::uint32_t src_offset, std::uint32_t src_width,
@@ -63,9 +77,8 @@ namespace Baikal
         CLWBuffer<float> m_x_weights, m_y_weights;
         // buffer to store mipmap offsets
         CLWBuffer<char> m_mipmap_offsets;
-        // clw buffers to sore texture data and mip levels info
-        CLWBuffer<char> m_mipmap_info;
-        CLWBuffer<char> m_texture_data
+        // cpu buffer to store mip levels info
+        std::vector<ClwScene::MipmapPyramid> m_mipmap_info;
     };
 }
 #endif //__MIPMAP_BUILDER__

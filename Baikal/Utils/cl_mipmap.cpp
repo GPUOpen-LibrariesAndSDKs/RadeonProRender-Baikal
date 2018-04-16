@@ -48,6 +48,7 @@ namespace Baikal
     }
 
     void Mipmap::Downscale(
+        CLWBuffer<char> texture_data,
         std::uint32_t dst_offset, std::uint32_t dst_width,
         std::uint32_t dst_pitch, std::uint32_t dst_height,
         std::uint32_t src_offset, std::uint32_t src_width,
@@ -83,7 +84,7 @@ namespace Baikal
                 scale_x.SetArg(argc++, dst_width);
                 scale_x.SetArg(argc++, src_height);
                 scale_x.SetArg(argc++, dst_pitch);
-                scale_x.SetArg(argc++, m_texture_data);
+                scale_x.SetArg(argc++, texture_data);
                 scale_x.SetArg(argc++, src_offset);
                 scale_x.SetArg(argc++, src_width);
                 scale_x.SetArg(argc++, src_height);
@@ -97,7 +98,7 @@ namespace Baikal
         {
             m_context.CopyBuffer<char>(
                 0,
-                m_texture_data,
+                texture_data,
                 m_tmp_buffer,
                 src_offset,
                 0,
@@ -121,7 +122,7 @@ namespace Baikal
                 int argc = 0;
 
                 auto scale_y = m_program.GetKernel("ScaleY_4C");
-                scale_y.SetArg(argc++, m_texture_data);
+                scale_y.SetArg(argc++, texture_data);
                 scale_y.SetArg(argc++, m_y_weights);
                 scale_y.SetArg(argc++, dst_offset);
                 scale_y.SetArg(argc++, dst_width);
@@ -139,13 +140,15 @@ namespace Baikal
         }
     }
 
-    void Mipmap::BuildMipPyramid(const ClwScene::Texture& texture)
+    void Mipmap::BuildMipPyramid(const ClwScene::Texture& texture, CLWBuffer<char> texture_data)
     {
+        ClwScene::MipmapPyramid mipmap = { 0 };
+
         int img_width = texture.w;
         int img_height = texture.h;
         int img_pitch = PixelBytes(texture.fmt) * texture.w;
 
-        int level_num = (int)std::ceilf(std::log2(std::max(img_width, img_height))) + 1;
+        int level_num = (int)std::ceilf((float)std::log2(std::max(img_width, img_height))) + 1;
         if (level_num > MAX_LEVEL_NUM)
         {
             throw std::exception(
@@ -153,76 +156,73 @@ namespace Baikal
         }
 
         // initialize first mip level
-        m_cpu_mip_levels.level_info[0].width = img_width;
-        m_cpu_mip_levels.level_info[0].height = img_height;
-        m_cpu_mip_levels.level_info[0].pitch = img_pitch;
-        m_cpu_mip_levels.level_info[0].offset = texture_info.dataoffset;
+        mipmap.level_info[0].width = img_width;
+        mipmap.level_info[0].height = img_height;
+        mipmap.level_info[0].pitch = img_pitch;
+        mipmap.level_info[0].offset = texture.dataoffset;
 
         int level_counter = 0;
-        int level_data_offset = m_cpu_mip_levels.level_info[0].offset;
+        int level_data_offset = mipmap.level_info[0].offset;
 
         for (int i = 1u; i < level_num; i++)
         {
             // compute level size for current level
-            auto dst_width = (std::uint32_t)ceilf(m_cpu_mip_levels.level_info[i - 1].width / 2.f);
-            auto dst_height = (std::uint32_t)ceilf(m_cpu_mip_levels.level_info[i - 1].height / 2.f);
-            auto dst_pitch = (std::uint32_t)PixelBytes(texture_info.fmt) * dst_width;
+            auto dst_width = (std::uint32_t)ceilf(mipmap.level_info[i - 1].width / 2.f);
+            auto dst_height = (std::uint32_t)ceilf(mipmap.level_info[i - 1].height / 2.f);
+            auto dst_pitch = (std::uint32_t)PixelBytes(texture.fmt) * dst_width;
 
             // downscale current level in x and y dimensions
             Downscale(
-                level_data_offset + m_cpu_mip_levels.level_info[i - 1].pitch * m_cpu_mip_levels.level_info[i - 1].height,
+                texture_data,
+                level_data_offset + mipmap.level_info[i - 1].pitch * mipmap.level_info[i - 1].height,
                 dst_width,
                 dst_pitch,
                 dst_height,
                 level_data_offset,
-                m_cpu_mip_levels.level_info[i - 1].width,
-                m_cpu_mip_levels.level_info[i - 1].pitch,
-                m_cpu_mip_levels.level_info[i - 1].height);
+                mipmap.level_info[i - 1].width,
+                mipmap.level_info[i - 1].pitch,
+                mipmap.level_info[i - 1].height);
 
             // update mip levels offsets
-            level_data_offset += m_cpu_mip_levels.level_info[i - 1].pitch * m_cpu_mip_levels.level_info[i - 1].height;
+            level_data_offset += mipmap.level_info[i - 1].pitch * mipmap.level_info[i - 1].height;
 
             // update mip levels info
-            m_cpu_mip_levels.level_info[i].width = dst_width;
-            m_cpu_mip_levels.level_info[i].height = dst_height;
-            m_cpu_mip_levels.level_info[i].pitch = dst_pitch;
-            m_cpu_mip_levels.level_info[i].offset = level_data_offset;
+            mipmap.level_info[i].width = dst_width;
+            mipmap.level_info[i].height = dst_height;
+            mipmap.level_info[i].pitch = dst_pitch;
+            mipmap.level_info[i].offset = level_data_offset;
 
             level_counter++;
         }
 
-        m_context.WriteBuffer<char>(
-            0,
-            m_mipmap_info,
-            (char*)&m_cpu_mip_levels,
-            sizeof(ClwScene::MipmapPyramid) * texture_info.mipmap_index,
-            sizeof(ClwScene::MipmapPyramid)).Wait();
+        m_mipmap_info.push_back(mipmap);
     }
 
-    void Mipmap::Build(Collector& texture_collector, CLWBuffer<char> mipmap_info, CLWBuffer<char> texture_data)
+    void Mipmap::Build(
+        ClwScene::Texture* texture,
+        std::uint32_t texture_num,
+        CLWBuffer<ClwScene::MipmapPyramid> mipmap_info,
+        CLWBuffer<char> texture_data)
     {
-        // reset buffers
-        m_mipmap_info = mipmap_info;
-        m_texture_data = texture_data;
-
-        auto texture_iter = texture_collector.CreateIterator();
-        for (; texture_iter->IsValid(); texture_iter->Next())
+        if (texture == nullptr)
         {
-            auto texture = texture_iter->ItemAs<Texture>();
+            throw std::runtime_error(
+                "Mipmap::Build(...): pointer on CPU texture buffer is null");
+        }
 
-            if (texture->MipmapGenerationReq())
+        for (auto i = 0u; i < texture_num; i++)
+        {
+            if (texture[i].mipmap_gen_required)
             {
-                BuildMipPyramid(texture, )
+                BuildMipPyramid(*texture, texture_data);
             }
         }
 
-        for (const auto& texture : m_cpu_texture_info)
-        {
-            if (texture.mipmap_gen_required)
-            {
-                BuildMipPyramid(texture, texture.w, texture.h, PixelBytes(texture.fmt) * texture.w);
-            }
-        }
+        m_context.WriteBuffer<ClwScene::MipmapPyramid>(
+            0,
+            mipmap_info,
+            m_mipmap_info.data(),
+            m_mipmap_info.size()).Wait();
     }
 
     int Mipmap::PixelBytes(int format)
@@ -244,10 +244,10 @@ namespace Baikal
         return pixel_in_bytes;
     }
 
-    std::uint32_t Mipmap::ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, std::uint32_t pitch, int format)
+    std::uint32_t Mipmap::ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, int format)
     {
-        std::uint32_t pyramid_size = height * pitch;
-        int level_num = (int)std::ceilf(std::log2(std::max(width, height))) + 1;
+        std::uint32_t pyramid_size = height * width * PixelBytes(format);
+        int level_num = (int)std::ceilf((float)std::log2(std::max(width, height))) + 1;
         int level_width = (int)std::ceill(width / 2.f);
         int level_height = (int)std::ceill(height / 2.f);;
 
@@ -259,5 +259,18 @@ namespace Baikal
         }
 
         return pyramid_size;
+    }
+
+    namespace
+    {
+        struct MipmapConcrete : public Mipmap {
+            MipmapConcrete(CLWContext context) :
+                Mipmap(context) {}
+        };
+    }
+
+    Mipmap::Ptr Mipmap::Create(CLWContext context)
+    {
+        return std::make_shared<MipmapConcrete>(context);
     }
 }
