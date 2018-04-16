@@ -29,10 +29,8 @@ THE SOFTWARE.
 #include "SceneGraph/texture.h"
 #include "math/mathutils.h"
 
-#ifdef ENABLE_UBERV2
 #include "SceneGraph/uberv2material.h"
 #include "SceneGraph/inputmaps.h"
-#endif
 
 #include <string>
 #include <map>
@@ -60,7 +58,6 @@ namespace Baikal
         }
 
     private:
-        Material::Ptr TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
         Material::Ptr TranslateMaterialUberV2(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
 
         mutable std::map<std::string, Material::Ptr> m_material_cache;
@@ -100,7 +97,7 @@ namespace Baikal
         for (int i = 0; i < (int)objmaterials.size(); ++i)
         {
             // Translate material
-            materials[i] = TranslateMaterial(*image_io, objmaterials[i], basepath, *scene);
+            materials[i] = TranslateMaterialUberV2(*image_io, objmaterials[i], basepath, *scene);
 
             // Add to emissive subset if needed
             if (materials[i]->HasEmission())
@@ -237,7 +234,7 @@ namespace Baikal
 
         return scene;
     }
-    Material::Ptr SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
+    Material::Ptr SceneIoObj::TranslateMaterialUberV2(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
     {
         auto iter = m_material_cache.find(mat.name);
 

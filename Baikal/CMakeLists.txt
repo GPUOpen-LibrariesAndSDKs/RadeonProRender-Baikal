@@ -156,10 +156,6 @@ if (BAIKAL_ENABLE_RAYMASK)
     target_compile_definitions(Baikal PUBLIC ENABLE_RAYMASK)
 endif (BAIKAL_ENABLE_RAYMASK)
 
-if (BAIKAL_ENABLE_UBERV2)
-    target_compile_definitions(Baikal PUBLIC ENABLE_UBERV2)
-endif (BAIKAL_ENABLE_UBERV2)
-
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
