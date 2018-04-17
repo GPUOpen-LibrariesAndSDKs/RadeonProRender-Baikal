@@ -281,22 +281,23 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
         "UberV2ShaderData const* shader_data)\n"
         "{\n"
         "\tconst int sampledComponent = Bxdf_UberV2_GetSampledComponent(dg);\n"
+        "\tfloat3 result;\n"
         "\tswitch(sampledComponent)\n"
         "\t{\n";
 
     std::vector<std::pair<uint32_t, std::string>> component_sampling =
     {
         {UberV2Material::Layers::kTransparencyLayer,
-            "\t\tcase kBxdfUberV2SampleTransparency: UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
+            "\t\tcase kBxdfUberV2SampleTransparency: result = UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
         {UberV2Material::Layers::kCoatingLayer,
-            "\t\tcase kBxdfUberV2SampleCoating: UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n\t\t\tbreak;"},
+            "\t\tcase kBxdfUberV2SampleCoating: result = UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n\t\t\tbreak;"},
         {UberV2Material::Layers::kReflectionLayer,
-            "\t\tcase kBxdfUberV2SampleReflection: UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"
+            "\t\tcase kBxdfUberV2SampleReflection: result = UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"
             },
         {UberV2Material::Layers::kRefractionLayer,
-            "\t\tcase kBxdfUberV2SampleRefraction: return UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
+            "\t\tcase kBxdfUberV2SampleRefraction: result = UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
         {UberV2Material::Layers::kDiffuseLayer,
-            "\t\tcase kBxdfUberV2SampleDiffuse: UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"
+            "\t\tcase kBxdfUberV2SampleDiffuse: result = UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"
             }
     };
 
@@ -310,8 +311,12 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
 
     sources->m_sample +=
         "\t}\n"
-        "\t*pdf = UberV2_GetPdf" + std::to_string(layers) + "(dg, wi, *wo, TEXTURE_ARGS, shader_data);\n"
-        "\treturn UberV2_Evaluate" + std::to_string(layers) + "(dg, wi, *wo, TEXTURE_ARGS, shader_data);\n"
+        "\tif (!Bxdf_IsSingular(dg))\n"
+        "\t{\n"
+        "\t\t*pdf = UberV2_GetPdf" + std::to_string(layers) + "(dg, wi, *wo, TEXTURE_ARGS, shader_data);\n"
+        "\t\treturn UberV2_Evaluate" + std::to_string(layers) + "(dg, wi, *wo, TEXTURE_ARGS, shader_data);\n"
+        "\t}\n"
+        "\treturn result;\n"
         "}\n";
 }
 void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material, UberV2Sources *sources)
