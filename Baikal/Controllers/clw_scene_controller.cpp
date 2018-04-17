@@ -798,6 +798,7 @@ namespace Baikal
         {
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(1, CL_MEM_READ_ONLY);
             out.texturedata = m_context.CreateBuffer<char>(1, CL_MEM_READ_ONLY);
+            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(1, CL_MEM_READ_ONLY);
             return;
         }
 
@@ -806,17 +807,14 @@ namespace Baikal
         {
             // Create material buffer
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(tex_buffer_size, CL_MEM_READ_ONLY);
-            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(tex_buffer_size, CL_MEM_READ_ONLY);
         }
 
         ClwScene::Texture* textures = nullptr;
-        ClwScene::MipmapPyramid* mipmaps = nullptr;
 
         std::size_t num_textures_written = 0;
 
         // Map GPU materials buffer
         m_context.MapBuffer(0, out.textures, CL_MAP_WRITE, &textures).Wait();
-        m_context.MapBuffer(0, out.mipmap, CL_MAP_WRITE, &mipmaps).Wait();
 
         // Update material bundle first to be able to track differences
         out.texture_bundle.reset(tex_collector.CreateBundle());
@@ -830,13 +828,21 @@ namespace Baikal
         {
             auto tex = tex_iter->ItemAs<Texture>();
 
-            int mip_index = tex->MipmapEnabled() ? (++mip_index_counter) : (-1);
+            int mip_index = tex->MipmapEnabled() ?
+                (++mip_index_counter) : (-1);
 
             WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written, mip_index);
 
             ++num_textures_written;
 
             tex_data_buffer_size += align16(tex->GetSizeInBytes());
+        }
+
+        // if there is textures with mipmap levels
+        if (out.mipmap.GetElementCount() < mip_index_counter + 1);
+        {
+            // Create material buffer
+            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(mip_index_counter + 1, CL_MEM_READ_ONLY);
         }
 
         // Unmap material buffer
@@ -1566,6 +1572,7 @@ namespace Baikal
         clw_texture->mipmap_enabled =
             (!texture.GetLevelsInfo().empty()) ? (1) : (0);
         clw_texture->mipmap_index = mipmap_index;
+        clw_texture->mipmap_gen_required = texture.MipmapGenerationReq() ? (1) : (0);
     }
 
     void ClwSceneController::WriteTextureData(Texture const& texture, void* data) const

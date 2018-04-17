@@ -157,7 +157,6 @@ namespace Baikal
         mipmap.level_info[0].pitch = img_pitch;
         mipmap.level_info[0].offset = texture.dataoffset;
 
-        int level_counter = 0;
         int level_data_offset = mipmap.level_info[0].offset;
 
         for (int i = 1u; i < level_num; i++)
@@ -187,8 +186,6 @@ namespace Baikal
             mipmap.level_info[i].height = dst_height;
             mipmap.level_info[i].pitch = dst_pitch;
             mipmap.level_info[i].offset = level_data_offset;
-
-            level_counter++;
         }
 
         m_mipmap_info.push_back(mipmap);
@@ -205,6 +202,8 @@ namespace Baikal
             throw std::runtime_error(
                 "Mipmap::Build(...): pointer on CPU texture buffer is null");
         }
+
+        m_mipmap_info.clear();
 
         // flag to specify that at least one mipmap was generated
         bool mipmap_generated = false; 

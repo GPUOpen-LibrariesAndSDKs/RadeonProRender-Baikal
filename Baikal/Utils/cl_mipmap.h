@@ -72,8 +72,6 @@ namespace Baikal
         // buffers for weights
         std::uint32_t m_x_weights_num, m_y_weights_num;
         CLWBuffer<float> m_x_weights, m_y_weights;
-        // buffer to store mipmap offsets
-        CLWBuffer<char> m_mipmap_offsets;
         // cpu buffer to store mip levels info
         std::vector<ClwScene::MipmapPyramid> m_mipmap_info;
     };
