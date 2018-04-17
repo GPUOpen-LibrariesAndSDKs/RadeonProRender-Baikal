@@ -15,7 +15,7 @@
 #include <map>
 #include <stack>
 #include <string>
-#include <assert>
+#include <assert.h>
 
 namespace Baikal
 {
