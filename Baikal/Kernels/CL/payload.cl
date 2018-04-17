@@ -125,20 +125,6 @@ typedef struct _InputMapData
 enum Bxdf
 {
     kZero,
-    kLambert,
-    kIdealReflect,
-    kIdealRefract,
-    kMicrofacetBeckmann,
-    kMicrofacetGGX,
-    kLayered,
-    kFresnelBlend,
-    kMix,
-    kEmissive,
-    kPassthrough,
-    kTranslucent,
-    kMicrofacetRefractionGGX,
-    kMicrofacetRefractionBeckmann,
-    kDisney,
     kUberV2
 };
 

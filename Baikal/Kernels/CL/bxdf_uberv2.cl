@@ -52,9 +52,6 @@ float4 GetUberV2EmissionColor(
 
 #include <../Baikal/Kernels/CL/bxdf_uberv2_bricks.cl>
 
-#include <uberv2_generated.cl>
-
-
 void UberV2_ApplyShadingNormal(
     // Geometry
     DifferentialGeometry* dg,

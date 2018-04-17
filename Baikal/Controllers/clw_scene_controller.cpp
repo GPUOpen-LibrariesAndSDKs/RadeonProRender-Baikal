@@ -893,36 +893,6 @@ namespace Baikal
         {
             return ClwScene::Bxdf::kUberV2;
         }
-        else if (auto bxdf = dynamic_cast<SingleBxdf const*>(&material))
-        {
-            switch (bxdf->GetBxdfType())
-            {
-                case SingleBxdf::BxdfType::kZero: return ClwScene::Bxdf::kZero;
-                case SingleBxdf::BxdfType::kLambert: return ClwScene::Bxdf::kLambert;
-                case SingleBxdf::BxdfType::kEmissive: return ClwScene::Bxdf::kEmissive;
-                case SingleBxdf::BxdfType::kPassthrough: return ClwScene::Bxdf::kPassthrough;
-                case SingleBxdf::BxdfType::kTranslucent: return ClwScene::Bxdf::kTranslucent;
-                case SingleBxdf::BxdfType::kIdealReflect: return ClwScene::Bxdf::kIdealReflect;
-                case SingleBxdf::BxdfType::kIdealRefract: return ClwScene::Bxdf::kIdealRefract;
-                case SingleBxdf::BxdfType::kMicrofacetGGX: return ClwScene::Bxdf::kMicrofacetGGX;
-                case SingleBxdf::BxdfType::kMicrofacetBeckmann: return ClwScene::Bxdf::kMicrofacetBeckmann;
-                case SingleBxdf::BxdfType::kMicrofacetRefractionGGX: return ClwScene::Bxdf::kMicrofacetRefractionGGX;
-                case SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann: return ClwScene::Bxdf::kMicrofacetRefractionBeckmann;
-            }
-        }
-        else if (auto mat = dynamic_cast<MultiBxdf const*>(&material))
-        {
-            switch (mat->GetType())
-            {
-                case MultiBxdf::Type::kMix: return ClwScene::Bxdf::kMix;
-                case MultiBxdf::Type::kLayered: return ClwScene::Bxdf::kLayered;
-                case MultiBxdf::Type::kFresnelBlend: return ClwScene::Bxdf::kFresnelBlend;
-            }
-        }
-        else if (auto mat = dynamic_cast<DisneyBxdf const*>(&material))
-        {
-            return ClwScene::Bxdf::kDisney;
-        }
 
         return ClwScene::Bxdf::kZero;
     }

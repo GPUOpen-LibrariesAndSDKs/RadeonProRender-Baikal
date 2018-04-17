@@ -138,4 +138,6 @@ bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
     return Bxdf_IsBtdf(dg) && !Bxdf_IsTransparency(dg);
 }
 
+#include <uberv2_generated.cl>
+
 #endif // BXDF_CL
