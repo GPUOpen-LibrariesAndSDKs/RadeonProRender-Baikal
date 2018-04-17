@@ -25,15 +25,17 @@ THE SOFTWARE.
 
 #include <CLW.h>
 #include "SceneGraph/clwscene.h"
+#include "Utils/clw_class.h"
+#include "Utils/cl_program_manager.h"
 
 namespace Baikal
 {
-    class Mipmap
+    class Mipmap : protected ClwClass
     {
     public:
         using Ptr = std::shared_ptr<Mipmap>;
 
-        static Ptr Create(CLWContext context);
+        static Ptr Create(CLWContext context, const CLProgramManager *program_manager);
 
         // generates images in mipmap levels
         // note: texture already should contain correct mipmap indexes
@@ -49,7 +51,7 @@ namespace Baikal
         static std::uint32_t ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, int format);
 
     protected:
-        Mipmap(CLWContext context);
+        Mipmap(CLWContext context, const CLProgramManager *program_manager);
 
     private:
 
@@ -68,7 +70,6 @@ namespace Baikal
 
         // OpenCL context
         CLWContext m_context;
-        CLWProgram m_program;
         // buffer for temporary image scaled in x dimension
         std::uint32_t m_tmp_buffer_size;
         CLWBuffer<char> m_tmp_buffer;

@@ -52,11 +52,40 @@ namespace Baikal
         auto fmt = GetTextureFormat(spec);
 
         int texture_data_size = 0;
+        int level_counter = 0; // reset counter to zero
 
-        std::unique_ptr<char[]> texture_data (new char[texture_data_size]);
+        // first pass to find out necessary size to hold mip levels
+        while (input->seek_subimage(0, level_counter, spec))
+        {
+            if (fmt == Texture::Format::kRgba8)
+            {
+                texture_data_size += spec.width * spec.height * spec.depth * 4;
+            }
+            else if (fmt == Texture::Format::kRgba16)
+            {
+                texture_data_size += spec.width * spec.height * spec.depth * sizeof(float) * 2;
+            }
+            else
+            {
+                texture_data_size += spec.width * spec.height * spec.depth * sizeof(RadeonRays::float3);
+            }
+
+            levels_spec.push_back(
+            {
+                spec.width,
+                spec.height,
+                spec.depth
+            });
+
+            level_counter++;
+        }
+
+        // alloc buffer for all texture mip levels
+        std::unique_ptr<char[]> texture_data(new char[texture_data_size]);
         auto data_inplace = texture_data.get();
 
-        int level_counter = 0; // reset counter to zero
+        // second pass to read all mip levels data in preallocated buffer
+        level_counter = 0;
         while (input->seek_subimage(0, level_counter, spec))
         {
             int size = 0;
@@ -93,21 +122,12 @@ namespace Baikal
                 input->read_image(TypeDesc::FLOAT, data_inplace, sizeof(RadeonRays::float3));
             }
 
-            levels_spec.push_back(
-            {
-                spec.width,
-                spec.height,
-                spec.depth
-            });
-
             data_inplace += size;
             level_counter++;
         }
 
         // Close handle
         input->close();
-
-        spec = input->spec(); // size of original level
 
         Texture::Ptr texture;
         if (levels_spec.size() == 1)

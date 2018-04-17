@@ -25,19 +25,15 @@ THE SOFTWARE.
 
 namespace Baikal
 {
-    Mipmap::Mipmap(CLWContext context) :
-        m_context(context)
-    {
-        m_program = CLWProgram::CreateFromFile(
-            "../Baikal/Kernels/CL/mipmap_level_scaler.cl",
-            nullptr,
-            m_context);
-    }
+    Mipmap::Mipmap(CLWContext context, const CLProgramManager *program_manager) :
+        m_context(context),
+        ClwClass(context, program_manager, "../Baikal/Kernels/CL/mipmap_level_scaler.cl", "")
+    {  }
 
     void Mipmap::ComputeWeights(CLWBuffer<float> weights, int size, bool is_rounding_necessary)
     {
         auto compute_weights_kernel = (is_rounding_necessary) ?
-            (m_program.GetKernel("ComputeWeights_RoundingUp")) : (m_program.GetKernel("ComputeWeights_NoRounding"));
+            GetKernel("ComputeWeights_RoundingUp") : GetKernel("ComputeWeights_NoRounding");
 
         int argc = 0;
         compute_weights_kernel.SetArg(argc++, weights);
@@ -77,7 +73,7 @@ namespace Baikal
             {
                 int argc = 0;
 
-                auto scale_x = m_program.GetKernel("ScaleX_4C");
+                auto scale_x = GetKernel("ScaleX_4C");
                 scale_x.SetArg(argc++, m_tmp_buffer);
                 scale_x.SetArg(argc++, m_x_weights);
                 scale_x.SetArg(argc++, 0);
@@ -121,7 +117,7 @@ namespace Baikal
             {
                 int argc = 0;
 
-                auto scale_y = m_program.GetKernel("ScaleY_4C");
+                auto scale_y = GetKernel("ScaleY_4C");
                 scale_y.SetArg(argc++, texture_data);
                 scale_y.SetArg(argc++, m_y_weights);
                 scale_y.SetArg(argc++, dst_offset);
@@ -210,19 +206,26 @@ namespace Baikal
                 "Mipmap::Build(...): pointer on CPU texture buffer is null");
         }
 
+        // flag to specify that at least one mipmap was generated
+        bool mipmap_generated = false; 
+
         for (auto i = 0u; i < texture_num; i++)
         {
             if (texture[i].mipmap_gen_required)
             {
                 BuildMipPyramid(*texture, texture_data);
+                mipmap_generated = true;
             }
         }
 
-        m_context.WriteBuffer<ClwScene::MipmapPyramid>(
-            0,
-            mipmap_info,
-            m_mipmap_info.data(),
-            m_mipmap_info.size()).Wait();
+        if (mipmap_generated)
+        {
+            m_context.WriteBuffer<ClwScene::MipmapPyramid>(
+                0,
+                mipmap_info,
+                m_mipmap_info.data(),
+                m_mipmap_info.size()).Wait();
+        }
     }
 
     int Mipmap::PixelBytes(int format)
@@ -264,13 +267,13 @@ namespace Baikal
     namespace
     {
         struct MipmapConcrete : public Mipmap {
-            MipmapConcrete(CLWContext context) :
-                Mipmap(context) {}
+            MipmapConcrete(CLWContext context, const CLProgramManager *program_manager) :
+                Mipmap(context, program_manager) {}
         };
     }
 
-    Mipmap::Ptr Mipmap::Create(CLWContext context)
+    Mipmap::Ptr Mipmap::Create(CLWContext context, const CLProgramManager *program_manager)
     {
-        return std::make_shared<MipmapConcrete>(context);
+        return std::make_shared<MipmapConcrete>(context, program_manager);
     }
 }

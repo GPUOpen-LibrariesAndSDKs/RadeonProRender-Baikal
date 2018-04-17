@@ -55,6 +55,7 @@ namespace Baikal
     , m_context(context)
     , m_api(api)
     , m_program_manager(program_manager)
+    , m_mipmap(Mipmap::Create(context, program_manager))
     {
         auto acc_type = "fatbvh";
         auto builder_type = "sah";
@@ -67,8 +68,6 @@ namespace Baikal
 
         m_api->SetOption("bvh.builder", builder_type);
         m_api->SetOption("bvh.sah.num_bins", 16.f);
-
-        m_mipmap = Mipmap::Create(context);
     }
 
     Material::Ptr ClwSceneController::GetDefaultMaterial() const
