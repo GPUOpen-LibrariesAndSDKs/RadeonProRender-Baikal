@@ -5,6 +5,7 @@
 #include "SceneGraph/shape.h"
 #include "SceneGraph/material.h"
 #include "SceneGraph/Collector/collector.h"
+#include "SceneGraph/uberv2material.h"
 
 #include "image_io.h"
 
@@ -14,6 +15,7 @@
 #include <map>
 #include <stack>
 #include <string>
+#include <assert>
 
 namespace Baikal
 {
@@ -73,64 +75,6 @@ namespace Baikal
         return oss.str();
     }
 
-    static std::string BxdfToString(SingleBxdf::BxdfType type)
-    {
-        switch (type)
-        {
-        case Baikal::SingleBxdf::BxdfType::kZero:
-            return "zero";
-        case Baikal::SingleBxdf::BxdfType::kLambert:
-            return "lambert";
-        case Baikal::SingleBxdf::BxdfType::kIdealReflect:
-            return "ideal_reflect";
-        case Baikal::SingleBxdf::BxdfType::kIdealRefract:
-            return "ideal_refract";;
-        case Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann:
-            return "microfacet_beckmann";
-        case Baikal::SingleBxdf::BxdfType::kMicrofacetGGX:
-            return "microfacet_ggx";
-        case Baikal::SingleBxdf::BxdfType::kEmissive:
-            return "emissive";
-        case Baikal::SingleBxdf::BxdfType::kPassthrough:
-            return "passthrough";
-        case Baikal::SingleBxdf::BxdfType::kTranslucent:
-            return "translucent";
-        case Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX:
-            return "microfacet_refraction_ggx";
-        case Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann:
-            return "microfacet_refraction_beckmann";
-        default:
-            return "lambert";
-        }
-    }
-
-    static SingleBxdf::BxdfType StringToBxdf(std::string const& bxdf)
-    {
-        static std::map<std::string, SingleBxdf::BxdfType> bxdf_map =
-        {
-            { "zero" , Baikal::SingleBxdf::BxdfType::kZero },
-            { "lambert" , Baikal::SingleBxdf::BxdfType::kLambert },
-            { "ideal_reflect" , Baikal::SingleBxdf::BxdfType::kIdealReflect },
-            { "ideal_refract" , Baikal::SingleBxdf::BxdfType::kIdealRefract },
-            { "microfacet_beckmann" , Baikal::SingleBxdf::BxdfType::kMicrofacetBeckmann },
-            { "microfacet_ggx" , Baikal::SingleBxdf::BxdfType::kMicrofacetGGX },
-            { "emissive" , Baikal::SingleBxdf::BxdfType::kEmissive },
-            { "passthrough" , Baikal::SingleBxdf::BxdfType::kPassthrough },
-            { "translucent" , Baikal::SingleBxdf::BxdfType::kTranslucent },
-            { "microfacet_refraction_ggx" , Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionGGX },
-            { "microfacet_refraction_beckmann" , Baikal::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann },
-        };
-
-        auto iter = bxdf_map.find(bxdf);
-
-        if (iter != bxdf_map.cend())
-        {
-            return iter->second;
-        }
-
-        return Baikal::SingleBxdf::BxdfType::kLambert;
-    }
-
     void MaterialIoXML::WriteInput(ImageIo& io, XMLPrinter& printer, std::string const& name, Material::InputValue value)
     {
         printer.OpenElement("Input");
@@ -184,11 +128,16 @@ namespace Baikal
 
         printer.PushAttribute("thin", material->IsThin());
 
-        auto bxdf = std::dynamic_pointer_cast<SingleBxdf>(material);
+        auto uberv2_material = std::dynamic_pointer_cast<UberV2Material>(material);
 
-        if (bxdf)
+        if (uberv2_material)
         {
-            printer.PushAttribute("type", "simple");
+            //Write properties
+            printer.PushAttribute("refraction_link_ior", uberv2_material->IsLinkRefractionIOR());
+            printer.PushAttribute("emission_doublesided", uberv2_material->isDoubleSided());
+            printer.PushAttribute("sss_multyscatter", uberv2_material->IsMultiscatter());
+            printer.PushAttribute("layers", uberv2_material->GetLayers());
+
 
             SingleBxdf::BxdfType type = bxdf->GetBxdfType();
 
@@ -233,34 +182,7 @@ namespace Baikal
         }
         else
         {
-            auto blend = std::dynamic_pointer_cast<MultiBxdf>(material);
-
-            printer.PushAttribute("type", "blend");
-
-            MultiBxdf::Type type = blend->GetType();
-
-            printer.PushAttribute("blend_type", (int)type);
-
-            Material::InputValue base = material->GetInputValue("base_material");
-
-            WriteInput(io, printer, "base_material", base);
-
-            Material::InputValue top = material->GetInputValue("top_material");
-
-            WriteInput(io, printer, "top_material", top);
-
-            if (type == MultiBxdf::Type::kFresnelBlend)
-            {
-                Material::InputValue ior = material->GetInputValue("ior");
-
-                WriteInput(io, printer, "ior", ior);
-            }
-            else
-            {
-                Material::InputValue weight = material->GetInputValue("weight");
-
-                WriteInput(io, printer, "weight", weight);
-            }
+            assert(!"Only UberV2 materials supported")
         }
 
         printer.CloseElement();
