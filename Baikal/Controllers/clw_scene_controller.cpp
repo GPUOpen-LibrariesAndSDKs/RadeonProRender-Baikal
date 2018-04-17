@@ -1571,7 +1571,13 @@ namespace Baikal
     void ClwSceneController::WriteTextureData(Texture const& texture, void* data) const
     {
         auto begin = texture.GetData();
-        auto end = begin + texture.GetSizeInBytes();
+
+        // if texture marked as Baikal generation mipmapm
+        // than we should copy only first images, and all levels otherwise
+        auto offset = texture.MipmapGenerationReq() ?
+            (Texture::GetPixelSize(texture.GetFormat()) * texture.GetSize().x * texture.GetSize().y) : (texture.GetSizeInBytes());
+
+        auto end = begin + offset;
         std::copy(begin, end, static_cast<char*>(data));
     }
 

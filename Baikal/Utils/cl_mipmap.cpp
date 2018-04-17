@@ -247,23 +247,6 @@ namespace Baikal
         return pixel_in_bytes;
     }
 
-    std::uint32_t Mipmap::ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, int format)
-    {
-        std::uint32_t pyramid_size = height * width * PixelBytes(format);
-        int level_num = (int)std::ceilf((float)std::log2(std::max(width, height))) + 1;
-        int level_width = (int)std::ceill(width / 2.f);
-        int level_height = (int)std::ceill(height / 2.f);;
-
-        for (int i = 1; i < level_num; i++)
-        {
-            pyramid_size += level_width * level_height * PixelBytes(format);
-            level_width = (level_width != 1) ? (int)std::ceill(level_width / 2.f) : (1);
-            level_height = (level_height != 1) ? (int)std::ceill(level_height / 2.f) : (1);
-        }
-
-        return pyramid_size;
-    }
-
     namespace
     {
         struct MipmapConcrete : public Mipmap {

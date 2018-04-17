@@ -46,10 +46,6 @@ namespace Baikal
             CLWBuffer<ClwScene::MipmapPyramid> mipmap_info,
             CLWBuffer<char> texture_data);
 
-        // computes size in bytes of the mipmap pyramid for one given image specs
-        // inluding original image as base level
-        static std::uint32_t ComputeMipPyramidSize(std::uint32_t width, std::uint32_t height, int format);
-
     protected:
         Mipmap(CLWContext context, const CLProgramManager *program_manager);
 
