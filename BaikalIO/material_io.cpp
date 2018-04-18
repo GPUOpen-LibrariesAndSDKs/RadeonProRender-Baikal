@@ -6,6 +6,7 @@
 #include "SceneGraph/material.h"
 #include "SceneGraph/Collector/collector.h"
 #include "SceneGraph/uberv2material.h"
+#include "SceneGraph/inputmaps.h"
 
 #include "image_io.h"
 
@@ -34,12 +35,15 @@ namespace Baikal
     private:
         // Write single material
         void WriteMaterial(ImageIo& io, XMLPrinter& printer, Material::Ptr material);
-        // Write single material input
-        void WriteInput(ImageIo& io, XMLPrinter& printer, std::string const& name, Material::InputValue value);
+        // Write single InputMap
+        void WriteInputMap(ImageIo& io, XMLPrinter& printer, InputMap::Ptr inputMap);
+
+        // Load inputs
+        InputMap::Ptr LoadInputMap(ImageIo& io, XMLElement* element, 
+            const std::map<uint32_t, XMLElement*> &input_map_cache,
+            std::map<uint32_t, InputMap::Ptr> &loaded_inputs);
         // Load single material
-        Material::Ptr LoadMaterial(ImageIo& io, XMLElement& element);
-        // Load single input
-        void LoadInput(ImageIo& io, Material::Ptr material, XMLElement& element);
+        Material::Ptr LoadMaterial(ImageIo& io, XMLElement& element, const std::map<uint32_t, InputMap::Ptr> &loaded_inputs);
 
         // Texture to name map
         std::map<Texture::Ptr, std::string> m_tex2name;
@@ -61,6 +65,31 @@ namespace Baikal
 
         std::set<ResolveRequest> m_resolve_requests;
         std::string m_base_path;
+
+        template<class T>
+        InputMap::Ptr LoadTwoArgInput(ImageIo& io, XMLElement* element,
+            const std::map<uint32_t, XMLElement*> &input_map_cache,
+            std::map<uint32_t, InputMap::Ptr> &loaded_inputs)
+        {
+            uint32_t arg1_id = element->UnsignedAttribute("input0");
+            uint32_t arg2_id = element->UnsignedAttribute("input1");
+            InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+            InputMap::Ptr arg2 = LoadInputMap(io, input_map_cache.at(arg2_id), input_map_cache, loaded_inputs);
+
+            return T::Create(arg1, arg2);
+        }
+
+        template<class T>
+        InputMap::Ptr LoadOneArgInput(ImageIo& io, XMLElement* element,
+            const std::map<uint32_t, XMLElement*> &input_map_cache,
+            std::map<uint32_t, InputMap::Ptr> &loaded_inputs)
+        {
+            uint32_t arg1_id = element->UnsignedAttribute("input0");
+            InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+
+            return T::Create(arg1);
+        }
+
     };
 
     std::unique_ptr<MaterialIo> MaterialIo::CreateMaterialIoXML()
@@ -71,51 +100,31 @@ namespace Baikal
     static std::string Float4ToString(RadeonRays::float3 const& v)
     {
         std::ostringstream oss;
-        oss << v.x << " " <<  v.y << " " << v.z << " " << v.w;
+        oss << v.x << " " << v.y << " " << v.z << " " << v.w;
         return oss.str();
     }
 
-    void MaterialIoXML::WriteInput(ImageIo& io, XMLPrinter& printer, std::string const& name, Material::InputValue value)
+    static std::string MatrixToString(RadeonRays::matrix const& v)
     {
-        printer.OpenElement("Input");
-
-        printer.PushAttribute("name", name.c_str());
-
-        if (value.type == Material::InputType::kFloat4)
+        std::ostringstream oss;
+        for (int i = 0; i < 4; ++i)
         {
-            printer.PushAttribute("type", "float4");
-            printer.PushAttribute("value", Float4ToString(value.float_value).c_str());
-        }
-        else if (value.type == Material::InputType::kTexture)
-        {
-            printer.PushAttribute("type", "texture");
-
-            auto iter = m_tex2name.find(value.tex_value);
-
-            if (iter != m_tex2name.cend())
+            for (int j = 0; j < 4; ++j)
             {
-                printer.PushAttribute("value", iter->second.c_str());
-            }
-            else
-            {
-                std::ostringstream oss;
-                oss << (std::uint64_t)value.tex_value.get() << ".jpg";
-
-                io.SaveImage(m_base_path + oss.str(), value.tex_value);
-
-                m_tex2name[value.tex_value] = oss.str();
-
-                printer.PushAttribute("value", oss.str().c_str());
+                oss << v.m[i][j] << " ";
             }
         }
-        else
+        return oss.str();
+    }
+
+    static std::string ArrayToString(uint32_t *array, uint32_t size)
+    {
+        std::ostringstream oss;
+        for (int a = 0; a < size; ++a)
         {
-            printer.PushAttribute("type", "material");
-
-            printer.PushAttribute("value", (int)(reinterpret_cast<std::uint64_t>(value.mat_value.get())));
+            oss << array[a] << " ";
         }
-
-        printer.CloseElement();
+        return oss.str();
     }
 
     void MaterialIoXML::WriteMaterial(ImageIo& io, XMLPrinter& printer, Material::Ptr material)
@@ -123,9 +132,7 @@ namespace Baikal
         printer.OpenElement("Material");
 
         printer.PushAttribute("name", material->GetName().c_str());
-
         printer.PushAttribute("id", (int)(reinterpret_cast<std::uint64_t>(material.get())));
-
         printer.PushAttribute("thin", material->IsThin());
 
         auto uberv2_material = std::dynamic_pointer_cast<UberV2Material>(material);
@@ -138,51 +145,16 @@ namespace Baikal
             printer.PushAttribute("sss_multyscatter", uberv2_material->IsMultiscatter());
             printer.PushAttribute("layers", uberv2_material->GetLayers());
 
-
-            SingleBxdf::BxdfType type = bxdf->GetBxdfType();
-
-            printer.PushAttribute("bxdf", BxdfToString(type).c_str());
-
-            SingleBxdf::InputValue albedo = bxdf->GetInputValue("albedo");
-
-            WriteInput(io, printer,"albedo", albedo);
-
-            SingleBxdf::InputValue normal = bxdf->GetInputValue("normal");
-
-            if (normal.tex_value)
+            auto num_inputs = uberv2_material->GetNumInputs();
+            for (size_t a = 0; a < num_inputs; ++a)
             {
-                WriteInput(io, printer, "normal", normal);
-            }
-            else
-            {
-                SingleBxdf::InputValue bump = bxdf->GetInputValue("bump");
-
-                if (bump.tex_value)
-                {
-                    WriteInput(io, printer, "bump", bump);
-                }
-            }
-
-            SingleBxdf::InputValue ior = bxdf->GetInputValue("ior");
-
-            WriteInput(io, printer,"ior", ior);
-
-            SingleBxdf::InputValue fresnel = bxdf->GetInputValue("fresnel");
-
-            WriteInput(io, printer,"fresnel", fresnel);
-
-            if (type == SingleBxdf::BxdfType::kMicrofacetGGX ||
-                type == SingleBxdf::BxdfType::kMicrofacetBeckmann ||
-                type == SingleBxdf::BxdfType::kMicrofacetRefractionGGX ||
-                type == SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann)
-            {
-                SingleBxdf::InputValue roughness = bxdf->GetInputValue("roughness");
-                WriteInput(io, printer,"roughness", roughness);
+                auto input = uberv2_material->GetInput(static_cast<uint32_t>(a));
+                printer.PushAttribute(input.info.name.c_str(), input.value.input_map_value->GetId());
             }
         }
         else
         {
-            assert(!"Only UberV2 materials supported")
+            assert(!"Only UberV2 materials supported");
         }
 
         printer.CloseElement();
@@ -204,6 +176,30 @@ namespace Baikal
 
         auto image_io = ImageIo::CreateImageIo();
 
+        std::set<Baikal::InputMap::Ptr> input_maps;
+
+        // Collect all unique material inputs
+        for (mat_iter.Reset(); mat_iter.IsValid(); mat_iter.Next())
+        {
+            auto material = mat_iter.ItemAs<Material>();
+            if (material)
+            {
+                auto input_map_iter = material->CreateInputMapsIterator();
+                for (input_map_iter->Reset(); input_map_iter->IsValid(); input_map_iter->Next())
+                {
+                    auto input_map = input_map_iter->ItemAs<InputMap>();
+                    input_maps.insert(input_map);
+                }
+            }
+        }
+        printer.OpenElement("Inputs");
+        for (auto input_map : input_maps)
+        {
+            WriteInputMap(*image_io, printer, input_map);
+        }
+        printer.CloseElement();
+
+        printer.OpenElement("Materials");
         for (mat_iter.Reset();mat_iter.IsValid(); mat_iter.Next())
         {
             auto material = mat_iter.ItemAs<Material>();
@@ -213,109 +209,35 @@ namespace Baikal
                 WriteMaterial(*image_io, printer, material);
             }
         }
+        printer.CloseElement();
 
         doc.Parse(printer.CStr());
 
         doc.SaveFile(filename.c_str());
     }
 
-    void MaterialIoXML::LoadInput(ImageIo& io, Material::Ptr material, XMLElement& element)
-    {
-        std::string type(element.Attribute("type"));
-        std::string name(element.Attribute("name"));
-
-        if (type == "float4")
-        {
-            std::istringstream iss(element.Attribute("value"));
-
-            RadeonRays::float4 value;
-
-            iss >> value.x >> value.y >> value.z >> value.w;
-
-            material->SetInputValue(name, value);
-
-        }
-        else if (type == "texture")
-        {
-            std::string filename(element.Attribute("value"));
-
-            auto iter = m_name2tex.find(filename);
-
-            if (iter != m_name2tex.cend())
-            {
-                material->SetInputValue(name, iter->second);
-            }
-            else
-            {
-                auto texture = io.LoadImage(m_base_path + filename);
-                material->SetInputValue(name, texture);
-                m_name2tex[name] = texture;
-            }
-        }
-        else if (type == "material")
-        {
-            auto id = static_cast<std::uint64_t>(std::atoi(element.Attribute("value")));
-
-            auto iter = m_id2mat.find(id);
-
-            if (iter != m_id2mat.cend())
-            {
-                material->SetInputValue(name, iter->second);
-            }
-            else
-            {
-                m_resolve_requests.emplace(ResolveRequest{ material, name, id });
-            }
-        }
-        else
-        {
-            throw std::runtime_error("Unsupported input type");
-        }
-    }
-
-    Material::Ptr MaterialIoXML::LoadMaterial(ImageIo& io, XMLElement& element)
+    Material::Ptr MaterialIoXML::LoadMaterial(ImageIo& io, XMLElement& element, const std::map<uint32_t, InputMap::Ptr> &loaded_inputs)
     {
         std::string name(element.Attribute("name"));
-        std::string type(element.Attribute("type"));
 
         auto attribute_thin = element.Attribute("thin");
         std::string thin(attribute_thin ? attribute_thin : "");
         auto id = static_cast<std::uint64_t>(std::atoi(element.Attribute("id")));
 
-        Material::Ptr material = nullptr;
-
-        if (type == "simple")
-        {
-            auto bxdf = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-
-            auto bxdf_type = StringToBxdf(element.Attribute("bxdf"));
-
-            bxdf->SetBxdfType(bxdf_type);
-
-            material = bxdf;
-        }
-        else if (type == "blend")
-        {
-            auto blend = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
-
-            auto blend_type = static_cast<MultiBxdf::Type>(std::atoi(element.Attribute("blend_type")));
-
-            blend->SetType(blend_type);
-
-            material = blend;
-        }
-        else
-        {
-            throw std::runtime_error("Unsupported material type");
-        }
-
+        UberV2Material::Ptr material = UberV2Material::Create();
+        material->SetLayers(std::atoi(element.Attribute("layers")));
+        material->SetThin(thin == "true");
+        material->SetDoubleSided(element.Attribute("emission_doublesided") == "true");
+        material->LinkRefractionIOR(element.Attribute("refraction_link_ior") == "true");
+        material->SetMultiscatter(element.Attribute("sss_multyscatter") == "true");
         material->SetName(name);
 
-        material->SetThin(thin == "true" ? true : false);
-
-        for (auto input = element.FirstChildElement(); input; input = input->NextSiblingElement())
+        auto num_inputs = material->GetNumInputs();
+        for (size_t a = 0; a < num_inputs; ++a)
         {
-            LoadInput(io, material, *input);
+            auto inputs = material->GetInput(a);
+            uint32_t input_id = element.UnsignedAttribute(inputs.info.name.c_str());
+            material->SetInputValue(inputs.info.name, loaded_inputs.at(input_id));
         }
 
         m_id2mat[id] = material;
@@ -341,10 +263,25 @@ namespace Baikal
 
         auto image_io = ImageIo::CreateImageIo();
 
-        std::set<Material::Ptr> materials;
-        for (auto element = doc.FirstChildElement(); element; element = element->NextSiblingElement())
+        std::map<uint32_t, XMLElement*> input_map_cache;
+        auto inputs = doc.FirstChildElement("Inputs");
+        for (auto element = inputs->FirstChildElement(); element; element = element->NextSiblingElement())
         {
-            auto material = LoadMaterial(*image_io, *element);
+            uint32_t id = element->UnsignedAttribute("id");
+            input_map_cache.insert(std::make_pair(id, element));
+        }
+
+        std::map<uint32_t, InputMap::Ptr> loaded_elements;
+        for (auto element = inputs->FirstChildElement(); element; element = element->NextSiblingElement())
+        {
+            LoadInputMap(*image_io, element, input_map_cache, loaded_elements);
+        }
+
+        std::set<Material::Ptr> materials;
+        auto materials_node = doc.FirstChildElement("Materials");
+        for (auto element = materials_node->FirstChildElement(); element; element = element->NextSiblingElement())
+        {
+            auto material = LoadMaterial(*image_io, *element, loaded_elements);
             materials.insert(material);
         }
 
@@ -364,8 +301,8 @@ namespace Baikal
         Collector mat_collector;
         // Collect materials from shapes first
         mat_collector.Collect(*shape_iter,
-            // This function adds all materials to resulting map
-            // recursively via Material dependency API
+        // This function adds all materials to resulting map
+        // recursively via Material dependency API
         [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
         {
             // Resulting material set
@@ -491,5 +428,395 @@ namespace Baikal
         doc.Parse(printer.CStr());
 
         doc.SaveFile(filename.c_str());
+    }
+
+    void MaterialIoXML::WriteInputMap(ImageIo& io, XMLPrinter& printer, InputMap::Ptr inputMap)
+    {
+        printer.OpenElement("Input");
+
+        printer.PushAttribute("name", inputMap->GetName().c_str());
+        printer.PushAttribute("id", inputMap->GetId());
+        printer.PushAttribute("type", static_cast<uint32_t>(inputMap->m_type));
+        switch (inputMap->m_type)
+        {
+            //Leafs
+            case InputMap::InputMapType::kConstantFloat:
+            {
+                InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(inputMap.get());
+                printer.PushAttribute("value", i->GetValue());
+                printer.CloseElement();
+                break;
+            }
+            case InputMap::InputMapType::kConstantFloat3:
+            {
+                InputMap_ConstantFloat3 *i = static_cast<InputMap_ConstantFloat3*>(inputMap.get());
+                printer.PushAttribute("value", Float4ToString(i->GetValue()).c_str());
+                printer.CloseElement();
+                break;
+            }
+            case InputMap::InputMapType::kSampler:
+            case InputMap::InputMapType::kSamplerBumpmap:
+            {
+                InputMap_Sampler *i = static_cast<InputMap_Sampler*>(inputMap.get());
+
+                auto texture = i->GetTexture();
+                auto iter = m_tex2name.find(texture);
+
+                if (iter != m_tex2name.cend())
+                {
+                    printer.PushAttribute("value", iter->second.c_str());
+                }
+                else
+                {
+                    std::ostringstream oss;
+                    oss << (std::uint64_t)texture.get() << ".jpg";
+
+                    io.SaveImage(m_base_path + oss.str(), texture);
+
+                    m_tex2name[texture] = oss.str();
+
+                    printer.PushAttribute("value", oss.str().c_str());
+                }
+                printer.CloseElement();
+                break;
+            }
+
+            // Two inputs
+            case InputMap::InputMapType::kAdd:
+            case InputMap::InputMapType::kSub:
+            case InputMap::InputMapType::kMul:
+            case InputMap::InputMapType::kDiv:
+            case InputMap::InputMapType::kMin:
+            case InputMap::InputMapType::kMax:
+            case InputMap::InputMapType::kDot3:
+            case InputMap::InputMapType::kDot4:
+            case InputMap::InputMapType::kCross3:
+            case InputMap::InputMapType::kCross4:
+            case InputMap::InputMapType::kPow:
+            case InputMap::InputMapType::kMod:
+            {
+                //It's safe since all this types differs only in id value
+                InputMap_Add *i = static_cast<InputMap_Add*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetA()->GetId());
+                printer.PushAttribute("input1", i->GetB()->GetId());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetA());
+                WriteInputMap(io, printer, i->GetB());
+                break;
+            }
+            //Single input
+            case InputMap::InputMapType::kSin:
+            case InputMap::InputMapType::kCos:
+            case InputMap::InputMapType::kTan:
+            case InputMap::InputMapType::kAsin:
+            case InputMap::InputMapType::kAcos:
+            case InputMap::InputMapType::kAtan:
+            case InputMap::InputMapType::kLength3:
+            case InputMap::InputMapType::kNormalize3:
+            case InputMap::InputMapType::kFloor:
+            case InputMap::InputMapType::kAbs:
+            {
+                //It's safe since all this types differs only in id value
+                InputMap_Sin *i = static_cast<InputMap_Sin*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetArg()->GetId());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetArg());
+            }
+            // Specials
+            case InputMap::InputMapType::kLerp:
+            {
+                InputMap_Lerp *i = static_cast<InputMap_Lerp*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetA()->GetId());
+                printer.PushAttribute("input1", i->GetB()->GetId());
+                printer.PushAttribute("control", i->GetControl()->GetId());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetA());
+                WriteInputMap(io, printer, i->GetB());
+                WriteInputMap(io, printer, i->GetControl());
+                break;
+            }
+            case InputMap::InputMapType::kSelect:
+            {
+                InputMap_Select *i = static_cast<InputMap_Select*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetArg()->GetId());
+                printer.PushAttribute("selection", static_cast<uint32_t>(i->GetSelection()));
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetArg());
+                break;
+            }
+            case InputMap::InputMapType::kShuffle:
+            {
+                InputMap_Shuffle *i = static_cast<InputMap_Shuffle*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetArg()->GetId());
+                auto mask = i->GetMask();
+                printer.PushAttribute("mask", ArrayToString(mask.data(), mask.size()).c_str());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetArg());
+                break;
+            }
+            case InputMap::InputMapType::kShuffle2:
+            {
+                InputMap_Shuffle2 *i = static_cast<InputMap_Shuffle2*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetA()->GetId());
+                printer.PushAttribute("input1", i->GetB()->GetId());
+                auto mask = i->GetMask();
+                printer.PushAttribute("mask", ArrayToString(mask.data(), mask.size()).c_str());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetA());
+                WriteInputMap(io, printer, i->GetB());
+                break;
+            }
+            case InputMap::InputMapType::kMatMul:
+            {
+                InputMap_MatMul *i = static_cast<InputMap_MatMul*>(inputMap.get());
+                printer.PushAttribute("input0", i->GetArg()->GetId());
+                printer.PushAttribute("matrix", MatrixToString(i->GetMatrix()).c_str());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetArg());
+
+                break;
+            }
+            case InputMap::InputMapType::kRemap:
+            {
+                InputMap_Remap *i = static_cast<InputMap_Remap*>(inputMap.get());
+                printer.PushAttribute("src", i->GetSourceRange()->GetId());
+                printer.PushAttribute("dst", i->GetDestinationRange()->GetId());
+                printer.PushAttribute("data", i->GetData()->GetId());
+                printer.CloseElement();
+                WriteInputMap(io, printer, i->GetSourceRange());
+                WriteInputMap(io, printer, i->GetDestinationRange());
+                WriteInputMap(io, printer, i->GetData());
+                break;
+            }
+        }
+    }
+
+    InputMap::Ptr MaterialIoXML::LoadInputMap(ImageIo& io, XMLElement* element,
+        const std::map<uint32_t, XMLElement*> &input_map_cache,
+        std::map<uint32_t, InputMap::Ptr> &loaded_inputs)
+    {
+        InputMap::InputMapType type = static_cast<InputMap::InputMapType>(element->UnsignedAttribute("type"));
+        std::string name = element->Attribute("name");
+        int id = element->UnsignedAttribute("id");
+
+        auto input = loaded_inputs.find(id);
+        if (input != loaded_inputs.end())
+        {
+            return input->second;
+        }
+
+        InputMap::Ptr result;
+
+        switch (type)
+        {
+            //Leafs
+            case InputMap::InputMapType::kConstantFloat:
+            {
+                result = InputMap_ConstantFloat::Create(element->FloatAttribute("value"));
+                break;
+            }
+            case InputMap::InputMapType::kConstantFloat3:
+            {
+
+                std::istringstream iss(element->Attribute("value"));
+                RadeonRays::float3 value;
+                iss >> value.x >> value.y >> value.z;
+
+                result = InputMap_ConstantFloat3::Create(value);
+                break;
+            }
+            case InputMap::InputMapType::kSampler:
+            {
+                std::string filename(element->Attribute("value"));
+
+                auto iter = m_name2tex.find(filename);
+                Texture::Ptr texture;
+
+                if (iter != m_name2tex.cend())
+                {
+                    texture = iter->second;
+                }
+                else
+                {
+                    texture = io.LoadImage(m_base_path + filename);
+                    m_name2tex[name] = texture;
+                }
+
+                result = InputMap_Sampler::Create(texture);
+
+                break;
+            }
+            case InputMap::InputMapType::kSamplerBumpmap:
+            {
+                std::string filename(element->Attribute("value"));
+
+                auto iter = m_name2tex.find(filename);
+                Texture::Ptr texture;
+
+                if (iter != m_name2tex.cend())
+                {
+                    texture = iter->second;
+                }
+                else
+                {
+                    texture = io.LoadImage(m_base_path + filename);
+                    m_name2tex[name] = texture;
+                }
+
+                result = InputMap_SamplerBumpMap::Create(texture);
+                break;
+            }
+
+            // Two inputs
+            case InputMap::InputMapType::kAdd:
+                result = LoadTwoArgInput<InputMap_Add>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kSub:
+                result = LoadTwoArgInput<InputMap_Sub>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kMul:
+                result = LoadTwoArgInput<InputMap_Mul>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kDiv:
+                result = LoadTwoArgInput<InputMap_Div>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kMin:
+                result = LoadTwoArgInput<InputMap_Min>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kMax:
+                result = LoadTwoArgInput<InputMap_Max>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kDot3:
+                result = LoadTwoArgInput<InputMap_Dot3>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kDot4:
+                result = LoadTwoArgInput<InputMap_Dot4>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kCross3:
+                result = LoadTwoArgInput<InputMap_Cross3>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kCross4:
+                result = LoadTwoArgInput<InputMap_Cross4>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kPow:
+                result = LoadTwoArgInput<InputMap_Pow>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kMod:
+                result = LoadTwoArgInput<InputMap_Mod>(io, element, input_map_cache, loaded_inputs);
+                break;
+            //Single input
+            case InputMap::InputMapType::kSin:
+                result = LoadOneArgInput<InputMap_Sin>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kCos:
+                result = LoadOneArgInput<InputMap_Cos>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kTan:
+                result = LoadOneArgInput<InputMap_Tan>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kAsin:
+                result = LoadOneArgInput<InputMap_Asin>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kAcos:
+                result = LoadOneArgInput<InputMap_Acos>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kAtan:
+                result = LoadOneArgInput<InputMap_Atan>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kLength3:
+                result = LoadOneArgInput<InputMap_Length3>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kNormalize3:
+                result = LoadOneArgInput<InputMap_Normalize3>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kFloor:
+                result = LoadOneArgInput<InputMap_Floor>(io, element, input_map_cache, loaded_inputs);
+                break;
+            case InputMap::InputMapType::kAbs:
+                result = LoadOneArgInput<InputMap_Abs>(io, element, input_map_cache, loaded_inputs);
+                break;
+            // Specials
+            case InputMap::InputMapType::kLerp:
+            {
+                uint32_t arg1_id = element->UnsignedAttribute("input0");
+                uint32_t arg2_id = element->UnsignedAttribute("input1");
+                uint32_t control_id = element->UnsignedAttribute("control");
+                InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+                InputMap::Ptr arg2 = LoadInputMap(io, input_map_cache.at(arg2_id), input_map_cache, loaded_inputs);
+                InputMap::Ptr control = LoadInputMap(io, input_map_cache.at(control_id), input_map_cache, loaded_inputs);
+
+                result = InputMap_Lerp::Create(arg1, arg2, control);
+                break;
+            }
+            case InputMap::InputMapType::kSelect:
+            {
+                uint32_t arg1_id = element->UnsignedAttribute("input0");
+                InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+                InputMap_Select::Selection selection = 
+                    static_cast<InputMap_Select::Selection>(element->UnsignedAttribute("selection"));
+
+                result = InputMap_Select::Create(arg1, selection);
+                break;
+            }
+            case InputMap::InputMapType::kShuffle:
+            {
+                uint32_t arg1_id = element->UnsignedAttribute("input0");
+                InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+                std::array<uint32_t, 4> mask;
+                std::istringstream iss(element->Attribute("mask"));
+                iss >> mask[0] >> mask[1] >> mask[2] >> mask[3];
+
+                result = InputMap_Shuffle::Create(arg1, mask);
+                break;
+            }
+            case InputMap::InputMapType::kShuffle2:
+            {
+                uint32_t arg1_id = element->UnsignedAttribute("input0");
+                InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+                uint32_t arg2_id = element->UnsignedAttribute("input1");
+                InputMap::Ptr arg2 = LoadInputMap(io, input_map_cache.at(arg2_id), input_map_cache, loaded_inputs);
+
+                std::array<uint32_t, 4> mask;
+                std::istringstream iss(element->Attribute("mask"));
+                iss >> mask[0] >> mask[1] >> mask[2] >> mask[3];
+
+                result = InputMap_Shuffle2::Create(arg1, arg2, mask);
+                break;
+            }
+            case InputMap::InputMapType::kMatMul:
+            {
+                uint32_t arg1_id = element->UnsignedAttribute("input0");
+                InputMap::Ptr arg1 = LoadInputMap(io, input_map_cache.at(arg1_id), input_map_cache, loaded_inputs);
+
+                RadeonRays::matrix mat;
+                std::istringstream iss(element->Attribute("matrix"));
+                for (int i = 0; i < 4; ++i)
+                {
+                    for (int j = 0; j < 4; ++j)
+                    {
+                        iss >> mat.m[i][j];
+                    }
+                }
+
+                result = InputMap_MatMul::Create(arg1, mat);
+                break;
+            }
+            case InputMap::InputMapType::kRemap:
+            {
+                uint32_t src_id = element->UnsignedAttribute("src");
+                InputMap::Ptr src = LoadInputMap(io, input_map_cache.at(src_id), input_map_cache, loaded_inputs);
+                uint32_t dst_id = element->UnsignedAttribute("dst");
+                InputMap::Ptr dst = LoadInputMap(io, input_map_cache.at(dst_id), input_map_cache, loaded_inputs);
+                uint32_t data_id = element->UnsignedAttribute("data");
+                InputMap::Ptr data = LoadInputMap(io, input_map_cache.at(data_id), input_map_cache, loaded_inputs);
+
+                result = InputMap_Remap::Create(src, dst, data);
+                break;
+            }
+        }
+
+        result->SetName(name);
+        loaded_inputs.insert(std::make_pair(id, result));
+        return result;
     }
 }

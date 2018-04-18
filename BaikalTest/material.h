@@ -611,7 +611,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
     }
 }
 
-TEST_F(MaterialTest, Material_Translucent)
+/*TEST_F(MaterialTest, Material_Translucent)
 {
     m_camera->LookAt(
         RadeonRays::float3(0.f, 2.f, -10.f),
@@ -700,7 +700,7 @@ TEST_F(MaterialTest, Material_Translucent)
         }
     }
 }
-
+*/
 TEST_F(MaterialTest, Material_DiffuseAndMicrofacet)
 {
     using namespace Baikal;
