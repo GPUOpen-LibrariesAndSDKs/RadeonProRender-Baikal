@@ -21,11 +21,11 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
-#include "SingleBxdfMaterialObject.h"
+#include "MaterialObject.h"
 
 //default variant of material
 class UnsupportedMaterialObject
-    : public SingleBxdfMaterialObject
+    : public MaterialObject
 {
 public:
     UnsupportedMaterialObject(MaterialObject::Type mat_type);

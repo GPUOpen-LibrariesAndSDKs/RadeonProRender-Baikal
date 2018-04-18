@@ -23,10 +23,6 @@ set(WRAP_OBJECT_SOURCES
     WrapObject/Materials/ImageMaterialObject.h
     WrapObject/Materials/MaterialObject.cpp
     WrapObject/Materials/MaterialObject.h
-    WrapObject/Materials/MultiBxdfMaterialObject.cpp
-    WrapObject/Materials/MultiBxdfMaterialObject.h
-    WrapObject/Materials/SingleBxdfMaterialObject.cpp
-    WrapObject/Materials/SingleBxdfMaterialObject.h
     WrapObject/Materials/TextureMaterialObject.cpp
     WrapObject/Materials/TextureMaterialObject.h
     WrapObject/Materials/UberMaterialObject.cpp
