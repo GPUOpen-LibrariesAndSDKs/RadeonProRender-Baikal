@@ -602,16 +602,16 @@ KERNEL void ApplyVolumeTransmissionUberV2(
 
             int volume_idx = Scene_GetVolumeIndex(&scene, shape_idx);
             /// @FIXME need to get material params from material_attributes
-            //int material_idx = Scene_GetMaterialIndex(&scene, shape_idx, prim_idx);
+            int layers = scene.shapes[shape_idx].material.layers;
 
             // If shape does not have volume, it is a surface intersection
             // and we fail a shadow test and bail out.
-/*            if ((volume_idx == -1) || (!Material_IsTransmissive(&materials[material_idx]) && volume_idx != path_volume_idx))
+            if ((volume_idx == -1) || (!UberV2IsTransmissive(layers) && volume_idx != path_volume_idx))
             {
                 shadow_hits[global_id] = 1;
-                Ray_SetInactive(&shadow_rays[global_id]);*/
+                Ray_SetInactive(&shadow_rays[global_id]);
                 return;
-            //}
+            }
 
             // Here we know volume intersection occured and we need to 
             // interpolate normal to figure out if we are entering or exiting volume

@@ -32,6 +32,13 @@ typedef struct _UberV2ShaderData
 
 } UberV2ShaderData;
 
+bool UberV2IsTransmissive(
+    // Layers
+    int layers
+    )
+{
+    return (layers & (kTransparencyLayer | kRefractionLayer)) != 0;
+}
 
 float4 GetUberV2EmissionColor(
     // Material offset

@@ -91,7 +91,6 @@ set(XML_SOURCES
 
 set(KERNELS_SOURCES
     Kernels/CL/bxdf.cl
-    Kernels/CL/bxdf_basic.cl
     Kernels/CL/bxdf_uberv2.cl
     Kernels/CL/bxdf_uberv2_bricks.cl
     Kernels/CL/common.cl
@@ -100,7 +99,6 @@ set(KERNELS_SOURCES
     Kernels/CL/integrator_bdpt.cl
     Kernels/CL/isect.cl
     Kernels/CL/light.cl
-    Kernels/CL/material.cl
     Kernels/CL/monte_carlo_renderer.cl
     Kernels/CL/normalmap.cl
     Kernels/CL/path.cl
