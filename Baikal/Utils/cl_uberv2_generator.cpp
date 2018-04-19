@@ -346,7 +346,7 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     {
         // If layer have transparency check in OpenCL if we sample it and if we sample it - return
         sources->m_get_bxdf_type +=
-            "\tfloat sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+            "\tconst float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
             "\tif (sample < shader_data->transparency)\n"
             "\t{\n"
             "\t\tbxdf_flags |= (kBxdfFlagsTransparency | kBxdfFlagsSingular);\n"
@@ -360,9 +360,9 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     if ((layers & UberV2Material::Layers::kRefractionLayer) == UberV2Material::Layers::kRefractionLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tfloat sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+            "\tconst float sample1 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
             "\tconst float fresnel = CalculateFresnel(1.0f, shader_data->refraction_ior, ndotwi);\n"
-            "\tif (sample >= fresnel)\n"
+            "\tif (sample1 >= fresnel)\n"
             "\t{\n"
             "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleRefraction);\n"
             "\t\tif (shader_data->refraction_roughness < ROUGHNESS_EPS)\n"
@@ -381,9 +381,9 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     if ((layers & UberV2Material::Layers::kCoatingLayer) == UberV2Material::Layers::kCoatingLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tfloat sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
-            "\tconst float fresnel = CalculateFresnel(top_ior, shader_data->coating_ior, ndotwi);\n"
-            "\tif (sample < fresnel)\n"
+            "\tconst float sample3 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+            "\tconst float fresnel1 = CalculateFresnel(top_ior, shader_data->coating_ior, ndotwi);\n"
+            "\tif (sample3 < fresnel1)\n"
             "\t{\n"
             "\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
             "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
@@ -396,9 +396,9 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     if ((layers & UberV2Material::Layers::kReflectionLayer) == UberV2Material::Layers::kReflectionLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tconst float fresnel = CalculateFresnel(top_ior, shader_data->reflection_ior, ndotwi);\n"
-            "\tfloat sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
-            "\tif (sample < fresnel)\n"
+            "\tconst float fresnel2 = CalculateFresnel(top_ior, shader_data->reflection_ior, ndotwi);\n"
+            "\tconst float sample4 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+            "\tif (sample4 < fresnel2)\n"
             "\t{\n"
             "\t\tif (shader_data->reflection_roughness < ROUGHNESS_EPS)\n"
             "\t\t{\n"

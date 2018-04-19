@@ -46,8 +46,8 @@ class BasicTest : public ::testing::Test
 {
 public:
     static std::uint32_t constexpr kMaxPlatforms = 5;
-    static std::uint32_t constexpr kOutputWidth = 800;
-    static std::uint32_t constexpr kOutputHeight = 600;
+    static std::uint32_t constexpr kOutputWidth = 256;
+    static std::uint32_t constexpr kOutputHeight = 256;
     static std::uint32_t constexpr kNumIterations = 32;
 
     virtual void SetUp()
