@@ -33,6 +33,8 @@ THE SOFTWARE.
 #include "cl_program_manager.h"
 #include "version.h"
 
+//#define DUMP_PROGRAM_SOURCE 1
+
 using namespace Baikal;
 
 inline std::uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)

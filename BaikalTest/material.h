@@ -729,6 +729,7 @@ TEST_F(MaterialTest, Material_VolumeScattering)
     };
 
     auto material = UberV2Material::Create();
+    material->SetLayers(UberV2Material::Layers::kTransparencyLayer);
 
     for (auto scatter : scattering)
     {
@@ -788,6 +789,7 @@ TEST_F(MaterialTest, Material_VolumeAbsorption)
     };
 
     auto material = UberV2Material::Create();
+    material->SetLayers(UberV2Material::Layers::kTransparencyLayer);
 
     for (auto absorption : absorptions)
     {
@@ -847,6 +849,7 @@ TEST_F(MaterialTest, Material_VolumeEmission)
     };
 
     auto material = UberV2Material::Create();
+    material->SetLayers(UberV2Material::Layers::kTransparencyLayer);
 
     for (auto emission : emissions)
     {
@@ -908,6 +911,7 @@ TEST_F(MaterialTest, Material_PhaseFunction)
     };
 
     auto material = UberV2Material::Create();
+    material->SetLayers(UberV2Material::Layers::kTransparencyLayer);
 
     for (auto g : gs)
     {

@@ -209,6 +209,13 @@ namespace Baikal
         else if (fname == "sphere+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3());
+
+            auto mat = UberV2Material::Create();
+            mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            mat->SetInputValue("uberv2.diffuse.color",
+                InputMap_ConstantFloat3::Create(float3(0.8f, 0.8f, 0.8f)));
+            
+            mesh->SetMaterial(mat);
             scene->AttachShape(mesh);
 
             auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
@@ -223,6 +230,13 @@ namespace Baikal
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
             scene->AttachShape(mesh);
 
+            auto mat = UberV2Material::Create();
+            mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            mat->SetInputValue("uberv2.diffuse.color",
+                InputMap_ConstantFloat3::Create(float3(0.8f, 0.8f, 0.8f)));
+
+            mesh->SetMaterial(mat);
+
             auto floor = CreateQuad(
             {
                 RadeonRays::float3(-8, 0, -8),
@@ -231,6 +245,7 @@ namespace Baikal
                 RadeonRays::float3(-8, 0, 8),
             }
             , false);
+            floor->SetMaterial(mat);
             scene->AttachShape(floor);
         }
         else if (fname == "sphere+plane+area")
@@ -335,14 +350,14 @@ namespace Baikal
             scene->AttachShape(mesh);
 
             auto mix = UberV2Material::Create();
-            mix->SetLayers(UberV2Material::Layers::kRefractionLayer |
-                UberV2Material::Layers::kReflectionLayer);
+            mix->SetLayers(UberV2Material::Layers::kRefractionLayer/* |
+                UberV2Material::Layers::kReflectionLayer*/);
             mix->SetInputValue("uberv2.refraction.color",
                 InputMap_ConstantFloat3::Create(float3(0.7f, 1.f, 0.7f)));
             mix->SetInputValue("uberv2.refraction.ior",
                 InputMap_ConstantFloat3::Create(1.5f));
             mix->SetInputValue("uberv2.refraction.roughness",
-                InputMap_ConstantFloat3::Create(0.f));
+                InputMap_ConstantFloat3::Create(0.1f));
             mix->SetInputValue("uberv2.reflection.color",
                 InputMap_ConstantFloat3::Create(float3(0.7f, 1.f, 0.7f)));
             mix->SetInputValue("uberv2.reflection.roughness",
@@ -362,6 +377,11 @@ namespace Baikal
                                      , false);
 
             scene->AttachShape(floor);
+            auto diffuse = UberV2Material::Create();
+            diffuse->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            diffuse->SetInputValue("uberv2.diffuse.color",
+                InputMap_ConstantFloat3::Create(float3(0.8f, 0.8f, 0.8f)));
+            floor->SetMaterial(diffuse);
 
             auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
 

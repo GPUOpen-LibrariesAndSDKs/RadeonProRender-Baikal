@@ -121,28 +121,9 @@ TEST_F(TestScenesTest, TestScenes_Sponza)
         return;
     }
 
-    //AttachLight(30.f);
+    AttachLight(30.f);
 
-    //DrawScene(128);
-    ClearOutput();
-    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
-
-    auto& scene = m_controller->GetCachedScene(m_scene);
-
-    std::vector<uint32_t> save_points = { 1, 16, 32, 64, 128, 4096 };
-    for (auto i = 0u; i < 4097; ++i)
-    {
-        ASSERT_NO_THROW(m_renderer->Render(scene));
-        for (auto z : save_points)
-        {
-            if (i == z)
-            {
-                std::string name = test_name() + "_uberv2_" + std::to_string(i) + ".png";
-                SaveOutput(name);
-                break;
-            }
-        }
-    }
+    DrawScene(128);
 }
 
 TEST_F(TestScenesTest, TestScenes_Classroom)

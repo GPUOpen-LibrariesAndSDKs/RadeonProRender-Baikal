@@ -321,7 +321,6 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
 }
 void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material, UberV2Sources *sources)
 {
-
     uint32_t layers = material->GetLayers();
     sources->m_get_bxdf_type = "void GetMaterialBxDFType" + std::to_string(layers) + "("
         "float3 wi, Sampler* sampler, SAMPLER_ARG_LIST, DifferentialGeometry* dg, UberV2ShaderData const* shader_data)\n"
@@ -333,7 +332,6 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
         (UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kRefractionLayer | UberV2Material::Layers::kCoatingLayer ))
         != 0)
     {
-
         sources->m_get_bxdf_type += "\tconst float ndotwi = dot(dg->n, wi);\n";
     }
 
@@ -342,36 +340,58 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
         sources->m_get_bxdf_type += "\tbxdf_flags |= kBxdfFlagsEmissive;\n";
     }
 
+    //Check if blend layers have underlying layers
+    bool transparency_has_underlying_layer = popcount(layers & (
+        UberV2Material::Layers::kRefractionLayer |
+        UberV2Material::Layers::kCoatingLayer |
+        UberV2Material::Layers::kReflectionLayer |
+        UberV2Material::Layers::kDiffuseLayer)) != 0;
+
+    bool refraction_has_underlying_layer = popcount(layers & (
+        UberV2Material::Layers::kCoatingLayer |
+        UberV2Material::Layers::kReflectionLayer |
+        UberV2Material::Layers::kDiffuseLayer)) != 0;
+
+    bool coating_has_underlying_layer = popcount(layers & (
+        UberV2Material::Layers::kReflectionLayer |
+        UberV2Material::Layers::kDiffuseLayer)) != 0;
+
+    bool reflection_has_underlying_layer = popcount(layers & (
+        UberV2Material::Layers::kDiffuseLayer)) != 0;
+
     if ((layers & UberV2Material::Layers::kTransparencyLayer) == UberV2Material::Layers::kTransparencyLayer)
     {
         // If layer have transparency check in OpenCL if we sample it and if we sample it - return
         sources->m_get_bxdf_type +=
-            "\tconst float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
-            "\tif (sample < shader_data->transparency)\n"
-            "\t{\n"
-            "\t\tbxdf_flags |= (kBxdfFlagsTransparency | kBxdfFlagsSingular);\n"
-            "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
-            "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleTransparency);\n"
-            "\t\treturn;\n"
-            "\t}\n";
+            (transparency_has_underlying_layer ?
+                "\tconst float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+                "\tif (sample < shader_data->transparency)\n"
+                "\t{\n" : "") +
+            std::string(
+                "\t\tbxdf_flags |= (kBxdfFlagsTransparency | kBxdfFlagsSingular);\n"
+                "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
+                "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleTransparency);\n"
+                "\t\treturn;\n") +
+            (transparency_has_underlying_layer ? "\t}\n" : "");
     }
 
     // Check refraction layer. If we have it and plan to sample it - set flags and sampled component
     if ((layers & UberV2Material::Layers::kRefractionLayer) == UberV2Material::Layers::kRefractionLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tconst float sample1 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
-            "\tconst float fresnel = CalculateFresnel(1.0f, shader_data->refraction_ior, ndotwi);\n"
-            "\tif (sample1 >= fresnel)\n"
-            "\t{\n"
-            "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleRefraction);\n"
-            "\t\tif (shader_data->refraction_roughness < ROUGHNESS_EPS)\n"
-            "\t\t{\n"
-            "\t\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
-            "\t\t}\n"
-            "\t\tBxdf_SetFlags(dg, bxdf_flags);"
-            "\t\treturn;\n"
-            "\t}\n";
+            (refraction_has_underlying_layer ? 
+                "\tconst float sample1 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+                "\tconst float fresnel = CalculateFresnel(1.0f, shader_data->refraction_ior, ndotwi);\n"
+                "\tif (sample1 >= fresnel)\n"
+                "\t{\n" : "") + 
+            std::string("\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleRefraction);\n"
+                "\t\tif (shader_data->refraction_roughness < ROUGHNESS_EPS)\n"
+                "\t\t{\n"
+                "\t\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
+                "\t\t}\n"
+                "\t\tBxdf_SetFlags(dg, bxdf_flags);"
+                "\t\treturn;\n") + 
+            (refraction_has_underlying_layer ? "\t}\n" : "");
     }
 
     sources->m_get_bxdf_type +=
@@ -381,39 +401,48 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     if ((layers & UberV2Material::Layers::kCoatingLayer) == UberV2Material::Layers::kCoatingLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tconst float sample3 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
-            "\tconst float fresnel1 = CalculateFresnel(top_ior, shader_data->coating_ior, ndotwi);\n"
-            "\tif (sample3 < fresnel1)\n"
-            "\t{\n"
-            "\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
-            "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
-            "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleCoating);\n"
-            "\t\treturn;\n"
-            "\t}\n"
-            "\ttop_ior = shader_data->coating_ior;\n";
+            (coating_has_underlying_layer ?
+                "\tconst float sample3 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+                "\tconst float fresnel1 = CalculateFresnel(top_ior, shader_data->coating_ior, ndotwi);\n"
+                "\tif (sample3 < fresnel1)\n"
+                "\t{\n" : "") +
+            std::string(
+                "\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
+                "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
+                "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleCoating);\n"
+                "\t\treturn;\n") +
+            (coating_has_underlying_layer ?
+                "\t}\n"
+                "\ttop_ior = shader_data->coating_ior;\n" : "");
     }
 
     if ((layers & UberV2Material::Layers::kReflectionLayer) == UberV2Material::Layers::kReflectionLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tconst float fresnel2 = CalculateFresnel(top_ior, shader_data->reflection_ior, ndotwi);\n"
-            "\tconst float sample4 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
-            "\tif (sample4 < fresnel2)\n"
-            "\t{\n"
-            "\t\tif (shader_data->reflection_roughness < ROUGHNESS_EPS)\n"
-            "\t\t{\n"
-            "\t\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
-            "\t\t}\n"
-            "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleReflection);\n"
-            "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
-            "\t\treturn;\n"
-            "\t}\n";
+            (reflection_has_underlying_layer ?
+                "\tconst float fresnel2 = CalculateFresnel(top_ior, shader_data->reflection_ior, ndotwi);\n"
+                "\tconst float sample4 = Sampler_Sample1D(sampler, SAMPLER_ARGS);\n"
+                "\tif (sample4 < fresnel2)\n"
+                "\t{\n" : "") + 
+            std::string(
+                "\t\tif (shader_data->reflection_roughness < ROUGHNESS_EPS)\n"
+                "\t\t{\n"
+                "\t\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
+                "\t\t}\n"
+                "\t\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleReflection);\n"
+                "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
+                "\t\treturn;\n") + 
+            (reflection_has_underlying_layer ? "\t}\n" : "");
 
     }
 
+    if ((layers & UberV2Material::Layers::kDiffuseLayer) == UberV2Material::Layers::kDiffuseLayer)
+    {
+        sources->m_get_bxdf_type +=
+            "\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleDiffuse);\n"
+            "\tBxdf_SetFlags(dg, bxdf_flags);\n";
+    }
     sources->m_get_bxdf_type +=
-        "\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleDiffuse);\n"
-        "\tBxdf_SetFlags(dg, bxdf_flags);\n"
         "return;\n"
         "}\n";
 }

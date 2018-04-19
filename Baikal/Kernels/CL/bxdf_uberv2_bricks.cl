@@ -637,7 +637,7 @@ float3 UberV2_Refraction_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = shader_data->refraction_roughness;
+    const bool is_singular = (shader_data->refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
         UberV2_IdealRefract_Evaluate(shader_data, wi, wo, TEXTURE_ARGS) :
