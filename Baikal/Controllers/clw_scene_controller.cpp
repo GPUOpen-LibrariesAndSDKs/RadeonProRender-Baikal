@@ -831,6 +831,8 @@ namespace Baikal
             int mip_index = tex->MipmapEnabled() ?
                 (++mip_index_counter) : (-1);
 
+            (textures + num_textures_written)->dataoffset = tex_data_buffer_size;
+
             WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written, mip_index);
 
             ++num_textures_written;
@@ -839,7 +841,7 @@ namespace Baikal
         }
 
         // if there is textures with mipmap levels
-        if (out.mipmap.GetElementCount() < mip_index_counter + 1);
+        if (out.mipmap.GetElementCount() < mip_index_counter + 1)
         {
             // Create material buffer
             out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(mip_index_counter + 1, CL_MEM_READ_ONLY);
@@ -1580,7 +1582,7 @@ namespace Baikal
         auto begin = texture.GetData();
 
         // if texture marked as Baikal generation mipmapm
-        // than we should copy only first images, and all levels otherwise
+        // than we should copy only first image, and all levels otherwise
         auto offset = texture.MipmapGenerationReq() ?
             (Texture::GetPixelSize(texture.GetFormat()) * texture.GetSize().x * texture.GetSize().y) : (texture.GetSizeInBytes());
 

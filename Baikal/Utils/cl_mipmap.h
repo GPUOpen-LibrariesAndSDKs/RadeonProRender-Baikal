@@ -54,13 +54,13 @@ namespace Baikal
         void BuildMipPyramid(const ClwScene::Texture& texture, CLWBuffer<char> texture_data);
 
         void Downscale(
-            CLWBuffer<char> texture_data,
+            CLWBuffer<char> texture_data, int format,
             std::uint32_t dst_offset, std::uint32_t dst_width,
             std::uint32_t dst_pitch, std::uint32_t dst_height,
             std::uint32_t src_offset, std::uint32_t src_width,
             std::uint32_t src_pitch, std::uint32_t src_height);
 
-        void ComputeWeights(CLWBuffer<float> weights, int size, bool is_rounding_necessary);
+        void ComputeWeights(CLWBuffer<RadeonRays::float4> weights, int size, bool is_rounding_necessary);
 
         static int PixelBytes(int format);
 
@@ -70,8 +70,7 @@ namespace Baikal
         std::uint32_t m_tmp_buffer_size;
         CLWBuffer<char> m_tmp_buffer;
         // buffers for weights
-        std::uint32_t m_x_weights_num, m_y_weights_num;
-        CLWBuffer<float> m_x_weights, m_y_weights;
+        CLWBuffer<RadeonRays::float4> m_x_weights, m_y_weights;
         // cpu buffer to store mip levels info
         std::vector<ClwScene::MipmapPyramid> m_mipmap_info;
     };

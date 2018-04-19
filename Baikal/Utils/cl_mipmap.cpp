@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #include <algorithm>
 #include "cl_mipmap.h"
+#include "SceneGraph/texture.h"
 
 namespace Baikal
 {
@@ -30,7 +31,7 @@ namespace Baikal
         ClwClass(context, program_manager, "../Baikal/Kernels/CL/mipmap_level_scaler.cl", "")
     {  }
 
-    void Mipmap::ComputeWeights(CLWBuffer<float> weights, int size, bool is_rounding_necessary)
+    void Mipmap::ComputeWeights(CLWBuffer<RadeonRays::float4> weights, int size, bool is_rounding_necessary)
     {
         auto compute_weights_kernel = (is_rounding_necessary) ?
             GetKernel("ComputeWeights_RoundingUp") : GetKernel("ComputeWeights_NoRounding");
@@ -44,7 +45,7 @@ namespace Baikal
     }
 
     void Mipmap::Downscale(
-        CLWBuffer<char> texture_data,
+        CLWBuffer<char> texture_data, int format,
         std::uint32_t dst_offset, std::uint32_t dst_width,
         std::uint32_t dst_pitch, std::uint32_t dst_height,
         std::uint32_t src_offset, std::uint32_t src_width,
@@ -62,18 +63,33 @@ namespace Baikal
         {
             bool is_rounding_necessary = (src_width % 2 != 0);
 
-            m_x_weights_num = 3 * dst_width;
-            if (m_x_weights.GetElementCount() < m_x_weights_num)
+            if (m_x_weights.GetElementCount() < dst_width)
             {
-                m_x_weights = m_context.CreateBuffer<float>(m_x_weights_num, CL_MEM_READ_ONLY);
+                m_x_weights = m_context.CreateBuffer<float4>(dst_width, CL_MEM_READ_ONLY);
             }
 
-            ComputeWeights(m_x_weights, m_x_weights_num, is_rounding_necessary);
+            ComputeWeights(m_x_weights, dst_width, is_rounding_necessary);
 
             {
                 int argc = 0;
 
-                auto scale_x = GetKernel("ScaleX_4C");
+                CLWKernel scale_x;
+
+                switch (format)
+                {
+                case ClwScene::RGBA8:
+                    scale_x = GetKernel("ScaleX_4C8U");
+                    break;
+                case ClwScene::RGBA16:
+                    scale_x = GetKernel("ScaleX_4C16U");
+                    break;
+                case ClwScene::RGBA32:
+                    scale_x = GetKernel("ScaleX_4C32U");
+                    break;
+                default:
+                    throw std::runtime_error("Mipmap::Downscale(...): unsupported format");
+                }
+
                 scale_x.SetArg(argc++, m_tmp_buffer);
                 scale_x.SetArg(argc++, m_x_weights);
                 scale_x.SetArg(argc++, 0);
@@ -86,7 +102,7 @@ namespace Baikal
                 scale_x.SetArg(argc++, src_height);
                 scale_x.SetArg(argc++, src_pitch);
 
-                int thread_num = (int)(std::ceilf(m_tmp_buffer_size / 64.f) * 64.f);
+                int thread_num = (int)(std::ceilf(dst_width * src_height / 64.f) * 64.f);
                 m_context.Launch1D(0, thread_num, 64, scale_x).Wait();
             }
         }
@@ -106,18 +122,33 @@ namespace Baikal
         {
             bool is_rounding_necessary = (src_height % 2 != 0);
 
-            m_y_weights_num = 3 * dst_height;
-            if (m_y_weights.GetElementCount() < m_y_weights_num)
+            if (m_y_weights.GetElementCount() < dst_height)
             {
-                m_y_weights = m_context.CreateBuffer<float>(m_y_weights_num, CL_MEM_READ_ONLY);
+                m_y_weights = m_context.CreateBuffer<RadeonRays::float4>(dst_height, CL_MEM_READ_ONLY);
             }
 
-            ComputeWeights(m_y_weights, m_y_weights_num, is_rounding_necessary);
+            ComputeWeights(m_y_weights, dst_height, is_rounding_necessary);
 
             {
                 int argc = 0;
 
-                auto scale_y = GetKernel("ScaleY_4C");
+                CLWKernel scale_y;
+
+                switch (format)
+                {
+                case ClwScene::RGBA8:
+                    scale_y = GetKernel("ScaleY_4C8U");
+                    break;
+                case ClwScene::RGBA16:
+                    scale_y = GetKernel("ScaleY_4C16U");
+                    break;
+                case ClwScene::RGBA32:
+                    scale_y = GetKernel("ScaleY_4C32U");
+                    break;
+                default:
+                    throw std::runtime_error("Mipmap::Downscale(...): unsupported format");
+                }
+
                 scale_y.SetArg(argc++, texture_data);
                 scale_y.SetArg(argc++, m_y_weights);
                 scale_y.SetArg(argc++, dst_offset);
@@ -130,7 +161,7 @@ namespace Baikal
                 scale_y.SetArg(argc++, src_height);
                 scale_y.SetArg(argc++, dst_pitch);
 
-                int thread_num = (int)(std::ceilf(dst_pitch * dst_height / 64.f) * 64.f);
+                int thread_num = (int)(std::ceilf(dst_width * dst_height / 64.f) * 64.f);
                 m_context.Launch1D(0, thread_num, 64, scale_y).Wait();
             }
         }
@@ -168,7 +199,7 @@ namespace Baikal
 
             // downscale current level in x and y dimensions
             Downscale(
-                texture_data,
+                texture_data, texture.fmt,
                 level_data_offset + mipmap.level_info[i - 1].pitch * mipmap.level_info[i - 1].height,
                 dst_width,
                 dst_pitch,
@@ -187,6 +218,8 @@ namespace Baikal
             mipmap.level_info[i].pitch = dst_pitch;
             mipmap.level_info[i].offset = level_data_offset;
         }
+
+        mipmap.level_num = level_num;
 
         m_mipmap_info.push_back(mipmap);
     }

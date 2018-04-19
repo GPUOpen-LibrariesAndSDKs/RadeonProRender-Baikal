@@ -30,7 +30,7 @@ THE SOFTWARE.
 
 KERNEL
 void ComputeWeights_NoRounding(
-    GLOBAL float* restrict weights,
+    GLOBAL float4* restrict weights,
     // size of weight vector
     const int size)
 {
@@ -38,15 +38,15 @@ void ComputeWeights_NoRounding(
 
     if (id < size)
     {
-        weights[3 * id] = .0f;
-        weights[3 * id + 1] = .5f;
-        weights[3 * id + 2] = .5f;
+        weights[id].x = .0f;
+        weights[id].y = .5f;
+        weights[id].z = .5f;
     }
 }
 
 KERNEL
 void ComputeWeights_RoundingUp(
-    GLOBAL float* restrict weights,
+    GLOBAL float4* restrict weights,
     // size of weight vector
     const int size)
 {
@@ -57,33 +57,33 @@ void ComputeWeights_RoundingUp(
     // first weight
     if (id == 0)
     {
-        weights[3 * id] = .0f;
-        weights[3 * id + 1] = ((float)size) / denominator;
-        weights[3 * id + 2] = ((float)size - 1.f) / denominator;
+        weights[id].x = .0f;
+        weights[id].y = ((float)size) / denominator;
+        weights[id].z = ((float)size - 1.f) / denominator;
         return;
     }
 
     // last weight
     if (id == size - 1)
     {
-        weights[3 * id] = ((float)size - 1.f) / denominator;
-        weights[3 * id + 1] = ((float)size) / denominator;
-        weights[3 * id + 2] = .0f;
+        weights[id].x = ((float)size - 1.f) / denominator;
+        weights[id].y = ((float)size) / denominator;
+        weights[id].z = .0f;
         return;
     }
 
     if (id < size - 1)
     {
-        weights[3 * id] = ((float)size - (float)id - 1.f) / denominator;
-        weights[3 * id + 1] = ((float)size) / denominator;
-        weights[3 * id + 2] = ((float)id) / denominator;
+        weights[id].x = ((float)size - (float)id - 1.f) / denominator;
+        weights[id].y = ((float)size) / denominator;
+        weights[id].z = ((float)id) / denominator;
     }
 }
 
 KERNEL
-void ScaleX_1C(
+void ScaleX_1C8U(
     GLOBAL uchar* restrict dst_buf,
-    GLOBAL float const* restrict weights,
+    GLOBAL float4 const* restrict weights,
     /* in bytes */ const int dst_offset, const int dst_width,
      const int dst_height, /* in bytes */ const int dst_pitch,
     GLOBAL uchar const* restrict src_buf,
@@ -107,8 +107,8 @@ void ScaleX_1C(
     if (dst_col == 0)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel]));
+                    weights[dst_col].y * ((float)src_buf[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel]));
         return;
     }
 
@@ -116,25 +116,131 @@ void ScaleX_1C(
     if (dst_col == dst_width - 1)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel]) +
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel]) +
+                    weights[dst_col].y * ((float)src_buf[center_pixel]));
         return;
     }
 
     if (id < dst_width * dst_height)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel]) + 
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel]) + 
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel]) + 
+                    weights[dst_col].y * ((float)src_buf[center_pixel]) + 
+                    weights[dst_col].z * ((float)src_buf[right_pixel]));
+    }
+}
+
+KERNEL
+void ScaleX_1C16U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights,
+    /* in bytes */ const int dst_offset, const int dst_width,
+     const int dst_height, /* in bytes */ const int dst_pitch,
+    GLOBAL uchar const* restrict src_buf,
+    /* in bytes */ const int src_offset, const int src_width,
+    const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = 2 * dst_col;
+    int src_row = dst_row;
+
+        // offsets in bytes
+    int left_pixel = src_offset + (src_row * src_pitch + (src_col - 1));
+    int center_pixel = src_offset + (src_row * src_pitch + src_col);
+    int right_pixel = src_row * src_pitch + src_col + 1;
+    int dst_pixel = dst_row * dst_pitch + dst_col;
+
+    __global half const* src_buf_16u = (__global half const*)src_buf;
+    __global half * dst_buf_16u = (__global half *)dst_buf;
+
+    // first pixel in row
+    if (dst_col == 0)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
+        return;
+    }
+
+    // last pixel in row
+    if (dst_col == dst_width - 1)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) +
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]));
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) + 
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) + 
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
+    }
+}
+
+KERNEL
+void ScaleX_1C32U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights,
+    /* in bytes */ const int dst_offset, const int dst_width,
+     const int dst_height, /* in bytes */ const int dst_pitch,
+    GLOBAL uchar const* restrict src_buf,
+    /* in bytes */ const int src_offset, const int src_width,
+    const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = 2 * dst_col;
+    int src_row = dst_row;
+
+        // offsets in bytes
+    int left_pixel = src_offset + (src_row * src_pitch + (src_col - 1));
+    int center_pixel = src_offset + (src_row * src_pitch + src_col);
+    int right_pixel = src_row * src_pitch + src_col + 1;
+    int dst_pixel = dst_row * dst_pitch + dst_col;
+
+    __global half const* src_buf_32u = (__global float3 const*)src_buf;
+    __global half * dst_buf_32u = (__global float3 *)src_buf;
+
+    // first pixel in row
+    if (dst_col == 0)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
+        return;
+    }
+
+    // last pixel in row
+    if (dst_col == dst_width - 1)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) +
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]));
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) + 
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) + 
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
     }
 }
 
 
 KERNEL
-void ScaleY_1C(
+void ScaleY_1C8U(
     GLOBAL uchar* restrict dst_buf,
-    GLOBAL float const* restrict weights,
+    GLOBAL float4 const* restrict weights,
     /* in bytes */ const int dst_offset, const int dst_width,
     const int dst_height, /* in bytes */ const int dst_pitch,
     GLOBAL uchar* restrict src_buf,
@@ -158,8 +264,8 @@ void ScaleY_1C(
     if (dst_row == 0)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel]));
+                    weights[dst_row].y * (float)(src_buf[center_pixel]) +
+                    weights[dst_row].z * (float)(src_buf[bottom_pixel]));
         return;
     }
 
@@ -167,25 +273,130 @@ void ScaleY_1C(
     if (dst_row == dst_height - 1)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel]));
+                    weights[dst_row].x * (float)(src_buf[top_pixel]) +
+                    weights[dst_row].y * (float)(src_buf[center_pixel]));
         return;
     }
 
     if (id < dst_width * dst_height)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel]) + 
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel]) + 
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel]));
+                    weights[dst_row].x * (float)(src_buf[top_pixel]) + 
+                    weights[dst_row].y * (float)(src_buf[center_pixel]) + 
+                    weights[dst_row].z * (float)(src_buf[bottom_pixel]));
     }
 }
 
+KERNEL
+void ScaleY_1C16U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights,
+    /* in bytes */ const int dst_offset, const int dst_width,
+    const int dst_height, /* in bytes */ const int dst_pitch,
+    GLOBAL uchar* restrict src_buf,
+    /* in bytes */ const int src_offset, const int src_width,
+    const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (int)((id - dst_col) / dst_width);
+    int src_col = dst_col;
+    int src_row = 2 * dst_row;
+
+    // offsets in bytes
+    int top_pixel = src_offset + (src_row - 1) * src_pitch +  src_col;
+    int center_pixel = src_offset + src_row * src_pitch + src_col;
+    int bottom_pixel = src_offset + (src_row + 1) * src_pitch + src_col;
+    int dst_pixel = dst_offset + dst_row * dst_pitch + dst_col;
+
+    __global half const* src_buf_16u = (__global half const*)src_buf;
+    __global half * dst_buf_16u = (__global half *)dst_buf;
+
+    // first row
+    if (dst_row == 0)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) +
+                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
+        return;
+    }
+
+    // last row
+    if (dst_row == dst_height - 1)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) +
+                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]));
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) + 
+                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) + 
+                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
+    }
+}
 
 KERNEL
-void ScaleX_4C(
+void ScaleY_1C32U(
     GLOBAL uchar* restrict dst_buf,
-    GLOBAL float const* restrict weights,
+    GLOBAL float4 const* restrict weights,
+    /* in bytes */ const int dst_offset, const int dst_width,
+    const int dst_height, /* in bytes */ const int dst_pitch,
+    GLOBAL uchar* restrict src_buf,
+    /* in bytes */ const int src_offset, const int src_width,
+    const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (int)((id - dst_col) / dst_width);
+    int src_col = dst_col;
+    int src_row = 2 * dst_row;
+
+    // offsets in bytes
+    int top_pixel = src_offset + (src_row - 1) * src_pitch +  src_col;
+    int center_pixel = src_offset + src_row * src_pitch + src_col;
+    int bottom_pixel = src_offset + (src_row + 1) * src_pitch + src_col;
+    int dst_pixel = dst_offset + dst_row * dst_pitch + dst_col;
+
+    __global float3 const* src_buf_16u = (__global float3 const*)src_buf;
+    __global float3 * dst_buf_16u = (__global float3*)dst_buf;
+
+    // first row
+    if (dst_row == 0)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) +
+                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
+        return;
+    }
+
+    // last row
+    if (dst_row == dst_height - 1)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) +
+                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]));
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) + 
+                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) + 
+                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
+    }
+}
+
+KERNEL
+void ScaleX_4C8U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights, int format,
     /* in bytes */ const int dst_offset, const int dst_width, 
     const int dst_height, /* in bytes */ const int dst_pitch,
     GLOBAL uchar const* restrict src_buf,
@@ -209,20 +420,20 @@ void ScaleX_4C(
     if (dst_col == 0)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel]));
+                    weights[dst_col].y * ((float)src_buf[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel]));
 
         dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 1]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel + 1]));
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 1]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel + 1]));
 
         dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 2]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel + 2]));
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 2]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel + 2]));
 
         dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 3]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel + 3]));
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 3]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel + 3]));
 
         return;
     }
@@ -231,20 +442,20 @@ void ScaleX_4C(
     if (dst_col == dst_width - 1)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel]) +
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel]) +
+                    weights[dst_col].y * ((float)src_buf[center_pixel]));
 
         dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel + 1]) +
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 1]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel + 1]) +
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 1]));
 
         dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel + 2]) +
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 2]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel + 2]) +
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 2]));
 
         dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel + 3]) +
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 3]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel + 3]) +
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 3]));
 
         return;
     }
@@ -253,32 +464,224 @@ void ScaleX_4C(
     {
 
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel]) + 
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel]) + 
+                    weights[dst_col].y * ((float)src_buf[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel]));
 
         dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel + 1]) + 
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 1]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel + 1]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel + 1]) + 
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 1]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel + 1]));
 
         dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel + 2]) + 
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 2]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel + 2]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel + 2]) + 
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 2]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel + 2]));
 
         dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[3 * dst_col] * ((float)src_buf[left_pixel + 3]) + 
-                    weights[3 * dst_col + 1] * ((float)src_buf[center_pixel + 3]) +
-                    weights[3 * dst_col + 2] * ((float)src_buf[right_pixel + 3]));
+                    weights[dst_col].x * ((float)src_buf[left_pixel + 3]) + 
+                    weights[dst_col].y * ((float)src_buf[center_pixel + 3]) +
+                    weights[dst_col].z * ((float)src_buf[right_pixel + 3]));
     }
 }
 
 
 KERNEL
-void ScaleY_4C(
+void ScaleX_4C16U(
     GLOBAL uchar* restrict dst_buf,
-    GLOBAL float const* restrict weights,
+    GLOBAL float4 const* restrict weights, int format,
+    /* in bytes */ const int dst_offset, const int dst_width, 
+    const int dst_height, /* in bytes */ const int dst_pitch,
+    GLOBAL uchar const* restrict src_buf,
+    /* in bytes */ const int src_offset, const int src_width,
+     const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = 2 * dst_col;
+    int src_row = dst_row;
+
+    // offsets in bytes
+    int left_pixel = src_offset + (src_row * src_pitch + 4 * (src_col - 1));
+    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
+    int right_pixel = src_offset + (src_row * src_pitch + 4 * (src_col + 1));
+    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
+
+    __global half const* src_buf_16u = (__global half const*)src_buf;
+    __global half * dst_buf_16u = (__global half*)dst_buf;
+
+    // first pixel in row
+    if (dst_col == 0)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
+
+        dst_buf_16u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 1]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 1]));
+
+        dst_buf_16u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 2]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 2]));
+
+        dst_buf_16u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 3]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 3]));
+
+        return;
+    }
+
+    // last pixel in row
+    if (dst_col == dst_width - 1)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) +
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]));
+
+        dst_buf_16u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 1]) +
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 1]));
+
+        dst_buf_16u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 2]) +
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 2]));
+
+        dst_buf_16u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 3]) +
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 3]));
+
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) + 
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
+
+        dst_buf_16u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 1]) + 
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 1]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 1]));
+
+        dst_buf_16u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 2]) + 
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 2]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 2]));
+
+        dst_buf_16u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 3]) + 
+                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 3]) +
+                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 3]));
+    }
+}
+
+KERNEL
+void ScaleX_4C32U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights, int format,
+    /* in bytes */ const int dst_offset, const int dst_width, 
+    const int dst_height, /* in bytes */ const int dst_pitch,
+    GLOBAL uchar const* restrict src_buf,
+    /* in bytes */ const int src_offset, const int src_width,
+     const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = 2 * dst_col;
+    int src_row = dst_row;
+
+    // offsets in bytes
+    int left_pixel = src_offset + (src_row * src_pitch + 4 * (src_col - 1));
+    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
+    int right_pixel = src_offset + (src_row * src_pitch + 4 * (src_col + 1));
+    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
+
+    __global float3 const* src_buf_32u = (__global float3 const*)src_buf;
+    __global float3 * dst_buf_32u = (__global float3*)dst_buf;
+
+    // first pixel in row
+    if (dst_col == 0)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
+
+        dst_buf_32u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 1]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 1]));
+
+        dst_buf_32u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 2]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 2]));
+
+        dst_buf_32u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 3]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 3]));
+
+        return;
+    }
+
+    // last pixel in row
+    if (dst_col == dst_width - 1)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) +
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]));
+
+        dst_buf_32u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 1]) +
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 1]));
+
+        dst_buf_32u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 2]) +
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 2]));
+
+        dst_buf_32u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 3]) +
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 3]));
+
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) + 
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
+
+        dst_buf_32u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 1]) + 
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 1]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 1]));
+
+        dst_buf_32u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 2]) + 
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 2]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 2]));
+
+        dst_buf_32u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 3]) + 
+                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 3]) +
+                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 3]));
+    }
+}
+
+
+
+KERNEL
+void ScaleY_4C8U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights,
     /* in bytes */ const int dst_offset, const int dst_width,
     const int dst_height, /* in bytes */const int dst_pitch,
     GLOBAL uchar const* restrict src_buf,
@@ -302,20 +705,20 @@ void ScaleY_4C(
     if (dst_row == 0)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel]));
+                    weights[dst_col].y * (float)(src_buf[center_pixel]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel]));
 
         dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 1]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel + 1]));
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 1]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 1]));
 
         dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 2]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel + 2]));
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 2]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 2]));
 
         dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 3]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel + 3]));
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 3]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 3]));
                     
         return;
     }
@@ -324,20 +727,20 @@ void ScaleY_4C(
     if (dst_row == dst_height - 1)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel]));
 
         dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel + 1]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 1]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel + 1]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 1]));
 
         dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel + 2]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 2]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel + 2]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 2]));
 
         dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel + 3]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 3]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel + 3]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 3]));
                     
         return;
     }
@@ -345,24 +748,212 @@ void ScaleY_4C(
     if (id < dst_width * dst_height)
     {
         dst_buf[dst_pixel] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel]));
 
         dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel + 1]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 1]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel + 1]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel + 1]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 1]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 1]));
 
         dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel + 2]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 2]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel + 2]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel + 2]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 2]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 2]));
 
         dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[3 * dst_row] * (float)(src_buf[top_pixel + 3]) +
-                    weights[3 * dst_row + 1] * (float)(src_buf[center_pixel + 3]) +
-                    weights[3 * dst_row + 2] * (float)(src_buf[bottom_pixel + 3]));
+                    weights[dst_col].x * (float)(src_buf[top_pixel + 3]) +
+                    weights[dst_col].y * (float)(src_buf[center_pixel + 3]) +
+                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 3]));
+    }
+}
+
+KERNEL
+void ScaleY_4C16U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights,
+    /* in bytes */ const int dst_offset, const int dst_width,
+    const int dst_height, /* in bytes */const int dst_pitch,
+    GLOBAL uchar const* restrict src_buf,
+     /* in bytes */ const int src_offset, const int src_width,
+      const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = dst_col;
+    int src_row = 2 * dst_row;
+
+    // offsets in bytes
+    int top_pixel = src_offset + ((src_row - 1) * src_pitch + 4 * src_col);
+    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
+    int bottom_pixel = src_offset + ((src_row + 1) * src_pitch + 4 * src_col);
+    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
+
+    __global half const* src_buf_16u = (__global half const*)src_buf;
+    __global half * dst_buf_16u = (__global half*)dst_buf;
+
+    // first row
+    if (dst_row == 0)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel]));
+
+        dst_buf_16u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 1]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 1]));
+
+        dst_buf_16u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 2]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 2]));
+
+        dst_buf_16u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 3]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 3]));
+                    
+        return;
+    }
+
+    // last row
+    if (dst_row == dst_height - 1)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel]));
+
+        dst_buf_16u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 1]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 1]));
+
+        dst_buf_16u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 2]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 2]));
+
+        dst_buf_16u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 3]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 3]));
+                    
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf_16u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel]));
+
+        dst_buf_16u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 1]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 1]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 1]));
+
+        dst_buf_16u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 2]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 2]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 2]));
+
+        dst_buf_16u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 3]) +
+                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 3]) +
+                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 3]));
+    }
+}
+
+KERNEL
+void ScaleY_4C32U(
+    GLOBAL uchar* restrict dst_buf,
+    GLOBAL float4 const* restrict weights,
+    /* in bytes */ const int dst_offset, const int dst_width,
+    const int dst_height, /* in bytes */const int dst_pitch,
+    GLOBAL uchar const* restrict src_buf,
+     /* in bytes */ const int src_offset, const int src_width,
+      const int src_height, /* in bytes */ const int src_pitch
+    )
+{
+    int id = get_global_id(0);
+    int dst_col = id % dst_width;
+    int dst_row = (id - dst_col) / dst_width;
+    int src_col = dst_col;
+    int src_row = 2 * dst_row;
+
+    // offsets in bytes
+    int top_pixel = src_offset + ((src_row - 1) * src_pitch + 4 * src_col);
+    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
+    int bottom_pixel = src_offset + ((src_row + 1) * src_pitch + 4 * src_col);
+    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
+
+    __global float3 const* src_buf_32u = (__global float3 const*)src_buf;
+    __global float3 * dst_buf_32u = (__global float3*)dst_buf;
+
+    // first row
+    if (dst_row == 0)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel]));
+
+        dst_buf_32u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 1]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 1]));
+
+        dst_buf_32u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 2]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 2]));
+
+        dst_buf_32u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 3]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 3]));
+                    
+        return;
+    }
+
+    // last row
+    if (dst_row == dst_height - 1)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel]));
+
+        dst_buf_32u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 1]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 1]));
+
+        dst_buf_32u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 2]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 2]));
+
+        dst_buf_32u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 3]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 3]));
+                    
+        return;
+    }
+
+    if (id < dst_width * dst_height)
+    {
+        dst_buf_32u[dst_pixel] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel]));
+
+        dst_buf_32u[dst_pixel + 1] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 1]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 1]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 1]));
+
+        dst_buf_32u[dst_pixel + 2] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 2]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 2]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 2]));
+
+        dst_buf_32u[dst_pixel + 3] = (uchar)(
+                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 3]) +
+                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 3]) +
+                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 3]));
     }
 }
 

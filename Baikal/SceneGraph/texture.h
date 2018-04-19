@@ -139,7 +139,7 @@ namespace Baikal
     }
 
     inline bool Texture::MipmapEnabled() const
-    { return m_generate_mipmap || (!m_levels.empty()); }
+    { return m_generate_mipmap || (m_levels.size() > 1); }
 
     inline void Texture::SetData(char* data, const std::vector<RadeonRays::int3> &level_sizes, Format format)
     {
