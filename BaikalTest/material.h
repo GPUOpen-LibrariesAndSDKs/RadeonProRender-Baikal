@@ -656,8 +656,7 @@ TEST_F(MaterialTest, Material_DiffuseAndMicrofacet)
 
     auto reflection_ior = Baikal::InputMap_ConstantFloat::Create(1.1f);
 
-    material->SetInputValue("uberv2.reflection.ior",
-        Baikal::InputMap_ConstantFloat::Create(1.f));
+    material->SetInputValue("uberv2.reflection.ior", reflection_ior);
 
     MaterialTestHelperFunction(
         test_name(),
