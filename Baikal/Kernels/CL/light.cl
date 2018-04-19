@@ -234,7 +234,7 @@ float3 AreaLight_GetLe(// Emissive object
 
         const float3 ke = GetUberV2EmissionColor(material_offset, dg, scene->input_map_values, scene->material_attributes, TEXTURE_ARGS).xyz;
         
-        return make_float3(1.0f, 1.0f, 1.f);
+        return ke;
     }
     else
     {
