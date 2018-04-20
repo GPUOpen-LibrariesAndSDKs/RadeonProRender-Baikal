@@ -74,24 +74,23 @@ namespace Baikal
                 int argc = 0;
 
                 CLWKernel scale_x;
-
                 switch (format)
                 {
                 case ClwScene::RGBA8:
-                    scale_x = GetKernel("ScaleX_4C8U");
+                    scale_x = GetKernel("ScaleX_4C_uchar4");
                     break;
                 case ClwScene::RGBA16:
-                    scale_x = GetKernel("ScaleX_4C16U");
+                    scale_x = GetKernel("ScaleX_4C_half4");
                     break;
                 case ClwScene::RGBA32:
-                    scale_x = GetKernel("ScaleX_4C32U");
+                    scale_x = GetKernel("ScaleX_4C_float4");
                     break;
                 default:
                     throw std::runtime_error("Mipmap::Downscale(...): unsupported format");
                 }
 
-                scale_x.SetArg(argc++, m_tmp_buffer);
                 scale_x.SetArg(argc++, m_x_weights);
+                scale_x.SetArg(argc++, m_tmp_buffer);
                 scale_x.SetArg(argc++, 0);
                 scale_x.SetArg(argc++, dst_width);
                 scale_x.SetArg(argc++, src_height);
@@ -137,20 +136,20 @@ namespace Baikal
                 switch (format)
                 {
                 case ClwScene::RGBA8:
-                    scale_y = GetKernel("ScaleY_4C8U");
+                    scale_y = GetKernel("ScaleY_4C_uchar4");
                     break;
                 case ClwScene::RGBA16:
-                    scale_y = GetKernel("ScaleY_4C16U");
+                    scale_y = GetKernel("ScaleY_4C_half4");
                     break;
                 case ClwScene::RGBA32:
-                    scale_y = GetKernel("ScaleY_4C32U");
+                    scale_y = GetKernel("ScaleY_4C_float4");
                     break;
                 default:
                     throw std::runtime_error("Mipmap::Downscale(...): unsupported format");
                 }
 
-                scale_y.SetArg(argc++, texture_data);
                 scale_y.SetArg(argc++, m_y_weights);
+                scale_y.SetArg(argc++, texture_data);
                 scale_y.SetArg(argc++, dst_offset);
                 scale_y.SetArg(argc++, dst_width);
                 scale_y.SetArg(argc++, dst_height);

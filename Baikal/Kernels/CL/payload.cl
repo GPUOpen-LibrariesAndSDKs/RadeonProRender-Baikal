@@ -332,7 +332,10 @@ enum TextureFormat
     UNKNOWN,
     RGBA8,
     RGBA16,
-    RGBA32
+    RGBA32,
+    GRAY8,
+    GRAY16,
+    GRAY32
 };
 
 /// mipmap level description

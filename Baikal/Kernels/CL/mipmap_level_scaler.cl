@@ -28,9 +28,200 @@ THE SOFTWARE.
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
+#define DST_BUFFER_ARG_LIST GLOBAL uchar* restrict dst_buf, \
+    /* in bytes */ const int dst_offset, /* in pixels */const int dst_width, \
+    /* in pixels */const int dst_height, /* in bytes */ const int dst_pitch
+    
+#define SRC_BUFFER_ARG_LIST GLOBAL uchar* restrict src_buf, \
+    /* in bytes */ const int src_offset, /* in pixels */const int src_width, \
+    /* in pixels */const int src_height, /* in bytes */ const int src_pitch
+
+#define GET_VALUE_PRODUCER(type)\
+    inline type GetValue(type* buf, int index)\
+    {\
+        return buf[index];\
+    }\
+
+#define SET_VALUE_PRODUCER(type)\
+    inline void SetValue(type* buf, int index, type value)\
+    {\
+        buf[index] = value;\
+    }\
+
+#define SCALE_X_1C_PRODUCER(type)\
+    KERNEL\
+    void ScaleX_1C_##type(\
+        GLOBAL float3 const* restrict weights,\
+        DST_BUFFER_ARG_LIST,\
+        SRC_BUFFER_ARG_LIST)\
+    {\
+        int id = get_global_id(0);\
+        int dst_x = id % dst_width;\
+        int dst_y = (id - dst_x) / dst_width;\
+        int src_x = 2 * dst_x;\
+        int src_y = dst_y;\
+        \
+        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
+        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
+        \
+        if (dst_x == 0)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        weights[dst_x].y * ((float)GetValue(src_row, src_x)) +    \
+                        weights[dst_x].z * ((float)GetValue(src_row, src_x + 1)));\
+            return;\
+        }\
+        \
+        if (dst_x == dst_width - 1)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        weights[dst_x].x * ((float)GetValue(src_row, src_x - 1)) +\
+                        weights[dst_x].y * ((float)GetValue(src_row, src_x)));\
+            return;\
+        }\
+        \
+        if (id < dst_width * dst_height)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        weights[dst_x].x * ((float)GetValue(src_row, src_x - 1)) +\
+                        weights[dst_x].y * ((float)GetValue(src_row, src_x)) +\
+                        weights[dst_x].z * ((float)GetValue(src_row, src_x + 1)));\
+        }\
+    }\
+
+
+
+#define SCALE_Y_1C_PRODUCER(type)\
+    KERNEL \
+    void ScaleX_1C_##type(\
+        GLOBAL float3 const* restrict weights,\
+        DST_BUFFER_ARG_LIST,\
+        SRC_BUFFER_ARG_LIST)\
+    {\
+        int id = get_global_id(0);\
+        int dst_x = id % dst_width;\
+        int dst_y = (int)((id - dst_x) / dst_width);\
+        int src_x = dst_x;\
+        int src_y = 2 * dst_y;\
+        \
+        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
+        type * top_src_row = (type*) (src_buf + src_offset + (src_y - 1) * src_pitch);\
+        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
+        type * bottom_src_row = (type*) (src_buf + src_offset + (src_y + 1) * src_pitch);\
+        \
+        if (dst_y == 0)\
+        {\
+        \
+            SetValue(dst_row, dst_x, (type)(\
+                        weights[dst_y].y * (float)GetValue(src_row, src_x) +\
+                        weights[dst_y].z * (float)GetValue(bottom_src_row, src_x));\
+            return;\
+        }\
+        \
+        if (dst_y == dst_height - 1)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        weights[dst_y].x * (float)GetValue(top_src_row, src_x) +\
+                        weights[dst_y].y * (float)GetValue(src_row, src_x));\
+            return;\
+        }\
+        \
+        if (id < dst_width * dst_height)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        weights[dst_y].x * (float)GetValue(top_src_row, src_x) +\
+                        weights[dst_y].y * (float)GetValue(src_row, src_x) +\
+                        weights[dst_y].z * (float)GetValue(bottom_src_row, src_x));\
+        }\
+    }\
+
+#define SCALE_X_4C_PRODUCER(type)\
+    KERNEL\
+    void ScaleX_4C_##type(\
+        GLOBAL float3 const* restrict weights,\
+        DST_BUFFER_ARG_LIST,\
+        SRC_BUFFER_ARG_LIST)\
+    {\
+        int id = get_global_id(0);\
+        int dst_x = id % dst_width;\
+        int dst_y = (id - dst_x) / dst_width;\
+        int src_x = 2 * dst_x;\
+        int src_y = dst_y;\
+    \
+        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
+        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
+    \
+        if (dst_x == 0)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y +\
+                        (((float4)GetValue(src_row, src_x + 1)).xyzw) * weights[dst_x].z);\
+            return;\
+        }\
+    \
+        if (dst_x == dst_width - 1)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        (((float4)GetValue(src_row, src_x - 1)).xyzw) * weights[dst_x].x +\
+                        (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y);\
+        return;\
+        }\
+    \
+        if (id < dst_width * dst_height)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                        (((float4)GetValue(src_row, src_x - 1)).xyzw) * weights[dst_x].x +\
+                        (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y + \
+                        (((float4)GetValue(src_row, src_x + 1)).xyzw) * weights[dst_x].z);\
+        }\
+    }\
+
+#define SCALE_Y_4C_PRODUCER(type)\
+    KERNEL\
+    void ScaleY_4C_##type(\
+        GLOBAL float3 const* restrict weights,\
+        DST_BUFFER_ARG_LIST,\
+        SRC_BUFFER_ARG_LIST)\
+    {\
+        int id = get_global_id(0);\
+        int dst_x = id % dst_width;\
+        int dst_y = (id - dst_x) / dst_width;\
+        int src_x = dst_x;\
+        int src_y = 2 * dst_row;\
+    \
+        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
+        type * top_src_row = (type*) (src_buf + src_offset + (src_y - 1) * src_pitch);\
+        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
+        type * bottom_src_row = (type*) (src_buf + src_offset + (src_y + 1) * src_pitch);\
+    \
+        if (dst_row == 0)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                    (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y +\
+                    (((float4)GetValue(bottom_src_row, src_x)).xyzw) * weights[dst_x].z);\
+            return;\
+        }\
+    \
+        if (dst_row == dst_height - 1)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                    (((float4)GetValue(top_src_row, src_x)).xyzw) * weights[dst_x].x +\
+                    (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y);\
+            return;\
+        }\
+    \
+        if (id < dst_width * dst_height)\
+        {\
+            SetValue(dst_row, dst_x, (type)(\
+                    (((float4)GetValue(top_src_row, src_x)).xyzw) * weights[dst_x].x +\
+                    (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y +\
+                    (((float4)GetValue(bottom_src_row, src_x)).xyzw) * weights[dst_x].z)\
+        }\
+    }\
+
 KERNEL
 void ComputeWeights_NoRounding(
-    GLOBAL float4* restrict weights,
+    GLOBAL float3* restrict weights,
     // size of weight vector
     const int size)
 {
@@ -46,7 +237,7 @@ void ComputeWeights_NoRounding(
 
 KERNEL
 void ComputeWeights_RoundingUp(
-    GLOBAL float4* restrict weights,
+    GLOBAL float3* restrict weights,
     // size of weight vector
     const int size)
 {
@@ -80,881 +271,59 @@ void ComputeWeights_RoundingUp(
     }
 }
 
-KERNEL
-void ScaleX_1C8U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-     const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-    const int src_height, /* in bytes */ const int src_pitch
-    )
+
+// produce functions part
+// order is important (!!!)
+
+// produce GetValue helper functions
+GET_VALUE_PRODUCER(uchar)
+GET_VALUE_PRODUCER(float)
+GET_VALUE_PRODUCER(float4)
+
+inline float GetValue(half* buf, int index)
 {
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = 2 * dst_col;
-    int src_row = dst_row;
-
-        // offsets in bytes
-    int left_pixel = src_offset + (src_row * src_pitch + (src_col - 1));
-    int center_pixel = src_offset + (src_row * src_pitch + src_col);
-    int right_pixel = src_row * src_pitch + src_col + 1;
-    int dst_pixel = dst_row * dst_pitch + dst_col;
-
-    // first pixel in row
-    if (dst_col == 0)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel]));
-        return;
-    }
-
-    // last pixel in row
-    if (dst_col == dst_width - 1)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel]) +
-                    weights[dst_col].y * ((float)src_buf[center_pixel]));
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel]) + 
-                    weights[dst_col].y * ((float)src_buf[center_pixel]) + 
-                    weights[dst_col].z * ((float)src_buf[right_pixel]));
-    }
+    return vload_half(index, buf);
 }
 
-KERNEL
-void ScaleX_1C16U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-     const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-    const int src_height, /* in bytes */ const int src_pitch
-    )
+inline float4 GetValue(half4* buf, int index)
 {
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = 2 * dst_col;
-    int src_row = dst_row;
-
-        // offsets in bytes
-    int left_pixel = src_offset + (src_row * src_pitch + (src_col - 1));
-    int center_pixel = src_offset + (src_row * src_pitch + src_col);
-    int right_pixel = src_row * src_pitch + src_col + 1;
-    int dst_pixel = dst_row * dst_pitch + dst_col;
-
-    __global half const* src_buf_16u = (__global half const*)src_buf;
-    __global half * dst_buf_16u = (__global half *)dst_buf;
-
-    // first pixel in row
-    if (dst_col == 0)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
-        return;
-    }
-
-    // last pixel in row
-    if (dst_col == dst_width - 1)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) +
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]));
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) + 
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) + 
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
-    }
+    return vload_half4(index, buf);
 }
 
-KERNEL
-void ScaleX_1C32U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-     const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-    const int src_height, /* in bytes */ const int src_pitch
-    )
+// produce SetValue helper functions
+
+SET_VALUE_PRODUCER(uchar)
+SET_VALUE_PRODUCER(float)
+SET_VALUE_PRODUCER(float4)
+
+inline void SetValue(half* buf, int index, float value) 
 {
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = 2 * dst_col;
-    int src_row = dst_row;
-
-        // offsets in bytes
-    int left_pixel = src_offset + (src_row * src_pitch + (src_col - 1));
-    int center_pixel = src_offset + (src_row * src_pitch + src_col);
-    int right_pixel = src_row * src_pitch + src_col + 1;
-    int dst_pixel = dst_row * dst_pitch + dst_col;
-
-    __global half const* src_buf_32u = (__global float3 const*)src_buf;
-    __global half * dst_buf_32u = (__global float3 *)src_buf;
-
-    // first pixel in row
-    if (dst_col == 0)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
-        return;
-    }
-
-    // last pixel in row
-    if (dst_col == dst_width - 1)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) +
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]));
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) + 
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) + 
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
-    }
+    vstore_half(value, index, buf);
 }
 
-
-KERNEL
-void ScaleY_1C8U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-    const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-    const int src_height, /* in bytes */ const int src_pitch
-    )
+inline void SetValue(half4* buf, int index, float4 value) 
 {
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (int)((id - dst_col) / dst_width);
-    int src_col = dst_col;
-    int src_row = 2 * dst_row;
-
-    // offsets in bytes
-    int top_pixel = src_offset + (src_row - 1) * src_pitch +  src_col;
-    int center_pixel = src_offset + src_row * src_pitch + src_col;
-    int bottom_pixel = src_offset + (src_row + 1) * src_pitch + src_col;
-    int dst_pixel = dst_offset + dst_row * dst_pitch + dst_col;
-
-    // first row
-    if (dst_row == 0)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_row].y * (float)(src_buf[center_pixel]) +
-                    weights[dst_row].z * (float)(src_buf[bottom_pixel]));
-        return;
-    }
-
-    // last row
-    if (dst_row == dst_height - 1)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_row].x * (float)(src_buf[top_pixel]) +
-                    weights[dst_row].y * (float)(src_buf[center_pixel]));
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_row].x * (float)(src_buf[top_pixel]) + 
-                    weights[dst_row].y * (float)(src_buf[center_pixel]) + 
-                    weights[dst_row].z * (float)(src_buf[bottom_pixel]));
-    }
+    vstore_half4(value, index, buf);
 }
 
-KERNEL
-void ScaleY_1C16U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-    const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-    const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (int)((id - dst_col) / dst_width);
-    int src_col = dst_col;
-    int src_row = 2 * dst_row;
-
-    // offsets in bytes
-    int top_pixel = src_offset + (src_row - 1) * src_pitch +  src_col;
-    int center_pixel = src_offset + src_row * src_pitch + src_col;
-    int bottom_pixel = src_offset + (src_row + 1) * src_pitch + src_col;
-    int dst_pixel = dst_offset + dst_row * dst_pitch + dst_col;
-
-    __global half const* src_buf_16u = (__global half const*)src_buf;
-    __global half * dst_buf_16u = (__global half *)dst_buf;
-
-    // first row
-    if (dst_row == 0)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) +
-                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
-        return;
-    }
-
-    // last row
-    if (dst_row == dst_height - 1)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) +
-                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]));
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) + 
-                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) + 
-                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
-    }
-}
-
-KERNEL
-void ScaleY_1C32U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-    const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-    const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (int)((id - dst_col) / dst_width);
-    int src_col = dst_col;
-    int src_row = 2 * dst_row;
-
-    // offsets in bytes
-    int top_pixel = src_offset + (src_row - 1) * src_pitch +  src_col;
-    int center_pixel = src_offset + src_row * src_pitch + src_col;
-    int bottom_pixel = src_offset + (src_row + 1) * src_pitch + src_col;
-    int dst_pixel = dst_offset + dst_row * dst_pitch + dst_col;
-
-    __global float3 const* src_buf_16u = (__global float3 const*)src_buf;
-    __global float3 * dst_buf_16u = (__global float3*)dst_buf;
-
-    // first row
-    if (dst_row == 0)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) +
-                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
-        return;
-    }
-
-    // last row
-    if (dst_row == dst_height - 1)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) +
-                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]));
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_row].x * (float)(src_buf_16u[top_pixel]) + 
-                    weights[dst_row].y * (float)(src_buf_16u[center_pixel]) + 
-                    weights[dst_row].z * (float)(src_buf_16u[bottom_pixel]));
-    }
-}
-
-KERNEL
-void ScaleX_4C8U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights, int format,
-    /* in bytes */ const int dst_offset, const int dst_width, 
-    const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-     const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = 2 * dst_col;
-    int src_row = dst_row;
-
-    // offsets in bytes
-    int left_pixel = src_offset + (src_row * src_pitch + 4 * (src_col - 1));
-    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
-    int right_pixel = src_offset + (src_row * src_pitch + 4 * (src_col + 1));
-    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
-
-    // first pixel in row
-    if (dst_col == 0)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel]));
-
-        dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 1]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel + 1]));
-
-        dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 2]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel + 2]));
-
-        dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 3]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel + 3]));
-
-        return;
-    }
-
-    // last pixel in row
-    if (dst_col == dst_width - 1)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel]) +
-                    weights[dst_col].y * ((float)src_buf[center_pixel]));
-
-        dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel + 1]) +
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 1]));
-
-        dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel + 2]) +
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 2]));
-
-        dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel + 3]) +
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 3]));
-
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel]) + 
-                    weights[dst_col].y * ((float)src_buf[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel]));
-
-        dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel + 1]) + 
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 1]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel + 1]));
-
-        dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel + 2]) + 
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 2]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel + 2]));
-
-        dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf[left_pixel + 3]) + 
-                    weights[dst_col].y * ((float)src_buf[center_pixel + 3]) +
-                    weights[dst_col].z * ((float)src_buf[right_pixel + 3]));
-    }
-}
-
-
-KERNEL
-void ScaleX_4C16U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights, int format,
-    /* in bytes */ const int dst_offset, const int dst_width, 
-    const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-     const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = 2 * dst_col;
-    int src_row = dst_row;
-
-    // offsets in bytes
-    int left_pixel = src_offset + (src_row * src_pitch + 4 * (src_col - 1));
-    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
-    int right_pixel = src_offset + (src_row * src_pitch + 4 * (src_col + 1));
-    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
-
-    __global half const* src_buf_16u = (__global half const*)src_buf;
-    __global half * dst_buf_16u = (__global half*)dst_buf;
-
-    // first pixel in row
-    if (dst_col == 0)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
-
-        dst_buf_16u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 1]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 1]));
-
-        dst_buf_16u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 2]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 2]));
-
-        dst_buf_16u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 3]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 3]));
-
-        return;
-    }
-
-    // last pixel in row
-    if (dst_col == dst_width - 1)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) +
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]));
-
-        dst_buf_16u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 1]) +
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 1]));
-
-        dst_buf_16u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 2]) +
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 2]));
-
-        dst_buf_16u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 3]) +
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 3]));
-
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel]) + 
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel]));
-
-        dst_buf_16u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 1]) + 
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 1]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 1]));
-
-        dst_buf_16u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 2]) + 
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 2]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 2]));
-
-        dst_buf_16u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_16u[left_pixel + 3]) + 
-                    weights[dst_col].y * ((float)src_buf_16u[center_pixel + 3]) +
-                    weights[dst_col].z * ((float)src_buf_16u[right_pixel + 3]));
-    }
-}
-
-KERNEL
-void ScaleX_4C32U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights, int format,
-    /* in bytes */ const int dst_offset, const int dst_width, 
-    const int dst_height, /* in bytes */ const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-    /* in bytes */ const int src_offset, const int src_width,
-     const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = 2 * dst_col;
-    int src_row = dst_row;
-
-    // offsets in bytes
-    int left_pixel = src_offset + (src_row * src_pitch + 4 * (src_col - 1));
-    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
-    int right_pixel = src_offset + (src_row * src_pitch + 4 * (src_col + 1));
-    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
-
-    __global float3 const* src_buf_32u = (__global float3 const*)src_buf;
-    __global float3 * dst_buf_32u = (__global float3*)dst_buf;
-
-    // first pixel in row
-    if (dst_col == 0)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
-
-        dst_buf_32u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 1]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 1]));
-
-        dst_buf_32u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 2]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 2]));
-
-        dst_buf_32u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 3]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 3]));
-
-        return;
-    }
-
-    // last pixel in row
-    if (dst_col == dst_width - 1)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) +
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]));
-
-        dst_buf_32u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 1]) +
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 1]));
-
-        dst_buf_32u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 2]) +
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 2]));
-
-        dst_buf_32u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 3]) +
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 3]));
-
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel]) + 
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel]));
-
-        dst_buf_32u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 1]) + 
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 1]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 1]));
-
-        dst_buf_32u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 2]) + 
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 2]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 2]));
-
-        dst_buf_32u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * ((float)src_buf_32u[left_pixel + 3]) + 
-                    weights[dst_col].y * ((float)src_buf_32u[center_pixel + 3]) +
-                    weights[dst_col].z * ((float)src_buf_32u[right_pixel + 3]));
-    }
-}
-
-
-
-KERNEL
-void ScaleY_4C8U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-    const int dst_height, /* in bytes */const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-     /* in bytes */ const int src_offset, const int src_width,
-      const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = dst_col;
-    int src_row = 2 * dst_row;
-
-    // offsets in bytes
-    int top_pixel = src_offset + ((src_row - 1) * src_pitch + 4 * src_col);
-    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
-    int bottom_pixel = src_offset + ((src_row + 1) * src_pitch + 4 * src_col);
-    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
-
-    // first row
-    if (dst_row == 0)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf[center_pixel]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel]));
-
-        dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 1]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 1]));
-
-        dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 2]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 2]));
-
-        dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 3]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 3]));
-                    
-        return;
-    }
-
-    // last row
-    if (dst_row == dst_height - 1)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel]));
-
-        dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel + 1]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 1]));
-
-        dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel + 2]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 2]));
-
-        dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel + 3]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 3]));
-                    
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf[dst_pixel] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel]));
-
-        dst_buf[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel + 1]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 1]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 1]));
-
-        dst_buf[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel + 2]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 2]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 2]));
-
-        dst_buf[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf[top_pixel + 3]) +
-                    weights[dst_col].y * (float)(src_buf[center_pixel + 3]) +
-                    weights[dst_col].z * (float)(src_buf[bottom_pixel + 3]));
-    }
-}
-
-KERNEL
-void ScaleY_4C16U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-    const int dst_height, /* in bytes */const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-     /* in bytes */ const int src_offset, const int src_width,
-      const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = dst_col;
-    int src_row = 2 * dst_row;
-
-    // offsets in bytes
-    int top_pixel = src_offset + ((src_row - 1) * src_pitch + 4 * src_col);
-    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
-    int bottom_pixel = src_offset + ((src_row + 1) * src_pitch + 4 * src_col);
-    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
-
-    __global half const* src_buf_16u = (__global half const*)src_buf;
-    __global half * dst_buf_16u = (__global half*)dst_buf;
-
-    // first row
-    if (dst_row == 0)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel]));
-
-        dst_buf_16u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 1]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 1]));
-
-        dst_buf_16u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 2]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 2]));
-
-        dst_buf_16u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 3]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 3]));
-                    
-        return;
-    }
-
-    // last row
-    if (dst_row == dst_height - 1)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel]));
-
-        dst_buf_16u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 1]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 1]));
-
-        dst_buf_16u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 2]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 2]));
-
-        dst_buf_16u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 3]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 3]));
-                    
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf_16u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel]));
-
-        dst_buf_16u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 1]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 1]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 1]));
-
-        dst_buf_16u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 2]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 2]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 2]));
-
-        dst_buf_16u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_16u[top_pixel + 3]) +
-                    weights[dst_col].y * (float)(src_buf_16u[center_pixel + 3]) +
-                    weights[dst_col].z * (float)(src_buf_16u[bottom_pixel + 3]));
-    }
-}
-
-KERNEL
-void ScaleY_4C32U(
-    GLOBAL uchar* restrict dst_buf,
-    GLOBAL float4 const* restrict weights,
-    /* in bytes */ const int dst_offset, const int dst_width,
-    const int dst_height, /* in bytes */const int dst_pitch,
-    GLOBAL uchar const* restrict src_buf,
-     /* in bytes */ const int src_offset, const int src_width,
-      const int src_height, /* in bytes */ const int src_pitch
-    )
-{
-    int id = get_global_id(0);
-    int dst_col = id % dst_width;
-    int dst_row = (id - dst_col) / dst_width;
-    int src_col = dst_col;
-    int src_row = 2 * dst_row;
-
-    // offsets in bytes
-    int top_pixel = src_offset + ((src_row - 1) * src_pitch + 4 * src_col);
-    int center_pixel = src_offset + (src_row * src_pitch + 4 * src_col);
-    int bottom_pixel = src_offset + ((src_row + 1) * src_pitch + 4 * src_col);
-    int dst_pixel = dst_offset + (dst_row * dst_pitch + 4 * dst_col);
-
-    __global float3 const* src_buf_32u = (__global float3 const*)src_buf;
-    __global float3 * dst_buf_32u = (__global float3*)dst_buf;
-
-    // first row
-    if (dst_row == 0)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel]));
-
-        dst_buf_32u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 1]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 1]));
-
-        dst_buf_32u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 2]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 2]));
-
-        dst_buf_32u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 3]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 3]));
-                    
-        return;
-    }
-
-    // last row
-    if (dst_row == dst_height - 1)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel]));
-
-        dst_buf_32u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 1]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 1]));
-
-        dst_buf_32u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 2]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 2]));
-
-        dst_buf_32u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 3]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 3]));
-                    
-        return;
-    }
-
-    if (id < dst_width * dst_height)
-    {
-        dst_buf_32u[dst_pixel] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel]));
-
-        dst_buf_32u[dst_pixel + 1] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 1]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 1]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 1]));
-
-        dst_buf_32u[dst_pixel + 2] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 2]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 2]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 2]));
-
-        dst_buf_32u[dst_pixel + 3] = (uchar)(
-                    weights[dst_col].x * (float)(src_buf_32u[top_pixel + 3]) +
-                    weights[dst_col].y * (float)(src_buf_32u[center_pixel + 3]) +
-                    weights[dst_col].z * (float)(src_buf_32u[bottom_pixel + 3]));
-    }
-}
+// produce ScaleX_1C functions
+SCALE_X_1C_PRODUCER(uchar)
+SCALE_X_1C_PRODUCER(half)
+SCALE_X_1C_PRODUCER(float)
+
+// produce ScaleY_1C functions
+SCALE_Y_1C_PRODUCER(uchar)
+SCALE_Y_1C_PRODUCER(half)
+SCALE_Y_1C_PRODUCER(float)
+
+// produce ScaleX_4C functions
+SCALE_X_4C_PRODUCER(uchar4)
+SCALE_X_4C_PRODUCER(half4)
+SCALE_X_4C_PRODUCER(float4)
+
+// produce ScaleY_4C functions
+SCALE_Y_4C_PRODUCER(uchar4)
+SCALE_Y_4C_PRODUCER(half4)
+SCALE_Y_4C_PRODUCER(float4)
 
 #endif // MIPMAP_LEVEL_SCALER_CL
