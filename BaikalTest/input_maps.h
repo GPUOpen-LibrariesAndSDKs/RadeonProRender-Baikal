@@ -597,7 +597,7 @@ TEST_F(InputMapsTest, InputMap_MatMul)
 TEST_F(InputMapsTest, InputMap_Bump)
 {
     auto image_io(Baikal::ImageIo::CreateImageIo());
-    auto bump_texture= image_io->LoadImage("../Resources/Textures/test_bump.png");
+    auto bump_texture= image_io->LoadImage("../Resources/Textures/test_bump.jpg");
 
     auto material = Baikal::UberV2Material::Create();
     auto bump_sampler = Baikal::InputMap_SamplerBumpMap::Create(bump_texture);
