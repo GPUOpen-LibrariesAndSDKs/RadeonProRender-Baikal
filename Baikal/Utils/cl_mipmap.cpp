@@ -77,13 +77,13 @@ namespace Baikal
                 switch (format)
                 {
                 case ClwScene::RGBA8:
-                    scale_x = GetKernel("ScaleX_4C_uchar4");
+                    scale_x = GetKernel("ScaleX_uchar4");
                     break;
                 case ClwScene::RGBA16:
-                    scale_x = GetKernel("ScaleX_4C_half4");
+                    scale_x = GetKernel("ScaleX_half4");
                     break;
                 case ClwScene::RGBA32:
-                    scale_x = GetKernel("ScaleX_4C_float4");
+                    scale_x = GetKernel("ScaleX_float4");
                     break;
                 default:
                     throw std::runtime_error("Mipmap::Downscale(...): unsupported format");
@@ -136,13 +136,13 @@ namespace Baikal
                 switch (format)
                 {
                 case ClwScene::RGBA8:
-                    scale_y = GetKernel("ScaleY_4C_uchar4");
+                    scale_y = GetKernel("ScaleY_uchar4");
                     break;
                 case ClwScene::RGBA16:
-                    scale_y = GetKernel("ScaleY_4C_half4");
+                    scale_y = GetKernel("ScaleY_half4");
                     break;
                 case ClwScene::RGBA32:
-                    scale_y = GetKernel("ScaleY_4C_float4");
+                    scale_y = GetKernel("ScaleY_float4");
                     break;
                 default:
                     throw std::runtime_error("Mipmap::Downscale(...): unsupported format");

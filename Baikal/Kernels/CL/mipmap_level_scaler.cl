@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 #include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
-#include <../Baikal/Kernels/CL/texture.cl>
+#include <../Baikal/Kernels/CL/utils.cl>
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
@@ -36,21 +36,97 @@ THE SOFTWARE.
     /* in bytes */ const int src_offset, /* in pixels */const int src_width, \
     /* in pixels */const int src_height, /* in bytes */ const int src_pitch
 
-#define GET_VALUE_PRODUCER(type)\
-    inline type GetValue(type* buf, int index)\
-    {\
-        return buf[index];\
-    }\
+// computes type conversion to float/float4 and multiplication
+inline float ComputeMult_uchar(
+    GLOBAL uchar* buf, int index, float weight)
+{
+    GLOBAL uchar *val = buf + index;
+    return weight * ((float)(*val));
+}
 
-#define SET_VALUE_PRODUCER(type)\
-    inline void SetValue(type* buf, int index, type value)\
-    {\
-        buf[index] = value;\
-    }\
+inline float ComputeMult_float(
+    GLOBAL float* buf, int index, float weight)
+{
+    GLOBAL float *val = buf + index;
+    return weight * (*val);
+}
 
-#define SCALE_X_1C_PRODUCER(type)\
+inline float ComputeMult_half(
+    GLOBAL half* buf, int index, float weight)
+{
+    return weight * vload_half(index, buf);
+}
+
+inline float4 ComputeMult_uchar4(
+    GLOBAL uchar4* buf, int index, float weight)
+{
+    GLOBAL uchar4 *val = buf + index;
+    return weight * make_float4(
+        (float)(*val).x,
+        (float)(*val).y,
+        (float)(*val).z,
+        (float)(*val).w);
+}
+
+inline float4 ComputeMult_float4(
+    GLOBAL float4* buf, int index, float weight)
+{
+    return weight * (*(buf + index));
+}
+
+inline float4 ComputeMult_half4(
+    GLOBAL half4* buf, int index, float weight)
+{
+    return weight * vload_half4(index, (GLOBAL half*)buf);
+}
+
+// convert float/float4 type to user and store it in buffer by index
+inline void SetValue_uchar(
+    GLOBAL uchar* buf, int index, float value)
+{
+    buf[index] = (uchar)value;
+}
+
+inline void SetValue_float(
+    GLOBAL half* buf, int index, float value)
+{
+    vstore_half(value, index, buf);
+}
+
+inline void SetValue_half(
+    GLOBAL float* buf, int index, float value)
+{
+    buf[index] = value;
+}
+
+inline void SetValue_uchar4(
+    GLOBAL uchar4* buf, int index, float4 value)
+{
+    uchar4 uchar_val;
+    uchar_val.x = (uchar)value.x;
+    uchar_val.y = (uchar)value.y;
+    uchar_val.z = (uchar)value.z;
+    uchar_val.w = (uchar)value.w;
+    buf[index] = uchar_val;
+}
+
+inline void SetValue_float4(
+    GLOBAL float4* buf, int index, float4 value)
+{
+    buf[index] = value;
+}
+
+inline void SetValue_half4(
+    GLOBAL half4* buf, int index, float4 value)
+{
+    vstore_half4(value, index, (GLOBAL half*)buf);
+}
+
+// level scaler kernels scheme
+
+#define SCALE_X_PRODUCER(type)\
     KERNEL\
-    void ScaleX_1C_##type(\
+    void ScaleX_##type(\
         GLOBAL float3 const* restrict weights,\
         DST_BUFFER_ARG_LIST,\
         SRC_BUFFER_ARG_LIST)\
@@ -61,39 +137,39 @@ THE SOFTWARE.
         int src_x = 2 * dst_x;\
         int src_y = dst_y;\
         \
-        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
-        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
+        GLOBAL type * dst_row = (GLOBAL type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
+        GLOBAL type * src_row = (GLOBAL type*) (src_buf + src_offset + src_y * src_pitch);\
         \
         if (dst_x == 0)\
         {\
-            SetValue(dst_row, dst_x, (type)(\
-                        weights[dst_x].y * ((float)GetValue(src_row, src_x)) +    \
-                        weights[dst_x].z * ((float)GetValue(src_row, src_x + 1)));\
+            SetValue_##type(dst_row, dst_x, (\
+                        ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
+                        ComputeMult_##type(src_row, src_x + 1, weights[dst_x].z)));\
             return;\
         }\
         \
         if (dst_x == dst_width - 1)\
         {\
-            SetValue(dst_row, dst_x, (type)(\
-                        weights[dst_x].x * ((float)GetValue(src_row, src_x - 1)) +\
-                        weights[dst_x].y * ((float)GetValue(src_row, src_x)));\
+            SetValue_##type(dst_row, dst_x, (\
+                        ComputeMult_##type(src_row, src_x - 1, weights[dst_x].x) +\
+                        ComputeMult_##type(src_row, src_x, weights[dst_x].y)));\
             return;\
         }\
         \
         if (id < dst_width * dst_height)\
         {\
-            SetValue(dst_row, dst_x, (type)(\
-                        weights[dst_x].x * ((float)GetValue(src_row, src_x - 1)) +\
-                        weights[dst_x].y * ((float)GetValue(src_row, src_x)) +\
-                        weights[dst_x].z * ((float)GetValue(src_row, src_x + 1)));\
+            SetValue_##type(dst_row, dst_x, (\
+                        ComputeMult_##type(src_row, src_x - 1, weights[dst_x].x) +\
+                        ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
+                        ComputeMult_##type(src_row, src_x + 1, weights[dst_x].z)));\
         }\
     }\
 
 
 
-#define SCALE_Y_1C_PRODUCER(type)\
+#define SCALE_Y_PRODUCER(type)\
     KERNEL \
-    void ScaleX_1C_##type(\
+    void ScaleY_##type(\
         GLOBAL float3 const* restrict weights,\
         DST_BUFFER_ARG_LIST,\
         SRC_BUFFER_ARG_LIST)\
@@ -104,118 +180,33 @@ THE SOFTWARE.
         int src_x = dst_x;\
         int src_y = 2 * dst_y;\
         \
-        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
-        type * top_src_row = (type*) (src_buf + src_offset + (src_y - 1) * src_pitch);\
-        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
-        type * bottom_src_row = (type*) (src_buf + src_offset + (src_y + 1) * src_pitch);\
+        GLOBAL type * dst_row = (GLOBAL type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
+        GLOBAL type * top_src_row = (GLOBAL type*) (src_buf + src_offset + (src_y - 1) * src_pitch);\
+        GLOBAL type * src_row = (GLOBAL type*) (src_buf + src_offset + src_y * src_pitch);\
+        GLOBAL type * bottom_src_row = (GLOBAL type*) (src_buf + src_offset + (src_y + 1) * src_pitch);\
         \
         if (dst_y == 0)\
         {\
-        \
-            SetValue(dst_row, dst_x, (type)(\
-                        weights[dst_y].y * (float)GetValue(src_row, src_x) +\
-                        weights[dst_y].z * (float)GetValue(bottom_src_row, src_x));\
+            SetValue_##type(dst_row, dst_x, (\
+                        ComputeMult_##type(src_row, src_x, weights[dst_y].y) +\
+                        ComputeMult_##type(bottom_src_row, src_x, weights[dst_y].z)));\
             return;\
         }\
         \
         if (dst_y == dst_height - 1)\
         {\
-            SetValue(dst_row, dst_x, (type)(\
-                        weights[dst_y].x * (float)GetValue(top_src_row, src_x) +\
-                        weights[dst_y].y * (float)GetValue(src_row, src_x));\
+            SetValue_##type(dst_row, dst_x, (\
+                        ComputeMult_##type(top_src_row, src_x, weights[dst_y].x) +\
+                        ComputeMult_##type(src_row, src_x, weights[dst_y].y)));\
             return;\
         }\
         \
         if (id < dst_width * dst_height)\
         {\
-            SetValue(dst_row, dst_x, (type)(\
-                        weights[dst_y].x * (float)GetValue(top_src_row, src_x) +\
-                        weights[dst_y].y * (float)GetValue(src_row, src_x) +\
-                        weights[dst_y].z * (float)GetValue(bottom_src_row, src_x));\
-        }\
-    }\
-
-#define SCALE_X_4C_PRODUCER(type)\
-    KERNEL\
-    void ScaleX_4C_##type(\
-        GLOBAL float3 const* restrict weights,\
-        DST_BUFFER_ARG_LIST,\
-        SRC_BUFFER_ARG_LIST)\
-    {\
-        int id = get_global_id(0);\
-        int dst_x = id % dst_width;\
-        int dst_y = (id - dst_x) / dst_width;\
-        int src_x = 2 * dst_x;\
-        int src_y = dst_y;\
-    \
-        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
-        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
-    \
-        if (dst_x == 0)\
-        {\
-            SetValue(dst_row, dst_x, (type)(\
-                        (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y +\
-                        (((float4)GetValue(src_row, src_x + 1)).xyzw) * weights[dst_x].z);\
-            return;\
-        }\
-    \
-        if (dst_x == dst_width - 1)\
-        {\
-            SetValue(dst_row, dst_x, (type)(\
-                        (((float4)GetValue(src_row, src_x - 1)).xyzw) * weights[dst_x].x +\
-                        (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y);\
-        return;\
-        }\
-    \
-        if (id < dst_width * dst_height)\
-        {\
-            SetValue(dst_row, dst_x, (type)(\
-                        (((float4)GetValue(src_row, src_x - 1)).xyzw) * weights[dst_x].x +\
-                        (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y + \
-                        (((float4)GetValue(src_row, src_x + 1)).xyzw) * weights[dst_x].z);\
-        }\
-    }\
-
-#define SCALE_Y_4C_PRODUCER(type)\
-    KERNEL\
-    void ScaleY_4C_##type(\
-        GLOBAL float3 const* restrict weights,\
-        DST_BUFFER_ARG_LIST,\
-        SRC_BUFFER_ARG_LIST)\
-    {\
-        int id = get_global_id(0);\
-        int dst_x = id % dst_width;\
-        int dst_y = (id - dst_x) / dst_width;\
-        int src_x = dst_x;\
-        int src_y = 2 * dst_row;\
-    \
-        type * dst_row = (type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
-        type * top_src_row = (type*) (src_buf + src_offset + (src_y - 1) * src_pitch);\
-        type * src_row = (type*) (src_buf + src_offset + src_y * src_pitch);\
-        type * bottom_src_row = (type*) (src_buf + src_offset + (src_y + 1) * src_pitch);\
-    \
-        if (dst_row == 0)\
-        {\
-            SetValue(dst_row, dst_x, (type)(\
-                    (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y +\
-                    (((float4)GetValue(bottom_src_row, src_x)).xyzw) * weights[dst_x].z);\
-            return;\
-        }\
-    \
-        if (dst_row == dst_height - 1)\
-        {\
-            SetValue(dst_row, dst_x, (type)(\
-                    (((float4)GetValue(top_src_row, src_x)).xyzw) * weights[dst_x].x +\
-                    (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y);\
-            return;\
-        }\
-    \
-        if (id < dst_width * dst_height)\
-        {\
-            SetValue(dst_row, dst_x, (type)(\
-                    (((float4)GetValue(top_src_row, src_x)).xyzw) * weights[dst_x].x +\
-                    (((float4)GetValue(src_row, src_x)).xyzw) * weights[dst_x].y +\
-                    (((float4)GetValue(bottom_src_row, src_x)).xyzw) * weights[dst_x].z)\
+            SetValue_##type(dst_row, dst_x, (\
+                        ComputeMult_##type(top_src_row, src_x, weights[dst_x].x) +\
+                        ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
+                        ComputeMult_##type(bottom_src_row, src_x, weights[dst_x].z)));\
         }\
     }\
 
@@ -271,59 +262,26 @@ void ComputeWeights_RoundingUp(
     }
 }
 
-
 // produce functions part
-// order is important (!!!)
 
-// produce GetValue helper functions
-GET_VALUE_PRODUCER(uchar)
-GET_VALUE_PRODUCER(float)
-GET_VALUE_PRODUCER(float4)
+// produce ScaleX 1 chanel functions
+SCALE_X_PRODUCER(uchar)
+SCALE_X_PRODUCER(half)
+SCALE_X_PRODUCER(float)
 
-inline float GetValue(half* buf, int index)
-{
-    return vload_half(index, buf);
-}
+// produce ScaleY 1 chanel functions
+SCALE_Y_PRODUCER(uchar)
+SCALE_Y_PRODUCER(half)
+SCALE_Y_PRODUCER(float)
 
-inline float4 GetValue(half4* buf, int index)
-{
-    return vload_half4(index, buf);
-}
+// produce ScaleX 4 chanel functions
+SCALE_X_PRODUCER(uchar4)
+SCALE_X_PRODUCER(half4)
+SCALE_X_PRODUCER(float4)
 
-// produce SetValue helper functions
-
-SET_VALUE_PRODUCER(uchar)
-SET_VALUE_PRODUCER(float)
-SET_VALUE_PRODUCER(float4)
-
-inline void SetValue(half* buf, int index, float value) 
-{
-    vstore_half(value, index, buf);
-}
-
-inline void SetValue(half4* buf, int index, float4 value) 
-{
-    vstore_half4(value, index, buf);
-}
-
-// produce ScaleX_1C functions
-SCALE_X_1C_PRODUCER(uchar)
-SCALE_X_1C_PRODUCER(half)
-SCALE_X_1C_PRODUCER(float)
-
-// produce ScaleY_1C functions
-SCALE_Y_1C_PRODUCER(uchar)
-SCALE_Y_1C_PRODUCER(half)
-SCALE_Y_1C_PRODUCER(float)
-
-// produce ScaleX_4C functions
-SCALE_X_4C_PRODUCER(uchar4)
-SCALE_X_4C_PRODUCER(half4)
-SCALE_X_4C_PRODUCER(float4)
-
-// produce ScaleY_4C functions
-SCALE_Y_4C_PRODUCER(uchar4)
-SCALE_Y_4C_PRODUCER(half4)
-SCALE_Y_4C_PRODUCER(float4)
+// produce ScaleY 4 chanel functions
+SCALE_Y_PRODUCER(uchar4)
+SCALE_Y_PRODUCER(half4)
+SCALE_Y_PRODUCER(float4)
 
 #endif // MIPMAP_LEVEL_SCALER_CL
