@@ -53,8 +53,8 @@ FramebufferObject::FramebufferObject(CLWContext context, CLWKernel copy_kernel, 
     GLint backup_tex = 0;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &backup_tex);
     glBindTexture(target, texture);
-    glGetTexLevelParameteriv(target, miplevel, GL_TEXTURE_WIDTH, &m_width);
-    glGetTexLevelParameteriv(target, miplevel, GL_TEXTURE_HEIGHT, &m_height);
+    glGetTexLevelParameteriv(target, miplevel, GL_TEXTURE_WIDTH, (GLint*)&m_width);
+    glGetTexLevelParameteriv(target, miplevel, GL_TEXTURE_HEIGHT, (GLint*)&m_height);
 
     //create interop image
     m_cl_interop_image = context.CreateImage2DFromGLTexture(texture);
@@ -67,15 +67,14 @@ FramebufferObject::~FramebufferObject()
     m_output = nullptr;
 }
 
-int FramebufferObject::Width()
+std::size_t FramebufferObject::Width()
 {
     return m_width;
 }
 
-int FramebufferObject::Height()
+std::size_t FramebufferObject::Height()
 {
     return m_height;
-
 }
 
 void FramebufferObject::GetData(void* out_data)
@@ -100,8 +99,8 @@ void FramebufferObject::UpdateGlTex()
         
         int argc = 0;
         m_copy_cernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(GetOutput())->data());
-        m_copy_cernel.SetArg(argc++, Width());
-        m_copy_cernel.SetArg(argc++, Height());
+        m_copy_cernel.SetArg(argc++, static_cast<cl_int>(Width()));
+        m_copy_cernel.SetArg(argc++, static_cast<cl_int>(Height()));
         m_copy_cernel.SetArg(argc++, 2.2f);
         m_copy_cernel.SetArg(argc++, m_cl_interop_image);
 

@@ -77,7 +77,7 @@ namespace Baikal
 
         std::cout << "Running on devices: \n";
 
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             std::cout << i << ": " << m_cfgs[i].context.GetDevice(0).GetName() << "\n";
         }
@@ -87,7 +87,7 @@ namespace Baikal
         m_outputs.resize(m_cfgs.size());
         m_ctrl.reset(new ControlData[m_cfgs.size()]);
 
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (m_cfgs[i].type == ConfigManager::kPrimary)
             {
@@ -124,7 +124,7 @@ namespace Baikal
 
         //create renderer
 #pragma omp parallel for
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             m_outputs[i].output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
 
@@ -245,7 +245,7 @@ namespace Baikal
     void AppClRender::UpdateScene()
     {
 
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (i == m_primary)
             {
@@ -269,7 +269,7 @@ namespace Baikal
     {
         //if (std::chrono::duration_cast<std::chrono::seconds>(time - updatetime).count() > 1)
         //{
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (m_cfgs[i].type == ConfigManager::kPrimary)
                 continue;
@@ -524,7 +524,7 @@ namespace Baikal
 
     void AppClRender::StartRenderThreads()
     {
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (i != m_primary)
             {
@@ -538,7 +538,7 @@ namespace Baikal
 
     void AppClRender::StopRenderThreads()
     {
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (i == m_primary)
                 continue;
@@ -596,7 +596,7 @@ namespace Baikal
 
     void AppClRender::SetNumBounces(int num_bounces)
     {
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[i].renderer.get())->SetMaxBounces(num_bounces);
         }
@@ -604,7 +604,7 @@ namespace Baikal
 
     void AppClRender::SetOutputType(Renderer::OutputType type)
     {
-        for (int i = 0; i < m_cfgs.size(); ++i)
+        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             m_cfgs[i].renderer->SetOutput(m_output_type, nullptr);
             m_cfgs[i].renderer->SetOutput(type, m_outputs[i].output.get());
@@ -641,7 +641,7 @@ namespace Baikal
         for (auto iter = m_scene->CreateShapeIterator(); iter->IsValid(); iter->Next())
         {
             auto shape = iter->ItemAs<Shape>();
-            if (shape->GetId() == shape_id)
+            if (shape->GetId() == static_cast<std::size_t>(shape_id))
                 return shape;
         }
         return nullptr;
