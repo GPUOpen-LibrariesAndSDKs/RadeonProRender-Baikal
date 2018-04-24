@@ -1,5 +1,6 @@
 #include "shape.h"
 #include <cassert>
+#include <iterator>
 
 namespace Baikal
 {
@@ -16,7 +17,7 @@ namespace Baikal
         // Resize internal array and copy data
         m_indices.resize(num_indices);
         
-        std::copy(indices, indices + num_indices, &m_indices[0]);
+        std::copy(indices, indices + num_indices, std::back_inserter(m_indices));
         
         SetDirty(true);
     }
@@ -44,7 +45,7 @@ namespace Baikal
         // Resize internal array and copy data
         m_vertices.resize(num_vertices);
 
-        std::copy(vertices, vertices + num_vertices, &m_vertices[0]);
+        std::copy(vertices, vertices + num_vertices, std::back_inserter(m_vertices));
 
         SetDirty(true);
     }
@@ -92,7 +93,7 @@ namespace Baikal
         // Resize internal array and copy data
         m_normals.resize(num_normals);
 
-        std::copy(normals, normals + num_normals, &m_normals[0]);
+        std::copy(normals, normals + num_normals, std::back_inserter(m_normals));
 
         SetDirty(true);
     }
@@ -140,7 +141,7 @@ namespace Baikal
         // Resize internal array and copy data
         m_uvs.resize(num_uvs);
 
-        std::copy(uvs, uvs + num_uvs, &m_uvs[0]);
+        std::copy(uvs, uvs + num_uvs, std::back_inserter(m_uvs));
 
         SetDirty(true);
     }

@@ -58,19 +58,21 @@ namespace Baikal
     std::unique_ptr<PostEffect> ClwRenderFactory::CreatePostEffect(
                                                     PostEffectType type) const
     {
+#ifdef ENABLE_DENOISER
         switch (type)
         {
-#ifdef ENABLE_DENOISER
             case PostEffectType::kBilateralDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new BilateralDenoiser(m_context, &m_program_manager));
             case PostEffectType::kWaveletDenoiser:
                 return std::unique_ptr<PostEffect>(
                                             new WaveletDenoiser(m_context, &m_program_manager));
-#endif
             default:
-                throw std::runtime_error("PostEffect not supported");
+                throw std::runtime_error("PostEffect is not supported");
         }
+#else
+        throw std::runtime_error("PostEffect is not supported");
+#endif
     }
 
     std::unique_ptr<SceneController<ClwScene>> ClwRenderFactory::CreateSceneController() const

@@ -35,7 +35,7 @@ void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val)
     }
     else if (input_name == "uberv2.refraction.thin_surface")
     {
-        m_mat->SetThin(val);
+        m_mat->SetThin(val != 0);
     }
     else if (input_name == "uberv2.emission.mode")
     {
@@ -43,7 +43,7 @@ void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val)
     }
     else if (input_name == "uberv2.sss.multiscatter")
     {
-        m_mat->SetMultiscatter(val);
+        m_mat->SetMultiscatter(val != 0);
     }
     else
     {
