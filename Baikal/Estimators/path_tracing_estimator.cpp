@@ -75,18 +75,18 @@ namespace Baikal
         std::shared_ptr<RadeonRays::IntersectionApi> api,
         const CLProgramManager *program_manager
     ) :
+        Estimator(api)
 #ifdef BAIKAL_EMBED_KERNELS
-        ClwClass(context,
+        , ClwClass(context,
             g_path_tracing_estimator_opencl,
             g_path_tracing_estimator_opencl_inc,
             sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
             "", cache_path)
 #else
-        ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
+        , ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
 #endif
-        , Estimator(api)
-        , m_sample_counter(0)
         , m_render_data(new RenderData)
+        , m_sample_counter(0)
         , m_uberv2_kernels(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator_uberv2.cl", "")
     {
         // Create parallel primitives

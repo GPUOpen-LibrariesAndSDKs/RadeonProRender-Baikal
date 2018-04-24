@@ -101,7 +101,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
 
         case InputMap::InputMapType::kConstantFloat:
         {
-            InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
+            //InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
 
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
@@ -110,7 +110,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         }
         case InputMap::InputMapType::kConstantFloat3:
         {
-            InputMap_ConstantFloat3 *i = static_cast<InputMap_ConstantFloat3*>(input.get());
+            //InputMap_ConstantFloat3 *i = static_cast<InputMap_ConstantFloat3*>(input.get());
 
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
@@ -119,7 +119,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         }
         case InputMap::InputMapType::kSampler:
         {
-            InputMap_Sampler *i = static_cast<InputMap_Sampler*>(input.get());
+            //InputMap_Sampler *i = static_cast<InputMap_Sampler*>(input.get());
 
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
@@ -128,7 +128,7 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         }
         case InputMap::InputMapType::kSamplerBumpmap:
         {
-            InputMap_SamplerBumpMap *i = static_cast<InputMap_SamplerBumpMap*>(input.get());
+            //InputMap_SamplerBumpMap *i = static_cast<InputMap_SamplerBumpMap*>(input.get());
 
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 

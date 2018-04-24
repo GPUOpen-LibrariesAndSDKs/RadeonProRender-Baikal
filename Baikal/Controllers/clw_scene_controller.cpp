@@ -52,9 +52,9 @@ namespace Baikal
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
-    : m_default_material(UberV2Material::Create())
-    , m_context(context)
+    : m_context(context)
     , m_api(api)
+    , m_default_material(UberV2Material::Create())
     , m_program_manager(program_manager)
     {
         auto acc_type = "fatbvh";
@@ -773,7 +773,6 @@ namespace Baikal
         }
 
         ClwScene::Volume* volumes = nullptr;
-        std::size_t num_materials_written = 0;
 
         // Map GPU materials buffer
         m_context.MapBuffer(0, out.volumes, CL_MAP_WRITE, &volumes).Wait();
@@ -889,7 +888,7 @@ namespace Baikal
     static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
         // Distinguish between single bxdf materials and compound ones
-        if (auto bxdf = dynamic_cast<UberV2Material const*>(&material))
+        if (dynamic_cast<UberV2Material const*>(&material))
         {
             return ClwScene::Bxdf::kUberV2;
         }

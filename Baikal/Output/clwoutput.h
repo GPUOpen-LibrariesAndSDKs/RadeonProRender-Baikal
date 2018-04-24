@@ -38,7 +38,7 @@ namespace Baikal
         CLWBuffer<RadeonRays::float3> data() const { return m_data; }
 
     private:
-        CLWBuffer<RadeonRays::float3> m_data;
         CLWContext m_context;
+        CLWBuffer<RadeonRays::float3> m_data;
     };
 }
