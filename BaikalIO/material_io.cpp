@@ -227,9 +227,9 @@ namespace Baikal
         UberV2Material::Ptr material = UberV2Material::Create();
         material->SetLayers(std::atoi(element.Attribute("layers")));
         material->SetThin(thin == "true");
-        material->SetDoubleSided(element.Attribute("emission_doublesided") == "true");
-        material->LinkRefractionIOR(element.Attribute("refraction_link_ior") == "true");
-        material->SetMultiscatter(element.Attribute("sss_multyscatter") == "true");
+        material->SetDoubleSided(strcmp(element.Attribute("emission_doublesided"), "true") == 0);
+        material->LinkRefractionIOR(strcmp(element.Attribute("refraction_link_ior"), "true") == 0);
+        material->SetMultiscatter(strcmp(element.Attribute("sss_multyscatter"), "true") == 0);
         material->SetName(name);
 
         auto num_inputs = material->GetNumInputs();

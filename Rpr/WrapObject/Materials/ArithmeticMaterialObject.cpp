@@ -85,7 +85,7 @@ void ArithmeticMaterialObject::SetInputU(const std::string& input_name, rpr_uint
     {
         if (m_input_map)
         {
-            throw Exception(RPR_ERROR_INTERNAL_ERROR, "Arithmetic field \"op\ can not be set twice");
+            throw Exception(RPR_ERROR_INTERNAL_ERROR, "Arithmetic field \"op\" can not be set twice");
         }
 
         switch (val)
@@ -390,5 +390,7 @@ void ArithmeticMaterialObject::SetInputMap(const std::string& input_name, Baikal
 
             break;
         }
+        default:
+            throw Exception(RPR_ERROR_INTERNAL_ERROR, "Unsupported input map type");
     }
 }

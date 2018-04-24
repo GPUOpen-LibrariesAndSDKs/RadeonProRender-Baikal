@@ -953,7 +953,7 @@ namespace Baikal
 
                 if (!m_object_name.empty())
                 {
-                    ImGui::Text(m_object_name.c_str());
+                    ImGui::Text("%s", m_object_name.c_str());
                 }
 
                 ImGui::Separator();
@@ -1022,6 +1022,8 @@ namespace Baikal
                                 }
                                 break;
                             }
+                            default:
+                                break;
                         }
                     }
                 }
