@@ -51,11 +51,9 @@ namespace Baikal
         std::uint32_t src_offset, std::uint32_t src_width,
         std::uint32_t src_pitch, std::uint32_t src_height)
     {
-
-        m_tmp_buffer_size = dst_pitch * src_height;
-        if (m_tmp_buffer.GetElementCount() < m_tmp_buffer_size)
+        if (m_tmp_buffer.GetElementCount() < dst_pitch * src_height)
         {
-            m_tmp_buffer = m_context.CreateBuffer<char>(m_tmp_buffer_size, CL_MEM_READ_WRITE);
+            m_tmp_buffer = m_context.CreateBuffer<char>(dst_pitch * src_height, CL_MEM_READ_WRITE);
         }
 
         // downscale in x direction

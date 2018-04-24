@@ -67,7 +67,6 @@ namespace Baikal
         // OpenCL context
         CLWContext m_context;
         // buffer for temporary image scaled in x dimension
-        std::uint32_t m_tmp_buffer_size;
         CLWBuffer<char> m_tmp_buffer;
         // buffers for weights
         CLWBuffer<RadeonRays::float4> m_x_weights, m_y_weights;
