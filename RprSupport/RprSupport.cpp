@@ -114,7 +114,6 @@ rpr_int rprxMaterialSetParameterN(rprx_context context, rprx_material material, 
         parameter == RPRX_UBER_MATERIAL_NORMAL)
     {
         rpr_uint layers = 0;
-        rpr_uint status;
 
         rprMaterialNodeGetInputInfo((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, RPR_MATERIAL_NODE_INPUT_VALUE, 4, &layers, 0);
 

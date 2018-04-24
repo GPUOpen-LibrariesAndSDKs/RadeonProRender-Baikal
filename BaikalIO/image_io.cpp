@@ -64,7 +64,7 @@ namespace Baikal
             if (spec.nchannels == 1)
             {
                 // set B, G and A components to 
-                for (auto i = 0u; i < size; i += 4)
+                for (auto i = 0; i < size; i += 4)
                 {
                     texturedata[i + 1] = texturedata[i];
                     texturedata[i + 2] = texturedata[i];

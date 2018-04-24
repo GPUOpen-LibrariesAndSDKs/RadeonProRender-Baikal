@@ -220,10 +220,10 @@ void SimpleRenderTest()
     //light
     rpr_light light = NULL; status = rprContextCreateSpotLight(context, &light);
     assert(status == RPR_SUCCESS);
-    matrix lightm = translation(float3(0, 16, 0)) * rotation_x(M_PI_2);
+    matrix lightm = translation(float3(0.0f, 16.0f, 0.0f)) * rotation_x(static_cast<float>(M_PI_2));
     status = rprLightSetTransform(light, true, &lightm.m00);
     assert(status == RPR_SUCCESS);
-    status = rprSpotLightSetConeShape(light, M_PI_4, M_PI * 2.f / 3.f);
+    status = rprSpotLightSetConeShape(light, static_cast<float>(M_PI_4), static_cast<float>(M_PI) * 2.f / 3.f);
     assert(status == RPR_SUCCESS);
     status = rprSpotLightSetRadiantPower3f(light, 350, 350, 350);
     assert(status == RPR_SUCCESS);
@@ -253,7 +253,7 @@ void SimpleRenderTest()
     assert(status == RPR_SUCCESS);
 
     //change light
-    status = rprSpotLightSetConeShape(light, M_PI_4 * 0.5f, M_PI_4 * 0.5f);
+    status = rprSpotLightSetConeShape(light, static_cast<float>(M_PI_4) * 0.5f, static_cast<float>(M_PI_4) * 0.5f);
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);  assert(status == RPR_SUCCESS);
     assert(status == RPR_SUCCESS);
@@ -619,7 +619,7 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprShapeSetMaterial(mesh, diffuse);
     assert(status == RPR_SUCCESS);
-    matrix m = translation(float3(0, 1, 0)) * scale(float3(0.2, 0.2, 0.2));
+    matrix m = translation(float3(0.0f, 1.0f, 0.0f)) * scale(float3(0.2f, 0.2f, 0.2f));
     status = rprShapeSetTransform(mesh, false, &m.m00);
     assert(status == RPR_SUCCESS);
 
@@ -658,7 +658,7 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprEnvironmentLightSetIntensityScale(light, 5.f);
     assert(status == RPR_SUCCESS);
-    matrix lightm = rotation_y(M_PI);
+    matrix lightm = rotation_y(static_cast<float>(M_PI));
     status = rprLightSetTransform(light, false, &lightm.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachLight(scene, light);
@@ -695,7 +695,7 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, plane_mesh);
     assert(status == RPR_SUCCESS);
-    lightm = rotation_y(-M_PI_2);
+    lightm = rotation_y(-static_cast<float>(M_PI_2));
     status = rprLightSetTransform(light, true, &lightm.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachLight(scene, light);
@@ -807,7 +807,7 @@ void DefaultMaterialTest()
         (rpr_int const*)indices, sizeof(rpr_int),
         num_face_vertices, 2, &mesh);
     assert(status == RPR_SUCCESS);
-    matrix r = rotation_x(M_PI_2);
+    matrix r = rotation_x(static_cast<float>(M_PI_2));
     status = rprShapeSetTransform(mesh, false, &r.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, mesh);
@@ -927,7 +927,7 @@ void NullShaderTest()
         (rpr_int const*)indices, sizeof(rpr_int),
         num_face_vertices, 2, &mesh);
     assert(status == RPR_SUCCESS);
-    matrix r = rotation_x(M_PI_2);
+    matrix r = rotation_x(static_cast<float>(M_PI_2));
     status = rprShapeSetTransform(mesh, false, &r.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, mesh);
@@ -1121,7 +1121,7 @@ void TiledRender()
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, mesh);
     assert(status == RPR_SUCCESS);
-    matrix m = rotation_x(M_PI_4) * rotation_y(M_PI);
+    matrix m = rotation_x(static_cast<float>(M_PI_4)) * rotation_y(static_cast<float>(M_PI));
     status = rprShapeSetTransform(mesh, false, &m.m00);
     assert(status == RPR_SUCCESS);
 
@@ -1612,11 +1612,12 @@ void test_feature_cameraDOF()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i< kRenderIterations; i++)
+    for (rpr_int i = 0; i< kRenderIterations; i++)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_cameraDOF.png");
 
     //cleanup
@@ -1774,11 +1775,12 @@ void test_feature_ContextImageFromData()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_ContextImageFromData.png");
 
     //cleanup
@@ -2075,7 +2077,7 @@ void test_feature_LightDirectional()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i<kRenderIterations; i++)
+    for (rpr_int i = 0; i < kRenderIterations; i++)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2091,11 +2093,12 @@ void test_feature_LightDirectional()
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
 
-    for (rpr_uint i = 0; i<kRenderIterations; i++)
+    for (rpr_int i = 0; i < kRenderIterations; i++)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_LightDirectional_dynamic.png");
 
     //cleanup
@@ -2160,7 +2163,7 @@ void InstancingTest()
             assert(status == RPR_SUCCESS);
 
             float s = 0.75f + rand_float();
-            matrix m = translation(float3(x, y, rand_float() * 10.f - 5.f)) * scale(float3(s, s, s));
+            matrix m = translation(float3(static_cast<float>(x), static_cast<float>(y), rand_float() * 10.f - 5.f)) * scale(float3(s, s, s));
             status = rprShapeSetTransform(instance, true, &m.m00);
             assert(status == RPR_SUCCESS);
 
@@ -2566,11 +2569,12 @@ void test_feature_shaderBumpmap()
     assert(status == RPR_SUCCESS);
     
     //render
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_shaderBumpmap_0.png");
 
     //dynamic : change parameters
@@ -2591,7 +2595,8 @@ void test_feature_shaderBumpmap()
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2606,7 +2611,8 @@ void test_feature_shaderBumpmap()
 
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2751,7 +2757,7 @@ void test_feature_shaderTypeLayered()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2775,7 +2781,7 @@ void test_feature_shaderTypeLayered()
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);

@@ -109,7 +109,7 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
+    bool interop = static_cast<bool>(creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP);
     if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
     {
         try

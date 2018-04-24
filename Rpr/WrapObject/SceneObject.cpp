@@ -244,6 +244,7 @@ LightObject* SceneObject::GetEnvironmentOverride(OverrideType overrride)
     case OverrideType::kTransparency:
         return m_environment_override.m_transparency;
     }
+	return nullptr;
 }
 
 Baikal::Scene1::EnvironmentOverride SceneObject::EnvironmentOverride::ToScene1EnvironmentOverride() const
