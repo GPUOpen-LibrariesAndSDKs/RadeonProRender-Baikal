@@ -168,7 +168,7 @@ inline void SetValue_half4(
 
 
 #define SCALE_Y_PRODUCER(type)\
-    KERNEL \
+    KERNEL\
     void ScaleY_##type(\
         GLOBAL float3 const* restrict weights,\
         DST_BUFFER_ARG_LIST,\
@@ -204,13 +204,13 @@ inline void SetValue_half4(
         if (id < dst_width * dst_height)\
         {\
             SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(top_src_row, src_x, weights[dst_x].x) +\
-                        ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
-                        ComputeMult_##type(bottom_src_row, src_x, weights[dst_x].z)));\
+                        ComputeMult_##type(top_src_row, src_x, weights[dst_y].x) +\
+                        ComputeMult_##type(src_row, src_x, weights[dst_y].y) +\
+                        ComputeMult_##type(bottom_src_row, src_x, weights[dst_y].z)));\
         }\
     }\
 
-KERNEL
+__kernel
 void ComputeWeights_NoRounding(
     GLOBAL float3* restrict weights,
     // size of weight vector
@@ -226,7 +226,7 @@ void ComputeWeights_NoRounding(
     }
 }
 
-KERNEL
+__kernel
 void ComputeWeights_RoundingUp(
     GLOBAL float3* restrict weights,
     // size of weight vector

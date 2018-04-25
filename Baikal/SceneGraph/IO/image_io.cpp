@@ -1,6 +1,6 @@
 #include "image_io.h"
 #include "../texture.h"
-
+#include <regex>
 #include "OpenImageIO/imageio.h"
 
 namespace Baikal
@@ -8,7 +8,7 @@ namespace Baikal
     class Oiio : public ImageIo
     {
     public:
-        Texture::Ptr LoadImage(std::string const& filename) const override;
+        Texture::Ptr LoadImage(std::string const& filename, bool generate_mipmap = false) const override;
         void SaveImage(std::string const& filename, Texture::Ptr texture) const override;
     };
     
@@ -36,7 +36,7 @@ namespace Baikal
             return TypeDesc::FLOAT;
     }
     
-    Texture::Ptr Oiio::LoadImage(const std::string &filename) const
+    Texture::Ptr Oiio::LoadImage(std::string const& filename, bool generate_mipmap) const
     {
         OIIO_NAMESPACE_USING
         
@@ -135,7 +135,8 @@ namespace Baikal
             texture = Texture::Create(
                 texture_data.release(),
                 levels_spec[0],
-                fmt);
+                fmt,
+                generate_mipmap);
         }
         else
         {

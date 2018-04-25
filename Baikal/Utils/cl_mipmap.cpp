@@ -242,7 +242,7 @@ namespace Baikal
         {
             if (texture[i].mipmap_gen_required)
             {
-                BuildMipPyramid(*texture, texture_data);
+                BuildMipPyramid(texture[i], texture_data);
                 mipmap_generated = true;
             }
         }
