@@ -102,7 +102,7 @@ void SimpleRenderTest()
 
     rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
     assert(status == RPR_SUCCESS);
-
+/*
     Vertex cube[] =
     {
         { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
@@ -135,7 +135,7 @@ void SimpleRenderTest()
         { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
         { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
     };
-
+*/
     Vertex plane[] =
     {
         { -5.f, 0.f, -5.f, 0.f, 1.f, 0.f, 0.f, 0.f },
@@ -533,7 +533,7 @@ void EnvLightClearTest()
         rpr_float norm[3];
         rpr_float tex[2];
     };
-
+/*
     Vertex cube[] =
     {
         { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
@@ -566,7 +566,7 @@ void EnvLightClearTest()
         { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
         { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
     };
-
+*/
     Vertex plane[] =
     {
         { -500.f, 0.f, -500.f, 0.f, 1.f, 0.f, 0.f, 0.f },
@@ -1487,7 +1487,7 @@ void test_feature_cameraDOF()
     //create context, material system and scene
     rpr_context	context;
     status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
-    rpr_material_system matsys = NULL;
+    //rpr_material_system matsys = NULL;
     rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
     assert(status == RPR_SUCCESS);
     status = rprContextSetScene(context, scene);
@@ -2000,12 +2000,13 @@ void test_feature_LightDirectional()
     status = rprContextSetScene(context, scene);
     assert(status == RPR_SUCCESS);
 
+/*
     //vertex data
     float c = 0.5f;
     float d = -7.0f;
     float o = -7.0f;
     float x = 0.6f;
-
+*/
     Vertex meshVertices[] =
     {
         { -2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    0.0f, 0.0f },

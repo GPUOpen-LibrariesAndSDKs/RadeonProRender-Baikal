@@ -261,7 +261,7 @@ void UberV2Test()
     status = rprObjectDelete(light); light = NULL;
     assert(status == RPR_SUCCESS);
 
-    for (int a = 0; a < shapes.size(); ++a)
+    for (std::size_t a = 0; a < shapes.size(); ++a)
     {
         status = rprSceneDetachShape(scene, shapes[a]);
         assert(status == RPR_SUCCESS);
@@ -269,7 +269,7 @@ void UberV2Test()
         assert(status == RPR_SUCCESS);
     }
 
-    for (int a = 0; a < materials.size(); ++a)
+    for (std::size_t a = 0; a < materials.size(); ++a)
     {
         status = rprObjectDelete(materials[a]);
         assert(status == RPR_SUCCESS);

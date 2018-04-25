@@ -247,7 +247,7 @@ namespace Baikal
 
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (i == m_primary)
+            if (i == static_cast<std::size_t>(m_primary))
             {
                 m_cfgs[i].controller->CompileScene(m_scene);
                 m_cfgs[i].renderer->Clear(float3(0, 0, 0), *m_outputs[i].output);
@@ -526,7 +526,7 @@ namespace Baikal
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (i != m_primary)
+            if (i != static_cast<std::size_t>(m_primary))
             {
                 m_renderthreads.push_back(std::thread(&AppClRender::RenderThread, this, std::ref(m_ctrl[i])));
                 m_renderthreads.back().detach();
@@ -540,7 +540,7 @@ namespace Baikal
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (i == m_primary)
+            if (i == static_cast<std::size_t>(m_primary))
                 continue;
 
             m_ctrl[i].stop.store(true);
