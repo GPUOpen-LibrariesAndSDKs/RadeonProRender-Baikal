@@ -554,7 +554,7 @@ TEST_F(InputMapsTest, InputMap_Shuffle)
 {
     auto material = Baikal::UberV2Material::Create();
     auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
-    auto diffuse_color = Baikal::InputMap_Shuffle::Create(color1, {0, 0, 0, 0});
+    auto diffuse_color = Baikal::InputMap_Shuffle::Create(color1, {{0, 0, 0, 0}});
 
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
     material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
@@ -567,7 +567,7 @@ TEST_F(InputMapsTest, InputMap_Shuffle2)
     auto material = Baikal::UberV2Material::Create();
     auto color1 = Baikal::InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f));
     auto color2 = Baikal::InputMap_ConstantFloat3::Create(float3(0.0f, 1.0f, 0.0f));
-    auto diffuse_color = Baikal::InputMap_Shuffle2::Create(color1, color2, {0, 5, 1, 6});
+    auto diffuse_color = Baikal::InputMap_Shuffle2::Create(color1, color2, {{0, 5, 1, 6}});
 
     material->SetInputValue("uberv2.diffuse.color", diffuse_color);
     material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);

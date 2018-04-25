@@ -909,7 +909,7 @@ namespace Baikal
         m_materialid_to_offset[material.GetId()] = static_cast<int>(material_data.size());
 
         // Pack material parameters
-        int32_t params;
+        int32_t params = 0;
         params |= ((uber_material.IsLinkRefractionIOR()) ? 1 : 0) << 0;
         params |= ((uber_material.IsThin()) ? 1 : 0) << 1;
         params |= ((uber_material.isDoubleSided()) ? 1 : 0) << 2;
