@@ -20,7 +20,7 @@ endif (BAIKAL_ENABLE_GLTF AND NOT BAIKAL_ENABLE_RPR)
 
 #global settings
 if (WIN32)
-    add_definitions(/MP -D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(/MP -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS)
 elseif (UNIX)
     add_definitions(-fvisibility=hidden -Wno-ignored-attributes)
 endif (WIN32)

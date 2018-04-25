@@ -104,7 +104,7 @@ void FramebufferObject::UpdateGlTex()
         m_copy_cernel.SetArg(argc++, 2.2f);
         m_copy_cernel.SetArg(argc++, m_cl_interop_image);
 
-        int globalsize = Width() * Height();
+        std::size_t globalsize = Width() * Height();
         m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, m_copy_cernel);
 
         m_context.ReleaseGLObjects(0, objects);
@@ -117,8 +117,8 @@ void FramebufferObject::SaveToFile(const char* path)
 {
     OIIO_NAMESPACE_USING;
 
-    int width = Width();
-    int height = Height();
+    std::size_t width = Width();
+    std::size_t height = Height();
     std::vector<RadeonRays::float3> tempbuf(width * height);
     GetData(tempbuf.data());
     std::vector<RadeonRays::float3> data(tempbuf);
@@ -145,7 +145,7 @@ void FramebufferObject::SaveToFile(const char* path)
         throw Exception(RPR_ERROR_IO_ERROR, "FramebufferObject: failed to create file.");
     }
 
-    ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
+    ImageSpec spec(static_cast<int>(width), static_cast<int>(height), 3, TypeDesc::FLOAT);
     out->open(path, spec);
     out->write_image(TypeDesc::FLOAT, &tempbuf[0], sizeof(RadeonRays::float3));
     out->close();

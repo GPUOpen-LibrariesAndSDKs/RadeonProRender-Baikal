@@ -141,7 +141,7 @@ namespace Baikal
         void SetThin(bool thin);
 
         size_t GetNumInputs() const;
-        Input GetInput(std::uint32_t idx) const;
+        Input GetInput(std::size_t idx) const;
 
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;

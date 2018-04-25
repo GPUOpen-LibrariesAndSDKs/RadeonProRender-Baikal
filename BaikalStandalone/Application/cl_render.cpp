@@ -91,7 +91,7 @@ namespace Baikal
         {
             if (m_cfgs[i].type == ConfigManager::kPrimary)
             {
-                m_primary = i;
+                m_primary = static_cast<int>(i);
 
                 if (m_cfgs[i].caninterop)
                 {
@@ -103,7 +103,7 @@ namespace Baikal
             m_ctrl[i].clear.store(1);
             m_ctrl[i].stop.store(0);
             m_ctrl[i].newdata.store(0);
-            m_ctrl[i].idx = i;
+            m_ctrl[i].idx = static_cast<int>(i);
         }
 
         if (force_disable_itnerop)

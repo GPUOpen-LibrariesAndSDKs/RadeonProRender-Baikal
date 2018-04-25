@@ -320,8 +320,8 @@ FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum targ
     auto& c = m_cfgs[0];
     auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(c.renderer.get())->GetCopyKernel();
     FramebufferObject* result = new FramebufferObject(c.context, copykernel, target, miplevel, texture);
-    int w = result->Width();
-    int h = result->Height();
+    std::uint32_t w = static_cast<std::uint32_t>(result->Width());
+    std::uint32_t h = static_cast<std::uint32_t>(result->Height());
     Baikal::Output* out = c.factory->CreateOutput(w, h).release();
     result->SetOutput(out);
     return result;

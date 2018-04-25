@@ -233,7 +233,7 @@ namespace Baikal
         material->SetName(name);
 
         auto num_inputs = material->GetNumInputs();
-        for (uint32_t a = 0u; a < num_inputs; ++a)
+        for (std::size_t a = 0u; a < num_inputs; ++a)
         {
             auto inputs = material->GetInput(a);
             uint32_t input_id = element.UnsignedAttribute(inputs.info.name.c_str());
