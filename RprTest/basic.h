@@ -1,0 +1,495 @@
+/**********************************************************************
+ Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ ********************************************************************/
+
+#pragma once
+
+#include "utils.h"
+
+#include "math/matrix.h"
+#include "math/mathutils.h"
+
+#include "RadeonProRender.h"
+#include "gtest/gtest.h"
+#include "OpenImageIO/imageio.h"
+
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <cstdlib>
+#include <sstream>
+#include <iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+using namespace RadeonRays;
+
+extern int g_argc;
+extern char** g_argv;
+
+class BasicTest : public ::testing::Test
+{
+public:
+    static std::uint32_t constexpr kRenderIterations = 32;
+    static std::uint32_t constexpr kOutputWidth = 256;
+    static std::uint32_t constexpr kOutputHeight = 256;
+
+    enum class SceneType
+    {
+        kSphereIbl = 0,
+        kSphereAndPlane
+    };
+
+    virtual void SetUp()
+    {
+        char* generate_option = GetCmdOption(g_argv, g_argv + g_argc, "-genref");
+        char* tolerance_option = GetCmdOption(g_argv, g_argv + g_argc, "-tolerance");
+        char* refpath_option = GetCmdOption(g_argv, g_argv + g_argc, "-ref");
+        char* outpath_option = GetCmdOption(g_argv, g_argv + g_argc, "-out");
+
+        m_generate = generate_option ? true : false;
+        m_tolerance = tolerance_option ? atoi(tolerance_option) : 20;
+        m_reference_path = refpath_option ? refpath_option : "ReferenceImages";
+        m_output_path = outpath_option ? outpath_option : "OutputImages";
+        m_reference_path.append("/");
+        m_output_path.append("/");
+
+        ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, nullptr, nullptr, &m_context), RPR_SUCCESS);
+        
+        // Create Framebuffer
+        rpr_framebuffer_desc desc = { kOutputWidth, kOutputHeight };
+        rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+        ASSERT_EQ(rprContextCreateFrameBuffer(m_context, fmt, &desc, &m_framebuffer), RPR_SUCCESS);
+        // Set color output
+        ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_COLOR, m_framebuffer), RPR_SUCCESS);
+
+    }
+
+    virtual void TearDown()
+    {
+        // Cleanup
+        for (rpr_light light : m_lights)
+        {
+            ASSERT_EQ(rprSceneDetachLight(m_scene, light), RPR_SUCCESS);
+            ASSERT_EQ(rprObjectDelete(light), RPR_SUCCESS);
+        }
+        m_lights.clear();
+
+        for (auto it = m_shapes.begin(); it != m_shapes.end(); ++it)
+        {
+            ASSERT_EQ(rprShapeSetMaterial(it->second, nullptr), RPR_SUCCESS);
+            ASSERT_EQ(rprSceneDetachShape(m_scene, it->second), RPR_SUCCESS);
+            ASSERT_EQ(rprObjectDelete(it->second), RPR_SUCCESS);
+        }
+        m_shapes.clear();
+
+        if (m_camera)
+        {
+            ASSERT_NE(m_scene, nullptr);
+            ASSERT_EQ(rprSceneSetCamera(m_scene, nullptr), RPR_SUCCESS);
+            ASSERT_EQ(rprObjectDelete(m_camera), RPR_SUCCESS);
+            m_camera = nullptr;
+        }
+        if (m_scene)
+        {
+            ASSERT_EQ(rprObjectDelete(m_scene), RPR_SUCCESS);
+            m_scene = nullptr;
+        }
+        if (m_framebuffer)
+        {
+            ASSERT_EQ(rprObjectDelete(m_framebuffer), RPR_SUCCESS);
+            m_framebuffer = nullptr;
+        }
+        if (m_context)
+        {
+            ASSERT_EQ(rprObjectDelete(m_context), RPR_SUCCESS);
+            m_context = nullptr;
+        }
+    }
+
+    void AddEnvironmentLight(rpr_char const* path = "../Resources/Textures/studio015.hdr")
+    {
+        rpr_light light = nullptr;
+        ASSERT_EQ(rprContextCreateEnvironmentLight(m_context, &light), RPR_SUCCESS);
+        rpr_image imageInput = nullptr;
+        ASSERT_EQ(rprContextCreateImageFromFile(m_context, path, &imageInput), RPR_SUCCESS);
+        ASSERT_EQ(rprEnvironmentLightSetImage(light, imageInput), RPR_SUCCESS);
+        ASSERT_EQ(rprSceneAttachLight(m_scene, light), RPR_SUCCESS);
+
+        m_lights.push_back(light);
+
+    }
+
+    void AddPointLight(float3 pos, float3 color)
+    {        
+        rpr_light light = nullptr;
+        ASSERT_EQ(rprContextCreatePointLight(m_context, &light), RPR_SUCCESS);
+        matrix lightm = translation(pos);
+        ASSERT_EQ(rprLightSetTransform(light, true, &lightm.m00), RPR_SUCCESS);
+        ASSERT_EQ(rprPointLightSetRadiantPower3f(light, color.x, color.y, color.z), RPR_SUCCESS);
+        ASSERT_EQ(rprSceneAttachLight(m_scene, light), RPR_SUCCESS);
+
+        m_lights.push_back(light);
+    }
+
+    void RemoveLight(size_t index)
+    {
+        ASSERT_TRUE(index >= 0 && index < m_lights.size());
+        const rpr_light light = m_lights[index];
+        ASSERT_NO_THROW(m_lights.erase(m_lights.begin() + index));
+
+        ASSERT_EQ(rprSceneDetachLight(m_scene, light), RPR_SUCCESS);
+        ASSERT_EQ(rprObjectDelete(light), RPR_SUCCESS);
+
+    }
+    
+    void ClearFramebuffer() const
+    {
+        ASSERT_EQ(rprFrameBufferClear(m_framebuffer), RPR_SUCCESS);
+    }
+
+    void AddDiffuseMaterial(std::string const& name, float3 color)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
+                
+        m_material_nodes[name] = material;
+    }
+
+    void ApplyMaterialToObject(std::string const& shape_name, std::string const& mtl_name) const
+    {
+        auto shapes_it = m_shapes.find(shape_name);
+        ASSERT_NE(shapes_it, m_shapes.end());
+        const rpr_shape shape = shapes_it->second;
+
+        auto mtl_it = m_material_nodes.find(mtl_name);
+        ASSERT_NE(mtl_it, m_material_nodes.end());
+        const rpr_material_node material = mtl_it->second;
+
+        ASSERT_EQ(rprShapeSetMaterial(shape, material), RPR_SUCCESS);
+    }
+
+    void AddSphere(std::string const& name, std::uint32_t lat, std::uint32_t lon, float r, RadeonRays::float3 const& c)
+    {
+        size_t num_verts = (lat - 2) * lon + 2;
+        size_t num_tris = (lat - 2) * (lon - 1) * 2;
+    
+        std::vector<RadeonRays::float3> vertices(num_verts);
+        std::vector<RadeonRays::float3> normals(num_verts);
+        std::vector<RadeonRays::float2> uvs(num_verts);
+        std::vector<std::uint32_t> indices(num_tris * 3);
+            
+        auto t = 0U;
+        for (auto j = 1U; j < lat - 1; j++)
+        {
+            for (auto i = 0U; i < lon; i++)
+            {
+                float theta = float(j) / (lat - 1) * (float)M_PI;
+                float phi = float(i) / (lon - 1) * (float)M_PI * 2;
+                vertices[t].x = r * sinf(theta) * cosf(phi) + c.x;
+                vertices[t].y = r * cosf(theta) + c.y;
+                vertices[t].z = r * -sinf(theta) * sinf(phi) + c.z;
+                normals[t].x = sinf(theta) * cosf(phi);
+                normals[t].y = cosf(theta);
+                normals[t].z = -sinf(theta) * sinf(phi);
+                uvs[t].x = phi / (2 * (float)M_PI);
+                uvs[t].y = theta / ((float)M_PI);
+                ++t;
+            }
+        }
+    
+        vertices[t].x = c.x; vertices[t].y = c.y + r; vertices[t].z = c.z;
+        normals[t].x = 0; normals[t].y = 1; normals[t].z = 0;
+        uvs[t].x = 0; uvs[t].y = 0;
+        ++t;
+        vertices[t].x = c.x; vertices[t].y = c.y - r; vertices[t].z = c.z;
+        normals[t].x = 0; normals[t].y = -1; normals[t].z = 0;
+        uvs[t].x = 1; uvs[t].y = 1;
+        ++t;
+    
+        t = 0U;
+        for (auto j = 0U; j < lat - 3; j++)
+        {
+            for (auto i = 0U; i < lon - 1; i++)
+            {
+                indices[t++] = j * lon + i;
+                indices[t++] = (j + 1) * lon + i + 1;
+                indices[t++] = j * lon + i + 1;
+                indices[t++] = j * lon + i;
+                indices[t++] = (j + 1) * lon + i;
+                indices[t++] = (j + 1) * lon + i + 1;
+            }
+        }
+    
+        for (auto i = 0U; i < lon - 1; i++)
+        {
+            indices[t++] = (lat - 2) * lon;
+            indices[t++] = i;
+            indices[t++] = i + 1;
+            indices[t++] = (lat - 2) * lon + 1;
+            indices[t++] = (lat - 3) * lon + i + 1;
+            indices[t++] = (lat - 3) * lon + i;
+        }
+    
+        std::vector<int> faces(indices.size() / 3, 3);
+        
+        rpr_shape sphere = nullptr;
+        ASSERT_EQ(rprContextCreateMesh(m_context,
+            (rpr_float const*)vertices.data(), vertices.size(), sizeof(RadeonRays::float3),
+            (rpr_float const*)normals.data(), normals.size(), sizeof(RadeonRays::float3),
+            (rpr_float const*)uvs.data(), uvs.size(), sizeof(RadeonRays::float2),
+            (rpr_int const*)indices.data(), sizeof(rpr_int),
+            (rpr_int const*)indices.data(), sizeof(rpr_int),
+            (rpr_int const*)indices.data(), sizeof(rpr_int),
+            faces.data(), faces.size(), &sphere), RPR_SUCCESS);
+
+        // Add to shapes map
+        m_shapes[name] = sphere;
+
+        ASSERT_EQ(rprSceneAttachShape(m_scene, sphere), RPR_SUCCESS);
+
+    }
+
+    // This function cannot return rpr_shape because it contains ASSERT_EQ statement
+    void AddPlane(std::string const& name)
+    {
+        struct Vertex
+        {
+            rpr_float position[3];
+            rpr_float normal[3];
+            rpr_float uv[2];
+        };
+
+        Vertex vertices[] =
+        {
+            { -8.0f, 0.0f, -8.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+            {  8.0f, 0.0f, -8.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f },
+            {  8.0f, 0.0f,  8.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f },
+            { -8.0f, 0.0f,  8.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f }
+        };
+
+        rpr_int indices[] =
+        {
+            3, 1, 0,
+            2, 1, 3
+        };
+
+        rpr_int num_face_vertices[] =
+        {
+            3, 3
+        };
+
+        rpr_shape quad = nullptr;
+
+        ASSERT_EQ(rprContextCreateMesh(m_context,
+            (rpr_float const*)&vertices[0], 4, sizeof(Vertex),
+            (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 3), 4, sizeof(Vertex),
+            (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 6), 4, sizeof(Vertex),
+            (rpr_int const*)indices, sizeof(rpr_int),
+            (rpr_int const*)indices, sizeof(rpr_int),
+            (rpr_int const*)indices, sizeof(rpr_int),
+            num_face_vertices, 2, &quad), RPR_SUCCESS);
+
+        m_shapes[name] = quad;
+
+        ASSERT_EQ(rprSceneAttachShape(m_scene, quad), RPR_SUCCESS);
+
+    }
+
+    void CreateScene(SceneType type)
+    {
+        // Create scene and material system
+        ASSERT_EQ(rprContextCreateMaterialSystem(m_context, 0, &m_matsys), RPR_SUCCESS);
+        ASSERT_EQ(rprContextCreateScene(m_context, &m_scene), RPR_SUCCESS);
+
+        // Create camera
+        ASSERT_EQ(rprContextCreateCamera(m_context, &m_camera), RPR_SUCCESS);
+        ASSERT_EQ(rprCameraSetSensorSize(m_camera, 36.0f, 36.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprCameraSetFocalLength(m_camera, 35.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprCameraSetFocusDistance(m_camera, 1.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprCameraSetFStop(m_camera, 0.0f), RPR_SUCCESS);
+
+        ASSERT_EQ(rprSceneSetCamera(m_scene, m_camera), RPR_SUCCESS);
+        ASSERT_EQ(rprContextSetScene(m_context, m_scene), RPR_SUCCESS);
+
+        // Add objects, materials and lights
+        AddDiffuseMaterial("lambert", float3(0.8f, 0.8f, 0.8f));
+        switch (type)
+        {
+        case SceneType::kSphereIbl:
+            ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 0.0f, -6.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
+            AddSphere("sphere", 64, 32, 2.f, float3(0.0f, 0.0f, 0.0f));
+            ApplyMaterialToObject("sphere", "lambert");
+            AddEnvironmentLight();
+            break;
+        case SceneType::kSphereAndPlane:
+            ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 2.0f, -10.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
+            AddSphere("sphere", 64, 32, 2.f, float3(0.f, 2.5f, 0.f));
+            ApplyMaterialToObject("sphere", "lambert");
+            AddPlane("plane");
+            ApplyMaterialToObject("plane", "lambert");
+            break;
+        }
+    }
+
+    void Render() const
+    {
+        for (std::uint32_t i = 0; i < kRenderIterations; ++i)
+        {
+            ASSERT_EQ(rprContextRender(m_context), RPR_SUCCESS);
+        }
+    }
+    
+    void LoadImage(std::string const& file_name, std::vector<char>& data) const
+    {
+        OIIO_NAMESPACE_USING
+
+        ImageInput* input = ImageInput::open(file_name);
+
+        ImageSpec const& spec = input->spec();
+
+        auto size = spec.width * spec.height * spec.depth * 4;
+
+        data.resize(size);
+
+        // Read data to storage
+        input->read_image(TypeDesc::UINT8, &data[0], sizeof(char) * 4);
+
+        // Close handle
+        input->close();
+
+        delete input;
+    }
+    
+    bool CompareToReference(std::string const& file_name) const
+    {
+        if (m_generate)
+            return true;
+
+        std::string path_to_output = m_output_path;
+        path_to_output.append(file_name);
+        std::string path_to_reference = m_reference_path;
+        path_to_reference.append(file_name);
+
+        std::vector<char> output_data;
+        std::vector<char> reference_data;
+
+        LoadImage(path_to_output, output_data);
+        LoadImage(path_to_reference, reference_data);
+
+        auto num_values = output_data.size();
+        auto difference = 0u;
+        for (auto i = 0u; i < num_values; ++i)
+        {
+            if (output_data[i] != reference_data[i])
+            {
+                ++difference;
+            }
+        }
+
+        return difference <= m_tolerance;
+    }
+    
+    void SaveOutput(std::string const& file_name) const
+    {
+        std::string path = m_generate ? m_reference_path : m_output_path;
+        path.append(file_name);
+
+        ASSERT_EQ(rprFrameBufferSaveToFile(m_framebuffer, path.c_str()), RPR_SUCCESS);
+    }
+
+    std::string TestName() const
+    {
+        return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    }
+
+    // Save to file and compare to reference
+    void SaveAndCompare() const
+    {
+        std::ostringstream oss;
+        oss << TestName() << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // Dump one float to filename and compare to reference
+    void SaveAndCompare(char const* const format, ...) const
+    {
+        char buffer[32];
+        sprintf(buffer, format);
+        std::ostringstream oss;
+        oss << TestName() << "_" << buffer << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    static char* GetCmdOption(char** begin, char** end, const std::string& option)
+    {
+        char** itr = std::find(begin, end, option);
+        if (itr != end && ++itr != end)
+        {
+            return *itr;
+        }
+        return 0;
+    }
+
+    static bool CmdOptionExists(char** begin, char** end, const std::string& option)
+    {
+        return std::find(begin, end, option) != end;
+    }
+    
+protected:
+    rpr_context	        m_context     = nullptr;
+    rpr_material_system m_matsys      = nullptr;
+    rpr_scene           m_scene       = nullptr;
+    rpr_camera          m_camera      = nullptr;
+    rpr_framebuffer     m_framebuffer = nullptr;
+
+    std::map<std::string, rpr_shape>         m_shapes;
+    std::map<std::string, rpr_material_node> m_material_nodes;
+    std::vector<rpr_light>                   m_lights;
+    
+    std::string m_reference_path;
+    std::string m_output_path;
+
+    bool m_generate;
+    std::uint32_t m_tolerance;
+
+};
+/*
+TEST_F(BasicTest, RenderTestScene)
+{
+    //AddEnvironmentLight();
+    //AddPointLight(float3( 10, 10,  10), float3(1000, 0, 0));
+    //AddPointLight(float3( 10, 10, -10), float3(0, 1000, 0));
+    //AddPointLight(float3(-10, 10,  10), float3(0, 0, 1000));
+    //AddPointLight(float3(-10, 10, -10), float3(0, 1000, 0));
+
+    CreateScene(SceneType::kSphereIbl);
+    CreateCamera();
+    ClearFramebuffer();
+    Render();
+    //SaveAndCompare();
+}
+*/
