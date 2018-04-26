@@ -1572,7 +1572,7 @@ namespace Baikal
         clw_texture->dataoffset = static_cast<int>(data_offset);
         // mark that texture has mipmap support
         clw_texture->mipmap_enabled =
-            (!texture.GetLevelsInfo().empty()) ? (1) : (0);
+            (texture.GetLevelsInfo().size() > 1) ? (1) : (0);
         clw_texture->mipmap_index = mipmap_index;
         clw_texture->mipmap_gen_required = texture.MipmapGenerationReq() ? (1) : (0);
     }
