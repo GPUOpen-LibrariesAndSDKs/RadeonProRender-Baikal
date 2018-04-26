@@ -67,12 +67,12 @@ FramebufferObject::~FramebufferObject()
     m_output = nullptr;
 }
 
-std::size_t FramebufferObject::Width()
+size_t FramebufferObject::Width()
 {
     return m_width;
 }
 
-std::size_t FramebufferObject::Height()
+size_t FramebufferObject::Height()
 {
     return m_height;
 }
@@ -104,7 +104,7 @@ void FramebufferObject::UpdateGlTex()
         m_copy_cernel.SetArg(argc++, 2.2f);
         m_copy_cernel.SetArg(argc++, m_cl_interop_image);
 
-        std::size_t globalsize = Width() * Height();
+        size_t globalsize = Width() * Height();
         m_context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, m_copy_cernel);
 
         m_context.ReleaseGLObjects(0, objects);
@@ -117,16 +117,16 @@ void FramebufferObject::SaveToFile(const char* path)
 {
     OIIO_NAMESPACE_USING;
 
-    std::size_t width = Width();
-    std::size_t height = Height();
+    size_t width = Width();
+    size_t height = Height();
     std::vector<RadeonRays::float3> tempbuf(width * height);
     GetData(tempbuf.data());
     std::vector<RadeonRays::float3> data(tempbuf);
 
     //convert pixels
-    for (auto y = 0; y < height; ++y)
+    for (size_t y = 0; y < height; ++y)
     {
-        for (auto x = 0; x < width; ++x)
+        for (size_t x = 0; x < width; ++x)
         {
 
             RadeonRays::float3 val = data[(height - 1 - y) * width + x];

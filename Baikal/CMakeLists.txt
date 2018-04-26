@@ -158,5 +158,10 @@ endif (BAIKAL_ENABLE_RAYMASK)
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
 target_link_libraries(Baikal PUBLIC RadeonRays)
-
+if (WIN32)
+    target_compile_options(Baikal PUBLIC /WX /openmp)
+elseif (UNIX)
+    target_compile_options(Baikal PUBLIC -Wall -Werror -fopenmp)
+    target_link_libraries(Baikal PUBLIC -fopenmp)
+endif (WIN32)
     
