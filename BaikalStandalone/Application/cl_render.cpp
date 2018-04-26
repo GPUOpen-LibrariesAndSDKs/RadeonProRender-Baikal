@@ -123,7 +123,6 @@ namespace Baikal
         }
 
         //create renderer
-#pragma omp parallel for
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             m_outputs[i].output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
