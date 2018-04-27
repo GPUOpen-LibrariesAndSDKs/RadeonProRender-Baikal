@@ -20,13 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
+#include "GL/glew.h"
 #include "WrapObject/FramebufferObject.h"
 #include "WrapObject/Exception.h"
 #include "Output/clwoutput.h"
 #include "OpenImageIO/imageio.h"
 #include "RadeonProRender.h"
 #include "RadeonProRender_GL.h"
-#include "GL/glew.h"
 #include "Renderers/monte_carlo_renderer.h"
 
 FramebufferObject::FramebufferObject(Baikal::Output* out)
@@ -152,3 +152,4 @@ void FramebufferObject::SaveToFile(const char* path)
     out->close();
     delete out;
 }
+
