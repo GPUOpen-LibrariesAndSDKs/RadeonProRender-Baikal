@@ -55,7 +55,8 @@ public:
     enum class SceneType
     {
         kSphereIbl = 0,
-        kSphereAndPlane
+        kSphereAndPlane,
+        kThreeSpheres
     };
 
     virtual void SetUp()
@@ -86,20 +87,29 @@ public:
     virtual void TearDown()
     {
         // Cleanup
-        for (rpr_light light : m_lights)
+        for (const rpr_light light : m_lights)
         {
+            if (light == nullptr) continue;
             ASSERT_EQ(rprSceneDetachLight(m_scene, light), RPR_SUCCESS);
             ASSERT_EQ(rprObjectDelete(light), RPR_SUCCESS);
         }
         m_lights.clear();
 
-        for (auto it = m_shapes.begin(); it != m_shapes.end(); ++it)
+        for (auto it = m_shapes.cbegin(); it != m_shapes.cend(); ++it)
         {
+            if (it->second == nullptr) continue;
             ASSERT_EQ(rprShapeSetMaterial(it->second, nullptr), RPR_SUCCESS);
             ASSERT_EQ(rprSceneDetachShape(m_scene, it->second), RPR_SUCCESS);
             ASSERT_EQ(rprObjectDelete(it->second), RPR_SUCCESS);
         }
         m_shapes.clear();
+        
+        for (auto it = m_material_nodes.cbegin(); it != m_material_nodes.cend(); ++it)
+        {
+            if (it->second == nullptr) continue;
+            ASSERT_EQ(rprObjectDelete(it->second), RPR_SUCCESS);
+        }
+        m_material_nodes.clear();
 
         if (m_camera)
         {
@@ -108,16 +118,19 @@ public:
             ASSERT_EQ(rprObjectDelete(m_camera), RPR_SUCCESS);
             m_camera = nullptr;
         }
+
         if (m_scene)
         {
             ASSERT_EQ(rprObjectDelete(m_scene), RPR_SUCCESS);
             m_scene = nullptr;
         }
+
         if (m_framebuffer)
         {
             ASSERT_EQ(rprObjectDelete(m_framebuffer), RPR_SUCCESS);
             m_framebuffer = nullptr;
         }
+
         if (m_context)
         {
             ASSERT_EQ(rprObjectDelete(m_context), RPR_SUCCESS);
@@ -125,31 +138,31 @@ public:
         }
     }
 
-    void AddEnvironmentLight(rpr_char const* path = "../Resources/Textures/studio015.hdr")
+    void ClearFramebuffer() const
+    {
+        ASSERT_EQ(rprFrameBufferClear(m_framebuffer), RPR_SUCCESS);
+    }
+
+    //
+    // Lights
+    //
+    void AddLight(const rpr_light light)
+    {
+        ASSERT_NE(light, nullptr);
+        ASSERT_EQ(rprSceneAttachLight(m_scene, light), RPR_SUCCESS);
+        m_lights.push_back(light);
+
+    }
+
+    void AddEnvironmentLight(const rpr_image image)
     {
         rpr_light light = nullptr;
-        ASSERT_EQ(rprContextCreateEnvironmentLight(m_context, &light), RPR_SUCCESS);
-        rpr_image imageInput = nullptr;
-        ASSERT_EQ(rprContextCreateImageFromFile(m_context, path, &imageInput), RPR_SUCCESS);
-        ASSERT_EQ(rprEnvironmentLightSetImage(light, imageInput), RPR_SUCCESS);
-        ASSERT_EQ(rprSceneAttachLight(m_scene, light), RPR_SUCCESS);
-
-        m_lights.push_back(light);
+        ASSERT_EQ(rprContextCreateEnvironmentLight(m_context, &light), RPR_SUCCESS);        
+        ASSERT_EQ(rprEnvironmentLightSetImage(light, image), RPR_SUCCESS);
+        AddLight(light);
 
     }
-
-    void AddPointLight(float3 pos, float3 color)
-    {        
-        rpr_light light = nullptr;
-        ASSERT_EQ(rprContextCreatePointLight(m_context, &light), RPR_SUCCESS);
-        matrix lightm = translation(pos);
-        ASSERT_EQ(rprLightSetTransform(light, true, &lightm.m00), RPR_SUCCESS);
-        ASSERT_EQ(rprPointLightSetRadiantPower3f(light, color.x, color.y, color.z), RPR_SUCCESS);
-        ASSERT_EQ(rprSceneAttachLight(m_scene, light), RPR_SUCCESS);
-
-        m_lights.push_back(light);
-    }
-
+    
     void RemoveLight(size_t index)
     {
         ASSERT_TRUE(index >= 0 && index < m_lights.size());
@@ -160,10 +173,13 @@ public:
         ASSERT_EQ(rprObjectDelete(light), RPR_SUCCESS);
 
     }
-    
-    void ClearFramebuffer() const
+
+    //
+    // Materials
+    //
+    void AddMaterial(std::string const& name, const rpr_material_node material)
     {
-        ASSERT_EQ(rprFrameBufferClear(m_framebuffer), RPR_SUCCESS);
+        m_material_nodes[name] = material;
     }
 
     void AddDiffuseMaterial(std::string const& name, float3 color)
@@ -173,8 +189,86 @@ public:
 
         ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
-                
-        m_material_nodes[name] = material;
+        
+        AddMaterial(name, material);
+    }
+
+    void AddSpecularMaterial(std::string const& name, float3 color, float roughness)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_REFLECTION), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, roughness, roughness, roughness, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_METALNESS, 0.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
+
+        AddMaterial(name, material);
+    }
+
+    void AddRefractionMaterial(std::string const& name, float3 color, float roughness)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+        
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_REFRACTION), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, roughness, roughness, roughness, 0.0f), RPR_SUCCESS);
+
+        AddMaterial(name, material);
+    }
+
+
+    void AddTransparentMaterial(std::string const& name, float3 transparency)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_TRANSPARENCY), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_TRANSPARENCY, transparency.x, transparency.y, transparency.z, 0.0f), RPR_SUCCESS);
+
+        AddMaterial(name, material);
+    }
+
+    void AddEmissiveMaterial(std::string const& name, float3 color)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_EMISSION), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_EMISSION_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
+
+        AddMaterial(name, material);
+    }
+    
+    void AddCoatMaterial(std::string const& name, float3 diffuse_color, float3 coat_color)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE | RPR_UBER_MATERIAL_LAYER_COATING), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, diffuse_color.x, diffuse_color.y, diffuse_color.z, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_COATING_COLOR, coat_color.x, coat_color.y, coat_color.z, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_COATING_IOR, 2.0f, 2.0f, 2.0f, 2.0f), RPR_SUCCESS);
+
+        AddMaterial(name, material);
+    }
+
+    void AddMetalMaterial(std::string const& name, float3 diffuse_color, float3 reflection_color)
+    {
+        rpr_material_node material = nullptr;
+        ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE | RPR_UBER_MATERIAL_LAYER_REFLECTION), RPR_SUCCESS);
+
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, diffuse_color.x, diffuse_color.y, diffuse_color.z, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_COLOR, reflection_color.x, reflection_color.y, reflection_color.z, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_METALNESS, 1.0f, 1.0f, 1.0f, 1.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, 0.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_IOR, 2.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
     }
 
     void ApplyMaterialToObject(std::string const& shape_name, std::string const& mtl_name) const
@@ -188,6 +282,15 @@ public:
         const rpr_material_node material = mtl_it->second;
 
         ASSERT_EQ(rprShapeSetMaterial(shape, material), RPR_SUCCESS);
+    }
+
+    //
+    // Shapes
+    //
+    void AddShape(std::string const& name, const rpr_shape shape)
+    {
+        ASSERT_EQ(rprSceneAttachShape(m_scene, shape), RPR_SUCCESS);
+        m_shapes[name] = shape;
     }
 
     void AddSphere(std::string const& name, std::uint32_t lat, std::uint32_t lon, float r, RadeonRays::float3 const& c)
@@ -264,30 +367,31 @@ public:
             (rpr_int const*)indices.data(), sizeof(rpr_int),
             faces.data(), faces.size(), &sphere), RPR_SUCCESS);
 
-        // Add to shapes map
-        m_shapes[name] = sphere;
-
-        ASSERT_EQ(rprSceneAttachShape(m_scene, sphere), RPR_SUCCESS);
+        AddShape(name, sphere);
 
     }
 
-    // This function cannot return rpr_shape because it contains ASSERT_EQ statement
-    void AddPlane(std::string const& name)
+    void AddPlane(std::string const& name, float3 center, float2 size, float3 normal)
     {
         struct Vertex
         {
-            rpr_float position[3];
-            rpr_float normal[3];
-            rpr_float uv[2];
+            float3 position;
+            float3 normal;
+            float2 uv;
         };
 
-        Vertex vertices[] =
+        float3 n = normalize(normal);
+        float3 axis = fabs(n.x) > 0.001f ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f);
+        float3 t = normalize(cross(axis, n));
+        float3 s = cross(n, t);
+        
+        Vertex vertices[4] =
         {
-            { -8.0f, 0.0f, -8.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
-            {  8.0f, 0.0f, -8.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f },
-            {  8.0f, 0.0f,  8.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f },
-            { -8.0f, 0.0f,  8.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f }
-        };
+            { { -s * size.x - t * size.y + center }, n, { 0.0f, 0.0f } },
+            { {  s * size.x - t * size.y + center }, n, { 1.0f, 0.0f } },
+            { {  s * size.x + t * size.y + center }, n, { 1.0f, 1.0f } },
+            { { -s * size.x + t * size.y + center }, n, { 0.0f, 1.0f } }
+        };        
 
         rpr_int indices[] =
         {
@@ -304,17 +408,29 @@ public:
 
         ASSERT_EQ(rprContextCreateMesh(m_context,
             (rpr_float const*)&vertices[0], 4, sizeof(Vertex),
-            (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 3), 4, sizeof(Vertex),
-            (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 6), 4, sizeof(Vertex),
+            (rpr_float const*)((char*)&vertices[0] + sizeof(float3)), 4, sizeof(Vertex),
+            (rpr_float const*)((char*)&vertices[0] + sizeof(float3) * 2), 4, sizeof(Vertex),
             (rpr_int const*)indices, sizeof(rpr_int),
             (rpr_int const*)indices, sizeof(rpr_int),
             (rpr_int const*)indices, sizeof(rpr_int),
             num_face_vertices, 2, &quad), RPR_SUCCESS);
 
-        m_shapes[name] = quad;
+        AddShape(name, quad);
 
-        ASSERT_EQ(rprSceneAttachShape(m_scene, quad), RPR_SUCCESS);
+    }
 
+    void CreateCamera()
+    {
+        // Make sure we've created the context and the scene
+        ASSERT_NE(m_context, nullptr);
+        ASSERT_NE(m_scene, nullptr);
+
+        // Create camera
+        ASSERT_EQ(rprContextCreateCamera(m_context, &m_camera), RPR_SUCCESS);
+        // Set default sensor size 36x36 mm because we're rendering to square viewport
+        ASSERT_EQ(rprCameraSetSensorSize(m_camera, 36.0f, 36.0f), RPR_SUCCESS);
+
+        ASSERT_EQ(rprSceneSetCamera(m_scene, m_camera), RPR_SUCCESS);
     }
 
     void CreateScene(SceneType type)
@@ -322,33 +438,48 @@ public:
         // Create scene and material system
         ASSERT_EQ(rprContextCreateMaterialSystem(m_context, 0, &m_matsys), RPR_SUCCESS);
         ASSERT_EQ(rprContextCreateScene(m_context, &m_scene), RPR_SUCCESS);
-
-        // Create camera
-        ASSERT_EQ(rprContextCreateCamera(m_context, &m_camera), RPR_SUCCESS);
-        ASSERT_EQ(rprCameraSetSensorSize(m_camera, 36.0f, 36.0f), RPR_SUCCESS);
-        ASSERT_EQ(rprCameraSetFocalLength(m_camera, 35.0f), RPR_SUCCESS);
-        ASSERT_EQ(rprCameraSetFocusDistance(m_camera, 1.0f), RPR_SUCCESS);
-        ASSERT_EQ(rprCameraSetFStop(m_camera, 0.0f), RPR_SUCCESS);
-
-        ASSERT_EQ(rprSceneSetCamera(m_scene, m_camera), RPR_SUCCESS);
         ASSERT_EQ(rprContextSetScene(m_context, m_scene), RPR_SUCCESS);
 
+        // Create camera
+        CreateCamera();
+
         // Add objects, materials and lights
-        AddDiffuseMaterial("lambert", float3(0.8f, 0.8f, 0.8f));
         switch (type)
         {
         case SceneType::kSphereIbl:
             ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 0.0f, -6.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
             AddSphere("sphere", 64, 32, 2.f, float3(0.0f, 0.0f, 0.0f));
-            ApplyMaterialToObject("sphere", "lambert");
-            AddEnvironmentLight();
+            AddDiffuseMaterial("sphere_mtl", float3(0.8f, 0.8f, 0.8f));
+            ApplyMaterialToObject("sphere", "sphere_mtl");
+            AddEnvironmentLight("../Resources/Textures/studio015.hdr");
             break;
         case SceneType::kSphereAndPlane:
             ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 2.0f, -10.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
-            AddSphere("sphere", 64, 32, 2.f, float3(0.f, 2.5f, 0.f));
-            ApplyMaterialToObject("sphere", "lambert");
-            AddPlane("plane");
-            ApplyMaterialToObject("plane", "lambert");
+            AddSphere("sphere", 64, 32, 2.f, float3(0.0f, 0.0f, 0.0f));
+            AddDiffuseMaterial("sphere_mtl", float3(0.8f, 0.8f, 0.8f));
+            ApplyMaterialToObject("sphere", "sphere_mtl");
+            AddPlane("plane", float3(0.0f, -2.0f, 0.0f), float2(8.0f, 8.0f), float3(0.0f, 1.0f, 0.0f));
+            AddDiffuseMaterial("plane_mtl", float3(0.8f, 0.8f, 0.8f));
+            ApplyMaterialToObject("plane", "plane_mtl");
+            break;
+        case SceneType::kThreeSpheres:
+            ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 2.0f, -10.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
+
+            AddPlane("plane", float3(0.0f, -2.0f, 0.0f), float2(8.0f, 8.0f), float3(0.0f, 1.0f, 0.0f));
+            AddDiffuseMaterial("plane_mtl", float3(0.8f, 0.8f, 0.8f));
+            ApplyMaterialToObject("plane", "plane_mtl");
+
+            AddSphere("sphere_specular", 64, 32, 2.f, float3(4.0f, 0.0f, 0.0f));
+            AddSpecularMaterial("specular_mtl", float3(1.0f, 1.0f, 1.0f), 0.001f);
+            ApplyMaterialToObject("sphere_specular", "specular_mtl");
+
+            AddSphere("sphere_refract", 64, 32, 2.f, float3(0.0f, 0.0f, 0.0f));
+            AddRefractionMaterial("refractive_mtl", float3(1.0f, 1.0f, 1.0f), 0.001f);
+            ApplyMaterialToObject("sphere_refract", "refractive_mtl");
+
+            AddSphere("sphere_transparent", 64, 32, 2.f, float3(-4.0f, 0.0f, 0.0f));
+            AddTransparentMaterial("transparent_mtl", float3(0.8f, 0.8f, 0.8f));
+            ApplyMaterialToObject("sphere_transparent", "transparent_mtl");
             break;
         }
     }
@@ -433,13 +564,16 @@ public:
         ASSERT_TRUE(CompareToReference(oss.str()));
     }
 
-    // Dump one float to filename and compare to reference
+    // Use formatting in filename
     void SaveAndCompare(char const* const format, ...) const
     {
         char buffer[32];
-        sprintf(buffer, format);
-        std::ostringstream oss;
-        oss << TestName() << "_" << buffer << ".png";
+        va_list args;
+        va_start(args, format);
+        vsnprintf(buffer, 32, format, args);
+        va_end(args);
+        std::ostringstream oss(TestName());
+        oss << "_" << buffer << ".png";
         SaveOutput(oss.str());
         ASSERT_TRUE(CompareToReference(oss.str()));
     }
