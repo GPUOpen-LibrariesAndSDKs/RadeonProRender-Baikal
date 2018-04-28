@@ -66,6 +66,7 @@ namespace Baikal
         virtual ~Texture() = default;
 
         // Set data
+        void SetData(char* data, const RadeonRays::int3 &size, Format format);
         void SetData(char* data, const std::vector<RadeonRays::int3> &level_sizes, Format format);
 
         // Get texture dimensions
@@ -140,6 +141,11 @@ namespace Baikal
 
     inline bool Texture::MipmapEnabled() const
     { return m_generate_mipmap || (m_levels.size() > 1); }
+
+    inline void Texture::SetData(char* data, const RadeonRays::int3 &size, Format format)
+    {
+        SetData(data, std::vector<RadeonRays::int3>{ size }, format);
+    }
 
     inline void Texture::SetData(char* data, const std::vector<RadeonRays::int3> &level_sizes, Format format)
     {
