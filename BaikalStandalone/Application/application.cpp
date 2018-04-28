@@ -84,6 +84,7 @@ namespace Baikal
     static bool     g_is_mouse_tracking = false;
     static bool     g_is_double_click = false;
     static bool     g_is_f10_pressed = false;
+    static bool     g_is_middle_pressed = false; // middle mouse button
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
     static float2   g_scroll_delta = float2(0, 0);
@@ -201,12 +202,12 @@ namespace Baikal
 
     void Application::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
     {
-        if (button == GLFW_MOUSE_BUTTON_RIGHT)
+        if ((button == GLFW_MOUSE_BUTTON_LEFT) ||
+            (button == GLFW_MOUSE_BUTTON_RIGHT) ||
+            (button == GLFW_MOUSE_BUTTON_MIDDLE))
         {
             if (action == GLFW_PRESS)
             {
-                g_is_mouse_tracking = true;
-
                 double x, y;
                 glfwGetCursorPos(window, &x, &y);
                 g_mouse_pos = float2((float)x, (float)y);
@@ -215,29 +216,42 @@ namespace Baikal
             else if (action == GLFW_RELEASE && g_is_mouse_tracking)
             {
                 g_is_mouse_tracking = false;
+                g_is_middle_pressed = false;
                 g_mouse_delta = float2(0, 0);
             }
+        }
+
+        if ((button == GLFW_MOUSE_BUTTON_RIGHT) &&  (action == GLFW_PRESS))
+        {
+            g_is_mouse_tracking = true;
         }
 
         if (button == GLFW_MOUSE_BUTTON_LEFT)
         {
             if (action == GLFW_PRESS)
             {
+                double x, y;
+                glfwGetCursorPos(window, &x, &y);
+                g_mouse_pos = float2((float)x, (float)y);
+
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>
                     (std::chrono::high_resolution_clock::now() - start);
-
-                if (duration.count() < 200)
-                {
-                    double x, y;
-                    glfwGetCursorPos(window, &x, &y);
-                    g_mouse_pos = float2((float)x, (float)y);
-                    g_mouse_delta = float2(0, 0);
-                    g_is_double_click = true;
-                }
+                g_is_double_click = (duration.count() < 200) ? (true) : (false);
                 start = std::chrono::high_resolution_clock::now();
             }
-            else if (action == GLFW_RELEASE)
+            else if (action == GLFW_RELEASE  && g_is_mouse_tracking)
+            {
                 g_is_double_click = false;
+            }
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+        {
+            if (action == GLFW_PRESS)
+            {
+                g_is_middle_pressed = true;
+                g_is_mouse_tracking = true;
+            }
         }
     }
 
@@ -314,17 +328,20 @@ namespace Baikal
             camrotx = -delta.x;
             camroty = -delta.y;
 
-            if (std::abs(camroty) > 0.001f)
+            if (!g_is_middle_pressed)
             {
-                camera->Tilt(camroty);
-                update = true;
-            }
+                if (std::abs(camroty) > 0.001f)
+                {
+                    camera->Tilt(camroty);
+                    update = true;
+                }
 
-            if (std::abs(camrotx) > 0.001f)
-            {
+                if (std::abs(camrotx) > 0.001f)
+                {
 
-                camera->Rotate(camrotx);
-                update = true;
+                    camera->Rotate(camrotx);
+                    update = true;
+                }
             }
 
             const float kMovementSpeed = m_settings.cspeed;
@@ -374,6 +391,18 @@ namespace Baikal
             {
                 g_is_f10_pressed = false; //one time execution
                 SaveToFile(time);
+            }
+
+            if (g_is_middle_pressed)
+            {
+                float distance = (float)dt.count() * kMovementSpeed / 2.f;
+                float right_shift, up_shift;
+                right_shift = (delta.x) ? distance * delta.x / std::abs(delta.x) : 0;
+                up_shift = (delta.y) ? distance * delta.y / std::abs(delta.y) : 0;
+                camera->MoveRight(-right_shift);
+                camera->MoveUp(up_shift);
+                update = true;
+                g_mouse_delta = RadeonRays::float2(0, 0);
             }
         }
 
