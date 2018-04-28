@@ -26,7 +26,7 @@ THE SOFTWARE.
 #include "math/int2.h"
 #include "SceneGraph/texture.h"
 #include "SceneGraph/material.h"
-#include "SceneGraph/IO/image_io.h"
+#include "image_io.h"
 #include "SceneGraph/iterator.h"
 #include "WrapObject/Materials/MaterialObject.h"
 #include "WrapObject/Exception.h"

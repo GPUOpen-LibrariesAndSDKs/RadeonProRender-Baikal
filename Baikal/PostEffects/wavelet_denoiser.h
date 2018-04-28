@@ -22,7 +22,10 @@ THE SOFTWARE.
 #pragma once
 #include "clw_post_effect.h"
 
-#include "SceneGraph/IO/image_io.h"
+#include <SceneGraph/camera.h>
+#include <math/matrix.h>
+#include <math/mathutils.h>
+#include "AreaMap33.h"
 
 #include <limits>
 
@@ -87,8 +90,8 @@ namespace Baikal
         // Number of wavelet passes
         uint32_t            m_max_wavelet_passes;
 
-        matrix              m_view_proj;
-        matrix              m_prev_view_proj;
+        RadeonRays::matrix              m_view_proj;
+        RadeonRays::matrix              m_prev_view_proj;
 
         CLWBuffer<float>    m_view_proj_buffer;
         CLWBuffer<float>    m_prev_view_proj_buffer;
@@ -129,10 +132,11 @@ namespace Baikal
         m_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
         m_prev_view_proj_buffer = context.CreateBuffer<float>(16, CL_MEM_READ_WRITE);
 
-        auto image_io(ImageIo::CreateImageIo());
-
         // Area map for MLAA weight coefficients
-        Texture::Ptr area_map = image_io->LoadImage("../Resources/Textures/AreaMap33.dds");
+        // Texture object takes ownership on texture data, so we need to copy area map into temporary buffer
+        char *buf = new char[sizeof(area_map_33)];
+        memcpy(buf, area_map_33, sizeof(area_map_33));
+        Texture::Ptr area_map = Texture::Create(buf, RadeonRays::int3(165, 165, 1), Texture::Format::kRgba8);
 
         if (area_map == nullptr)
             throw std::runtime_error("AreaMap33.dds is missing");
@@ -528,24 +532,24 @@ namespace Baikal
         m_prev_view_proj = m_view_proj;
 
         const float focal_length = camera->GetFocalLength();
-        const float2 sensor_size = camera->GetSensorSize();
+        const RadeonRays::float2 sensor_size = camera->GetSensorSize();
 
-        float2 z_range = camera->GetDepthRange();
+        RadeonRays::float2 z_range = camera->GetDepthRange();
 
         // Nan-avoidance in perspective matrix
         z_range.x = std::max(z_range.x, std::numeric_limits<float>::epsilon());
 
         const float fovy = atan(sensor_size.y / (2.0f * focal_length));
 
-        const float3 up = camera->GetUpVector();
-        const float3 right = -camera->GetRightVector();
-        const float3 forward = camera->GetForwardVector();
-        const float3 pos = camera->GetPosition();
+        const RadeonRays::float3 up = camera->GetUpVector();
+        const RadeonRays::float3 right = -camera->GetRightVector();
+        const RadeonRays::float3 forward = camera->GetForwardVector();
+        const RadeonRays::float3 pos = camera->GetPosition();
 
-        const matrix proj = perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
-        const float3 ip = float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
+        const RadeonRays::matrix proj = RadeonRays::perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
+        const RadeonRays::float3 ip = RadeonRays::float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
 
-        const matrix view = matrix(right.x, right.y, right.z, ip.x,
+        const RadeonRays::matrix view = RadeonRays::matrix(right.x, right.y, right.z, ip.x,
             up.x, up.y, up.z, ip.y,
             forward.x, forward.y, forward.z, ip.z,
             0.0f, 0.0f, 0.0f, 1.0f);

@@ -50,10 +50,15 @@ target_compile_features(BaikalStandalone PRIVATE cxx_std_14)
 target_include_directories(BaikalStandalone
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE .)
-target_link_libraries(BaikalStandalone PRIVATE Baikal glfw3::glfw3 OpenGL::GL GLEW::GLEW)
+target_link_libraries(BaikalStandalone PRIVATE Baikal BaikalIO glfw3::glfw3 OpenGL::GL GLEW::GLEW)
+
+if (BAIKAL_ENABLE_DENOISER)
+    target_compile_definitions(BaikalStandalone PUBLIC ENABLE_DENOISER)
+endif(BAIKAL_ENABLE_DENOISER)
 
 if (BAIKAL_ENABLE_GLTF)
     target_link_libraries(BaikalStandalone PRIVATE RadeonProRender RprSupport)
 endif (BAIKAL_ENABLE_GLTF)
+
 set_target_properties(BaikalStandalone
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalStandalone)

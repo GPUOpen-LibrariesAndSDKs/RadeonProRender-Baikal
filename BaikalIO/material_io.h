@@ -32,6 +32,16 @@
 #include <map>
 #include <memory>
 
+#ifdef WIN32
+#ifdef BAIKAL_EXPORT_API
+#define BAIKAL_API_ENTRY __declspec(dllexport)
+#else
+#define BAIKAL_API_ENTRY __declspec(dllimport)
+#endif
+#else
+#define BAIKAL_API_ENTRY __attribute__((visibility ("default")))
+#endif
+
 namespace Baikal
 {
     class Scene1;
@@ -42,7 +52,7 @@ namespace Baikal
 
      MaterialIO is responsible for material loading from disk.
      */
-    class MaterialIo
+    class BAIKAL_API_ENTRY MaterialIo
     {
     public:
         // Create XML based material IO

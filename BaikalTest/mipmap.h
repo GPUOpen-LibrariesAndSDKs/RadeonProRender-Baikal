@@ -22,7 +22,7 @@ THE SOFTWARE.
 #pragma once
 
 #include "basic.h"
-#include "SceneGraph/IO/image_io.h"
+#include "../BaikalIO/image_io.h"
 
 using namespace Baikal;
 
@@ -30,8 +30,7 @@ class MipmapTest : public BasicTest
 {
     void LoadTestScene() override
     {
-        auto io = SceneIo::CreateSceneIoTest();
-        m_scene = io->LoadScene("sphere+plane+ibl", "");
+        m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
     }
 };
 

@@ -1,5 +1,4 @@
 #include "image_io.h"
-#include "../texture.h"
 #include <regex>
 #include "OpenImageIO/imageio.h"
 
