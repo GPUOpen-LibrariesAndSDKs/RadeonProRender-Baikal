@@ -64,7 +64,7 @@ namespace Baikal
         virtual ~ImageIo() = default;
         
         // Load texture from file
-        virtual Texture::Ptr LoadImage(std::string const& filename) const = 0;
+        virtual Texture::Ptr LoadImage(std::string const& filename, bool generate_mipmap = false) const = 0;
         virtual void SaveImage(std::string const& filename, Texture::Ptr texture) const = 0;
         
         // Disallow copying
