@@ -55,6 +55,7 @@ namespace Baikal
     , m_context(context)
     , m_api(api)
     , m_program_manager(program_manager)
+    , m_mipmap(Mipmap::Create(context, program_manager))
     {
         auto acc_type = "fatbvh";
         auto builder_type = "sah";
@@ -791,11 +792,13 @@ namespace Baikal
         // Get new buffer size
         std::size_t tex_buffer_size = tex_collector.GetNumItems();
         std::size_t tex_data_buffer_size = 0;
+        std::size_t mipmap_buffer_size = 0;
 
         if (tex_buffer_size == 0)
         {
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(1, CL_MEM_READ_ONLY);
             out.texturedata = m_context.CreateBuffer<char>(1, CL_MEM_READ_ONLY);
+            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(1, CL_MEM_READ_ONLY);
             return;
         }
 
@@ -807,6 +810,7 @@ namespace Baikal
         }
 
         ClwScene::Texture* textures = nullptr;
+
         std::size_t num_textures_written = 0;
 
         // Map GPU materials buffer
@@ -815,19 +819,32 @@ namespace Baikal
         // Update material bundle first to be able to track differences
         out.texture_bundle.reset(tex_collector.CreateBundle());
 
-        // Create material iterator
+        // Create texture iterator
         std::unique_ptr<Iterator> tex_iter(tex_collector.CreateIterator());
 
         // Iterate and serialize
+        int mip_index_counter = -1;
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
             auto tex = tex_iter->ItemAs<Texture>();
 
-            WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written);
+            int mip_index = tex->MipmapEnabled() ?
+                (++mip_index_counter) : (-1);
+
+            (textures + num_textures_written)->dataoffset = tex_data_buffer_size;
+
+            WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written, mip_index);
 
             ++num_textures_written;
 
             tex_data_buffer_size += align16(tex->GetSizeInBytes());
+        }
+
+        // if there is textures with mipmap levels
+        if (out.mipmap.GetElementCount() < mip_index_counter + 1)
+        {
+            // Create material buffer
+            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(mip_index_counter + 1, CL_MEM_READ_ONLY);
         }
 
         // Unmap material buffer
@@ -860,6 +877,9 @@ namespace Baikal
 
         // Unmap material buffer
         m_context.UnmapBuffer(0, out.texturedata, data);
+
+        // build mipmap for all marked textures
+        m_mipmap->Build(textures, num_textures_written, out.mipmap, out.texturedata);
     }
 
     // Convert Material:: types to ClwScene:: types
@@ -1539,9 +1559,9 @@ namespace Baikal
         }
     }
 
-    void ClwSceneController::WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const
+    void ClwSceneController::WriteTexture(Texture const& texture, std::size_t data_offset, void* texture_data, int mipmap_index) const
     {
-        auto clw_texture = reinterpret_cast<ClwScene::Texture*>(data);
+        auto clw_texture = reinterpret_cast<ClwScene::Texture*>(texture_data);
 
         auto dim = texture.GetSize();
 
@@ -1550,12 +1570,23 @@ namespace Baikal
         clw_texture->d = dim.z;
         clw_texture->fmt = GetTextureFormat(texture);
         clw_texture->dataoffset = static_cast<int>(data_offset);
+        // mark that texture has mipmap support
+        clw_texture->mipmap_enabled =
+            (texture.GetLevelsInfo().size() > 1) ? (1) : (0);
+        clw_texture->mipmap_index = mipmap_index;
+        clw_texture->mipmap_gen_required = texture.MipmapGenerationReq() ? (1) : (0);
     }
 
     void ClwSceneController::WriteTextureData(Texture const& texture, void* data) const
     {
         auto begin = texture.GetData();
-        auto end = begin + texture.GetSizeInBytes();
+
+        // if texture marked as Baikal generation mipmapm
+        // than we should copy only first image, and all levels otherwise
+        auto offset = texture.MipmapGenerationReq() ?
+            (Texture::GetPixelSize(texture.GetFormat()) * texture.GetSize().x * texture.GetSize().y) : (texture.GetSizeInBytes());
+
+        auto end = begin + offset;
         std::copy(begin, end, static_cast<char*>(data));
     }
 

@@ -26,6 +26,9 @@ THE SOFTWARE.
 #define TEXTURED_INPUT_HAS_TEXTURE(x) ((x).int_value.value[3] != -1)
 #define TEXTURED_INPUT_GET_COLOR(x) ((x).float_value.value.xyz)
 
+// maximun number of mimmap pyramid levels
+#define MAX_LEVEL_NUM (14)
+
 // Matrix
 typedef struct
 {
@@ -329,8 +332,31 @@ enum TextureFormat
     UNKNOWN,
     RGBA8,
     RGBA16,
-    RGBA32
+    RGBA32,
+    GRAY8,
+    GRAY16,
+    GRAY32
 };
+
+/// mipmap level description
+typedef
+struct _MipLevel
+{
+    int width;
+    int height;
+    int pitch;
+    int offset;
+} MipLevel;
+
+/// mipmap description
+typedef
+struct _MipmapPyramid
+{
+    int level_num;
+    MipLevel level_info[MAX_LEVEL_NUM];
+    // unused field for alignment
+    int alignment;
+} MipmapPyramid;
 
 /// Texture description
 typedef
@@ -345,6 +371,12 @@ struct _Texture
     // Format
     int fmt;
     int extra;
+    // mipmap info
+    int mipmap_enabled;
+    int mipmap_gen_required; // specify that baikal should generate on its own
+    int mipmap_index;
+    // unused field for alignment
+    int alignment;
 } Texture;
 
 
