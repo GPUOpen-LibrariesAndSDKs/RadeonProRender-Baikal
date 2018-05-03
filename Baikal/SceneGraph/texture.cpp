@@ -139,8 +139,8 @@ namespace Baikal
 
         if (generate_mipmap)
         {
-            int width = (int)std::max(1.f, std::ceilf((float)m_levels[0].x / 2.f));
-            int height = (int)std::max(1.f, std::ceilf((float)m_levels[0].y / 2.f));
+            int width = (int)std::max(1.f, (float)std::ceil(m_levels[0].x / 2.0));
+            int height = (int)std::max(1.f, (float)std::ceil(m_levels[0].y / 2.0));
 
             while ((width != 1) || (height != 1))
             {
@@ -151,8 +151,8 @@ namespace Baikal
                     1
                 });
 
-                width = (int)std::max(1.f, std::ceilf((float)width / 2.f));
-                height = (int)std::max(1.f, std::ceilf((float)height / 2.f));
+                width = (int)std::max(1.f, (float)std::ceil(width / 2.0));
+                height = (int)std::max(1.f, (float)std::ceil(height / 2.0));
             }
 
             m_levels.push_back({ 1, 1, 1});

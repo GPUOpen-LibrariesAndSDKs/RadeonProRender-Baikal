@@ -40,7 +40,7 @@ namespace Baikal
         compute_weights_kernel.SetArg(argc++, weights);
         compute_weights_kernel.SetArg(argc++, size);
 
-        int thread_num = (int)(std::ceilf(size / 64.f) * 64.f);
+        int thread_num = (int)(std::ceil(size / 64.0) * 64.0);
         m_context.Launch1D(0, thread_num, 64, compute_weights_kernel).Wait();
     }
 
@@ -99,7 +99,7 @@ namespace Baikal
                 scale_x.SetArg(argc++, src_height);
                 scale_x.SetArg(argc++, src_pitch);
 
-                int thread_num = (int)(std::ceilf(dst_width * src_height / 64.f) * 64.f);
+                int thread_num = (int)(std::ceil(dst_width * src_height / 64.0) * 64.0);
                 m_context.Launch1D(0, thread_num, 64, scale_x).Wait();
             }
         }
@@ -158,7 +158,7 @@ namespace Baikal
                 scale_y.SetArg(argc++, src_height);
                 scale_y.SetArg(argc++, dst_pitch);
 
-                int thread_num = (int)(std::ceilf(dst_width * dst_height / 64.f) * 64.f);
+                int thread_num = (int)(std::ceil(dst_width * dst_height / 64.0) * 64.0);
                 m_context.Launch1D(0, thread_num, 64, scale_y).Wait();
             }
         }
@@ -172,10 +172,10 @@ namespace Baikal
         int img_height = texture.h;
         int img_pitch = PixelBytes(texture.fmt) * texture.w;
 
-        int level_num = (int)std::ceilf((float)std::log2(std::max(img_width, img_height))) + 1;
+        int level_num = (int)std::ceil(std::log2(std::max(img_width, img_height))) + 1;
         if (level_num > MAX_LEVEL_NUM)
         {
-            throw std::exception(
+            throw std::runtime_error(
                 "Mipmap::BuildMipPyramid(...): too big resolution for mipmapping");
         }
 
@@ -190,8 +190,8 @@ namespace Baikal
         for (int i = 1u; i < level_num; i++)
         {
             // compute level size for current level
-            auto dst_width = (std::uint32_t)ceilf(mipmap.level_info[i - 1].width / 2.f);
-            auto dst_height = (std::uint32_t)ceilf(mipmap.level_info[i - 1].height / 2.f);
+            auto dst_width = (std::uint32_t)ceil(mipmap.level_info[i - 1].width / 2.0);
+            auto dst_height = (std::uint32_t)ceil(mipmap.level_info[i - 1].height / 2.0);
             auto dst_pitch = (std::uint32_t)PixelBytes(texture.fmt) * dst_width;
 
             // downscale current level in x and y dimensions
