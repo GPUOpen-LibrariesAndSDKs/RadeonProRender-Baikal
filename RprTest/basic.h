@@ -111,6 +111,13 @@ public:
         }
         m_material_nodes.clear();
 
+        //for (auto it = m_images.cbegin(); it != m_images.cend(); ++it)
+        //{
+        //    if (it->second == nullptr) continue;
+        //    ASSERT_EQ(rprObjectDelete(it->second), RPR_SUCCESS);
+        //}
+        //m_images.clear();
+
         if (m_camera)
         {
             ASSERT_NE(m_scene, nullptr);
@@ -154,10 +161,11 @@ public:
 
     }
 
-    void AddEnvironmentLight(const rpr_image image)
+    void AddEnvironmentLight(std::string const& path)
     {
         rpr_light light = nullptr;
-        ASSERT_EQ(rprContextCreateEnvironmentLight(m_context, &light), RPR_SUCCESS);        
+        ASSERT_EQ(rprContextCreateEnvironmentLight(m_context, &light), RPR_SUCCESS);
+        const rpr_image image = FindImage(path);
         ASSERT_EQ(rprEnvironmentLightSetImage(light, image), RPR_SUCCESS);
         AddLight(light);
 
@@ -175,11 +183,43 @@ public:
     }
 
     //
+    // Images
+    //
+    void AddImage(std::string const& path, rpr_image* image)
+    {
+        ASSERT_EQ(rprContextCreateImageFromFile(m_context, path.c_str(), image), RPR_SUCCESS);
+        m_images[path] = image;
+    }
+
+    rpr_image FindImage(std::string const& path)
+    {
+        auto img_it = m_images.find(path);
+        if (img_it == m_images.end())
+        {
+            rpr_image image = nullptr;
+            AddImage(path, &image);
+            return image;
+        }
+        else
+        {
+            return img_it->second;
+        }
+    }
+
+    //
     // Materials
     //
     void AddMaterial(std::string const& name, const rpr_material_node material)
     {
         m_material_nodes[name] = material;
+    }
+
+    rpr_material_node GetMaterial(std::string const& name) const
+    {
+        auto mtl_it = m_material_nodes.find(name);
+        // Cannot use ASSERT_NE in non-void returning function
+        assert(mtl_it != m_material_nodes.end());
+        return mtl_it->second;
     }
 
     void AddDiffuseMaterial(std::string const& name, float3 color)
@@ -219,7 +259,6 @@ public:
 
         AddMaterial(name, material);
     }
-
 
     void AddTransparentMaterial(std::string const& name, float3 transparency)
     {
@@ -572,8 +611,8 @@ public:
         va_start(args, format);
         vsnprintf(buffer, 32, format, args);
         va_end(args);
-        std::ostringstream oss(TestName());
-        oss << "_" << buffer << ".png";
+        std::ostringstream oss;
+        oss << TestName() << "_" << buffer << ".png";
         SaveOutput(oss.str());
         ASSERT_TRUE(CompareToReference(oss.str()));
     }
@@ -602,6 +641,7 @@ protected:
 
     std::map<std::string, rpr_shape>         m_shapes;
     std::map<std::string, rpr_material_node> m_material_nodes;
+    std::map<std::string, rpr_image>         m_images;
     std::vector<rpr_light>                   m_lights;
     
     std::string m_reference_path;

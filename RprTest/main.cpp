@@ -23,7 +23,8 @@
 //#include "basic.h"
 //#include "aov.h"
 //#include "camera.h"
-#include "light.h"
+//#include "light.h"
+#include "material.h"
 
 int g_argc;
 char** g_argv;
