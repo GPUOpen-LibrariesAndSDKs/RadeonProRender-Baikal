@@ -277,6 +277,27 @@ TEST_F(MaterialTest, Material_ReflectionMicrofacetAndRefraction)
     }
 }
 
+TEST_F(MaterialTest, Material_Coating)
+{
+    const rpr_material_node sphere_mtl = GetMaterial("sphere_mtl");
+    ASSERT_EQ(rprMaterialNodeSetInputU_ext(sphere_mtl, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE | RPR_UBER_MATERIAL_LAYER_COATING), RPR_SUCCESS);
+
+    for (auto const& c : colors)
+    {
+        ASSERT_EQ(rprMaterialNodeSetInputF_ext(sphere_mtl, RPR_UBER_MATERIAL_COATING_COLOR, c.x, c.y, c.z, 0.0f), RPR_SUCCESS);
+
+        for (auto& ior : iors)
+        {
+            ASSERT_EQ(rprMaterialNodeSetInputF_ext(sphere_mtl, RPR_UBER_MATERIAL_COATING_IOR, ior, ior, ior, ior), RPR_SUCCESS);
+
+            Render();
+            SaveAndCompare("%f_%f_%f_%f", c.x, c.y, c.z, ior);
+        }
+    }
+
+}
+
+
 TEST_F(BasicTest, Material_VolumeScattering)
 {
     // UNSUPPORTED_FUNCTION
