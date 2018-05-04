@@ -286,6 +286,42 @@ namespace Baikal
             scene->AttachLight(l1);
             scene->AttachLight(l2);
         }
+        else if (fname == "env_override_spheres")
+        {
+            auto mesh1 = CreateSphere(64, 32, 2.f, float3(-3.f, 2.5f, 0.f));
+            scene->AttachShape(mesh1);
+            auto mesh2 = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
+            scene->AttachShape(mesh2);
+            auto mesh3 = CreateSphere(64, 32, 2.f, float3(3.f, 2.5f, 0.f));
+            scene->AttachShape(mesh3);
+            
+            auto reflective = UberV2Material::Create();
+            reflective->SetLayers(UberV2Material::Layers::kReflectionLayer);
+            reflective->SetInputValue("uberv2.reflection.color",
+                InputMap_ConstantFloat3::Create(float3(0.9f, 0.9f, 0.9f)));
+            reflective->SetInputValue("uberv2.reflection.roughness",
+                InputMap_ConstantFloat::Create(0.001f));
+            reflective->SetInputValue("uberv2.reflection.ior",
+                InputMap_ConstantFloat::Create(1.33f));
+            mesh1->SetMaterial(reflective);
+
+            auto refractive = UberV2Material::Create();
+            refractive->SetLayers(UberV2Material::Layers::kRefractionLayer);
+            refractive->SetInputValue("uberv2.refraction.color",
+                InputMap_ConstantFloat3::Create(float3(0.7f, 0.7f, 0.7f)));
+            refractive->SetInputValue("uberv2.refraction.ior",
+                InputMap_ConstantFloat3::Create(1.5f));
+            refractive->SetInputValue("uberv2.refraction.roughness",
+                InputMap_ConstantFloat3::Create(0.001f));
+            mesh2->SetMaterial(refractive);
+            
+            auto transparent = UberV2Material::Create();
+            transparent->SetLayers(UberV2Material::Layers::kTransparencyLayer);
+            transparent->SetInputValue("uberv2.transparency",
+                InputMap_ConstantFloat3::Create(1.f));
+            mesh3->SetMaterial(transparent);
+
+        }
         else if (fname == "sphere+plane+area+ibl")
         {
             auto mesh = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));

@@ -209,7 +209,7 @@ public:
     //
     // Materials
     //
-    void AddMaterial(std::string const& name, const rpr_material_node material)
+    void AddMaterialNode(std::string const& name, const rpr_material_node material)
     {
         m_material_nodes[name] = material;
     }
@@ -230,7 +230,7 @@ public:
         ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
         
-        AddMaterial(name, material);
+        AddMaterialNode(name, material);
     }
 
     void AddSpecularMaterial(std::string const& name, float3 color, float roughness)
@@ -244,7 +244,7 @@ public:
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_ROUGHNESS, roughness, roughness, roughness, 0.0f), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFLECTION_METALNESS, 0.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
 
-        AddMaterial(name, material);
+        AddMaterialNode(name, material);
     }
 
     void AddRefractionMaterial(std::string const& name, float3 color, float roughness)
@@ -257,7 +257,7 @@ public:
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_IOR, 2.0f, 2.0f, 2.0f, 2.0f), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_REFRACTION_ROUGHNESS, roughness, roughness, roughness, 0.0f), RPR_SUCCESS);
 
-        AddMaterial(name, material);
+        AddMaterialNode(name, material);
     }
 
     void AddTransparentMaterial(std::string const& name, float3 transparency)
@@ -268,7 +268,7 @@ public:
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_TRANSPARENCY, transparency.x, transparency.y, transparency.z, 0.0f), RPR_SUCCESS);
 
-        AddMaterial(name, material);
+        AddMaterialNode(name, material);
     }
 
     void AddEmissiveMaterial(std::string const& name, float3 color)
@@ -279,7 +279,7 @@ public:
         ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_EMISSION), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_EMISSION_COLOR, color.x, color.y, color.z, 0.0f), RPR_SUCCESS);
 
-        AddMaterial(name, material);
+        AddMaterialNode(name, material);
     }
     
     void AddCoatMaterial(std::string const& name, float3 diffuse_color, float3 coat_color)
@@ -293,7 +293,7 @@ public:
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_COATING_COLOR, coat_color.x, coat_color.y, coat_color.z, 0.0f), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_COATING_IOR, 2.0f, 2.0f, 2.0f, 2.0f), RPR_SUCCESS);
 
-        AddMaterial(name, material);
+        AddMaterialNode(name, material);
     }
 
     void AddMetalMaterial(std::string const& name, float3 diffuse_color, float3 reflection_color)
@@ -322,7 +322,7 @@ public:
 
         ASSERT_EQ(rprShapeSetMaterial(shape, material), RPR_SUCCESS);
     }
-
+    
     //
     // Shapes
     //
@@ -525,6 +525,7 @@ public:
 
     void Render() const
     {
+        ClearFramebuffer();
         for (std::uint32_t i = 0; i < kRenderIterations; ++i)
         {
             ASSERT_EQ(rprContextRender(m_context), RPR_SUCCESS);
@@ -662,7 +663,6 @@ TEST_F(BasicTest, RenderTestScene)
 
     CreateScene(SceneType::kSphereIbl);
     CreateCamera();
-    ClearFramebuffer();
     Render();
     //SaveAndCompare();
 }

@@ -42,7 +42,6 @@ TEST_F(CameraTest, Camera_FocalLength)
 
     for (auto v : values)
     {
-        ClearFramebuffer();
         ASSERT_EQ(rprCameraSetFocalLength(m_camera, v * 1000.0f), RPR_SUCCESS);
         Render();
         SaveAndCompare("%.3f", v);
@@ -60,7 +59,6 @@ TEST_F(CameraTest, Camera_SensorSize)
 
     for (auto v : values)
     {
-        ClearFramebuffer();
         ASSERT_EQ(rprCameraSetSensorSize(m_camera, v.first * 1000.0f, v.second * 1000.0f), RPR_SUCCESS);
         Render();
         SaveAndCompare("%.3f_%.3f", v.first, v.second);
@@ -75,7 +73,6 @@ TEST_F(CameraTest, Camera_Aperture)
     
     for (auto v : values)
     {
-        ClearFramebuffer();
         ASSERT_EQ(rprCameraSetFStop(m_camera, v * 1000.0f), RPR_SUCCESS);
         Render();
         SaveAndCompare("%.3f", v);
@@ -90,7 +87,6 @@ TEST_F(CameraTest, Camera_FocusDistance)
 
     for (auto v : values)
     {
-        ClearFramebuffer();
         ASSERT_EQ(rprCameraSetFocusDistance(m_camera, v), RPR_SUCCESS);
         Render();
         SaveAndCompare("%.3f", v);

@@ -95,12 +95,10 @@ TEST_F(LightTest, Light_PointLight)
         AddPointLight(positions[i], colors[i] * 10.0f);
     }
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare("1");
 
     RemoveLight(0);
-    ClearFramebuffer();
     Render();
     SaveAndCompare("2");
 
@@ -122,7 +120,6 @@ TEST_F(LightTest, Light_PointLightMany)
         AddPointLight(float3(x, y, z), color * 10.0f);
     }
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare();
 }
@@ -148,12 +145,10 @@ TEST_F(LightTest, Light_DirectionalLight)
         AddDirectionalLight(directions[i].first, directions[i].second, colors[i]);
     }
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare("1");
 
     RemoveLight(0);
-    ClearFramebuffer();
     Render();
     SaveAndCompare("2");
 
@@ -196,12 +191,10 @@ TEST_F(LightTest, Light_SpotLight)
         AddSpotLight(positions[i], directions[i].first, directions[i].second, colors[i] * 100.0f, cone_shapes[i].first, cone_shapes[i].second);
     }
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare("1");
 
     RemoveLight(0);
-    ClearFramebuffer();
     Render();
     SaveAndCompare("2");
 
@@ -211,7 +204,6 @@ TEST_F(LightTest, Light_SpotLight)
 TEST_F(LightTest, Light_AreaLight)
 {
     AddAreaLight();
-    ClearFramebuffer();
     Render();
     SaveAndCompare();
 }
@@ -239,7 +231,6 @@ TEST_F(LightTest, Light_PointAndAreaLight)
 
     AddAreaLight();
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare();
 }
@@ -267,7 +258,6 @@ TEST_F(LightTest, Light_DirectionalAndAreaLight)
 
     AddAreaLight();
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare();
 }
@@ -311,7 +301,6 @@ TEST_F(LightTest, Light_SpotAndAreaLight)
 
     AddAreaLight();
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare();
 }
@@ -320,7 +309,6 @@ TEST_F(LightTest, Light_EmissiveSphere)
 {
     AddEmissiveMaterial("sphere_emissive_mtl", float3(4.0f, 2.0f, 1.0f));
     ApplyMaterialToObject("sphere", "sphere_emissive_mtl");
-    ClearFramebuffer();
     Render();
     SaveAndCompare();
 }
@@ -328,13 +316,11 @@ TEST_F(LightTest, Light_EmissiveSphere)
 TEST_F(LightTest, Light_ImageBasedLight)
 {
     AddEnvironmentLight("../Resources/Textures/studio015.hdr");
-    ClearFramebuffer();
     Render();
     SaveAndCompare("1");
     RemoveLight(0);
 
     AddEnvironmentLight("../Resources/Textures/test_albedo1.jpg");
-    ClearFramebuffer();
     Render();
     SaveAndCompare("2");
 
@@ -347,7 +333,6 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
     AddPointLight(float3(3.0f, 6.0f, 0.0f), float3(10.0f, 100.0f, 10.0f));
     AddSpotLight(float3(-5.2f, 6.0f, -3.0f), (float)M_PI * 4.0f / 3.0f, (float)M_PI / 4.0f, float3(100.0f, 10.0f, 10.0f), std::cos((float)M_PI / 6), std::cos((float)M_PI / 3));
 
-    ClearFramebuffer();
     Render();
     SaveAndCompare("1");
     RemoveLight(1);
@@ -355,20 +340,18 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
 
     // Ibl, directional
     AddDirectionalLight((float)M_PI / 3.0f * 2.0f, (float)M_PI / 4.0f, float3(3.0f, 0.1f, 0.1f));
-    ClearFramebuffer();
     Render();
     SaveAndCompare("2");
     RemoveLight(1);
 
     // Ibl, area
     AddAreaLight();
-    ClearFramebuffer();
     Render();
     SaveAndCompare("3");
 
 }
 
-// Overrides aren't working in Rpr for now...
+// Overrides don't work in Rpr now...
 
 //class LightTestOverrideReflections : public LightTest
 //{
@@ -390,7 +373,6 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
 //
 //    ASSERT_EQ(rprSceneSetBackgroundImage(m_scene, FindImage("../Resources/Textures/test_normal.jpg")), RPR_SUCCESS);
 //    
-//    ClearFramebuffer();
 //    Render();
 //    SaveAndCompare();
 //

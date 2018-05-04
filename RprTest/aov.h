@@ -31,7 +31,6 @@ public:
     {
         CreateScene(SceneType::kSphereIbl);
         ASSERT_EQ(rprContextSetAOV(m_context, aov, m_framebuffer), RPR_SUCCESS);
-        ClearFramebuffer();
         Render();
         SaveAndCompare();
     }
