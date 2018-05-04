@@ -31,7 +31,6 @@ public:
     {
         BasicTest::SetUp();
         CreateScene(SceneType::kSphereIbl);
-        CreateCamera();
     }
     
 };
@@ -91,4 +90,14 @@ TEST_F(CameraTest, Camera_FocusDistance)
         Render();
         SaveAndCompare("%.3f", v);
     }
+}
+
+TEST_F(CameraTest, Camera_Ortho)
+{
+    ASSERT_EQ(rprCameraSetMode(m_camera, RPR_CAMERA_MODE_ORTHOGRAPHIC), RPR_SUCCESS);
+    ASSERT_EQ(rprCameraSetOrthoWidth(m_camera, 5.0f), RPR_SUCCESS);
+    ASSERT_EQ(rprCameraSetOrthoHeight(m_camera, 5.0f), RPR_SUCCESS);
+
+    Render();
+    SaveAndCompare();
 }

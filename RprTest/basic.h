@@ -466,6 +466,8 @@ public:
 
         // Create camera
         ASSERT_EQ(rprContextCreateCamera(m_context, &m_camera), RPR_SUCCESS);
+
+        ASSERT_EQ(rprCameraSetMode(m_camera, RPR_CAMERA_MODE_PERSPECTIVE), RPR_SUCCESS);
         // Set default sensor size 36x36 mm because we're rendering to square viewport
         ASSERT_EQ(rprCameraSetSensorSize(m_camera, 36.0f, 36.0f), RPR_SUCCESS);
 
@@ -486,15 +488,15 @@ public:
         switch (type)
         {
         case SceneType::kSphereIbl:
-            ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 0.0f, -6.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
-            AddSphere("sphere", 64, 32, 2.f, float3(0.0f, 0.0f, 0.0f));
+            ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 0.0f, -10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
+            AddSphere("sphere", 64, 32, 2.0f, float3(0.0f, 0.0f, 0.0f));
             AddDiffuseMaterial("sphere_mtl", float3(0.8f, 0.8f, 0.8f));
             ApplyMaterialToObject("sphere", "sphere_mtl");
             AddEnvironmentLight("../Resources/Textures/studio015.hdr");
             break;
         case SceneType::kSphereAndPlane:
             ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 2.0f, -10.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
-            AddSphere("sphere", 64, 32, 2.f, float3(0.0f, 0.0f, 0.0f));
+            AddSphere("sphere", 64, 32, 2.0f, float3(0.0f, 0.0f, 0.0f));
             AddDiffuseMaterial("sphere_mtl", float3(0.8f, 0.8f, 0.8f));
             ApplyMaterialToObject("sphere", "sphere_mtl");
             AddPlane("plane", float3(0.0f, -2.0f, 0.0f), float2(8.0f, 8.0f), float3(0.0f, 1.0f, 0.0f));
