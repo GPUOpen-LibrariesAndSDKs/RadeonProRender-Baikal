@@ -132,7 +132,7 @@ namespace Baikal
         std::string GenerateGetBxDFTypeDispatcher();
         std::string GeneratePrepareInputsDispatcher();
 
-        std::map<uint32_t, UberV2Sources> m_materials;
+        std::map<std::uint32_t, UberV2Sources> m_materials;
     };
 
 }
