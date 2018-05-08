@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "Utils/sobol.h"
+#include "Utils/aux_ray.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
 #include "./Kernels/CL/cache/kernels.h"
@@ -29,6 +30,8 @@ namespace Baikal
     {
         // OpenCL stuff
         CLWBuffer<ray> rays[2];
+        CLWBuffer<AuxRay> x_auxiliary_rays[2];
+        CLWBuffer<AuxRay> y_auxiliary_rays[2];
         CLWBuffer<int> hits;
 
         CLWBuffer<ray> shadowrays;
@@ -114,6 +117,10 @@ namespace Baikal
     {
         m_render_data->rays[0] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
         m_render_data->rays[1] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
+        m_render_data->x_auxiliary_rays[0] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
+        m_render_data->x_auxiliary_rays[1] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
+        m_render_data->y_auxiliary_rays[0] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
+        m_render_data->y_auxiliary_rays[1] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
         m_render_data->hits = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->intersections = GetContext().CreateBuffer<Intersection>(size, CL_MEM_READ_WRITE);
         m_render_data->shadowrays = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
@@ -158,6 +165,16 @@ namespace Baikal
     CLWBuffer<ray> PathTracingEstimator::GetRayBuffer() const
     {
         return m_render_data->rays[0];
+    }
+
+    CLWBuffer<AuxRay> PathTracingEstimator::GetAuxRayXBuffer() const
+    {
+        return m_render_data->x_auxiliary_rays[0];
+    }
+
+    CLWBuffer<AuxRay> PathTracingEstimator::GetAuxRayYBuffer() const
+    {
+        return m_render_data->y_auxiliary_rays[0];
     }
 
     CLWBuffer<int> PathTracingEstimator::GetOutputIndexBuffer() const

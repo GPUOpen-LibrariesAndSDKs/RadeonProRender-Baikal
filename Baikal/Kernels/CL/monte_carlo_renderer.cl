@@ -57,6 +57,10 @@ void PerspectiveCamera_GeneratePaths(
     uint frame,
     // Rays to generate
     GLOBAL ray* restrict rays,
+    // Auxiliary rays to generate in x dimension
+    GLOBAL aux_ray* restrict x_auxiliary_rays,
+    // Auxiliary rays to generate in y dimension
+    GLOBAL aux_ray* restrict y_auxiliary_rays,
     // RNG data
     GLOBAL uint* restrict random,
     GLOBAL uint const* restrict sobol_mat
@@ -73,6 +77,8 @@ void PerspectiveCamera_GeneratePaths(
 
         // Get pointer to ray & path handles
         GLOBAL ray* my_ray = rays + global_id;
+        GLOBAL aux_ray* my_x_ray = x_auxiliary_rays + global_id;
+        GLOBAL aux_ray* my_y_ray = y_auxiliary_rays + global_id;
 
         // Initialize sampler
         Sampler sampler;
@@ -113,6 +119,7 @@ void PerspectiveCamera_GeneratePaths(
 
         // Calculate direction to image plane
         my_ray->d.xyz = normalize(camera->focal_length * camera->forward + c_sample.x * camera->right + c_sample.y * camera->up);
+        
         // Origin == camera position + nearz * d
         my_ray->o.xyz = camera->p + camera->zcap.x * my_ray->d.xyz;
         // Max T value = zfar - znear since we moved origin to znear
@@ -124,6 +131,56 @@ void PerspectiveCamera_GeneratePaths(
         my_ray->extra.y = 0xFFFFFFFF;
         Ray_SetExtra(my_ray, 1.f);
         Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
+
+        // Calculate auxiliary rays
+        float2 aux_img_sample;
+        aux_img_sample.x = (float)(x + 1) / output_width + sample0.x / output_width;
+        aux_img_sample.y = (float)(y + 1)  / output_height + sample0.y / output_height;
+
+        // Transform into [-dim/2, dim/2]
+        float2 aux_c_sample = (aux_img_sample - make_float2(0.5f, 0.5f)) * camera->dim;
+
+        // Calculate direction to image plane for auxiliary x ray
+        vstore_half3(
+            normalize(
+                camera->focal_length * camera->forward +
+                aux_c_sample.x * camera->right +
+                c_sample.y * camera->up).xyz,
+            0,
+            (GLOBAL half*)&my_x_ray->d);
+
+        // origin pos
+        vstore_half3(
+            normalize(my_ray->o.xyz),
+            0,
+            (GLOBAL half*)&my_x_ray->o);
+
+        // Calculate direction to image plane for auxiliary y ray
+        vstore_half3(
+            normalize(
+                camera->focal_length * camera->forward +
+                c_sample.x * camera->right +
+                aux_c_sample.y * camera->up).xyz,
+            0,
+            (GLOBAL half*)&my_x_ray->d);
+            
+         // origin pos
+        vstore_half3(
+            normalize(my_ray->o.xyz),
+            0,
+            (GLOBAL half*)&my_y_ray->o);
+
+        if (x == output_width - 1)
+        {
+            my_x_ray->d.xyz = 0.f;
+            my_x_ray->o.xyz = 0.f;
+        }
+
+        if (y == output_height - 1)
+        {
+            my_y_ray->d.xyz = 0.f;
+            my_y_ray->o.xyz = 0.f;
+        }
     }
 }
 
@@ -145,6 +202,10 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
     uint frame,
     // Rays to generate
     GLOBAL ray* restrict rays,
+    // Auxiliary rays to generate in x dimension
+    GLOBAL aux_ray* restrict x_auxiliary_rays,
+    // Auxiliary rays to generate in y dimension
+    GLOBAL aux_ray* restrict y_auxiliary_rays,
     // RNG data
     GLOBAL uint* restrict random,
     GLOBAL uint const* restrict sobol_mat
@@ -161,6 +222,8 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
 
         // Get pointer to ray & path handles
         GLOBAL ray* my_ray = rays + global_id;
+        GLOBAL aux_ray* my_x_ray = x_auxiliary_rays + global_id;
+        GLOBAL aux_ray* my_y_ray = y_auxiliary_rays + global_id;
 
         // Initialize sampler
         Sampler sampler;
@@ -220,6 +283,61 @@ KERNEL void PerspectiveCameraDof_GeneratePaths(
         my_ray->extra.y = 0xFFFFFFFF;
         Ray_SetExtra(my_ray, 1.f);
         Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
+
+        // Calculate auxiliary rays
+        float2 aux_img_sample;
+        aux_img_sample.x = (float)(x + 1) / output_width + sample0.x / output_width;
+        aux_img_sample.y = (float)(y + 1)  / output_height + sample0.y / output_height;
+
+        // Transform into [-dim/2, dim/2]
+        float2 aux_c_sample = (aux_img_sample - make_float2(0.5f, 0.5f)) * camera->dim;
+
+        // Calculate position on focal plane
+        float2 aux_focal_plane_sample = aux_c_sample * camera->focus_distance / camera->focal_length;
+        // Calculate ray direction
+        float2 aux_camera_dir = aux_focal_plane_sample - lens_sample;
+
+        // Calculate direction to image plane for auxiliary x ray
+        vstore_half3(
+            normalize(
+                camera->forward * camera->focus_distance +
+                camera->right * aux_camera_dir.x +
+                camera->up * camera_dir.y),
+            0,
+            (GLOBAL half*)&my_x_ray->d);
+
+        // origin pos
+        vstore_half3(
+            normalize(my_ray->o.xyz),
+            0,
+            (GLOBAL half*)&my_x_ray->o);
+
+        // Calculate direction to image plane for auxiliary x ray
+        vstore_half3(
+            normalize(
+                camera->forward * camera->focus_distance +
+                camera->right * camera_dir.x +
+                camera->up * aux_camera_dir.y),
+            0,
+            (GLOBAL half*)&my_x_ray->d);
+
+        // origin pos
+         vstore_half3(
+            normalize(my_ray->o.xyz),
+            0,
+            (GLOBAL half*)&my_x_ray->o);
+
+        if (x == output_width - 1)
+        {
+            my_x_ray->d.xyz = 0.f;
+            my_x_ray->o.xyz = 0.f;
+        }
+
+        if (y == output_height - 1)
+        {
+            my_y_ray->d.xyz = 0.f;
+            my_y_ray->o.xyz = 0.f;
+        }
     }
 }
 
@@ -408,7 +526,7 @@ void PerspectiveCameraDof_GenerateVertices(
 
         // Calculate [0..1] image plane sample
         float2 img_sample;
-        img_sample.x = (float)x / output_width + sample0.x / output_width;
+        img_sample.x = (float)x / output_width + sample0.x /  output_width;
         img_sample.y = (float)y / output_height + sample0.y / output_height;
 
         // Transform into [-0.5, 0.5]
@@ -1116,25 +1234,29 @@ KERNEL void EstimateVariance(
 
 KERNEL
 void  OrthographicCamera_GeneratePaths(
-                                     // Camera
-                                     GLOBAL Camera const* restrict camera,
-                                     // Image resolution
-                                     int output_width,
-                                     int output_height,
-                                     // Pixel domain buffer
-                                     GLOBAL int const* restrict pixel_idx,
-                                     // Size of pixel domain buffer
-                                     GLOBAL int const* restrict num_pixels,
-                                     // RNG seed value
-                                     uint rng_seed,
-                                     // Current frame
-                                     uint frame,
-                                     // Rays to generate
-                                     GLOBAL ray* restrict rays,
-                                     // RNG data
-                                     GLOBAL uint* restrict random,
-                                     GLOBAL uint const* restrict sobol_mat
-                                     )
+    // Camera
+    GLOBAL Camera const* restrict camera,
+    // Image resolution
+    int output_width,
+    int output_height,
+    // Pixel domain buffer
+    GLOBAL int const* restrict pixel_idx,
+    // Size of pixel domain buffer
+    GLOBAL int const* restrict num_pixels,
+    // RNG seed value
+    uint rng_seed,
+    // Current frame
+    uint frame,
+    // Rays to generate
+    GLOBAL ray* restrict rays,
+        // Auxiliary rays to generate in x dimension
+    GLOBAL aux_ray* restrict x_auxiliary_rays,
+    // Auxiliary rays to generate in y dimension
+    GLOBAL aux_ray* restrict y_auxiliary_rays,
+    // RNG data
+    GLOBAL uint* restrict random,
+    GLOBAL uint const* restrict sobol_mat
+    )
 {
     int global_id = get_global_id(0);
     
@@ -1147,7 +1269,9 @@ void  OrthographicCamera_GeneratePaths(
         
         // Get pointer to ray & path handles
         GLOBAL ray* my_ray = rays + global_id;
-        
+        GLOBAL aux_ray* my_x_ray = x_auxiliary_rays + global_id;
+        GLOBAL aux_ray* my_y_ray = y_auxiliary_rays + global_id;
+
         // Initialize sampler
         Sampler sampler;
 #if SAMPLER == SOBOL
@@ -1198,6 +1322,48 @@ void  OrthographicCamera_GeneratePaths(
         my_ray->extra.y = 0xFFFFFFFF;
         Ray_SetExtra(my_ray, 1.f);
         Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
+
+        float2 aux_img_sample;
+        aux_img_sample.x = (float)(x + 1) / output_width + sample0.x / output_width;
+        aux_img_sample.y = (float)(y + 1) / output_height + sample0.y / output_height;
+        
+        // Transform into [-0.5, 0.5]
+        float2 aux_h_sample = img_sample - make_float2(0.5f, 0.5f);
+        // Transform into [-dim/2, dim/2]
+        float2 aux_c_sample = aux_h_sample * camera->dim;
+
+        // compute aux rays
+        vstore_half3(
+            my_ray->d.xyz,
+            0,
+            (GLOBAL half*)&my_x_ray->d);
+
+        vstore_half3(
+            (camera->p + aux_c_sample.x * camera->right + c_sample.y * camera->up).xyz,
+            0,
+            (GLOBAL half*)&my_x_ray->o);
+
+        vstore_half3(
+            my_ray->d.xyz,
+            0,
+            (GLOBAL half*)&my_x_ray->d);
+
+        vstore_half3(
+            (camera->p + c_sample.x * camera->right + aux_c_sample.y * camera->up).xyz,
+            0,
+            (GLOBAL half*)&my_x_ray->o);
+
+        if (x == output_width - 1)
+        {
+            my_x_ray->d.xyz = 0.f;
+            my_x_ray->o.xyz = 0.f;
+        }
+
+        if (y == output_height - 1)
+        {
+            my_y_ray->d.xyz = 0.f;
+            my_y_ray->o.xyz = 0.f;
+        }
     }
 }
 

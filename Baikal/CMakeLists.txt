@@ -40,6 +40,7 @@ set(UTILS_SOURCES
     Utils/eLut.h
     Utils/half.cpp
     Utils/half.h
+    Utils/aux_ray.h
     Utils/log.h
     Utils/sh.cpp
     Utils/sh.h

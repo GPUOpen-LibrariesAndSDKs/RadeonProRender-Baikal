@@ -37,6 +37,16 @@ typedef struct
     float2 padding;
 } ray;
 
+// Auxiliary rays descriptor
+typedef struct
+{
+    // xyz - origin
+    half3 o;
+    // xyz - direction
+    half3 d;
+} aux_ray;
+
+
 // Set ray activity flag
 INLINE void Ray_SetInactive(GLOBAL ray* r)
 {
