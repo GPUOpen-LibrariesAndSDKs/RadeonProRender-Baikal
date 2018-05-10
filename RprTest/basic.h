@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include "utils.h"
-
 #include "math/matrix.h"
 #include "math/mathutils.h"
 
@@ -38,7 +36,7 @@
 #include <sstream>
 #include <iostream>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 using namespace RadeonRays;
 

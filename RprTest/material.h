@@ -109,8 +109,8 @@ TEST_F(MaterialTest, Material_ImageFromMemory)
     {
         for (rpr_uint x = 0; x < imageDesc.image_width; x++)
         {
-            dataImage[x * 4 + y * imageDesc.image_width * 4 + 0] = (std::sinf(x * 2.0f) + std::cosf(y * 2.0f)) * 0.25f + 0.5f; // R
-            dataImage[x * 4 + y * imageDesc.image_width * 4 + 1] = (std::cosf(x * 2.0f) + std::sinf(y * 2.0f)) * 0.25f + 0.5f; // G
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 0] = (std::sin(x * 2.0f) + std::cos(y * 2.0f)) * 0.25f + 0.5f; // R
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 1] = (std::cos(x * 2.0f) + std::sin(y * 2.0f)) * 0.25f + 0.5f; // G
             dataImage[x * 4 + y * imageDesc.image_width * 4 + 2] = 0.0f; // B
             dataImage[x * 4 + y * imageDesc.image_width * 4 + 3] = 1.0f; // A
         }
