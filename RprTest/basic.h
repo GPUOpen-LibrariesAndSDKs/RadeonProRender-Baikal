@@ -111,12 +111,12 @@ public:
         }
         m_material_nodes.clear();
 
-        //for (auto it = m_images.cbegin(); it != m_images.cend(); ++it)
-        //{
-        //    if (it->second == nullptr) continue;
-        //    ASSERT_EQ(rprObjectDelete(it->second), RPR_SUCCESS);
-        //}
-        //m_images.clear();
+        for (auto it = m_images.cbegin(); it != m_images.cend(); ++it)
+        {
+            if (it->second == nullptr) continue;
+            ASSERT_EQ(rprObjectDelete(it->second), RPR_SUCCESS);
+        }
+        m_images.clear();
 
         if (m_camera)
         {
@@ -158,7 +158,6 @@ public:
         ASSERT_NE(light, nullptr);
         ASSERT_EQ(rprSceneAttachLight(m_scene, light), RPR_SUCCESS);
         m_lights.push_back(light);
-
     }
 
     void AddEnvironmentLight(std::string const& path)
@@ -168,7 +167,6 @@ public:
         const rpr_image image = FindImage(path);
         ASSERT_EQ(rprEnvironmentLightSetImage(light, image), RPR_SUCCESS);
         AddLight(light);
-
     }
     
     void RemoveLight(size_t index)
@@ -179,7 +177,6 @@ public:
 
         ASSERT_EQ(rprSceneDetachLight(m_scene, light), RPR_SUCCESS);
         ASSERT_EQ(rprObjectDelete(light), RPR_SUCCESS);
-
     }
 
     //
@@ -188,7 +185,7 @@ public:
     void AddImage(std::string const& path, rpr_image* image)
     {
         ASSERT_EQ(rprContextCreateImageFromFile(m_context, path.c_str(), image), RPR_SUCCESS);
-        m_images[path] = image;
+        m_images[path] = *image;
     }
 
     rpr_image FindImage(std::string const& path)
@@ -217,7 +214,7 @@ public:
     rpr_material_node GetMaterial(std::string const& name) const
     {
         auto mtl_it = m_material_nodes.find(name);
-        // Cannot use ASSERT_NE in non-void returning function
+        // Cannot use ASSERT_NE in non-void returning function in GTest
         assert(mtl_it != m_material_nodes.end());
         return mtl_it->second;
     }
@@ -330,6 +327,14 @@ public:
     {
         ASSERT_EQ(rprSceneAttachShape(m_scene, shape), RPR_SUCCESS);
         m_shapes[name] = shape;
+    }
+
+    rpr_shape GetShape(std::string const& name) const
+    {
+        auto shape_it = m_shapes.find(name);
+        // Cannot use ASSERT_NE in non-void returning function in GTest
+        assert(shape_it != m_shapes.end());
+        return shape_it->second;
     }
 
     void AddSphere(std::string const& name, std::uint32_t lat, std::uint32_t lon, float r, RadeonRays::float3 const& c)
@@ -629,43 +634,144 @@ public:
         }
         return 0;
     }
-
-    static bool CmdOptionExists(char** begin, char** end, const std::string& option)
-    {
-        return std::find(begin, end, option) != end;
-    }
     
 protected:
-    rpr_context	        m_context     = nullptr;
-    rpr_material_system m_matsys      = nullptr;
-    rpr_scene           m_scene       = nullptr;
-    rpr_camera          m_camera      = nullptr;
-    rpr_framebuffer     m_framebuffer = nullptr;
+    rpr_context	                             m_context     = nullptr;
+    rpr_material_system                      m_matsys      = nullptr;
+    rpr_scene                                m_scene       = nullptr;
+    rpr_camera                               m_camera      = nullptr;
+    rpr_framebuffer                          m_framebuffer = nullptr;
 
     std::map<std::string, rpr_shape>         m_shapes;
     std::map<std::string, rpr_material_node> m_material_nodes;
     std::map<std::string, rpr_image>         m_images;
     std::vector<rpr_light>                   m_lights;
     
-    std::string m_reference_path;
-    std::string m_output_path;
+    std::string                              m_reference_path;
+    std::string                              m_output_path;
 
-    bool m_generate;
-    std::uint32_t m_tolerance;
+    bool                                     m_generate;
+    std::uint32_t                            m_tolerance;
 
 };
-/*
-TEST_F(BasicTest, RenderTestScene)
-{
-    //AddEnvironmentLight();
-    //AddPointLight(float3( 10, 10,  10), float3(1000, 0, 0));
-    //AddPointLight(float3( 10, 10, -10), float3(0, 1000, 0));
-    //AddPointLight(float3(-10, 10,  10), float3(0, 0, 1000));
-    //AddPointLight(float3(-10, 10, -10), float3(0, 1000, 0));
 
-    CreateScene(SceneType::kSphereIbl);
-    CreateCamera();
-    Render();
-    //SaveAndCompare();
+// Memstat test
+TEST_F(BasicTest, Basic_MemoryStatistics)
+{
+    rpr_render_statistics rs;
+    rs.gpumem_usage = 0;
+    rs.gpumem_total = 0;
+    rs.gpumem_max_allocation = 0;
+
+    //create context and check there is no used resources
+    ASSERT_EQ(rprContextGetInfo(m_context, RPR_CONTEXT_RENDER_STATISTICS, sizeof(rpr_render_statistics), &rs, NULL), RPR_SUCCESS);
+
+    ASSERT_EQ(rs.gpumem_usage, 0);
+    ASSERT_EQ(rs.gpumem_total, 0);
+    ASSERT_EQ(rs.gpumem_max_allocation, 0);
+
 }
-*/
+
+// Tiled render test
+TEST_F(BasicTest, Basic_TiledRender)
+{
+    CreateScene(SceneType::kSphereAndPlane);
+    AddEnvironmentLight("../Resources/Textures/studio015.hdr");
+
+    ClearFramebuffer();
+    for (int i = 0; i < kRenderIterations; ++i)
+    {
+        ASSERT_EQ(rprContextRenderTile(m_context, 0, 128, 0, 128), RPR_SUCCESS);
+    }
+
+    SaveAndCompare();
+
+}
+
+// Add instancing test
+TEST_F(BasicTest, Basic_Instancing)
+{
+    CreateScene(SceneType::kSphereAndPlane);
+    AddEnvironmentLight("../Resources/Textures/studio015.hdr");
+
+    const rpr_shape sphere = GetShape("sphere");
+    const rpr_material_node sphere_mtl = GetMaterial("sphere_mtl");
+    rpr_shape instance = nullptr;
+    for (int i = 0; i < 16; ++i)
+    {
+        ASSERT_EQ(rprContextCreateInstance(m_context, sphere, &instance), RPR_SUCCESS);
+
+        float x = i / 4 - 1.5f;
+        float y = i % 4 + 1.0f;
+        float z = 2.0f;
+        float s = rand_float() * 0.5f + 0.1f;
+        matrix m = translation(float3(x, y, z) * 2.0f) * scale(float3(s, s, s));
+        ASSERT_EQ(rprShapeSetTransform(instance, true, &m.m00), RPR_SUCCESS);
+        AddShape("instance" + i, instance);
+        ASSERT_EQ(rprShapeSetMaterial(instance, sphere_mtl), RPR_SUCCESS);
+    }
+    
+    Render();
+    SaveAndCompare();
+
+}
+
+//test RPR_MATERIAL_NODE_INPUT_LOOKUP and rprContextCreateMeshEx unsupported
+TEST_F(BasicTest, Basic_MultiUV)
+{
+    rpr_material_node uv_node = nullptr;
+    ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_INPUT_LOOKUP, &uv_node), RPR_ERROR_INVALID_PARAMETER);
+
+    struct VertexMT
+    {
+        rpr_float pos[3];
+        rpr_float norm[3];
+        rpr_float tex0[2];
+        rpr_float tex1[2];
+    };
+    
+    VertexMT vertices[] =
+    {
+        { -2.0f,  2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f },
+        {  2.0f,  2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f },
+        {  2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+        { -2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f }
+    };
+
+    rpr_int indices[] =
+    {
+        3, 2, 1, 0
+    };
+
+    rpr_int num_face_vertices[] =
+    {
+        4
+    };
+
+    unsigned int num_vertices = sizeof(vertices) / sizeof(vertices[0]);
+    unsigned int num_faces = sizeof(num_face_vertices) / sizeof(num_face_vertices[0]);
+
+    rpr_float const* texcoords[] = { (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 6), (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 8) };
+    size_t num_texcoords[] = { num_vertices,  num_vertices };
+    rpr_int texcoord_stride[] = { sizeof(VertexMT), sizeof(VertexMT) };
+    rpr_int const* texcoord_indices[] = { indices, indices };
+    rpr_int tidx_stride[] = { sizeof(rpr_int), sizeof(rpr_int) };
+
+    rpr_shape mesh = nullptr;
+    ASSERT_EQ(rprContextCreateMeshEx(m_context,
+        // Vertices
+        (rpr_float const*)&vertices[0], num_vertices, sizeof(VertexMT),
+        // Normals
+        (rpr_float const*)((char*)&vertices[0] + sizeof(rpr_float) * 3), num_faces, sizeof(VertexMT),
+        // Vertex flags
+        nullptr, 0, 0,
+        // Texcoords
+        2, texcoords, num_texcoords, texcoord_stride,
+        // Vertex indices
+        indices, sizeof(rpr_int),
+        // Normal indices
+        indices, sizeof(rpr_int),
+        // Texcoord indices
+        texcoord_indices, tidx_stride,
+        num_face_vertices, num_faces, &mesh), RPR_ERROR_UNIMPLEMENTED);
+}

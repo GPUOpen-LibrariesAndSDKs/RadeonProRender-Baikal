@@ -351,8 +351,7 @@ TEST_F(LightTest, Light_ImageBasedLightAndLightChanging)
 
 }
 
-// Overrides don't work in Rpr now...
-
+// Overrides don't work in Rpr for now...
 //class LightTestOverrideReflections : public LightTest
 //{
 //public:

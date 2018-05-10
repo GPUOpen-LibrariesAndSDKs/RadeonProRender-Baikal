@@ -89,6 +89,48 @@ TEST_F(MaterialTest, Material_Diffuse)
 
 }
 
+// Create image from data, not from file
+TEST_F(MaterialTest, Material_ImageFromMemory)
+{
+    rpr_image_format imageFormat;
+    memset(&imageFormat, 0, sizeof(imageFormat));
+    imageFormat.num_components = 4;
+    imageFormat.type = RPR_COMPONENT_TYPE_FLOAT32;
+    rpr_image_desc imageDesc;
+    memset(&imageDesc, 0, sizeof(imageDesc));
+    imageDesc.image_depth = 1;
+    imageDesc.image_width = 32;
+    imageDesc.image_height = 32;
+    imageDesc.image_row_pitch = imageDesc.image_width * sizeof(float) * 4;
+    imageDesc.image_slice_pitch = imageDesc.image_width * imageDesc.image_height * sizeof(float) * 4;
+    std::vector<float> dataImage(imageDesc.image_width  *  imageDesc.image_height * 4);
+
+    for (rpr_uint y = 0; y < imageDesc.image_height; y++)
+    {
+        for (rpr_uint x = 0; x < imageDesc.image_width; x++)
+        {
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 0] = (std::sinf(x * 2.0f) + std::cosf(y * 2.0f)) * 0.25f + 0.5f; // R
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 1] = (std::cosf(x * 2.0f) + std::sinf(y * 2.0f)) * 0.25f + 0.5f; // G
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 2] = 0.0f; // B
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 3] = 1.0f; // A
+        }
+    }
+
+    rpr_image image = nullptr;
+    ASSERT_EQ(rprContextCreateImage(m_context, imageFormat, &imageDesc, dataImage.data(), &image), RPR_SUCCESS);
+    m_images["procedural"] = image;
+
+    const rpr_material_node sphere_mtl = GetMaterial("sphere_mtl");
+    rpr_material_node inputTexture;
+    ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_IMAGE_TEXTURE, &inputTexture), RPR_SUCCESS);
+    ASSERT_EQ(rprMaterialNodeSetInputN_ext(sphere_mtl, RPR_UBER_MATERIAL_DIFFUSE_COLOR, inputTexture), RPR_SUCCESS);
+    AddMaterialNode("tex", inputTexture);
+    ASSERT_EQ(rprMaterialNodeSetInputImageData(inputTexture, "data", image), RPR_SUCCESS);
+    
+    Render();
+    SaveAndCompare();
+}
+
 TEST_F(MaterialTest, Material_Reflect)
 {
     const rpr_material_node sphere_mtl = GetMaterial("sphere_mtl");

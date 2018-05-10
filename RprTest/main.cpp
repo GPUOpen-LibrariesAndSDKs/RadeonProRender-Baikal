@@ -20,11 +20,11 @@
  THE SOFTWARE.
  ********************************************************************/
 
-//#include "basic.h"
-//#include "aov.h"
-//#include "camera.h"
-//#include "light.h"
-//#include "material.h"
+#include "basic.h"
+#include "aov.h"
+#include "camera.h"
+#include "light.h"
+#include "material.h"
 #include "arithmetic.h"
 
 int g_argc;
