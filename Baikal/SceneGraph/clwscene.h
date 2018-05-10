@@ -31,7 +31,7 @@ namespace Baikal
 
         CLWBuffer<Shape> shapes;
 
-        CLWBuffer<int32_t> material_attributes;
+        CLWBuffer<std::int32_t> material_attributes;
         CLWBuffer<Light> lights;
         CLWBuffer<Volume> volumes;
         CLWBuffer<Texture> textures;
