@@ -63,6 +63,7 @@ namespace Baikal
             kGloss,
             kMeshID,
             kBackground,
+            kOpacity,
             kDepth,
             kShapeId,
             kVisibility,

@@ -118,6 +118,10 @@ KERNEL void FillAOVsUberV2(
     int background_enabled,
     // Background aov
     GLOBAL float4* restrict aov_background,
+    // Opacity enabled flag
+    int opacity_enabled,
+    // Opacity aov
+    GLOBAL float4* restrict aov_opacity,
     // Depth enabled flag
     int depth_enabled,
     // Depth map
@@ -164,9 +168,9 @@ KERNEL void FillAOVsUberV2(
             int tex = EnvironmentLight_GetBackgroundTexture(&light);
             if (tex != -1)
             {
-                aov_background[idx].xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                aov_background[idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
             }
-            aov_background[idx].w = 1.0f;
+            aov_background[idx].w += 1.0f;
         }
 
         if (isect.shapeid > -1)
@@ -353,7 +357,27 @@ KERNEL void FillAOVsUberV2(
             
             if (mesh_id_enabled)
             {
-                mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
+                //mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
+                Sampler shapeid_sampler;
+                // Hash one more time for confidence
+                shapeid_sampler.index = WangHash(isect.shapeid);
+                mesh_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&shapeid_sampler),
+                    UniformSampler_Sample1D(&shapeid_sampler),
+                    UniformSampler_Sample1D(&shapeid_sampler)), 0.0f, 1.0f);
+                mesh_id[idx].w += 1.0f;
+            }
+
+            if (opacity_enabled)
+            {
+                // Select BxDF
+                UberV2ShaderData uber_shader_data;
+                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
+
+                const float t = ((diffgeo.mat.layers & kTransparencyLayer) == kTransparencyLayer) ?
+                    uber_shader_data.transparency : 0.0f;
+
+                aov_opacity[idx].xyz += 1.0f - t;
+                aov_opacity[idx].w += 1.f;
             }
 
             if (depth_enabled)
