@@ -114,6 +114,10 @@ KERNEL void FillAOVsUberV2(
     int mesh_id_enabled,
 	// Mesh_id AOV
     GLOBAL float4* restrict mesh_id,
+	// Background enabled flag
+	int background_enabled,
+	// Background aov
+	GLOBAL float4* restrict aov_background,
     // Depth enabled flag
     int depth_enabled,
     // Depth map
@@ -153,6 +157,17 @@ KERNEL void FillAOVsUberV2(
 
         if (shape_ids_enabled)
             aov_shape_ids[idx].x = -1;
+
+		if (background_enabled)
+		{
+		    Light light = lights[env_light_idx];
+            int tex = EnvironmentLight_GetBackgroundTexture(&light);
+            if (tex != -1)
+            {
+            	aov_background[idx].xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+			}
+			aov_background[idx].w = 1.0f;
+		}
 
         if (isect.shapeid > -1)
         {
@@ -340,7 +355,7 @@ KERNEL void FillAOVsUberV2(
             {
                 mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
             }
-            
+
             if (depth_enabled)
             {
                 float w = aov_depth[idx].w;

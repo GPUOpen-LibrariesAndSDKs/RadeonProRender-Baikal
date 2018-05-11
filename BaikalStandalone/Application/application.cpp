@@ -740,6 +740,8 @@ namespace Baikal
             "Tangent\0"
             "Bitangent\0"
             "Gloss\0"
+            "Object ID\0"
+            "Background\0"
             "Depth\0\0"
             ;
 
