@@ -151,6 +151,7 @@ namespace Baikal
                     output->data());
 
         }
+
         // Check if we have other outputs, than color
         bool aov_pass_needed = (FindFirstNonZeroOutput(false) != nullptr);
         if (aov_pass_needed)
