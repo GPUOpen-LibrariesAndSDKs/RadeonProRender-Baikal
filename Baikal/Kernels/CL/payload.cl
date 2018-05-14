@@ -88,6 +88,9 @@ typedef struct
     int volume_idx;
     // unique shape id
     int id;
+    // shape group id
+    int group_id;
+    int padding[3];
     // Linear motion vector
     float3 linearvelocity;
     // Angular velocity

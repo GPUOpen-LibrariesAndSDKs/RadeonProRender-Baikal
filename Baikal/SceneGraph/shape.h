@@ -72,6 +72,10 @@ namespace Baikal
         // Destructor
         virtual ~Shape() = 0;
 
+        // Set and get group id
+        void SetGroupId(std::uint32_t id);
+        std::uint32_t GetGroupId() const;
+
         // Get and set material
         void SetMaterial(Material::Ptr material);
         Material::Ptr GetMaterial() const;
@@ -113,6 +117,8 @@ namespace Baikal
         RadeonRays::matrix m_transform;
         // Visibility mask
         std::uint32_t m_visibility_mask;
+        // Group id
+        std::uint32_t m_group_id;
     };
     
     /**
@@ -184,12 +190,24 @@ namespace Baikal
     }
     
     inline Shape::Shape() 
-        : m_material(nullptr)
+        : m_group_id(-1)
+        , m_material(nullptr)
         , m_volume(nullptr)
         , m_visibility_mask(0xffffffffu)
     {
     }
     
+    inline void Shape::SetGroupId(std::uint32_t id)
+    {
+        m_group_id = id;
+        SetDirty(true);
+    }
+
+    inline std::uint32_t Shape::GetGroupId() const
+    {
+        return m_group_id;
+    }
+
     inline void Shape::SetMaterial(Material::Ptr material)
     {
         m_material = material;

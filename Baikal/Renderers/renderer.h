@@ -62,6 +62,7 @@ namespace Baikal
             kWorldBitangent,
             kGloss,
             kMeshID,
+            kGroupID,
             kBackground,
             kOpacity,
             kDepth,

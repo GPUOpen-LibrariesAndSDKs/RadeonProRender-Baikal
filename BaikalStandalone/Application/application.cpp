@@ -741,6 +741,7 @@ namespace Baikal
             "Bitangent\0"
             "Gloss\0"
             "Object ID\0"
+            "Group ID\0"
             "Background\0"
             "Opacity\0"
             "Depth\0\0"

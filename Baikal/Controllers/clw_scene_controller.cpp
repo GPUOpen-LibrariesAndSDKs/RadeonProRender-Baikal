@@ -487,6 +487,7 @@ namespace Baikal
             ClwScene::Shape shape;
 
             shape.id = iter->GetId();
+            shape.group_id = iter->GetGroupId();
 
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
@@ -544,6 +545,7 @@ namespace Baikal
             ClwScene::Shape shape;
 
             shape.id = mesh->GetId();
+            shape.group_id = mesh->GetGroupId();
 
             shape.startvtx = static_cast<int>(num_vertices_written);
             shape.startidx = static_cast<int>(num_indices_written);
@@ -591,6 +593,7 @@ namespace Baikal
             ClwScene::Shape shape = shape_data[base_shape];
 
             shape.id = iter->GetId();
+            shape.group_id = iter->GetGroupId();
 
             // Instance has its own transform.
             shape.transform.m0 = { transform.m00, transform.m01, transform.m02, transform.m03 };
@@ -655,6 +658,7 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape->group_id = iter->GetGroupId();
 
             ++current_shape;
         }
@@ -676,6 +680,7 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape->group_id = iter->GetGroupId();
 
             ++current_shape;
         }
@@ -697,6 +702,7 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape->group_id = iter->GetGroupId();
 
             ++current_shape;
         }

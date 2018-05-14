@@ -119,6 +119,10 @@ KERNEL void FillAOVsUberV2(
     int mesh_id_enabled,
     // Mesh_id AOV
     GLOBAL float4* restrict mesh_id,
+    // Group id enabled flag
+    int group_id_enabled,
+    // Group id AOV
+    GLOBAL float4* restrict group_id,
     // Background enabled flag
     int background_enabled,
     // Background aov
@@ -372,7 +376,6 @@ KERNEL void FillAOVsUberV2(
             
             if (mesh_id_enabled)
             {
-                //mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
                 Sampler shapeid_sampler;
                 // Hash one more time for confidence
                 shapeid_sampler.index = WangHash(isect.shapeid);
@@ -380,6 +383,17 @@ KERNEL void FillAOVsUberV2(
                     UniformSampler_Sample1D(&shapeid_sampler),
                     UniformSampler_Sample1D(&shapeid_sampler)), 0.0f, 1.0f);
                 mesh_id[idx].w += 1.0f;
+            }
+
+            if (group_id_enabled)
+            {
+                Sampler groupid_sampler;
+                // This is not working
+                groupid_sampler.index = WangHash(shapes[isect.shapeid - 1].group_id);
+                group_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&groupid_sampler),
+                    UniformSampler_Sample1D(&groupid_sampler),
+                    UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);
+                group_id[idx].w += 1.0f;
             }
 
             if (opacity_enabled)
