@@ -377,8 +377,7 @@ KERNEL void FillAOVsUberV2(
             if (mesh_id_enabled)
             {
                 Sampler shapeid_sampler;
-                // Hash one more time for confidence
-                shapeid_sampler.index = WangHash(isect.shapeid);
+                shapeid_sampler.index = shapes[isect.shapeid - 1].id;
                 mesh_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&shapeid_sampler),
                     UniformSampler_Sample1D(&shapeid_sampler),
                     UniformSampler_Sample1D(&shapeid_sampler)), 0.0f, 1.0f);
@@ -388,7 +387,7 @@ KERNEL void FillAOVsUberV2(
             if (group_id_enabled)
             {
                 Sampler groupid_sampler;
-                groupid_sampler.index = WangHash(shapes[isect.shapeid - 1].group_id);
+                groupid_sampler.index = shapes[isect.shapeid - 1].group_id;
                 group_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&groupid_sampler),
                     UniformSampler_Sample1D(&groupid_sampler),
                     UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);
