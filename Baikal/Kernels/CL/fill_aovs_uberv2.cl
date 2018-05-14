@@ -388,7 +388,6 @@ KERNEL void FillAOVsUberV2(
             if (group_id_enabled)
             {
                 Sampler groupid_sampler;
-                // This is not working
                 groupid_sampler.index = WangHash(shapes[isect.shapeid - 1].group_id);
                 group_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&groupid_sampler),
                     UniformSampler_Sample1D(&groupid_sampler),

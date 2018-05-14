@@ -25,7 +25,28 @@
 #include "SceneGraph/light.h"
 
 class AovTest : public BasicTest
-{   };
+{   
+    void LoadTestScene() override
+    {
+        m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
+    }
+
+    virtual void SetupCamera() override
+    {
+        m_camera = Baikal::PerspectiveCamera::Create(
+            RadeonRays::float3(0.f, 2.f, -10.f),
+            RadeonRays::float3(0.f, 2.f, 0.f),
+            RadeonRays::float3(0.f, 1.f, 0.f));
+
+        m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+        m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+        m_camera->SetFocalLength(0.035f);
+        m_camera->SetFocusDistance(1.f);
+
+        m_scene->SetCamera(m_camera);
+    }
+
+};
 
 TEST_F(AovTest, Aov_WorldPosition)
 {
@@ -202,6 +223,101 @@ TEST_F(AovTest, Aov_Uv)
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
 
+TEST_F(AovTest, Aov_ObjectId)
+{
+    auto output_ws = m_factory->CreateOutput(
+        m_output->width(), m_output->height()
+    );
+
+    m_renderer->SetOutput(Baikal::Renderer::OutputType::kMeshID,
+        output_ws.get());
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (auto i = 0u; i < kNumIterations; ++i)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    std::ostringstream oss;
+    oss << test_name() << ".png";
+    SaveOutput(oss.str(), output_ws.get());
+    ASSERT_TRUE(CompareToReference(oss.str()));
+}
+
+TEST_F(AovTest, Aov_GroupId)
+{
+    auto output_ws = m_factory->CreateOutput(
+        m_output->width(), m_output->height()
+    );
+
+    m_renderer->SetOutput(Baikal::Renderer::OutputType::kGroupID,
+        output_ws.get());
+    
+    auto SetMeshGroupId = [&](uint32_t sphere_id, uint32_t quad_id)
+    {
+        for (auto iter = m_scene->CreateShapeIterator();
+            iter->IsValid();
+            iter->Next())
+        {
+            auto mesh = iter->ItemAs<Baikal::Mesh>();
+            if (mesh->GetName() == "sphere")
+            {
+                mesh->SetGroupId(sphere_id);
+            }
+            if (mesh->GetName() == "quad")
+            {
+                mesh->SetGroupId(quad_id);
+            }
+        }
+    };
+
+    // Move meshes to the same group
+    SetMeshGroupId(0, 0);
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+    {
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_1" << ".png";
+        SaveOutput(oss.str(), output_ws.get());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // Move meshes to different groups
+    SetMeshGroupId(0, 1);
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+    {
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_2" << ".png";
+        SaveOutput(oss.str(), output_ws.get());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+}
+
 TEST_F(AovTest, Aov_Background)
 {
     auto output_ws = m_factory->CreateOutput(
@@ -217,8 +333,7 @@ TEST_F(AovTest, Aov_Background)
     };
 
     // Get image based light
-    auto light_it = m_scene->CreateLightIterator();
-    auto light = std::dynamic_pointer_cast<Baikal::ImageBasedLight>(light_it->Item());
+    auto light = m_scene->CreateLightIterator()->ItemAs<Baikal::ImageBasedLight>();
     
     for (float intensity : intensities)
     {
