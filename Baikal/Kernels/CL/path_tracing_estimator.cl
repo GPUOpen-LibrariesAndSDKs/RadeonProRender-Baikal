@@ -74,11 +74,11 @@ KERNEL void ShadeVolume(
     // Hit indices
     GLOBAL int const* restrict hit_indices,
     // Pixel indices
-    GLOBAL int const*  restrict pixel_indices,
+    GLOBAL int const* restrict pixel_indices,
     // Output indices
-    GLOBAL int const*  restrict output_indices,
+    GLOBAL int const* restrict output_indices,
     // Number of rays
-    GLOBAL int const*  restrict num_hits,
+    GLOBAL int const* restrict num_hits,
     // Vertices
     GLOBAL float3 const* restrict vertices,
     // Normals
@@ -300,6 +300,10 @@ KERNEL void ShadeSurface(
     GLOBAL Volume const* restrict volumes,
     // Shadow rays
     GLOBAL ray* restrict shadow_rays,
+    // Auxiliary rays to generate in x dimension
+    GLOBAL aux_ray* restrict x_auxiliary_rays,
+    // Auxiliary rays to generate in y dimension
+    GLOBAL aux_ray* restrict y_auxiliary_rays,
     // Light samples
     GLOBAL float3* restrict light_samples,
     // Path throughput
@@ -361,7 +365,7 @@ KERNEL void ShadeSurface(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
+        Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);

@@ -394,7 +394,13 @@ typedef struct _DifferentialGeometry
     // Derivatives
     float3 dpdu;
     float3 dpdv;
-    float  area;
+    // Screen derivatives
+    float3 dudx;
+    float3 dudy;
+    float3 dvdx;
+    float3 dvdy;
+    // Triangle area
+    float area;
 
     matrix4x4 world_to_tangent;
     matrix4x4 tangent_to_world;

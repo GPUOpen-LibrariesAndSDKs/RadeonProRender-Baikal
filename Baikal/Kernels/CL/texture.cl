@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/utils.cl>
+#include <../Baikal/Kernels/CL/ray.cl>
 
 
 /// To simplify a bit

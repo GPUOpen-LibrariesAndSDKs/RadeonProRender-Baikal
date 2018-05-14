@@ -35,6 +35,8 @@ namespace Baikal
         CLWBuffer<int> hits;
 
         CLWBuffer<ray> shadowrays;
+        CLWBuffer<AuxRay> x_auxiliary_shadow_rays;
+        CLWBuffer<AuxRay> y_auxiliary_shadow_rays;
         CLWBuffer<int> shadowhits;
 
         CLWBuffer<Intersection> intersections;
@@ -386,6 +388,8 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_sample_counter);
         shadekernel.SetArg(argc++, scene.volumes);
         shadekernel.SetArg(argc++, m_render_data->shadowrays);
+        shadekernel.SetArg(argc++, m_render_data->x_auxiliary_shadow_rays);
+        shadekernel.SetArg(argc++, m_render_data->y_auxiliary_shadow_rays);
         shadekernel.SetArg(argc++, m_render_data->lightsamples);
         shadekernel.SetArg(argc++, m_render_data->paths);
         shadekernel.SetArg(argc++, m_render_data->rays[(pass + 1) & 0x1]);

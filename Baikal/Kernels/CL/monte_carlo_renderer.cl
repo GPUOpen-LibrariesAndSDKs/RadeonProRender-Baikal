@@ -864,7 +864,7 @@ KERNEL void FillAOVs(
 
             // Fill surface data
             DifferentialGeometry diffgeo;
-            Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
+            Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
 
             if (world_position_enabled)
             {

@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
+#include <../Baikal/Kernels/CL/ray.h>
 
 typedef struct
 {
@@ -199,11 +200,81 @@ INLINE int Scene_GetVolumeIndex(Scene const* scene, int shape_idx)
     return shape.volume_idx;
 }
 
+///Computes screen derivatives, demension (x or y) determined by auxiliary ray
+INLINE float2 Scene_ComputePartialDerivatives(
+                          //auxiliary ray
+                          GLOBAL aux_ray const* ray,
+                          // Differential geometry
+                          DifferentialGeometry* diffgeo
+                          )
+{
+    float3 o = vload_half3(0, (GLOBAL half*)&ray->o);
+    float3 d = vload_half3(0, (GLOBAL half*)&ray->d);
+
+    // intersection of x auxiliary ray with tangent plane
+    float t =  dot(diffgeo->n, diffgeo->p - o) / dot(diffgeo->n, d);
+    float3 aux_p = o + d * t;
+
+    // compute partial derivatives for x dimension
+    // Calculate cross product of the derivatives to choose not degenerate equations
+    float3 derivative_det = cross(diffgeo->dpdu, diffgeo->dpdv);
+
+    // linear system of equations created from partial derivatives
+    float2 aux_ray_delta;
+    float4 derivative_matrix;
+
+    // choose not degerated matrix rows 
+    if (derivative_det.x > max(derivative_det.y, derivative_det.z))
+    {
+        derivative_matrix.x = diffgeo->dpdu.y;
+        derivative_matrix.y = diffgeo->dpdv.y;
+        derivative_matrix.z = diffgeo->dpdu.z;
+        derivative_matrix.w = diffgeo->dpdv.z;
+        aux_ray_delta.x = aux_p.y - diffgeo->p.y;
+        aux_ray_delta.y = aux_p.z - diffgeo->p.z;
+    }
+    else if (derivative_det.y > max(derivative_det.x, derivative_det.z))
+    {
+        derivative_matrix.x = diffgeo->dpdu.x;
+        derivative_matrix.y = diffgeo->dpdv.x;
+        derivative_matrix.z = diffgeo->dpdu.z;
+        derivative_matrix.w = diffgeo->dpdv.z;
+        aux_ray_delta.x = aux_p.x - diffgeo->p.x;
+        aux_ray_delta.y = aux_p.z - diffgeo->p.z;
+    }
+    else
+    {
+        derivative_matrix.x = diffgeo->dpdu.x;
+        derivative_matrix.y = diffgeo->dpdv.x;
+        derivative_matrix.z = diffgeo->dpdu.y;
+        derivative_matrix.w = diffgeo->dpdv.y;
+        aux_ray_delta.x = aux_p.x - diffgeo->p.x;
+        aux_ray_delta.y = aux_p.y - diffgeo->p.y;
+    }
+
+    // Solve linear system using Cramer rule
+    float matrix_det = 
+        derivative_matrix.x * derivative_matrix.w - derivative_matrix.y * derivative_matrix.z;
+
+    float det1 =
+        aux_ray_delta.x * derivative_matrix.w - aux_ray_delta.y * derivative_matrix.z;
+
+    float det2 = 
+        derivative_matrix.x * aux_ray_delta.y - derivative_matrix.y * aux_ray_delta.x;
+
+    diffgeo->dudx = det1 / matrix_det;
+    diffgeo->dudy = det2 / matrix_det;
+}
+
 /// Fill DifferentialGeometry structure based on intersection info from RadeonRays
 void Scene_FillDifferentialGeometry(// Scene
                               Scene const* scene,
                               // RadeonRays intersection
                               Intersection const* isect,
+                              // auxiliary rays in x dimension
+                              GLOBAL aux_ray const* x_ray,
+                              // auxiliary rays in y dimension
+                              GLOBAL aux_ray const* y_ray,
                               // Differential geometry
                               DifferentialGeometry* diffgeo
                               )
@@ -282,6 +353,21 @@ void Scene_FillDifferentialGeometry(// Scene
     }
 
     diffgeo->material_index = material_idx;
+
+    // Calculate intersection of the aux rays with the tangent plane
+    if (x_ray == NULL || y_ray == NULL)
+    {
+        diffgeo->dudx = diffgeo->dudy = diffgeo->dvdx = diffgeo->dvdy = 0.f;
+        return;    
+    }
+
+    // Calculate partial screen derivatives
+    float2 screen_derivative_x = Scene_ComputePartialDerivatives(x_ray, diffgeo);
+    float2 screen_derivative_y = Scene_ComputePartialDerivatives(y_ray, diffgeo);
+    diffgeo->dudx = screen_derivative_x.x;
+    diffgeo->dudy = screen_derivative_x.y;
+    diffgeo->dvdx = screen_derivative_y.x;
+    diffgeo->dvdy = screen_derivative_y.y;
 }
 
 

@@ -277,7 +277,7 @@ KERNEL void SampleSurface(
 
             // Fill surface data
             DifferentialGeometry diffgeo;
-            Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
+            Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
             diffgeo.transfer_mode = transfer_mode; 
 
             // Check if we are hitting from the inside
