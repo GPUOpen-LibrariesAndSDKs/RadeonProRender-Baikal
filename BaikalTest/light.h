@@ -25,6 +25,9 @@ THE SOFTWARE.
 #include "SceneGraph/light.h"
 #include "SceneGraph/shape.h"
 #include "SceneGraph/material.h"
+#include "SceneGraph/uberv2material.h"
+#include "SceneGraph/inputmaps.h"
+
 #include "image_io.h"
 
 #define _USE_MATH_DEFINES
@@ -501,8 +504,10 @@ TEST_F(LightTest, Light_EmissiveSphere)
     m_scene = Baikal::SceneIo::LoadScene("sphere+plane.test", "");
     m_scene->SetCamera(m_camera);
 
-    auto emission = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kEmissive);
-    emission->SetInputValue("albedo", float3(2.f, 2.f, 2.f));
+    auto emission = Baikal::UberV2Material::Create();
+    emission->SetLayers(Baikal::UberV2Material::Layers::kEmissionLayer);
+    emission->SetInputValue("uberv2.emission.color",
+        Baikal::InputMap_ConstantFloat3::Create(float3(2.f, 2.f, 2.f)));
 
     auto iter = m_scene->CreateShapeIterator();
 
@@ -553,8 +558,10 @@ TEST_F(LightTest, Light_DirectionalAndEmissiveSphere)
     light->SetEmittedRadiance(5.f * float3(1.f, 0.f, 0.f));
     m_scene->AttachLight(light);
 
-    auto emission = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kEmissive);
-    emission->SetInputValue("albedo", float3(2.f, 2.f, 2.f));
+    auto emission = Baikal::UberV2Material::Create();
+    emission->SetLayers(Baikal::UberV2Material::Layers::kEmissionLayer);
+    emission->SetInputValue("uberv2.emission.color",
+        Baikal::InputMap_ConstantFloat3::Create(float3(2.f, 2.f, 2.f)));
 
     auto iter = m_scene->CreateShapeIterator();
 
@@ -816,8 +823,11 @@ TEST_F(LightTest, Light_IblReflectionOverride)
 
     LoadTestScene();
 
-    auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kMicrofacetGGX);
-    material->SetInputValue("roughness", RadeonRays::float3(0.07f, 0.07f, 0.07f));
+    auto material = Baikal::UberV2Material::Create();
+    material->SetLayers(Baikal::UberV2Material::Layers::kReflectionLayer);
+    material->SetInputValue("uberv2.reflection.roughness",
+        Baikal::InputMap_ConstantFloat::Create(0.07f));
+    
     ApplyMaterialToObject("sphere", material);
 
     m_scene->SetCamera(m_camera);
@@ -888,8 +898,11 @@ TEST_F(LightTest, Light_IblRefractionOverride)
 
     LoadTestScene();
 
-    auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kIdealRefract);
-    material->SetInputValue("ior", RadeonRays::float3(2.f, 2.f, 2.f));
+    auto material = Baikal::UberV2Material::Create();
+    material->SetLayers(Baikal::UberV2Material::Layers::kRefractionLayer);
+    material->SetInputValue("uberv2.refraction.ior",
+        Baikal::InputMap_ConstantFloat::Create(2.f));
+
     ApplyMaterialToObject("sphere", material);
 
     m_scene->SetCamera(m_camera);
@@ -958,7 +971,11 @@ TEST_F(LightTest, Light_IblTransparencyOverride)
 
     LoadTestScene();
 
-    auto material = Baikal::SingleBxdf::Create(Baikal::SingleBxdf::BxdfType::kPassthrough);
+    auto material = Baikal::UberV2Material::Create();
+    material->SetLayers(Baikal::UberV2Material::Layers::kTransparencyLayer);
+    material->SetInputValue("uberv2.transparency",
+        Baikal::InputMap_ConstantFloat::Create(1.0f));
+
     ApplyMaterialToObject("sphere", material);
 
     m_scene->SetCamera(m_camera);

@@ -17,10 +17,6 @@ endif (BAIKAL_ENABLE_FBX)
 
 add_library(BaikalIO SHARED ${SOURCES})
 
-if (BAIKAL_ENABLE_UBERV2)
-    target_compile_definitions(BaikalIO PUBLIC ENABLE_UBERV2)
-endif (BAIKAL_ENABLE_UBERV2)
-
 target_compile_definitions(BaikalIO PRIVATE BAIKAL_EXPORT_API)
 target_compile_features(BaikalIO PRIVATE cxx_std_14)
 target_link_libraries(BaikalIO PUBLIC Baikal OpenImageIO::OpenImageIO)

@@ -1,5 +1,77 @@
 #ifndef BXDF_UBERV2_BRICKS
 #define BXDF_UBERV2_BRICKS
+
+// Utility functions for Uberv2
+/// Calculates Fresnel for provided parameters. Swaps IORs if needed
+float CalculateFresnel(
+    // IORs
+    float top_ior,
+    float bottom_ior,
+    // Angle between normal and incoming ray
+    float ndotwi
+)
+{
+    float etai = top_ior;
+    float etat = bottom_ior;
+    float cosi = ndotwi;
+
+    // Revert normal and eta if needed
+    if (cosi < 0.f)
+    {
+        float tmp = etai;
+        etai = etat;
+        etat = tmp;
+        cosi = -cosi;
+    }
+
+    float eta = etai / etat;
+    float sini2 = 1.f - cosi * cosi;
+    float sint2 = eta * eta * sini2;
+    float fresnel = 1.f;
+
+    if (sint2 < 1.f)
+    {
+        float cost = native_sqrt(max(0.f, 1.f - sint2));
+        fresnel = FresnelDielectric(etai, etat, cosi, cost);
+    }
+
+    return fresnel;
+}
+
+// Calucates Fresnel blend for two float3 values.
+// F(top_ior, bottom_ior) * top_value + (1 - F(top_ior, bottom_ior) * bottom_value)
+float3 Fresnel_Blend(
+    // IORs
+    float top_ior,
+    float bottom_ior,
+    // Values to blend
+    float3 top_value,
+    float3 bottom_value,
+    // Incoming direction
+    float3 wi
+)
+{
+    float fresnel = CalculateFresnel(top_ior, bottom_ior, wi.y);
+    return fresnel * top_value + (1.f - fresnel) * bottom_value;
+}
+
+// Calucates Fresnel blend for two float values.
+// F(top_ior, bottom_ior) * top_value + (1 - F(top_ior, bottom_ior) * bottom_value)
+float Fresnel_Blend_F(
+    // IORs
+    float top_ior,
+    float bottom_ior,
+    // Values to blend
+    float top_value,
+    float bottom_value,
+    // Incoming direction
+    float3 wi
+)
+{
+    float fresnel = CalculateFresnel(top_ior, bottom_ior, wi.y);
+    return fresnel * top_value + (1.f - fresnel) * bottom_value;
+}
+
 // Diffuse layer
 float3 UberV2_Lambert_Evaluate(
     // Preprocessed shader input data
@@ -565,7 +637,7 @@ float3 UberV2_Refraction_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const bool is_singular = shader_data->refraction_roughness;
+    const bool is_singular = (shader_data->refraction_roughness < ROUGHNESS_EPS);
 
     return is_singular ?
         UberV2_IdealRefract_Evaluate(shader_data, wi, wo, TEXTURE_ARGS) :

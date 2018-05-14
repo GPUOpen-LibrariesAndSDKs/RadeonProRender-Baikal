@@ -113,6 +113,9 @@ namespace Baikal
     public:
         std::unique_ptr<Estimator> m_estimator;
         mutable std::uint32_t m_sample_counter;
+
+    private:
+        ClwClass m_uberv2_kernels;
     };
 
 }

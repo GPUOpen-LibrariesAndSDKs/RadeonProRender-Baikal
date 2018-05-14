@@ -25,8 +25,6 @@ namespace Baikal
 
         virtual ~ClwClass() = default;
 
-
-    protected:
         CLWContext GetContext() const { return m_context; }
         CLWKernel GetKernel(std::string const& name, std::string const& opts = "");
         void SetDefaultBuildOptions(std::string const& opts);
@@ -84,9 +82,6 @@ namespace Baikal
             ""
 #endif
         );
-#ifdef ENABLE_UBERV2
-        opts.append("-D ENABLE_UBERV2");
-#endif
     }
 
     inline std::string ClwClass::GetFullBuildOpts() const

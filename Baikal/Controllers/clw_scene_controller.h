@@ -100,7 +100,7 @@ namespace Baikal
         void UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const;
         // Write out single material at data pointer.
         // Collectors are required to convert texture and material pointers into indices.
-        void WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, void* data) const;
+        void WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<std::int32_t> &material_data) const;
         // Write out single light at data pointer.
         // Collector is required to convert texture pointers into indices.
         void WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const;
@@ -115,10 +115,14 @@ namespace Baikal
         // Collectore is required to convert texture pointers into indices.
         void WriteInputMapLeaf(InputMap const& leaf, Collector& tex_collector, void* data) const;
 
+        // Resolves host material pointer to device offset
+        std::int32_t ResolveMaterialPtr(Material::Ptr material) const;
+
     private:
         int GetMaterialIndex(Collector const& collector, Material::Ptr material) const;
         int GetTextureIndex(Collector const& collector, Texture::Ptr material) const;
         int GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const;
+        int GetMaterialLayers(Material::Ptr material) const;
 
         // Context
         CLWContext m_context;
@@ -128,5 +132,7 @@ namespace Baikal
         Material::Ptr m_default_material;
         // CL Program manager
         const CLProgramManager *m_program_manager;
+        // Material to device material map
+        mutable std::unordered_map<std::uint32_t, std::int32_t> m_materialid_to_offset;
     };
 }

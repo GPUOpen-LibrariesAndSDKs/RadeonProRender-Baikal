@@ -38,8 +38,10 @@ typedef struct
     GLOBAL int const* restrict indices;
     // Shapes
     GLOBAL Shape const* restrict shapes;
-    // Materials
-    GLOBAL Material const* restrict materials;
+    // Material attributes
+    GLOBAL int const* restrict material_attributes;
+    // Input map values
+    GLOBAL InputMapData const* restrict input_map_values;
     // Emissive objects
     GLOBAL Light const* restrict lights;
     // Envmap idx
@@ -186,13 +188,6 @@ INLINE void Scene_InterpolateNormalsFromIntersection(Scene const* scene, Interse
     *n = normalize(matrix_mul_vector3(shape.transform, (1.f - barycentrics.x - barycentrics.y) * n0 + barycentrics.x * n1 + barycentrics.y * n2));
 }
 
-// Get material index of a shape face
-INLINE int Scene_GetMaterialIndex(Scene const* scene, int shape_idx, int prim_idx)
-{
-    Shape shape = scene->shapes[shape_idx];
-    return shape.material_idx;
-}
-
 INLINE int Scene_GetVolumeIndex(Scene const* scene, int shape_idx)
 {
     Shape shape = scene->shapes[shape_idx];
@@ -240,8 +235,7 @@ void Scene_FillDifferentialGeometry(// Scene
     diffgeo->ng = normalize(cross(v1 - v0, v2 - v0));
 
     // Get material at shading point
-    int material_idx = Scene_GetMaterialIndex(scene, shape_idx, prim_idx);
-    diffgeo->mat = scene->materials[material_idx];
+    diffgeo->mat = shape.material;
 
     // Get UVs
     float2 uv0, uv1, uv2;
@@ -280,8 +274,6 @@ void Scene_FillDifferentialGeometry(// Scene
         diffgeo->dpdu = normalize(GetOrthoVector(diffgeo->n));
         diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
     }
-
-    diffgeo->material_index = material_idx;
 }
 
 

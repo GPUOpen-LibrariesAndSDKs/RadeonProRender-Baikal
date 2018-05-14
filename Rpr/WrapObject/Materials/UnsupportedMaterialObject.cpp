@@ -28,7 +28,7 @@ using namespace Baikal;
 using namespace RadeonRays;
 
 UnsupportedMaterialObject::UnsupportedMaterialObject(MaterialObject::Type type)
-    : SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kLambert)
+    : MaterialObject(type)
 {
 
 }
@@ -36,51 +36,23 @@ UnsupportedMaterialObject::UnsupportedMaterialObject(MaterialObject::Type type)
 void UnsupportedMaterialObject::SetInputMaterial(const std::string& input_name, MaterialObject* input)
 {
     //trying to behave as SingleBxdfMaterialObject and ignore in case of failure
-    try
-    {
-        SingleBxdfMaterialObject::SetInputMaterial(input_name, input);
-    }
-    catch (...)
-    {
-        std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
-    }
+    std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
 }
 
 void UnsupportedMaterialObject::SetInputTexture(const std::string& input_name, TextureMaterialObject* input)
 {
     //trying to behave as SingleBxdfMaterialObject and ignore in case of failure
-    try
-    {
-        SingleBxdfMaterialObject::SetInputTexture(input_name, input);
-    }
-    catch (...)
-    {
-        std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
-    }
+    std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
 }
 
 void UnsupportedMaterialObject::SetInputImage(const std::string& input_name, ImageMaterialObject* input)
 {
     //trying to behave as SingleBxdfMaterialObject and ignore in case of failure
-    try
-    {
-        SingleBxdfMaterialObject::SetInputImage(input_name, input);
-    }
-    catch (...)
-    {
-        std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
-    }
+    std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
 }
 
 void UnsupportedMaterialObject::SetInputF(const std::string& input_name, const RadeonRays::float4& val)
 {
     //trying to behave as SingleBxdfMaterialObject and ignore in case of failure
-    try
-    {
-        SingleBxdfMaterialObject::SetInputF(input_name, val);
-    }
-    catch (...)
-    {
-        std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
-    }
+    std::cout << "Warning: ignoring unsupported material input name - " << input_name << std::endl;
 }

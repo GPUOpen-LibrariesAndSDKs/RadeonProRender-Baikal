@@ -380,7 +380,7 @@ namespace Baikal
             // copy shape id elem from OpenCl
             float4 shape_id;
             m_shape_id_data.output->GetData((float3*)&shape_id, offset, 1);
-            m_promise.set_value(shape_id.x);
+            m_promise.set_value(static_cast<int>(shape_id.x));
             // clear output to stop tracking shape id map in openCl
             m_cfgs[m_primary].renderer->SetOutput(Renderer::OutputType::kShapeId, nullptr);
             m_shape_id_requested = false;

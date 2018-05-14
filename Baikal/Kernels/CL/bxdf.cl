@@ -67,263 +67,77 @@ enum BxdfUberV2SampledComponent
 /// Returns BxDF flags. Flags stored in first byte of bxdf_flags
 int Bxdf_GetFlags(DifferentialGeometry const* dg)
 {
-    return (dg->mat.bxdf_flags & kBxdfFlagsAll);
+    return (dg->mat.flags & kBxdfFlagsAll);
 }
 
 /// Sets BxDF flags. Flags stored in first byte of bxdf_flags
 void Bxdf_SetFlags(DifferentialGeometry *dg, int flags)
 {
-    dg->mat.bxdf_flags &= 0xffffff00; //Reset flags
-    dg->mat.bxdf_flags |= flags; //Set new flags
+    dg->mat.flags &= 0xffffff00; //Reset flags
+    dg->mat.flags |= flags; //Set new flags
 }
 
 /// Return BxDF sampled component. Sampled component stored in second byte of bxdf_flags
 int Bxdf_UberV2_GetSampledComponent(DifferentialGeometry const* dg)
 {
-    return (dg->mat.bxdf_flags >> 8) & 0xff;
+    return (dg->mat.flags >> 8) & 0xff;
 }
 
 /// Sets BxDF sampled component. Sampled component stored in second byte of bxdf_flags
 void Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
 {
-    dg->mat.bxdf_flags &= 0xffff00ff; //Reset sampled component
-    dg->mat.bxdf_flags |= (sampledComponent << 8); //Set new component
+    dg->mat.flags &= 0xffff00ff; //Reset sampled component
+    dg->mat.flags |= (sampledComponent << 8); //Set new component
 }
 
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
-#include <../Baikal/Kernels/CL/disney.cl>
-#include <../Baikal/Kernels/CL/bxdf_basic.cl>
-#ifdef ENABLE_UBERV2
-
 #include <../Baikal/Kernels/CL/bxdf_uberv2.cl>
-
-#endif
-
-/*
- Dispatch functions
- */
-float3 Bxdf_Evaluate(
-    // Geometry
-    DifferentialGeometry const* dg
-    // Incoming direction
-    ,float3 wi
-    // Outgoing direction
-    ,float3 wo
-    // Texture args
-    ,TEXTURE_ARG_LIST
-#ifdef ENABLE_UBERV2
-    ,UberV2ShaderData const* shader_data
-#endif
-)
-{
-    // Transform vectors into tangent space
-    float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
-    float3 wo_t = matrix_mul_vector3(dg->world_to_tangent, wo);
-
-    int mattype = dg->mat.type;
-    switch (mattype)
-    {
-    case kLambert:
-        return Lambert_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetGGX:
-        return MicrofacetGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetBeckmann:
-        return MicrofacetBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kIdealReflect:
-        return IdealReflect_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kIdealRefract:
-        return IdealRefract_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kTranslucent:
-        return Translucent_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetRefractionGGX:
-        return MicrofacetRefractionGGX_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetRefractionBeckmann:
-        return MicrofacetRefractionBeckmann_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kPassthrough:
-        return 0.f;
-#ifdef ENABLE_DISNEY
-    case kDisney:
-        return Disney_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS);
-#endif
-#ifdef ENABLE_UBERV2
-    case kUberV2:
-        return UberV2_Evaluate(dg, wi_t, wo_t, TEXTURE_ARGS, shader_data);
-#endif
-    }
-
-    return 0.f;
-}
-
-float3 Bxdf_Sample(
-    // Geometry
-    DifferentialGeometry const* dg
-    // Incoming direction
-    ,float3 wi
-    // Texture args
-    ,TEXTURE_ARG_LIST
-    // RNG
-    ,float2 sample
-    // Outgoing  direction
-    ,float3* wo
-    // PDF at w
-    ,float* pdf
-#ifdef ENABLE_UBERV2
-    ,UberV2ShaderData const* shader_data
-#endif
-)
-{
-    // Transform vectors into tangent space
-    float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
-    float3 wo_t;
-
-    float3 res = 0.f;
-
-    int mattype = dg->mat.type;
-    switch (mattype)
-    {
-    case kLambert:
-        res = Lambert_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kMicrofacetGGX:
-        res = MicrofacetGGX_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kMicrofacetBeckmann:
-        res = MicrofacetBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kIdealReflect:
-        res = IdealReflect_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kIdealRefract:
-        res = IdealRefract_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kTranslucent:
-        res = Translucent_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kPassthrough:
-        res = Passthrough_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kMicrofacetRefractionGGX:
-        res = MicrofacetRefractionGGX_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-    case kMicrofacetRefractionBeckmann:
-        res = MicrofacetRefractionBeckmann_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-#ifdef ENABLE_DISNEY
-    case kDisney:
-        res = Disney_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf);
-        break;
-#endif
-#ifdef ENABLE_UBERV2
-    case kUberV2:
-        res = UberV2_Sample(dg, wi_t, TEXTURE_ARGS, sample, &wo_t, pdf, shader_data);
-        break;
-#endif
-    default:
-        *pdf = 0.f;
-        break;
-    }
-
-    *wo = matrix_mul_vector3(dg->tangent_to_world, wo_t);
-
-    return res;
-}
-
-float Bxdf_GetPdf(
-    // Geometry
-    DifferentialGeometry const* dg
-    // Incoming direction
-    ,float3 wi
-    // Outgoing direction
-    ,float3 wo
-    // Texture args
-    ,TEXTURE_ARG_LIST
-#ifdef ENABLE_UBERV2
-    ,UberV2ShaderData const* shader_data
-#endif
-)
-{
-    // Transform vectors into tangent space
-    float3 wi_t = matrix_mul_vector3(dg->world_to_tangent, wi);
-    float3 wo_t = matrix_mul_vector3(dg->world_to_tangent, wo);
-
-    int mattype = dg->mat.type;
-    switch (mattype)
-    {
-    case kLambert:
-        return Lambert_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetGGX:
-        return MicrofacetGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetBeckmann:
-        return MicrofacetBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kIdealReflect:
-        return IdealReflect_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kIdealRefract:
-        return IdealRefract_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kTranslucent:
-        return Translucent_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kPassthrough:
-        return 0.f;
-    case kMicrofacetRefractionGGX:
-        return MicrofacetRefractionGGX_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-    case kMicrofacetRefractionBeckmann:
-        return MicrofacetRefractionBeckmann_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-#ifdef ENABLE_DISNEY
-    case kDisney:
-        return Disney_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS);
-#endif
-#ifdef ENABLE_UBERV2
-    case kUberV2:
-        return UberV2_GetPdf(dg, wi_t, wo_t, TEXTURE_ARGS, shader_data);
-#endif
-    }
-
-    return 0.f;
-}
 
 /// Emissive BRDF sampling
 float3 Emissive_GetLe(
     // Geometry
     DifferentialGeometry const* dg,
     // Texture args
-    TEXTURE_ARG_LIST)
+    TEXTURE_ARG_LIST,
+    UberV2ShaderData const* shader_data)
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    return kd;
+    return shader_data->emission_color.xyz;
 }
 
 /// BxDF singularity check
 bool Bxdf_IsSingular(DifferentialGeometry const* dg)
 {
-    return (dg->mat.bxdf_flags & kBxdfFlagsSingular) == kBxdfFlagsSingular;
+    return (dg->mat.flags & kBxdfFlagsSingular) == kBxdfFlagsSingular;
 }
 
 /// BxDF emission check
 bool Bxdf_IsEmissive(DifferentialGeometry const* dg)
 {
-    return (dg->mat.bxdf_flags & kBxdfFlagsEmissive) == kBxdfFlagsEmissive;
+    return (dg->mat.flags & kBxdfFlagsEmissive) == kBxdfFlagsEmissive;
 }
 
-/// BxDF singularity check
 bool Bxdf_IsBtdf(DifferentialGeometry const* dg)
 {
-    return (dg->mat.bxdf_flags & kBxdfFlagsBrdf) == 0;
+    return (dg->mat.flags & kBxdfFlagsBrdf) == 0;
 }
 
 bool Bxdf_IsReflection(DifferentialGeometry const* dg)
 {
-    return ((dg->mat.bxdf_flags & kBxdfFlagsBrdf) == kBxdfFlagsBrdf) && ((dg->mat.bxdf_flags & kBxdfFlagsDiffuse) == kBxdfFlagsDiffuse);
+    return ((dg->mat.flags & kBxdfFlagsBrdf) == kBxdfFlagsBrdf) && ((dg->mat.flags & kBxdfFlagsDiffuse) == kBxdfFlagsDiffuse);
 }
 
 bool Bxdf_IsTransparency(DifferentialGeometry const* dg)
 {
-    return (dg->mat.bxdf_flags & kBxdfFlagsTransparency) == kBxdfFlagsTransparency;
+    return (dg->mat.flags & kBxdfFlagsTransparency) == kBxdfFlagsTransparency;
 }
 
 bool Bxdf_IsRefraction(DifferentialGeometry const* dg)
 {
     return Bxdf_IsBtdf(dg) && !Bxdf_IsTransparency(dg);
 }
+
+#include <uberv2_generated.cl>
 
 #endif // BXDF_CL

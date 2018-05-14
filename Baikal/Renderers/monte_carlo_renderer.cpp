@@ -64,6 +64,7 @@ namespace Baikal
 #endif
         , m_estimator(std::move(estimator))
         , m_sample_counter(0u)
+        , m_uberv2_kernels(context, program_manager, "../Baikal/Kernels/CL/fill_aovs_uberv2.cl", "")
     {
         m_estimator->SetWorkBufferSize(kTileSizeX * kTileSizeY);
     }
@@ -248,7 +249,7 @@ namespace Baikal
         // Intersect ray batch
         m_estimator->TraceFirstHit(scene, num_rays);
 
-        CLWKernel fill_kernel = GetKernel("FillAOVs");
+        CLWKernel fill_kernel = m_uberv2_kernels.GetKernel("FillAOVsUberV2");
 
         auto argc = 0U;
         fill_kernel.SetArg(argc++, m_estimator->GetRayBuffer());
@@ -260,7 +261,7 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.uvs);
         fill_kernel.SetArg(argc++, scene.indices);
         fill_kernel.SetArg(argc++, scene.shapes);
-        fill_kernel.SetArg(argc++, scene.materials);
+        fill_kernel.SetArg(argc++, scene.material_attributes);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
         fill_kernel.SetArg(argc++, scene.envmapidx);

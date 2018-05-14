@@ -29,6 +29,9 @@ THE SOFTWARE.
 #include "SceneGraph/texture.h"
 #include "math/mathutils.h"
 
+#include "SceneGraph/uberv2material.h"
+#include "SceneGraph/inputmaps.h"
+
 #include <string>
 #include <map>
 #include <set>
@@ -55,7 +58,7 @@ namespace Baikal
         }
 
     private:
-        Material::Ptr TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
+        Material::Ptr TranslateMaterialUberV2(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const;
 
         mutable std::map<std::string, Material::Ptr> m_material_cache;
     };
@@ -63,125 +66,6 @@ namespace Baikal
     // Create static object to register loader. This object will be used as loader
     static SceneIoObj obj_loader;
 
-
-    Material::Ptr SceneIoObj::TranslateMaterial(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
-    {
-        auto iter = m_material_cache.find(mat.name);
-
-        if (iter != m_material_cache.cend())
-        {
-            return iter->second;
-        }
-        else
-        {
-            RadeonRays::float3 emission(mat.emission[0], mat.emission[1], mat.emission[2]);
-
-            Material::Ptr material = nullptr;
-
-            // Check if this is emissive
-            if (emission.sqnorm() > 0)
-            {
-                // If yes create emissive brdf
-                material = SingleBxdf::Create(SingleBxdf::BxdfType::kEmissive);
-
-                // Set albedo
-                if (!mat.diffuse_texname.empty())
-                {
-                    auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
-                    material->SetInputValue("albedo", texture);
-                }
-                else
-                {
-                    material->SetInputValue("albedo", emission);
-                }
-            }
-            else
-            {
-                auto s = RadeonRays::float3(mat.specular[0], mat.specular[1], mat.specular[2]);
-
-                if ((s.sqnorm() > 0 || !mat.specular_texname.empty()))
-                {
-                    // Otherwise create lambert
-                    material = MultiBxdf::Create(MultiBxdf::Type::kFresnelBlend);
-                    material->SetInputValue("ior", RadeonRays::float4(1.5f, 1.5f, 1.5f, 1.5f));
-
-                    auto diffuse = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-                    auto specular = SingleBxdf::Create(SingleBxdf::BxdfType::kMicrofacetGGX);
-
-                    specular->SetInputValue("roughness", RadeonRays::float4(0.01f));
-
-                    // Set albedo
-                    if (!mat.diffuse_texname.empty())
-                    {
-                        auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
-                        diffuse->SetInputValue("albedo", texture);
-                    }
-                    else
-                    {
-                        diffuse->SetInputValue("albedo", RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
-                    }
-
-                    // Set albedo
-                    if (!mat.specular_texname.empty())
-                    {
-                        auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
-                        specular->SetInputValue("albedo", texture);
-                    }
-                    else
-                    {
-                        specular->SetInputValue("albedo", s);
-                    }
-
-                    // Set normal
-                    if (!mat.bump_texname.empty())
-                    {
-                        auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
-                        diffuse->SetInputValue("bump", texture);
-                        specular->SetInputValue("bump", texture);
-                    }
-
-                    diffuse->SetName(mat.name + "-diffuse");
-                    specular->SetName(mat.name + "-specular");
-
-                    material->SetInputValue("base_material", diffuse);
-                    material->SetInputValue("top_material", specular);
-                }
-                else
-                {
-                    // Otherwise create lambert
-                    auto diffuse = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-
-                    // Set albedo
-                    if (!mat.diffuse_texname.empty())
-                    {
-                        auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
-                        diffuse->SetInputValue("albedo", texture);
-                    }
-                    else
-                    {
-                        diffuse->SetInputValue("albedo", RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]));
-                    }
-
-                    // Set normal
-                    if (!mat.bump_texname.empty())
-                    {
-                        auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
-                        diffuse->SetInputValue("bump", texture);
-                    }
-
-                    material = diffuse;
-                }
-            }
-
-            // Set material name
-            material->SetName(mat.name);
-            //material->SetThin(true);
-
-            m_material_cache.emplace(std::make_pair(mat.name, material));
-
-            return material;
-        }
-    }
 
     Scene1::Ptr SceneIoObj::LoadScene(std::string const& filename, std::string const& basepath) const
     {
@@ -213,7 +97,7 @@ namespace Baikal
         for (int i = 0; i < (int)objmaterials.size(); ++i)
         {
             // Translate material
-            materials[i] = TranslateMaterial(*image_io, objmaterials[i], basepath, *scene);
+            materials[i] = TranslateMaterialUberV2(*image_io, objmaterials[i], basepath, *scene);
 
             // Add to emissive subset if needed
             if (materials[i]->HasEmission())
@@ -330,25 +214,277 @@ namespace Baikal
         auto ibl = ImageBasedLight::Create();
         ibl->SetTexture(ibl_texture);
         //ibl->SetReflectionTexture(ibl_texture1);
-        //ibl->SetBackgroundTexture(ibl_texture1);
+        //ibl->SetBackgroundTexture(ibl_texture);
         ibl->SetMultiplier(1.f);
 
         // TODO: temporary code to add directional light
         auto light = DirectionalLight::Create();
-        light->SetDirection(RadeonRays::normalize(RadeonRays::float3(-1.1f, -0.6f, -0.2f)));
-        light->SetEmittedRadiance(30.f * RadeonRays::float3(1.f, 0.95f, 0.92f));
+        light->SetDirection(RadeonRays::float3(.1f, -1.f, -.1f));
+        light->SetEmittedRadiance(RadeonRays::float3(1.f, 1.f, 1.f));
 
-        auto light1 = DirectionalLight::Create();
+        /*auto light1 = DirectionalLight::Create();
         auto d = RadeonRays::float3(-0.1f, -1.f, -1.f);
         d.normalize();
         light1->SetDirection(d);
-        light1->SetEmittedRadiance(3.f * RadeonRays::float3(1.f, 0.8f, 0.65f));
+        light1->SetEmittedRadiance(3.f * RadeonRays::float3(1.f, 0.8f, 0.65f));*/
 
-        //scene->AttachLight(light);
+        scene->AttachLight(light);
         //scene->AttachLight(light1);
         scene->AttachLight(ibl);
 
         return scene;
+    }
+    Material::Ptr SceneIoObj::TranslateMaterialUberV2(ImageIo const& image_io, tinyobj::material_t const& mat, std::string const& basepath, Scene1& scene) const
+    {
+        auto iter = m_material_cache.find(mat.name);
+
+        if (iter != m_material_cache.cend())
+        {
+            return iter->second;
+        }
+        else
+        {
+            RadeonRays::float3 emission(mat.emission[0], mat.emission[1], mat.emission[2]);
+
+            Material::Ptr material = nullptr;
+
+            // Old code for emissive. No emissive in UberV2 yet
+            // Check if this is emissive
+            if (emission.sqnorm() > 0)
+            {
+                // If yes create emissive brdf
+                material = UberV2Material::Create();
+
+                // Set albedo
+                if (!mat.diffuse_texname.empty())
+                {
+                    auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+                    material->SetInputValue("uberv2.emission.color",
+                        InputMap_Pow::Create(
+                            InputMap_Sampler::Create(texture),
+                            InputMap_ConstantFloat::Create(2.2f)));
+                }
+                else
+                {
+                    material->SetInputValue("uberv2.emission.color",
+                        InputMap_ConstantFloat3::Create(emission));
+                }
+                static_cast<UberV2Material*>(material.get())->SetLayers(
+                    UberV2Material::Layers::kEmissionLayer);
+            }
+            else
+            {
+                auto s = RadeonRays::float3(mat.specular[0], mat.specular[1], mat.specular[2]);
+                auto r = RadeonRays::float3(mat.transmittance[0], mat.transmittance[1], mat.transmittance[2]);
+                auto d = RadeonRays::float3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]);
+
+                auto default_ior = Baikal::InputMap_ConstantFloat::Create(3.0f);
+                auto default_roughness = Baikal::InputMap_ConstantFloat::Create(0.01f);
+                auto default_one = Baikal::InputMap_ConstantFloat::Create(1.0f);
+                if ((r.sqnorm() > 0) && (s.sqnorm() > 0))
+                {
+                    uint32_t layers = UberV2Material::Layers::kDiffuseLayer |
+                        UberV2Material::Layers::kReflectionLayer |
+                        UberV2Material::Layers::kRefractionLayer;
+                    // Create refraction + diffuse + reflection
+                    material = UberV2Material::Create();
+                    
+                    material->SetInputValue("uberv2.reflection.ior", default_ior);
+                    material->SetInputValue("uberv2.refraction.ior", default_ior);
+                    material->SetInputValue("uberv2.reflection.roughness", default_roughness);
+                    material->SetInputValue("uberv2.refraction.roughness", default_roughness);
+                    material->SetInputValue("uberv2.reflection.metalness", default_one);
+                    
+                    // Set albedo
+                    if (!mat.diffuse_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+                        material->SetInputValue("uberv2.diffuse.color",
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
+                    }
+                    else
+                    {
+                        material->SetInputValue("uberv2.diffuse.color",
+                            InputMap_ConstantFloat3::Create(d));
+                    }
+
+                    // Set albedo
+                    if (!mat.specular_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
+                        material->SetInputValue("uberv2.reflecton.color",
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
+                    }
+                    else
+                    {
+                        material->SetInputValue("uberv2.reflection.color",
+                            InputMap_ConstantFloat3::Create(s));
+                    }
+
+                    if (!mat.bump_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
+                        auto bump_sampler = InputMap_SamplerBumpMap::Create(texture);
+                        auto bump_remap = Baikal::InputMap_Remap::Create(
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 1.0f, 0.0f)),
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(-1.0f, 1.0f, 0.0f)),
+                            bump_sampler);
+                        material->SetInputValue("uberv2.shading_normal", bump_remap);
+
+                        layers |= UberV2Material::Layers::kShadingNormalLayer;
+                    }
+
+                    material->SetInputValue("uberv2.refraction.color",
+                        InputMap_ConstantFloat3::Create(r));
+
+                    static_cast<UberV2Material*>(material.get())->SetLayers(layers);
+                }
+                else if ( (d.sqnorm() < 0.01) && (s.sqnorm() > 0))
+                {
+                    // Create reflection
+                    material = UberV2Material::Create();
+                    uint32_t layers = UberV2Material::Layers::kReflectionLayer;
+
+                    material->SetInputValue("uberv2.reflection.ior", default_ior);
+                    material->SetInputValue("uberv2.reflection.roughness", default_roughness);
+                    material->SetInputValue("uberv2.reflection.metalness", default_one);
+
+                    // Set albedo
+                    if (!mat.specular_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
+                        material->SetInputValue("uberv2.reflecton.color",
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
+                    }
+                    else
+                    {
+                        material->SetInputValue("uberv2.reflection.color",
+                            InputMap_ConstantFloat3::Create(s));
+                    }
+
+                    if (!mat.bump_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
+                        auto bump_sampler = InputMap_SamplerBumpMap::Create(texture);
+                        auto bump_remap = Baikal::InputMap_Remap::Create(
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 1.0f, 0.0f)),
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(-1.0f, 1.0f, 0.0f)),
+                            bump_sampler);
+                        material->SetInputValue("uberv2.shading_normal", bump_remap);
+
+                        layers |= UberV2Material::Layers::kShadingNormalLayer;
+                    }
+
+                    static_cast<UberV2Material*>(material.get())->SetLayers(layers);
+                }
+                else if ((s.sqnorm() > 0 || !mat.specular_texname.empty()))
+                {
+                    // Create diffuse + reflection
+                    material = UberV2Material::Create();
+                    uint32_t layers = UberV2Material::Layers::kDiffuseLayer |
+                        UberV2Material::Layers::kReflectionLayer;
+
+                    material->SetInputValue("uberv2.reflection.ior", default_ior);
+                    material->SetInputValue("uberv2.reflection.roughness", default_roughness);
+                    material->SetInputValue("uberv2.reflection.metalness", default_one);
+
+                    // Set albedo
+                    if (!mat.diffuse_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+                        material->SetInputValue("uberv2.diffuse.color",
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
+                    }
+                    else
+                    {
+                        material->SetInputValue("uberv2.diffuse.color",
+                            InputMap_ConstantFloat3::Create(d));
+                    }
+
+                    // Set albedo
+                    if (!mat.specular_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.specular_texname);
+                        material->SetInputValue("uberv2.reflection.color",
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
+                    }
+                    else
+                    {
+                        material->SetInputValue("uberv2.reflection.color",
+                            InputMap_ConstantFloat3::Create(s));
+                    }
+
+                    if (!mat.bump_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
+                        auto bump_sampler = InputMap_SamplerBumpMap::Create(texture);
+                        auto bump_remap = Baikal::InputMap_Remap::Create(
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 1.0f, 0.0f)),
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(-1.0f, 1.0f, 0.0f)),
+                            bump_sampler);
+                        material->SetInputValue("uberv2.shading_normal", bump_remap);
+
+                        layers |= UberV2Material::Layers::kShadingNormalLayer;
+                    }
+
+                    static_cast<UberV2Material*>(material.get())->SetLayers(layers);
+                }
+                else
+                {
+                    // Create diffuse
+                    material = UberV2Material::Create();
+                    uint32_t layers = UberV2Material::Layers::kDiffuseLayer;
+
+                    // Set albedo
+                    if (!mat.diffuse_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.diffuse_texname);
+                        material->SetInputValue("uberv2.diffuse.color",
+                            InputMap_Pow::Create(
+                                InputMap_Sampler::Create(texture),
+                                InputMap_ConstantFloat::Create(2.2f)));
+                    }
+                    else
+                    {
+                        material->SetInputValue("uberv2.diffuse.color",
+                            InputMap_ConstantFloat3::Create(d));
+                    }
+
+                    if (!mat.bump_texname.empty())
+                    {
+                        auto texture = LoadTexture(image_io, scene, basepath, mat.bump_texname);
+                        auto bump_sampler = InputMap_SamplerBumpMap::Create(texture);
+                        auto bump_remap = Baikal::InputMap_Remap::Create(
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 1.0f, 0.0f)),
+                            Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(-1.0f, 1.0f, 0.0f)),
+                            bump_sampler);
+                        material->SetInputValue("uberv2.shading_normal", bump_remap);
+
+                        layers |= UberV2Material::Layers::kShadingNormalLayer;
+                    }
+
+                    static_cast<UberV2Material*>(material.get())->SetLayers(layers);
+                }
+            }
+
+            // Set material name
+            material->SetName(mat.name);
+            //material->SetThin(true);
+
+            m_material_cache.emplace(std::make_pair(mat.name, material));
+
+            return material;
+        }
     }
 
 

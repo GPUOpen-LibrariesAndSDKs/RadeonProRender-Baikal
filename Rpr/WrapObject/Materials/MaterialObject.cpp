@@ -33,8 +33,6 @@ THE SOFTWARE.
 
 #include "ImageMaterialObject.h"
 #include "TextureMaterialObject.h"
-#include "SingleBxdfMaterialObject.h"
-#include "MultiBxdfMaterialObject.h"
 #include "UnsupportedMaterialObject.h"
 #include "ArithmeticMaterialObject.h"
 #include "UberMaterialObject.h"
@@ -170,37 +168,21 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
     switch (in_type)
     {
     // SingleBxdf
-    case RPR_MATERIAL_NODE_DIFFUSE:
-    case RPR_MATERIAL_NODE_ORENNAYAR:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kLambert);
-    case RPR_MATERIAL_NODE_WARD:
-    case RPR_MATERIAL_NODE_MICROFACET:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kMicrofacetGGX);
-    case RPR_MATERIAL_NODE_MICROFACET_REFRACTION:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kMicrofacetRefractionGGX);
-    case RPR_MATERIAL_NODE_REFLECTION:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kIdealReflect);
-    case RPR_MATERIAL_NODE_REFRACTION:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kIdealRefract);
-    case RPR_MATERIAL_NODE_STANDARD:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kLambert);
-    case RPR_MATERIAL_NODE_DIFFUSE_REFRACTION:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kTranslucent);
-    case RPR_MATERIAL_NODE_FRESNEL_SCHLICK:
-    case RPR_MATERIAL_NODE_FRESNEL:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kTranslucent);
-    case RPR_MATERIAL_NODE_EMISSIVE:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kEmissive);
-    case RPR_MATERIAL_NODE_PASSTHROUGH:
-        return new SingleBxdfMaterialObject(type, SingleBxdf::BxdfType::kPassthrough);
-    
-    //Multibxdf
+    case RPR_MATERIAL_NODE_ADD:
+    case RPR_MATERIAL_NODE_BLEND_VALUE:
+    case RPR_MATERIAL_NODE_VOLUME:
+    case RPR_MATERIAL_NODE_INPUT_LOOKUP:
+    case RPR_MATERIAL_NODE_UV_PROJECT:
+
+    {
+        return new UnsupportedMaterialObject(type);
+    }
+
+
     case RPR_MATERIAL_NODE_ARITHMETIC:
     {
         return new ArithmeticMaterialObject(type);
     }
-    case RPR_MATERIAL_NODE_BLEND:
-        return new MultiBxdfMaterialObject(type, MultiBxdf::Type::kMix);
 
     //Textures
     case RPR_MATERIAL_NODE_NORMAL_MAP:
@@ -212,20 +194,6 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
     case RPR_MATERIAL_NODE_CONSTANT_TEXTURE:
     case RPR_MATERIAL_NODE_BUMP_MAP:
         return new TextureMaterialObject(type);
-
-    case RPR_MATERIAL_NODE_TRANSPARENT:
-    case RPR_MATERIAL_NODE_ADD:
-    case RPR_MATERIAL_NODE_BLEND_VALUE:
-    case RPR_MATERIAL_NODE_VOLUME:
-    case RPR_MATERIAL_NODE_INPUT_LOOKUP:
-    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION:
-    case RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION:
-    case RPR_MATERIAL_NODE_TWOSIDED:
-    case RPR_MATERIAL_NODE_UV_PROJECT:
-
-    {
-        return new UnsupportedMaterialObject(type);
-    }
 
     case RPR_MATERIAL_NODE_UBERV2:
     {

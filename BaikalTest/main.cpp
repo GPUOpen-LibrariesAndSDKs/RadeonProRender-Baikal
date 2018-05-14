@@ -31,10 +31,8 @@ THE SOFTWARE.
 #include "aov.h"
 #include "test_scenes.h"
 
-#ifdef ENABLE_UBERV2
 #include "uberv2.h"
 #include "input_maps.h"
-#endif
 
 int g_argc;
 char** g_argv;

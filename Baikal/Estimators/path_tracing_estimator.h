@@ -266,5 +266,6 @@ namespace Baikal
 
         std::unique_ptr<RenderData> m_render_data;
         mutable std::uint32_t m_sample_counter;
+        ClwClass m_uberv2_kernels;
     };
 }
