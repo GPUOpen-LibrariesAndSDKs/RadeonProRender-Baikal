@@ -22,6 +22,7 @@
 #pragma once
 
 #include "basic.h"
+#include "SceneGraph/light.h"
 
 class AovTest : public BasicTest
 {   };
@@ -199,6 +200,114 @@ TEST_F(AovTest, Aov_Uv)
     oss << test_name() << ".png";
     SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
+}
+
+TEST_F(AovTest, Aov_Background)
+{
+    auto output_ws = m_factory->CreateOutput(
+        m_output->width(), m_output->height()
+    );
+
+    m_renderer->SetOutput(Baikal::Renderer::OutputType::kBackground,
+        output_ws.get());
+
+    std::vector<float> intensities = 
+    {
+        0.1f, 0.5f, 1.0f, 2.0f, 5.0f
+    };
+
+    // Get image based light
+    auto light_it = m_scene->CreateLightIterator();
+    auto light = std::dynamic_pointer_cast<Baikal::ImageBasedLight>(light_it->Item());
+    
+    for (float intensity : intensities)
+    {
+        light->SetMultiplier(intensity);
+        ClearOutput(output_ws.get());
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+        auto& scene = m_controller->GetCachedScene(m_scene);
+                
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << "_"<< intensity <<".png";
+            SaveOutput(oss.str(), output_ws.get());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+
+    // Test background override
+    auto image_io(Baikal::ImageIo::CreateImageIo());
+    auto background_texture = image_io->LoadImage("../Resources/Textures/test_albedo1.jpg");
+    light->SetBackgroundTexture(background_texture);
+    light->SetMultiplier(1.0f);
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+    {
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_bgOverride.png";
+        SaveOutput(oss.str(), output_ws.get());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // Test no image based light => black image
+    m_scene->DetachLight(light);
+    auto point_light = Baikal::PointLight::Create();
+    point_light->SetPosition(float3(5.0f, 5.0f, 5.0f));
+    m_scene->AttachLight(point_light);
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+    {
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_noIBL.png";
+        SaveOutput(oss.str(), output_ws.get());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
+
+    // Test background image
+    m_scene->SetBackgroundImage(background_texture);
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+    {
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_BackgroundImage.png";
+        SaveOutput(oss.str(), output_ws.get());
+        ASSERT_TRUE(CompareToReference(oss.str()));
+    }
 }
 
 TEST_F(AovTest, Aov_Visibility)

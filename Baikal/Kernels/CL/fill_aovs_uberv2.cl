@@ -62,6 +62,11 @@ KERNEL void FillAOVsUberV2(
     TEXTURE_ARG_LIST,
     // Environment texture index
     int env_light_idx,
+    // Background texture index
+    int background_idx,
+    // Output size
+    int width,
+    int height,
     // Emissives
     GLOBAL Light const* restrict lights,
     // Number of emissive objects
@@ -164,11 +169,21 @@ KERNEL void FillAOVsUberV2(
 
         if (background_enabled)
         {
-            Light light = lights[env_light_idx];
-            int tex = EnvironmentLight_GetBackgroundTexture(&light);
-            if (tex != -1)
+            if (env_light_idx != -1)
             {
-                aov_background[idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                Light light = lights[env_light_idx];
+                int tex = EnvironmentLight_GetBackgroundTexture(&light);
+                if (tex != -1)
+                {
+                    aov_background[idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                }
+            }
+            else if (background_idx != -1)
+            {
+                float x = (float)(idx % width) / (float)width;
+                float y = (float)(idx / width) / (float)height;
+                float2 uv = make_float2(x, y);
+                aov_background[idx].xyz += Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
             }
             aov_background[idx].w += 1.0f;
         }
