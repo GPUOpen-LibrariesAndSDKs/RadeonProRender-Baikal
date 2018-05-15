@@ -446,7 +446,9 @@ namespace Baikal
                         uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer | UberV2Material::Layers::kTransparencyLayer);
                         break;
                     }
-                    auto instance = Instance::Create(mesh);
+                    // Uncomment when instancing will be fixed
+                    //auto instance = Instance::Create(mesh);
+                    auto instance = CreateSphere(64, 32, 0.9f, float3(0.f, 1.0f, 0.f));
                     t = RadeonRays::translation(float3(j * 2.f - 9.f, i * 2.f - 3.f, -10.f));
                     instance->SetTransform(t);
                     scene->AttachShape(instance);
