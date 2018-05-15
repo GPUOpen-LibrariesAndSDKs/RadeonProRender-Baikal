@@ -395,10 +395,10 @@ typedef struct _DifferentialGeometry
     float3 dpdu;
     float3 dpdv;
     // Screen derivatives
-    float3 dudx;
-    float3 dudy;
-    float3 dvdx;
-    float3 dvdy;
+    float dudx;
+    float dudy;
+    float dvdx;
+    float dvdy;
     // Triangle area
     float area;
 

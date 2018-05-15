@@ -29,14 +29,14 @@ THE SOFTWARE.
 
 
 /// To simplify a bit
-#define TEXTURE_ARG_LIST __global Texture const* textures, __global char const* texturedata
-#define TEXTURE_ARG_LIST_IDX(x) int x, __global Texture const* textures, __global char const* texturedata
-#define TEXTURE_ARGS textures, texturedata
-#define TEXTURE_ARGS_IDX(x) x, textures, texturedata
+#define TEXTURE_ARG_LIST __global Texture const* textures, __global char const* texturedata, __global MipmapPyramid const* mipmap
+#define TEXTURE_ARG_LIST_IDX(x) int x, __global Texture const* textures, __global char const* texturedata, __global MipmapPyramid const* mipmap
+#define TEXTURE_ARGS textures, texturedata, mipmap
+#define TEXTURE_ARGS_IDX(x) x, textures, texturedata, mipmap
 
 /// Sample 2D texture
 inline
-float4 Texture_Sample2D(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
+float4 Texture_Sample2D(float2 uv, DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
 {
     // Get width and height
     int width = textures[texidx].w;
@@ -54,7 +54,173 @@ float4 Texture_Sample2D(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
     // and our axis goes from down to top
     uv.y = 1.f - uv.y;
 
-    // Calculate integer coordinates
+    if (textures[texidx].mipmap_enabled && (diffgeo != NULL))
+    {
+        float delta_u_length = sqrt(dudx * dudx + dudy * dudy);
+        float delta_v_length = sqrt(dvdx * dvdx + dvdy * dvdy);
+        float max_delta = max(delta_u_length, delta_v_length);
+        MipmapPyramid mip_pyramid = mipmap[textures[texidx].mipmap_index];
+        float level = mip_pyramid.level_num - 1 + log2(max(max_delta, 1e-8f));
+
+        if (level >= MAX_LEVEL_NUM)
+        {
+            switch (textures[texidx].fmt)
+            {
+                int level_offset = mip_pyramid.level_info[level_num - 1].offset;
+                case RGBA32:
+                {
+                    return *((__global float4 const*)(texturedata + level_offset));
+                }
+                case RGBA16:
+                {
+                    return vload_half4(0, (__global half4 const*)(texturedata + level_offset));
+                }
+                case RGBA8:
+                {
+                    uchar4 val = *((__global char4 const*)(texturedata + level_offset));
+                    return make_float4(
+                        (float)val.x / 255.f,
+                        (float)val.y / 255.f,
+                        (float)val.z / 255.f,
+                        (float)val.w / 255.f);
+                }
+                default:
+                {
+                    return make_float4(0.f, 0.f, 0.f, 0.f);
+                }
+            }
+        }
+
+        int int_level = floor(level);
+        float alpha = level - int_level;
+
+        if (level > 0)
+        {
+            // compute coords in level
+            float f_x = uv.x * (float)mip_pyramid.level_info[int_level].width;
+            float f_y = uv.y * (float)mip_pyramid.level_info[int_level].height;
+            // compute integer coords
+            int x0 = clamp((int)floor(f_x), 0, width - 1);
+            int y0 = clamp((int)floor(f_y), 0, width - 1);
+            int x1 = clamp(x0 + 1, 0, width - 1);
+            int y1 = clamp(y0 + 1, 0, width - 1);
+            // compute delta for filtering
+            float d_x = f_x - x0;
+            float d_y = f_y - y0;
+
+            // level offsets
+            int bottom_level_offset = mip_pyramid.level_info[int_level].offset
+            int top_level_offset = mip_pyramid.level_info[int_level + 1].offset
+
+            switch (textures[texidx].fmt)
+            {
+                case RGBA32:
+                {
+                    // get data
+                    __global float4* bottom_level_data =
+                        (__global float4* )(texturedata + bottom_level_offset);
+                    __global float4* top_level_data =
+                        (__global float4* )(texturedata + top_level_offset);
+
+                    // triangle filter for bottom level
+                    float4 bottom_val0 = bottom_level_data[y0 * mip_pyramid.level_info[int_level].pitch + x0];
+                    float4 bottom_val1 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x0];
+                    float4 bottom_val2 = bottom_level_data[y0 * mip_pyramid.level_info[int_level].pitch + x1];
+                    float4 bottom_val3 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x1];
+                    
+                    float4 bottom_val = make_float4(
+                        (1 - dx) * (1 - dy) * (bottom_val0.x + bottom_val1.x + bottom_val2.x + bottom_val3.x),
+                        (1 - dx) * dy * (bottom_val0.y + bottom_val1.y + bottom_val2.y + bottom_val3.y),
+                        dx * (1 - dy) * (bottom_val0.z + bottom_val1.z + bottom_val2.z + bottom_val3.z),
+                        dx * dy * (bottom_val0.w + bottom_val1.w + bottom_val2.w + bottom_val3.w));
+
+                    float4 top_val0 = top_level_data[y0 * mip_pyramid.level_info[int_level + 1].pitch + x0];
+                    float4 top_val1 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x0];
+                    float4 top_val2 = top_level_data[y0 * mip_pyramid.level_info[int_level + 1].pitch + x1];
+                    float4 top_val3 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x1];
+                    
+                    float4 top_val =  make_float4(
+                        (1 - dx) * (1 - dy) * (top_val0.x + top_val1.x + top_val2.x + top_val3.x),
+                        (1 - dx) * dy * (top_val0.y + top_val1.y + top_val2.y + top_val3.y),
+                        dx * (1 - dy) * (top_val0.z + top_val1.z + top_val2.z + top_val3.z),
+                        dx * dy * (top_val0.w + top_val1.w + top_val2.w + top_val3.w));
+
+                    return lerp(bottom_val, top_val, alpha);
+                }
+                case RGBA16:
+                {
+                    // get data
+                    __global half4* bottom_level_data =
+                        (__global half4* )(texturedata + bottom_level_offset);
+                    __global half4* top_level_data =
+                        (__global half4* )(texturedata + top_level_offset);
+
+                    // triangle filter for bottom level
+                    float4 bottom_val0 = vload_half4(y0 * mip_pyramid.level_info[int_level].pitch + x0, bottom_level_data);
+                    float4 bottom_val1 = vload_half4(y1 * mip_pyramid.level_info[int_level].pitch + x0, bottom_level_data);
+                    float4 bottom_val2 = vload_half4(y0 * mip_pyramid.level_info[int_level].pitch + x1, bottom_level_data);
+                    float4 bottom_val3 = vload_half4(y1 * mip_pyramid.level_info[int_level].pitch + x1, bottom_level_data);
+                    
+                    float4 bottom_val = make_float4(
+                        (1 - dx) * (1 - dy) * (bottom_val0.x + bottom_val1.x + bottom_val2.x + bottom_val3.x),
+                        (1 - dx) * dy * (bottom_val0.y + bottom_val1.y + bottom_val2.y + bottom_val3.y),
+                        dx * (1 - dy) * (bottom_val0.z + bottom_val1.z + bottom_val2.z + bottom_val3.z),
+                        dx * dy * (bottom_val0.w + bottom_val1.w + bottom_val2.w + bottom_val3.w));
+
+                   float4 top_val0 = vload_half4(y0 * mip_pyramid.level_info[int_level + 1].pitch + x0, bottom_level_data);
+                   float4 top_val1 = vload_half4(y1 * mip_pyramid.level_info[int_level + 1].pitch + x0, bottom_level_data);
+                   float4 top_val2 = vload_half4(y0 * mip_pyramid.level_info[int_level + 1].pitch + x1, bottom_level_data);
+                   float4 top_val3 = vload_half4(y1 * mip_pyramid.level_info[int_level + 1].pitch + x1, bottom_level_data);
+                    
+                    float4 top_val =  make_float4(
+                        (1 - dx) * (1 - dy) * (top_val0.x + top_val1.x + top_val2.x + top_val3.x),
+                        (1 - dx) * dy * (top_val0.y + top_val1.y + top_val2.y + top_val3.y),
+                        dx * (1 - dy) * (top_val0.z + top_val1.z + top_val2.z + top_val3.z),
+                        dx * dy * (top_val0.w + top_val1.w + top_val2.w + top_val3.w));
+
+                    return lerp(bottom_val, top_val, alpha);
+                }
+                case RGBA8:
+                {
+                    // get data
+                    __global char4* bottom_level_data =
+                        (__global char4* )(texturedata + bottom_level_offset);
+                    __global char4* top_level_data =
+                        (__global char4* )(texturedata + top_level_offset);
+
+                    // triangle filter for bottom level
+                    char4 bottom_val0 = bottom_level_data[y0 * mip_pyramid.level_info[int_level].pitch + x0];
+                    char4 bottom_val1 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x0];
+                    char4 bottom_val2 = bottom_level_data[y0 * mip_pyramid.level_info[int_level].pitch + x1];
+                    char4 bottom_val3 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x1];
+                    
+                    char4 bottom_val = make_float4(
+                        (1 - dx) * (1 - dy) * (bottom_val0.x + bottom_val1.x + bottom_val2.x + bottom_val3.x),
+                        (1 - dx) * dy * (bottom_val0.y + bottom_val1.y + bottom_val2.y + bottom_val3.y),
+                        dx * (1 - dy) * (bottom_val0.z + bottom_val1.z + bottom_val2.z + bottom_val3.z),
+                        dx * dy * (bottom_val0.w + bottom_val1.w + bottom_val2.w + bottom_val3.w));
+
+                    char4 top_val0 = top_level_data[y0 * mip_pyramid.level_info[int_level + 1].pitch + x0];
+                    char4 top_val1 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x0];
+                    char4 top_val2 = top_level_data[y0 * mip_pyramid.level_info[int_level + 1].pitch + x1];
+                    char4 top_val3 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x1];
+                    
+                    char4 top_val =  make_float4(
+                        (1 - dx) * (1 - dy) * (top_val0.x + top_val1.x + top_val2.x + top_val3.x) / 255.f,
+                        (1 - dx) * dy * (top_val0.y + top_val1.y + top_val2.y + top_val3.y) / 255.f,
+                        dx * (1 - dy) * (top_val0.z + top_val1.z + top_val2.z + top_val3.z) / 255.f,
+                        dx * dy * (top_val0.w + top_val1.w + top_val2.w + top_val3.w) / 255.f);
+
+                    return lerp(bottom_val, top_val, alpha);
+                }
+                default:
+                {
+                    return make_float4(0.f, 0.f, 0.f, 0.f);
+                }
+            }
+        }
+    }
+        // Calculate integer coordinates
     int x0 = clamp((int)floor(uv.x * width), 0, width - 1);
     int y0 = clamp((int)floor(uv.y * height), 0, height - 1);
 
@@ -71,7 +237,7 @@ float4 Texture_Sample2D(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
         case RGBA32:
         {
             __global float4 const* mydataf = (__global float4 const*)mydata;
-
+            
             // Get 4 values for linear filtering
             float4 val00 = *(mydataf + width * y0 + x0);
             float4 val01 = *(mydataf + width * y0 + x1);
@@ -136,7 +302,7 @@ float3 Texture_SampleEnvMap(float3 d, TEXTURE_ARG_LIST_IDX(texidx))
     uv.y = 1.f - theta / PI;
 
     // Sample the texture
-    return Texture_Sample2D(uv, TEXTURE_ARGS_IDX(texidx)).xyz;
+    return Texture_Sample2D(uv, NULL, TEXTURE_ARGS_IDX(texidx)).xyz;
 }
 
 /// Get data from parameter value or texture
@@ -146,6 +312,8 @@ float3 Texture_GetValue3f(
                 float3 v,
                 // Texture coordinate
                 float2 uv,
+                // Differential geometry for mipmaping
+                DifferentialGeometry const *diffgeo,
                 // Texture args
                 TEXTURE_ARG_LIST_IDX(texidx)
                 )
@@ -154,7 +322,7 @@ float3 Texture_GetValue3f(
     if (texidx != -1)
     {
         // Sample texture
-        return native_powr(Texture_Sample2D(uv, TEXTURE_ARGS_IDX(texidx)).xyz, 2.2f);
+        return native_powr(Texture_Sample2D(uv, diffgeo, TEXTURE_ARGS_IDX(texidx)).xyz, 2.2f);
     }
 
     // Return fixed color otherwise
@@ -168,6 +336,8 @@ float4 Texture_GetValue4f(
                 float4 v,
                 // Texture coordinate
                 float2 uv,
+                // Differential geometry for mipmaping
+                DifferentialGeometry const *diffgeo,
                 // Texture args
                 TEXTURE_ARG_LIST_IDX(texidx)
                 )
@@ -176,7 +346,7 @@ float4 Texture_GetValue4f(
     if (texidx != -1)
     {
         // Sample texture
-        return native_powr(Texture_Sample2D(uv, TEXTURE_ARGS_IDX(texidx)), 2.2f);
+        return native_powr(Texture_Sample2D(uv, diffgeo, TEXTURE_ARGS_IDX(texidx)), 2.2f);
     }
 
     // Return fixed color otherwise
@@ -190,6 +360,8 @@ float Texture_GetValue1f(
                         float v,
                         // Texture coordinate
                         float2 uv,
+                        // Differential geometry for mipmaping
+                        DifferentialGeometry const *diffgeo,
                         // Texture args
                         TEXTURE_ARG_LIST_IDX(texidx)
                         )
@@ -198,7 +370,7 @@ float Texture_GetValue1f(
     if (texidx != -1)
     {
         // Sample texture
-        return Texture_Sample2D(uv, TEXTURE_ARGS_IDX(texidx)).x;
+        return Texture_Sample2D(uv, diffgeo, TEXTURE_ARGS_IDX(texidx)).x;
     }
 
     // Return fixed color otherwise
