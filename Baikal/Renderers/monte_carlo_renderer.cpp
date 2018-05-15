@@ -194,23 +194,21 @@ namespace Baikal
         }
     }
 
-    Output* MonteCarloRenderer::FindFirstNonZeroOutput(bool include_color) const
+    Output* MonteCarloRenderer::FindFirstNonZeroOutput(bool include_multipass) const
     {
         // Find first non-zero output
-        auto current_output = include_color ? GetOutput(Renderer::OutputType::kColor) : nullptr;
-        if (!current_output)
+        auto start_index = include_multipass ? 0 : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
+        
+        Output* current_output = nullptr;
+        for (auto i = start_index; i < static_cast<std::uint32_t>(Renderer::OutputType::kVisibility); ++i)
         {
-            for (auto i = 1U; i < static_cast<std::uint32_t>(Renderer::OutputType::kVisibility); ++i)
-            {
-                current_output = GetOutput(static_cast<Renderer::OutputType>(i));
+            current_output = GetOutput(static_cast<Renderer::OutputType>(i));
 
-                if (current_output)
-                {
-                    break;
-                }
+            if (current_output)
+            {
+                break;
             }
         }
-
         return current_output;
     }
 
@@ -235,7 +233,7 @@ namespace Baikal
     void MonteCarloRenderer::FillAOVs(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
         // Find first non-zero AOV to get buffer dimensions
-        auto output = FindFirstNonZeroOutput();
+        auto output = FindFirstNonZeroOutput(false);
         auto output_size = int2(output->width(), output->height());
 
         // Generate tile domain
@@ -274,7 +272,8 @@ namespace Baikal
         fill_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kRandomSeed));
         fill_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kSobolLUT));
         fill_kernel.SetArg(argc++, m_sample_counter);
-        for (auto i = 1U; i < static_cast<std::uint32_t>(Renderer::OutputType::kMax); ++i)
+        for (auto i = static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
+            i < static_cast<std::uint32_t>(Renderer::OutputType::kMax); ++i)
         {
             if (auto aov = static_cast<ClwOutput*>(GetOutput(static_cast<Renderer::OutputType>(i))))
             {

@@ -128,9 +128,9 @@ KERNEL void FillAOVsUberV2(
     // Background aov
     GLOBAL float4* restrict aov_background,
     // Opacity enabled flag
-    int opacity_enabled,
+    //int opacity_enabled,
     // Opacity aov
-    GLOBAL float4* restrict aov_opacity,
+    //GLOBAL float4* restrict aov_opacity,
     // Depth enabled flag
     int depth_enabled,
     // Depth map
@@ -393,7 +393,7 @@ KERNEL void FillAOVsUberV2(
                     UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);
                 group_id[idx].w += 1.0f;
             }
-
+            /*
             if (opacity_enabled)
             {
                 // Select BxDF
@@ -406,7 +406,7 @@ KERNEL void FillAOVsUberV2(
                 aov_opacity[idx].xyz += 1.0f - t;
                 aov_opacity[idx].w += 1.f;
             }
-
+            */
             if (depth_enabled)
             {
                 float w = aov_depth[idx].w;
