@@ -122,7 +122,7 @@ namespace Baikal
             auto parent = queue.front();
             for (size_t i = 0; i < queue.front()->GetNumInputs(); i++)
             {
-                auto input = queue.front()->GetInput(static_cast<uint32_t>(i));
+                auto input = queue.front()->GetInput(static_cast<std::uint32_t>(i));
 
                 if (input.value.type == Material::InputType::kMaterial)
                 {
@@ -975,7 +975,7 @@ namespace Baikal
                 for (size_t i = 0; i < material->GetNumInputs(); i++)
                 {
                     ImGui::Separator();
-                    auto input = material->GetInput(static_cast<uint32_t>(i));
+                    auto input = material->GetInput(static_cast<std::uint32_t>(i));
 
                     if (settings->inputs_info.size() <= i)
                     {
@@ -990,13 +990,13 @@ namespace Baikal
                         {
                             case Material::InputType::kFloat4:
                             {
-                                auto result = ReadFloatInput(material, *settings, static_cast<uint32_t>(i));
+                                auto result = ReadFloatInput(material, *settings, static_cast<std::uint32_t>(i));
                                 is_scene_changed = is_scene_changed ? is_scene_changed : result;
                                 break;
                             }
                             case Material::InputType::kTexture:
                             {
-                                auto result = ReadTextruePath(material, *settings, static_cast<uint32_t>(i));
+                                auto result = ReadTextruePath(material, *settings, static_cast<std::uint32_t>(i));
                                 is_scene_changed = is_scene_changed ? is_scene_changed : result;
                                 break;
                             }

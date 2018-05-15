@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
-inline int popcount(uint32_t value)
+inline int popcount(std::uint32_t value)
 {
   int count = value ? 1 : 0;
   while (value &= (value - 1))
@@ -45,7 +45,7 @@ CLUberV2Generator::~CLUberV2Generator()
 
 void CLUberV2Generator::AddMaterial(UberV2Material::Ptr material)
 {
-    uint32_t layers = material->GetLayers();
+    std::uint32_t layers = material->GetLayers();
     // Check if we already have such material type processed
     if (m_materials.find(layers) != m_materials.end())
     {
@@ -139,7 +139,7 @@ void CLUberV2Generator::MaterialGeneratePrepareInputs(UberV2Material::Ptr materi
     // Reserve 4k. This should be enought for maximum configuration
     sources->m_prepare_inputs.reserve(4096);
     // Write base code
-    uint32_t layers = material->GetLayers();
+    std::uint32_t layers = material->GetLayers();
     sources->m_prepare_inputs =
         "void UberV2PrepareInputs" + std::to_string(layers) + "("
         "DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values,"
@@ -232,7 +232,7 @@ std::string CLUberV2Generator::GenerateBlend(const BlendData &blend_data, bool i
 
 void CLUberV2Generator::MaterialGenerateGetPdf(UberV2Material::Ptr material, UberV2Sources *sources)
 {
-    uint32_t layers = material->GetLayers();
+    std::uint32_t layers = material->GetLayers();
 
     sources->m_get_pdf = "float UberV2_GetPdf" + std::to_string(layers) + "("
         "DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
@@ -275,7 +275,7 @@ void CLUberV2Generator::MaterialGenerateGetPdf(UberV2Material::Ptr material, Ube
 
 void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, UberV2Sources *sources)
 {
-    uint32_t layers = material->GetLayers();
+    std::uint32_t layers = material->GetLayers();
     sources->m_sample =
         "float3 UberV2_Sample" + std::to_string(layers) + "(DifferentialGeometry const* dg, float3 wi, TEXTURE_ARG_LIST, float2 sample, float3* wo, float* pdf,"
         "UberV2ShaderData const* shader_data)\n"
@@ -285,7 +285,7 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
         "\tswitch(sampledComponent)\n"
         "\t{\n";
 
-    std::vector<std::pair<uint32_t, std::string>> component_sampling =
+    std::vector<std::pair<std::uint32_t, std::string>> component_sampling =
     {
         {UberV2Material::Layers::kTransparencyLayer,
             "\t\tcase kBxdfUberV2SampleTransparency: result = UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
@@ -321,7 +321,7 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
 }
 void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material, UberV2Sources *sources)
 {
-    uint32_t layers = material->GetLayers();
+    std::uint32_t layers = material->GetLayers();
     sources->m_get_bxdf_type = "void GetMaterialBxDFType" + std::to_string(layers) + "("
         "float3 wi, Sampler* sampler, SAMPLER_ARG_LIST, DifferentialGeometry* dg, UberV2ShaderData const* shader_data)\n"
         "{\n"
@@ -454,7 +454,7 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
 
 void CLUberV2Generator::MaterialGenerateEvaluate(UberV2Material::Ptr material, UberV2Sources *sources)
 {
-uint32_t layers = material->GetLayers();
+    std::uint32_t layers = material->GetLayers();
 
     sources->m_evaluate = "float3 UberV2_Evaluate" + std::to_string(layers) + "("
         "DifferentialGeometry const* dg, float3 wi, float3 wo, TEXTURE_ARG_LIST, UberV2ShaderData const* shader_data)\n"
