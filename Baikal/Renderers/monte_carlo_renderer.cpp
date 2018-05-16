@@ -120,7 +120,9 @@ namespace Baikal
     void MonteCarloRenderer::RenderTile(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
         // Number of rays to generate
-        auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
+        //auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
+        // Find output that need to be rendered in multi pass kernel
+        auto output = static_cast<ClwOutput*>(FindFirstNonZeroOutput(true, false));
 
         if (output)
         {
@@ -130,13 +132,15 @@ namespace Baikal
             GenerateTileDomain(output_size, tile_origin, tile_size);
             GeneratePrimaryRays(scene, *output, tile_size);
 
+            auto color_output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
+
             if (scene.background_idx > -1)
             {
                 m_estimator->Estimate(
                     scene,
                     num_rays,
                     Estimator::QualityLevel::kStandard,
-                    output->data(),
+                    color_output->data(),
                     true,
                     false,
                     std::bind(&MonteCarloRenderer::HandleMissedRays, this, std::ref(scene), output_size.x, output_size.y,
@@ -148,11 +152,11 @@ namespace Baikal
                     scene,
                     num_rays,
                     Estimator::QualityLevel::kStandard,
-                    output->data());
+                    color_output->data());
 
         }
 
-        // Check if we have other outputs, than color
+        // Check if we have outputs that we can render in single pass
         bool aov_pass_needed = (FindFirstNonZeroOutput(false) != nullptr);
         if (aov_pass_needed)
         {
@@ -194,13 +198,18 @@ namespace Baikal
         }
     }
 
-    Output* MonteCarloRenderer::FindFirstNonZeroOutput(bool include_multipass) const
+    Output* MonteCarloRenderer::FindFirstNonZeroOutput(bool include_multipass, bool include_singlepass) const
     {
-        // Find first non-zero output
-        auto start_index = include_multipass ? 0 : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
+        // If we don't use anything, why are we calling this function?
+        assert(include_multipass || include_singlepass);
+
+        std::uint32_t start_index = include_multipass ? 0
+            : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
+        std::uint32_t end_index = include_singlepass ? static_cast<std::uint32_t>(Renderer::OutputType::kVisibility)
+            : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput);
         
         Output* current_output = nullptr;
-        for (auto i = start_index; i < static_cast<std::uint32_t>(Renderer::OutputType::kVisibility); ++i)
+        for (auto i = start_index; i < end_index; ++i)
         {
             current_output = GetOutput(static_cast<Renderer::OutputType>(i));
 
@@ -214,18 +223,25 @@ namespace Baikal
 
     void MonteCarloRenderer::SetOutput(OutputType type, Output* output)
     {
-        if (type == OutputType::kVisibility)
+        static const std::map<OutputType, Estimator::IntermediateValue> kOutputTypeToIntermediateValue = 
         {
-            if (!m_estimator->SupportsIntermediateValue(Estimator::IntermediateValue::kVisibility))
+            { OutputType::kVisibility, Estimator::IntermediateValue::kVisibility },
+            { OutputType::kVisibility, Estimator::IntermediateValue::kVisibility },
+        };
+        
+        auto it = kOutputTypeToIntermediateValue.find(type);
+        if (it != kOutputTypeToIntermediateValue.end())
+        {
+            if (!m_estimator->SupportsIntermediateValue(it->second))
             {
                 throw std::runtime_error("Visibility AOV not supported by an underlying estimator");
             }
 
             auto clw_output = static_cast<ClwOutput*>(output);
 
-            m_estimator->SetIntermediateValueBuffer(Estimator::IntermediateValue::kVisibility, clw_output->data());
+            m_estimator->SetIntermediateValueBuffer(it->second, clw_output->data());
         }
-
+        // CHECK: do we need call this if we set intermediate value buffer?
         Renderer::SetOutput(type, output);
     }
 

@@ -189,6 +189,9 @@ namespace Baikal
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
         auto visibility_buffer = GetIntermediateValueBuffer(IntermediateValue::kVisibility);
 
+        auto has_opacity_buffer = HasIntermediateValueBuffer(IntermediateValue::kOpacity);
+        auto opacity_buffer = GetIntermediateValueBuffer(IntermediateValue::kOpacity);
+
         InitPathData(num_estimates, scene.camera_volume_index);
 
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
@@ -843,7 +846,7 @@ namespace Baikal
 
     bool PathTracingEstimator::SupportsIntermediateValue(IntermediateValue value) const
     {
-        if (value == IntermediateValue::kVisibility)
+        if (value == IntermediateValue::kVisibility || value == IntermediateValue::kOpacity)
         {
             return true;
         }
