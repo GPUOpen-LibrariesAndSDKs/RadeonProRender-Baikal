@@ -102,8 +102,8 @@ float3 MicrofacetBeckmann_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
     const float eta = dg->mat.simple.ni;
 
     // Incident and reflected zenith angles
@@ -133,7 +133,7 @@ float MicrofacetBeckmann_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
     return MicrofacetDistribution_Beckmann_GetPdf(roughness, dg, wi, wo, TEXTURE_ARGS);
 }
 
@@ -152,7 +152,7 @@ float3 MicrofacetBeckmann_Sample(
     float* pdf
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
 
     float3 wh;
     MicrofacetDistribution_Beckmann_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
@@ -262,8 +262,8 @@ float3 MicrofacetGGX_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
 
     // Incident and reflected zenith angles
     float costhetao = fabs(wo.y);
@@ -291,7 +291,7 @@ float MicrofacetGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
 
     float3 wh = normalize(wo + wi);
 
@@ -313,7 +313,7 @@ float3 MicrofacetGGX_Sample(
     float* pdf
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
 
     float3 wh;
     MicrofacetDistribution_GGX_SampleNormal(roughness, dg, TEXTURE_ARGS, sample, &wh);
@@ -341,7 +341,7 @@ float3 Lambert_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
 
     float F = dg->mat.simple.fresnel;
 
@@ -379,7 +379,7 @@ float3 Lambert_Sample(
     float* pdf
 )
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
 
     *wo = Sample_MapToHemisphere(sample, make_float3(0.f, 1.f, 0.f), 1.f);
 
@@ -423,7 +423,7 @@ float3 Translucent_Sample(
     float* pdf
 )
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
 
     float ndotwi = wi.y;
 
@@ -448,7 +448,7 @@ float3 Translucent_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -509,7 +509,7 @@ float3 IdealReflect_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
     const float eta = dg->mat.simple.ni;
 
     // Mirror reflect wi
@@ -574,7 +574,7 @@ float3 IdealRefract_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
 
     float etai = 1.f;
     float etat = dg->mat.simple.ni;
@@ -624,8 +624,8 @@ float3 MicrofacetRefractionGGX_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -675,7 +675,7 @@ float MicrofacetRefractionGGX_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
     float ndotwi = wi.y;
     float ndotwo = wo.y;
 
@@ -726,8 +726,8 @@ float3 MicrofacetRefractionGGX_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
 
@@ -782,8 +782,8 @@ float3 MicrofacetRefractionBeckmann_Evaluate(
     TEXTURE_ARG_LIST
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float roughness = max(Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx)), ROUGHNESS_EPS);
 
     float ndotwi = wi.y;
     float ndotwo = wo.y;
@@ -828,7 +828,7 @@ float MicrofacetRefractionBeckmann_GetPdf(
     TEXTURE_ARG_LIST
 )
 {
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
     float ndotwi = wi.y;
     float ndotwo = wo.y;
 
@@ -874,8 +874,8 @@ float3 MicrofacetRefractionBeckmann_Sample(
     float* pdf
 )
 {
-    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
-    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
+    const float3 ks = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float roughness = Texture_GetValue1f(dg->mat.simple.ns, dg, TEXTURE_ARGS_IDX(dg->mat.simple.nsmapidx));
 
     float ndotwi = wi.y;
 

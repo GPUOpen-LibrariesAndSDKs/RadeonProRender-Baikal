@@ -173,7 +173,7 @@ void Material_Select(
             {
                 float sample = Sampler_Sample1D(sampler, SAMPLER_ARGS);
 
-                float weight = Texture_GetValue1f(mat.compound.weight, dg->uv, TEXTURE_ARGS_IDX(mat.compound.weight_map_idx));
+                float weight = Texture_GetValue1f(mat.compound.weight, dg, TEXTURE_ARGS_IDX(mat.compound.weight_map_idx));
 
                 if (sample < weight)
                 {

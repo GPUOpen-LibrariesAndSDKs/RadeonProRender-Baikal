@@ -42,7 +42,7 @@ KERNEL
 void InitPathData(
     GLOBAL int const* restrict src_index,
     GLOBAL int* restrict dst_index,
-    GLOBAL int const* restrict num_elements, 
+    GLOBAL int const* restrict num_elements,
     int world_volume_idx,
     GLOBAL Path* restrict paths
 )
@@ -365,7 +365,7 @@ KERNEL void ShadeSurface(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
+        Scene_FillDifferentialGeometry(&scene, &isect, x_auxiliary_rays, y_auxiliary_rays, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
@@ -977,7 +977,7 @@ KERNEL void ShadeMiss(
             {
                 v.xyz = weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t;
                 v.xyz = REASONABLE_RADIANCE(v.xyz);
-            }
+            } 
 
             ADD_FLOAT4(&output[output_index], v);
         }

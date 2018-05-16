@@ -70,16 +70,16 @@ INLINE float Disney_GetPdf(
     TEXTURE_ARG_LIST
     )
 {
-    float3 base_color = Texture_GetValue3f(dg->mat.disney.base_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.base_color_map_idx));
-    float metallic = Texture_GetValue1f(dg->mat.disney.metallic, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.metallic_map_idx));
-    float specular = Texture_GetValue1f(dg->mat.disney.specular, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.specular_map_idx));
-    float anisotropy = Texture_GetValue1f(dg->mat.disney.anisotropy, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.anisotropy_map_idx));
-    float roughness = Texture_GetValue1f(dg->mat.disney.roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.roughness_map_idx));
-    float specular_tint = Texture_GetValue1f(dg->mat.disney.specular_tint, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.specular_tint_map_idx));
-    float sheen_tint = Texture_GetValue1f(dg->mat.disney.sheen_tint, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_tint_map_idx));
-    float sheen = Texture_GetValue1f(dg->mat.disney.sheen, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_map_idx));
-    float clearcoat_gloss = Texture_GetValue1f(dg->mat.disney.clearcoat_gloss, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_gloss_map_idx));
-    float clearcoat = Texture_GetValue1f(dg->mat.disney.clearcoat, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_map_idx));
+    float3 base_color = Texture_GetValue3f(dg->mat.disney.base_color.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.disney.base_color_map_idx));
+    float metallic = Texture_GetValue1f(dg->mat.disney.metallic, dg, TEXTURE_ARGS_IDX(dg->mat.disney.metallic_map_idx));
+    float specular = Texture_GetValue1f(dg->mat.disney.specular, dg, TEXTURE_ARGS_IDX(dg->mat.disney.specular_map_idx));
+    float anisotropy = Texture_GetValue1f(dg->mat.disney.anisotropy, dg, TEXTURE_ARGS_IDX(dg->mat.disney.anisotropy_map_idx));
+    float roughness = Texture_GetValue1f(dg->mat.disney.roughness, dg, TEXTURE_ARGS_IDX(dg->mat.disney.roughness_map_idx));
+    float specular_tint = Texture_GetValue1f(dg->mat.disney.specular_tint, dg, TEXTURE_ARGS_IDX(dg->mat.disney.specular_tint_map_idx));
+    float sheen_tint = Texture_GetValue1f(dg->mat.disney.sheen_tint, dg, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_tint_map_idx));
+    float sheen = Texture_GetValue1f(dg->mat.disney.sheen, dg, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_map_idx));
+    float clearcoat_gloss = Texture_GetValue1f(dg->mat.disney.clearcoat_gloss, dg, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_gloss_map_idx));
+    float clearcoat = Texture_GetValue1f(dg->mat.disney.clearcoat, dg, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_map_idx));
     float subsurface = dg->mat.disney.subsurface;
     
     float aspect = native_sqrt(1.f - anisotropy * 0.9f);
@@ -125,16 +125,16 @@ INLINE float3 Disney_Evaluate(
     TEXTURE_ARG_LIST
     )
 {
-    float3 base_color = Texture_GetValue3f(dg->mat.disney.base_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.base_color_map_idx));
-    float metallic = Texture_GetValue1f(dg->mat.disney.metallic, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.metallic_map_idx));
-    float specular = Texture_GetValue1f(dg->mat.disney.specular, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.specular_map_idx));
-    float anisotropy = Texture_GetValue1f(dg->mat.disney.anisotropy, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.anisotropy_map_idx));
-    float roughness = Texture_GetValue1f(dg->mat.disney.roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.roughness_map_idx));
-    float specular_tint = Texture_GetValue1f(dg->mat.disney.specular_tint, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.specular_tint_map_idx));
-    float sheen_tint = Texture_GetValue1f(dg->mat.disney.sheen_tint, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_tint_map_idx));
-    float sheen = Texture_GetValue1f(dg->mat.disney.sheen, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_map_idx));
-    float clearcoat_gloss = Texture_GetValue1f(dg->mat.disney.clearcoat_gloss, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_gloss_map_idx));
-    float clearcoat = Texture_GetValue1f(dg->mat.disney.clearcoat, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_map_idx));
+    float3 base_color = Texture_GetValue3f(dg->mat.disney.base_color.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.disney.base_color_map_idx));
+    float metallic = Texture_GetValue1f(dg->mat.disney.metallic, dg, TEXTURE_ARGS_IDX(dg->mat.disney.metallic_map_idx));
+    float specular = Texture_GetValue1f(dg->mat.disney.specular, dg, TEXTURE_ARGS_IDX(dg->mat.disney.specular_map_idx));
+    float anisotropy = Texture_GetValue1f(dg->mat.disney.anisotropy, dg, TEXTURE_ARGS_IDX(dg->mat.disney.anisotropy_map_idx));
+    float roughness = Texture_GetValue1f(dg->mat.disney.roughness, dg, TEXTURE_ARGS_IDX(dg->mat.disney.roughness_map_idx));
+    float specular_tint = Texture_GetValue1f(dg->mat.disney.specular_tint, dg, TEXTURE_ARGS_IDX(dg->mat.disney.specular_tint_map_idx));
+    float sheen_tint = Texture_GetValue1f(dg->mat.disney.sheen_tint, dg, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_tint_map_idx));
+    float sheen = Texture_GetValue1f(dg->mat.disney.sheen, dg, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_map_idx));
+    float clearcoat_gloss = Texture_GetValue1f(dg->mat.disney.clearcoat_gloss, dg, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_gloss_map_idx));
+    float clearcoat = Texture_GetValue1f(dg->mat.disney.clearcoat, dg, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_map_idx));
     float subsurface = dg->mat.disney.subsurface;
     
     float ndotwi = fabs(wi.y);
@@ -210,16 +210,16 @@ INLINE float3 Disney_Sample(
                             float* pdf
                             )
 {
-    float3 base_color = Texture_GetValue3f(dg->mat.disney.base_color.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.base_color_map_idx));
-    float metallic = Texture_GetValue1f(dg->mat.disney.metallic, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.metallic_map_idx));
-    float specular = Texture_GetValue1f(dg->mat.disney.specular, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.specular_map_idx));
-    float anisotropy = Texture_GetValue1f(dg->mat.disney.anisotropy, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.anisotropy_map_idx));
-    float roughness = Texture_GetValue1f(dg->mat.disney.roughness, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.roughness_map_idx));
-    float specular_tint = Texture_GetValue1f(dg->mat.disney.specular_tint, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.specular_tint_map_idx));
-    float sheen_tint = Texture_GetValue1f(dg->mat.disney.sheen_tint, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_tint_map_idx));
-    float sheen = Texture_GetValue1f(dg->mat.disney.sheen, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_map_idx));
-    float clearcoat_gloss = Texture_GetValue1f(dg->mat.disney.clearcoat_gloss, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_gloss_map_idx));
-    float clearcoat = Texture_GetValue1f(dg->mat.disney.clearcoat, dg->uv, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_map_idx));
+    float3 base_color = Texture_GetValue3f(dg->mat.disney.base_color.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.disney.base_color_map_idx));
+    float metallic = Texture_GetValue1f(dg->mat.disney.metallic, dg, TEXTURE_ARGS_IDX(dg->mat.disney.metallic_map_idx));
+    float specular = Texture_GetValue1f(dg->mat.disney.specular, dg, TEXTURE_ARGS_IDX(dg->mat.disney.specular_map_idx));
+    float anisotropy = Texture_GetValue1f(dg->mat.disney.anisotropy, dg, TEXTURE_ARGS_IDX(dg->mat.disney.anisotropy_map_idx));
+    float roughness = Texture_GetValue1f(dg->mat.disney.roughness, dg, TEXTURE_ARGS_IDX(dg->mat.disney.roughness_map_idx));
+    float specular_tint = Texture_GetValue1f(dg->mat.disney.specular_tint, dg, TEXTURE_ARGS_IDX(dg->mat.disney.specular_tint_map_idx));
+    float sheen_tint = Texture_GetValue1f(dg->mat.disney.sheen_tint, dg, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_tint_map_idx));
+    float sheen = Texture_GetValue1f(dg->mat.disney.sheen, dg, TEXTURE_ARGS_IDX(dg->mat.disney.sheen_map_idx));
+    float clearcoat_gloss = Texture_GetValue1f(dg->mat.disney.clearcoat_gloss, dg, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_gloss_map_idx));
+    float clearcoat = Texture_GetValue1f(dg->mat.disney.clearcoat, dg, TEXTURE_ARGS_IDX(dg->mat.disney.clearcoat_map_idx));
     float subsurface = dg->mat.disney.subsurface;
     
     float ax = max(0.001f, roughness * roughness * ( 1.f + anisotropy));

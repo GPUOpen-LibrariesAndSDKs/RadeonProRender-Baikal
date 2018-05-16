@@ -233,7 +233,7 @@ float3 AreaLight_GetLe(// Emissive object
         int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
         Material mat = scene->materials[mat_idx];
 
-        const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
+        const float3 ke = Texture_UV_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
         return ke;
     }
     else
@@ -282,7 +282,7 @@ float3 AreaLight_Sample(// Emissive object
     int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
-    const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
+    const float3 ke = Texture_UV_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
 
     float3 v = -normalize(*wo);
 
@@ -383,7 +383,7 @@ float3 AreaLight_SampleVertex(
     int mat_idx = Scene_GetMaterialIndex(scene, shapeidx, primidx);
     Material mat = scene->materials[mat_idx];
 
-    const float3 ke = Texture_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
+    const float3 ke = Texture_UV_GetValue3f(mat.simple.kx.xyz, tx, TEXTURE_ARGS_IDX(mat.simple.kxmapidx));
 
     *wo = Sample_MapToHemisphere(sample1, *n, 1.f);
     *pdf = (1.f / area) * fabs(dot(*n, *wo)) / PI;

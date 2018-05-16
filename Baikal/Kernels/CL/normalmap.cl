@@ -32,7 +32,7 @@ void DifferentialGeometry_ApplyNormalMap(DifferentialGeometry* diffgeo, TEXTURE_
     if (nmapidx != -1)
     {
         // Now n, dpdu, dpdv is orthonormal basis
-        float3 mappednormal = 2.f * Texture_Sample2D(diffgeo->uv, TEXTURE_ARGS_IDX(nmapidx)).xyz - make_float3(1.f, 1.f, 1.f);
+        float3 mappednormal = 2.f * Texture_Sample2D(diffgeo, TEXTURE_ARGS_IDX(nmapidx)).xyz - make_float3(1.f, 1.f, 1.f);
 
         // Return mapped version
         diffgeo->n = normalize(mappednormal.z *  diffgeo->n + mappednormal.x * diffgeo->dpdu + mappednormal.y * diffgeo->dpdv);

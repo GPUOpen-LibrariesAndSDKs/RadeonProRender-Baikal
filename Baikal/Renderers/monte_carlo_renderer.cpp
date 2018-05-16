@@ -263,6 +263,7 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.materials);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
+        fill_kernel.SetArg(argc++, scene.mipmap);
         fill_kernel.SetArg(argc++, scene.envmapidx);
         fill_kernel.SetArg(argc++, scene.lights);
         fill_kernel.SetArg(argc++, scene.num_lights);
@@ -392,6 +393,7 @@ namespace Baikal
         misskernel.SetArg(argc++, h);
         misskernel.SetArg(argc++, scene.textures);
         misskernel.SetArg(argc++, scene.texturedata);
+        misskernel.SetArg(argc++, scene.mipmap);
         misskernel.SetArg(argc++, output);
 
         {

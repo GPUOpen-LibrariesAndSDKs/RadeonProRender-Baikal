@@ -949,7 +949,7 @@ KERNEL void FillAOVs(
                 // Select BxDF
                 Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
 
-                const float3 kd = Texture_GetValue3f(diffgeo.mat.simple.kx.xyz, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.kxmapidx));
+                const float3 kd = Texture_GetValue3f(diffgeo.mat.simple.kx.xyz, &diffgeo, TEXTURE_ARGS_IDX(diffgeo.mat.simple.kxmapidx));
 
                 aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
@@ -1027,7 +1027,7 @@ KERNEL void FillAOVs(
                 else if (type == kMicrofacetGGX || type == kMicrofacetBeckmann ||
                     type == kMicrofacetRefractionGGX || type == kMicrofacetRefractionBeckmann)
                 {
-                    gloss = 1.f - Texture_GetValue1f(diffgeo.mat.simple.ns, diffgeo.uv, TEXTURE_ARGS_IDX(diffgeo.mat.simple.nsmapidx));
+                    gloss = 1.f - Texture_GetValue1f(diffgeo.mat.simple.ns, &diffgeo, TEXTURE_ARGS_IDX(diffgeo.mat.simple.nsmapidx));
                 }
 
 
@@ -1405,7 +1405,7 @@ KERNEL void ShadeBackgroundImage(
         if (isects[global_id].shapeid < 0)
         {
             float2 uv = make_float2(x, y);
-            v.xyz = Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
+            v.xyz = Texture_UVSample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
         }
         
         ADD_FLOAT4(&output[output_index], v);

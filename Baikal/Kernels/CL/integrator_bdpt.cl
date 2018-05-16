@@ -182,6 +182,10 @@ KERNEL void GenerateLightVertices(
 KERNEL void SampleSurface( 
     // Ray batch
     GLOBAL ray const* rays,
+    // auxiliary ray in x dimension
+    GLOBAL aux_ray const* x_aux_rays,
+    // auxiliary ray in y dimension
+    GLOBAL aux_ray const* y_aux_rays,
     // Intersection data
     GLOBAL Intersection const* intersections,
     // Hit indices

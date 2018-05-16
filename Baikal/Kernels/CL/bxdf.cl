@@ -289,7 +289,7 @@ float3 Emissive_GetLe(
     // Texture args
     TEXTURE_ARG_LIST)
 {
-    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg->uv, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
+    const float3 kd = Texture_GetValue3f(dg->mat.simple.kx.xyz, dg, TEXTURE_ARGS_IDX(dg->mat.simple.kxmapidx));
     return kd;
 }
 
