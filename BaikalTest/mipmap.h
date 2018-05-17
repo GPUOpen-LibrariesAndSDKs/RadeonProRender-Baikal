@@ -175,7 +175,7 @@ TEST_F(MipmapTest, MipPyramid_8bit)
             std::string file_name = test_name();
             file_name.append("_");
             file_name.append(std::to_string(i));
-            file_name.append(".png");
+            file_name.append(".jpg");
             path.append(file_name);
 
             image_io->SaveImage(path, sg_texture);
@@ -183,69 +183,6 @@ TEST_F(MipmapTest, MipPyramid_8bit)
         }
     }
 }
-
-//TEST_F(MipmapTest, MipPyramid_16bit)
-//{
-//    auto image_io = ImageIo::CreateImageIo();
-//    std::string resource_dir = "../Resources/Textures/";
-//
-//    ClearOutput();
-//
-//    auto material_texture = image_io->LoadImage(
-//        resource_dir + std::string("Soma"), true);
-//
-//    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-//    material->SetInputValue("albedo", material_texture);
-//
-//    ApplyMaterialToObject("sphere", material);
-//
-//    auto light_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
-//    auto refraction_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
-//    auto light = ImageBasedLight::Create();
-//
-//    light->SetTexture(light_texture);
-//    light->SetRefractionTexture(refraction_texture);
-//    m_scene->AttachLight(light);
-//
-//    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
-//
-//    auto& clw_scene = m_controller->GetCachedScene(m_scene);
-//
-//    auto textures_num = clw_scene.textures.GetElementCount();
-//    auto mipmap_num = clw_scene.mipmap.GetElementCount();
-//    auto texturedata_size = clw_scene.texturedata.GetElementCount();
-//
-//    std::unique_ptr<ClwScene::Texture[]> textures(new ClwScene::Texture[textures_num]);
-//    std::unique_ptr<char> texturedata(new char[texturedata_size]);
-//    std::unique_ptr<ClwScene::MipmapPyramid[]> mipmaps(new ClwScene::MipmapPyramid[mipmap_num]);
-//
-//    m_context->ReadBuffer<ClwScene::Texture>(0, clw_scene.textures, textures.get(), textures_num).Wait();
-//    m_context->ReadBuffer<char>(0, clw_scene.texturedata, texturedata.get(), texturedata_size).Wait();
-//    m_context->ReadBuffer<ClwScene::MipmapPyramid>(0, clw_scene.mipmap, mipmaps.get(), mipmap_num).Wait();
-//
-//    for (int i = 0; i < textures_num; i++)
-//    {
-//        auto texture = textures[i];
-//        if (texture.mipmap_enabled)
-//        {
-//            auto sg_texture = CreateTexture(
-//                texture,
-//                texturedata.get(),
-//                mipmaps.get());
-//
-//            // save image
-//            std::string path = m_generate ? m_reference_path : m_output_path;
-//            std::string file_name = test_name();
-//            file_name.append("_");
-//            file_name.append(std::to_string(i));
-//            file_name.append(".png");
-//            path.append(file_name);
-//
-//            image_io->SaveImage(path, sg_texture);
-//            ASSERT_TRUE(CompareToReference(file_name));
-//        }
-//    }
-//}
 
 TEST_F(MipmapTest, MipPyramid_32bit)
 {
