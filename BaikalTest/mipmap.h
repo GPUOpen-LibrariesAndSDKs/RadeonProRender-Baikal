@@ -192,7 +192,7 @@ TEST_F(MipmapTest, MipPyramid_32bit)
     ClearOutput();
 
     auto material_texture = image_io->LoadImage(
-        resource_dir + std::string("checkerboard.png"), true);
+        resource_dir + std::string("checkerboard.png"));
 
     auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
     material->SetInputValue("albedo", material_texture);
@@ -244,5 +244,48 @@ TEST_F(MipmapTest, MipPyramid_32bit)
             image_io->SaveImage(path, sg_texture);
             ASSERT_TRUE(CompareToReference(file_name));
         }
+    }
+}
+
+TEST_F(MipmapTest, MipPyramid_TestCameraRayMipmap)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    auto image_io = ImageIo::CreateImageIo();
+    std::string resource_dir = "../Resources/Textures/";
+
+    auto material_texture = image_io->LoadImage(
+        resource_dir + std::string("checkerboard.png"), true);
+
+    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
+    material->SetInputValue("albedo", material_texture);
+    material->SetInputValue("albedo", RadeonRays::float3(0.9f, 0.2f, 0.1f));
+
+    ApplyMaterialToObject("sphere", material);
+
+    auto light_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+    auto refraction_texture = image_io->LoadImage("../Resources/Textures/sky.hdr");
+    auto light = ImageBasedLight::Create();
+
+    light->SetTexture(light_texture);
+    light->SetRefractionTexture(refraction_texture);
+    m_scene->AttachLight(light);
+
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+    for (auto i = 0u; i < kNumIterations; ++i)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    {
+        std::ostringstream oss;
+        oss << test_name() << "_" << ".png";
+        SaveOutput(oss.str());
+        ASSERT_TRUE(CompareToReference(oss.str()));
     }
 }
