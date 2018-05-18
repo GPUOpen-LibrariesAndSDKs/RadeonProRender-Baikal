@@ -128,11 +128,15 @@ TEST_F(MipmapTest, MipPyramid_8bit)
 
     ClearOutput();
 
-    auto material_texture = image_io->LoadImage(
+    auto texture = image_io->LoadImage(
         resource_dir + std::string("test_albedo1.jpg"), true);
 
-    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-    material->SetInputValue("albedo", material_texture);
+    auto material = Baikal::UberV2Material::Create();
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+    auto material_texture = Baikal::InputMap_Sampler::Create(texture);
+    material->SetInputValue("uberv2.diffuse.color", material_texture);
+
+    ApplyMaterialToObject("sphere", material);
 
     ApplyMaterialToObject("sphere", material);
 
@@ -191,11 +195,13 @@ TEST_F(MipmapTest, MipPyramid_32bit)
 
     ClearOutput();
 
-    auto material_texture = image_io->LoadImage(
-        resource_dir + std::string("checkerboard.png"));
+    auto texture = image_io->LoadImage(
+        resource_dir + std::string("checkerboard.png"), true);
 
-    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-    material->SetInputValue("albedo", material_texture);
+    auto material = Baikal::UberV2Material::Create();
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+    auto material_texture = Baikal::InputMap_Sampler::Create(texture);
+    material->SetInputValue("uberv2.diffuse.color", material_texture);
 
     ApplyMaterialToObject("sphere", material);
 
@@ -257,12 +263,13 @@ TEST_F(MipmapTest, MipPyramid_TestCameraRayMipmap)
     auto image_io = ImageIo::CreateImageIo();
     std::string resource_dir = "../Resources/Textures/";
 
-    auto material_texture = image_io->LoadImage(
+    auto texture = image_io->LoadImage(
         resource_dir + std::string("checkerboard.png"), true);
 
-    auto material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
-    material->SetInputValue("albedo", material_texture);
-    material->SetInputValue("albedo", RadeonRays::float3(0.9f, 0.2f, 0.1f));
+    auto material = Baikal::UberV2Material::Create();
+    material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+    auto material_texture = Baikal::InputMap_Sampler::Create(texture);
+    material->SetInputValue("uberv2.diffuse.color", material_texture);
 
     ApplyMaterialToObject("sphere", material);
 

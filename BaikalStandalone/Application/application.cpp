@@ -122,7 +122,7 @@ namespace Baikal
             auto parent = queue.front();
             for (size_t i = 0; i < queue.front()->GetNumInputs(); i++)
             {
-                auto input = queue.front()->GetInput(i);
+                auto input = queue.front()->GetInput(static_cast<std::uint32_t>(i));
 
                 if (input.value.type == Material::InputType::kMaterial)
                 {
@@ -975,7 +975,7 @@ namespace Baikal
                 for (size_t i = 0; i < material->GetNumInputs(); i++)
                 {
                     ImGui::Separator();
-                    auto input = material->GetInput(i);
+                    auto input = material->GetInput(static_cast<std::uint32_t>(i));
 
                     if (settings->inputs_info.size() <= i)
                     {
@@ -990,13 +990,13 @@ namespace Baikal
                         {
                             case Material::InputType::kFloat4:
                             {
-                                auto result = ReadFloatInput(material, *settings, i);
+                                auto result = ReadFloatInput(material, *settings, static_cast<std::uint32_t>(i));
                                 is_scene_changed = is_scene_changed ? is_scene_changed : result;
                                 break;
                             }
                             case Material::InputType::kTexture:
                             {
-                                auto result = ReadTextruePath(material, *settings, i);
+                                auto result = ReadTextruePath(material, *settings, static_cast<std::uint32_t>(i));
                                 is_scene_changed = is_scene_changed ? is_scene_changed : result;
                                 break;
                             }
@@ -1037,7 +1037,7 @@ namespace Baikal
 
                 // Get material type settings
                 std::string material_info;
-                MaterialAccessor material_accessor(m_material_selector->Get());
+/*                MaterialAccessor material_accessor(m_material_selector->Get());
                 for (const auto& iter : material_accessor.GetTypeInfo())
                 {
                     material_info += iter;
@@ -1046,13 +1046,7 @@ namespace Baikal
 
                 int material_type_output = material_accessor.GetType();
                 ImGui::Separator();
-                ImGui::Combo("Material type", &material_type_output, material_info.c_str());
-
-                if (material_accessor.GetType() != material_type_output)
-                {
-                    material_accessor.SetType(material_type_output);
-                    is_scene_changed = true;
-                }
+                ImGui::Combo("Material type", &material_type_output, material_info.c_str());*/
 
                 // process volume materials
                 auto volume = m_cl->GetShapeById(m_current_shape_id)->GetVolumeMaterial();

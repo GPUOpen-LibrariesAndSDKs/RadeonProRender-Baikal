@@ -231,100 +231,6 @@ namespace Baikal
         return iter->second;
     }
 
-    SingleBxdf::SingleBxdf(BxdfType type)
-    : m_type(type)
-    {
-        RegisterInput("albedo", "Diffuse color", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("normal", "Normal map", {InputType::kTexture});
-        RegisterInput("bump", "Bump map", { InputType::kTexture });
-        RegisterInput("ior", "Index of refraction", {InputType::kFloat4});
-        RegisterInput("fresnel", "Fresnel flag", {InputType::kFloat4});
-        RegisterInput("roughness", "Roughness", {InputType::kFloat4, InputType::kTexture});
-
-        SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
-        SetInputValue("normal", static_cast<Texture::Ptr>(nullptr));
-        SetInputValue("bump", static_cast<Texture::Ptr>(nullptr));
-    }
-
-    SingleBxdf::BxdfType SingleBxdf::GetBxdfType() const
-    {
-        return m_type;
-    }
-
-    void SingleBxdf::SetBxdfType(BxdfType type)
-    {
-        m_type = type;
-        SetDirty(true);
-    }
-
-    bool SingleBxdf::HasEmission() const
-    {
-        return m_type == BxdfType::kEmissive;
-    }
-
-
-    MultiBxdf::MultiBxdf(Type type)
-    : m_type(type)
-    {
-        RegisterInput("base_material", "Base material", {InputType::kMaterial});
-        RegisterInput("top_material", "Top material", {InputType::kMaterial});
-        RegisterInput("ior", "Index of refraction", {InputType::kFloat4});
-        RegisterInput("weight", "Blend weight", {InputType::kFloat4, InputType::kTexture});
-    }
-
-    MultiBxdf::Type MultiBxdf::GetType() const
-    {
-        return m_type;
-    }
-
-    void MultiBxdf::SetType(Type type)
-    {
-        m_type = type;
-        SetDirty(true);
-    }
-
-    bool MultiBxdf::HasEmission() const
-    {
-        auto base = GetInputValue("base_material");
-        auto top = GetInputValue("base_material");
-
-        if (base.mat_value && base.mat_value->HasEmission())
-            return true;
-        if (top.mat_value && top.mat_value->HasEmission())
-            return true;
-
-        return false;
-    }
-
-    DisneyBxdf::DisneyBxdf()
-    {
-        RegisterInput("albedo", "Base color", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("metallic", "Metallicity", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("subsurface", "Subsurface look of diffuse base", {InputType::kFloat4});
-        RegisterInput("specular", "Specular exponent", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("specular_tint", "Specular color to base", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("anisotropy", "Anisotropy of specular layer", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("sheen", "Sheen for cloth", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("sheen_tint", "Sheen to base color", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("clearcoat", "Clearcoat layer", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("clearcoat_gloss", "Clearcoat roughness", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("roughness", "Roughness of specular & diffuse layers", {InputType::kFloat4, InputType::kTexture});
-        RegisterInput("normal", "Normal map", {InputType::kTexture});
-        RegisterInput("bump", "Bump map", { InputType::kTexture });
-
-        SetInputValue("albedo", RadeonRays::float4(0.7f, 0.7f, 0.7f, 1.f));
-        SetInputValue("metallic", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
-        SetInputValue("specular", RadeonRays::float4(0.25f, 0.25f, 0.25f, 0.25f));
-        SetInputValue("normal", Texture::Ptr{nullptr});
-        SetInputValue("bump", Texture::Ptr{nullptr});
-    }
-
-    // Check if material has emissive components
-    bool DisneyBxdf::HasEmission() const
-    {
-        return false;
-    }
-
     // VolumeMaterial implementation
     VolumeMaterial::VolumeMaterial()
     {
@@ -345,7 +251,7 @@ namespace Baikal
         return (GetInputValue("emission").float_value.sqnorm() != 0);
     }
 
-    MaterialAccessor::MaterialAccessor(Material::Ptr material) : m_material(material)
+/*    MaterialAccessor::MaterialAccessor(Material::Ptr material) : m_material(material)
     {   }
 
     std::vector<std::string> MaterialAccessor::GetTypeInfo() const
@@ -420,36 +326,11 @@ namespace Baikal
         }
 
         return -1;
-    }
+    }*/
 
     namespace {
-        struct SingleBxdfConcrete: public SingleBxdf {
-            SingleBxdfConcrete(BxdfType type) :
-            SingleBxdf(type) {}
-        };
-
-        struct MultiBxdfConcrete: public MultiBxdf {
-            MultiBxdfConcrete(Type type) :
-            Baikal::MultiBxdf(type) {}
-        };
-
-        struct DisneyBxdfConcrete: public DisneyBxdf {
-        };
-
         struct VolumeMaterialConcrete : public VolumeMaterial {
         };
-    }
-
-    SingleBxdf::Ptr SingleBxdf::Create(BxdfType type) {
-        return std::make_shared<SingleBxdfConcrete>(type);
-    }
-
-    MultiBxdf::Ptr MultiBxdf::Create(Type type) {
-        return std::make_shared<MultiBxdfConcrete>(type);
-    }
-
-    DisneyBxdf::Ptr DisneyBxdf::Create() {
-        return std::make_shared<DisneyBxdfConcrete>();
     }
 
     VolumeMaterial::Ptr VolumeMaterial::Create() {

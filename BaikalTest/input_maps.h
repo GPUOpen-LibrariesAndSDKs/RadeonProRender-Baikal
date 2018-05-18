@@ -60,6 +60,7 @@ protected:
         ClearOutput();
 
         ApplyMaterialToObject(object_name, material);
+        ApplyMaterialToObject("sphere", material);
 
         ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 

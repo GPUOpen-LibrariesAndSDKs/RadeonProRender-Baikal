@@ -32,10 +32,8 @@ THE SOFTWARE.
 #include "test_scenes.h"
 #include "mipmap.h"
 
-#ifdef ENABLE_UBERV2
 #include "uberv2.h"
 #include "input_maps.h"
-#endif
 
 int g_argc;
 char** g_argv;

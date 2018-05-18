@@ -5,6 +5,7 @@
 #include "SceneGraph/material.h"
 #include "SceneGraph/light.h"
 #include "SceneGraph/texture.h"
+#include "SceneGraph/uberv2material.h"
 #include "image_io.h"
 #include "math/mathutils.h"
 #include "Utils/log.h"
@@ -184,7 +185,7 @@ namespace Baikal
             throw std::runtime_error("Cannot open file for writing");
         }
 
-        auto default_material = SingleBxdf::Create(SingleBxdf::BxdfType::kLambert);
+        auto default_material = UberV2Material::Create();
 
         auto num_shapes = (std::uint32_t)scene.GetNumShapes();
         out.write((char*)&num_shapes, sizeof(std::uint32_t));
@@ -213,7 +214,7 @@ namespace Baikal
 
             auto material = mesh->GetMaterial();
 
-            if (!material)
+            /*if (!material)
             {
                 material = default_material;
             }
@@ -229,28 +230,14 @@ namespace Baikal
             {
                 throw std::runtime_error("Material not supported");
             }
+            diffuse->GetInputValue("albedo");
+            */
 
-            auto albedo = diffuse->GetInputValue("albedo");
+            auto albedo = RadeonRays::float3(1.0f, 1.0f, 1.0f);
 
-            if (albedo.type == Material::InputType::kFloat4)
-            {
-                std::uint32_t flag = 0;
-                out.write(reinterpret_cast<char const*>(&flag), sizeof(flag));
-                out.write(reinterpret_cast<char const*>(&albedo.float_value.x), sizeof(RadeonRays::float3));
-            }
-            else
-            {
-                std::uint32_t flag = 1;
-
-                auto name = albedo.tex_value->GetName();
-                //LogInfo("Saving texture ", name, "\n");
-                auto size = name.size();
-
-                out.write(reinterpret_cast<char const*>(&flag), sizeof(flag));
-                out.write(reinterpret_cast<char const*>(&size), sizeof(size));
-                out.write(name.c_str(), sizeof(char) * size);
-            }
-
+            std::uint32_t flag = 0;
+            out.write(reinterpret_cast<char const*>(&flag), sizeof(flag));
+            out.write(reinterpret_cast<char const*>(&albedo.x), sizeof(RadeonRays::float3));
         }
     }
 }

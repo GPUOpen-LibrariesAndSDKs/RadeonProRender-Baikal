@@ -33,6 +33,8 @@ THE SOFTWARE.
 #include "cl_program_manager.h"
 #include "version.h"
 
+//#define DUMP_PROGRAM_SOURCE 1
+
 using namespace Baikal;
 
 inline std::uint32_t jenkins_one_at_a_time_hash(char const *key, size_t len)
@@ -181,10 +183,12 @@ CLWProgram CLProgram::Compile(const std::string &opts)
         /*
          * Code below usable for cache debugging
          */
-        /*int e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+#ifdef DUMP_PROGRAM_SOURCE
+        int e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         std::ofstream file(std::to_string(e));
         file << m_compiled_source;
-        file.close();*/
+        file.close();
+#endif
     }
     catch (CLWException exception)
     {

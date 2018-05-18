@@ -29,11 +29,9 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/sampling.cl>
-#include <../Baikal/Kernels/CL/normalmap.cl>
 #include <../Baikal/Kernels/CL/bxdf.cl>
 #include <../Baikal/Kernels/CL/light.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
-#include <../Baikal/Kernels/CL/material.cl>
 #include <../Baikal/Kernels/CL/volumetrics.cl>
 #include <../Baikal/Kernels/CL/path.cl>
 #include <../Baikal/Kernels/CL/vertex.cl>

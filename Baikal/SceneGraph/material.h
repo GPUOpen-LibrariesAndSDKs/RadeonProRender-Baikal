@@ -174,79 +174,6 @@ namespace Baikal
         return false;
     }
 
-    class SingleBxdf : public Material
-    {
-    public:
-        enum class BxdfType
-        {
-            kZero = 0,
-            kLambert,
-            kIdealReflect,
-            kIdealRefract,
-            kMicrofacetBeckmann,
-            kMicrofacetGGX,
-            kEmissive,
-            kPassthrough,
-            kTranslucent,
-            kMicrofacetRefractionGGX,
-            kMicrofacetRefractionBeckmann
-        };
-
-        using Ptr = std::shared_ptr<SingleBxdf>;
-        static Ptr Create(BxdfType type);
-
-        BxdfType GetBxdfType() const;
-        void SetBxdfType(BxdfType type);
-
-        // Check if material has emissive components
-        bool HasEmission() const override;
-
-    protected:
-        SingleBxdf(BxdfType type);
-
-    private:
-        BxdfType m_type;
-    };
-
-    class MultiBxdf : public Material
-    {
-    public:
-        enum class Type
-        {
-            kLayered = 0,
-            kFresnelBlend,
-            kMix
-        };
-
-        using Ptr = std::shared_ptr<MultiBxdf>;
-        static Ptr Create(Type type);
-
-        Type GetType() const;
-        void SetType(Type type);
-
-        // Check if material has emissive components
-        bool HasEmission() const override;
-
-    protected:
-        MultiBxdf(Type type);
-
-    private:
-        Type m_type;
-    };
-
-    class DisneyBxdf : public Material
-    {
-    public:
-        using Ptr = std::shared_ptr<DisneyBxdf>;
-        static Ptr Create();
-
-        // Check if material has emissive components
-        bool HasEmission() const override;
-
-    protected:
-        DisneyBxdf();
-    };
-
     class VolumeMaterial : public Material
     {
     public:
@@ -260,7 +187,7 @@ namespace Baikal
         VolumeMaterial();
     };
 
-    class MaterialAccessor
+/*    class MaterialAccessor
     {
     public:
         MaterialAccessor(Material::Ptr material);
@@ -275,5 +202,5 @@ namespace Baikal
         MaterialAccessor& operator = (const MaterialAccessor&) = delete;
     private:
         Material::Ptr m_material;
-    };
+    };*/
 }

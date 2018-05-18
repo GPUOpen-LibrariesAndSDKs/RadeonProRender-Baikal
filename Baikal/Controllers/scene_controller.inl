@@ -364,6 +364,14 @@ namespace Baikal
                 DropCameraDirty(*scene);
             }
 
+            // If materials need an update, do it.
+            // We are passing material dirty state detection function in there.
+            // We update materials before lights and shapes since they depends on it.
+            if (should_update_materials)
+            {
+                UpdateMaterials(*scene, m_material_collector, m_texture_collector, out);
+            }
+
             {
                 // Check if we have lights in the scene
                 auto light_iter = scene->CreateLightIterator();
@@ -433,13 +441,6 @@ namespace Baikal
                 {
                     UpdateShapeProperties(*scene, m_material_collector, m_texture_collector, m_volume_collector, out);
                 }
-            }
-
-            // If materials need an update, do it.
-            // We are passing material dirty state detection function in there.
-            if (should_update_materials)
-            {
-                UpdateMaterials(*scene, m_material_collector, m_texture_collector, out);
             }
 
             // If textures need an update, do it.
@@ -521,6 +522,9 @@ namespace Baikal
         UpdateCamera(scene, m_material_collector, m_texture_collector, m_volume_collector, out);
         DropCameraDirty(scene);
 
+        //Lights and Shapes depends on Materials
+        UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
+
         UpdateLights(scene, m_material_collector, m_texture_collector, out);
         auto light_iterator = scene.CreateLightIterator();
         DropDirty(*light_iterator);
@@ -528,8 +532,6 @@ namespace Baikal
         UpdateShapes(scene, m_material_collector, m_texture_collector, vol_collector, out);
         auto shape_iterator = scene.CreateShapeIterator();
         DropDirty(*shape_iterator);
-
-        UpdateMaterials(scene, m_material_collector, m_texture_collector, out);
 
         UpdateTextures(scene, m_material_collector, m_texture_collector, out);
 

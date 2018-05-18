@@ -60,6 +60,26 @@ typedef struct
     float aperture;
 } Camera;
 
+enum UberMaterialLayers
+{
+    kEmissionLayer = 0x1,
+    kTransparencyLayer = 0x2,
+    kCoatingLayer = 0x4,
+    kReflectionLayer = 0x8,
+    kDiffuseLayer = 0x10,
+    kRefractionLayer = 0x20,
+    kSSSLayer = 0x40,
+    kShadingNormalLayer = 0x80
+};
+
+typedef struct
+{
+    int offset;
+    int layers;
+    int flags;
+    int padding;
+} Material;
+
 // Shape description
 typedef struct
 {
@@ -67,20 +87,17 @@ typedef struct
     int startidx;
     // Start vertex
     int startvtx;
-    // Start material idx
-    int material_idx;
     // Number of primitives in the shape
     int volume_idx;
+    // unique shape id
+    int id;
     // Linear motion vector
     float3 linearvelocity;
     // Angular velocity
     float4 angularvelocity;
     // Transform in row major format
     matrix4x4 transform;
-    // unique shape id
-    int id;
-    // Follow fields for 16 byte allign
-    int offset[3];
+    Material material;
 } Shape;
 
 typedef enum
@@ -111,142 +128,8 @@ typedef struct _InputMapData
 enum Bxdf
 {
     kZero,
-    kLambert,
-    kIdealReflect,
-    kIdealRefract,
-    kMicrofacetBeckmann,
-    kMicrofacetGGX,
-    kLayered,
-    kFresnelBlend,
-    kMix,
-    kEmissive,
-    kPassthrough,
-    kTranslucent,
-    kMicrofacetRefractionGGX,
-    kMicrofacetRefractionBeckmann,
-    kDisney,
     kUberV2
 };
-
-enum UberMaterialLayers
-{
-    kEmissionLayer = 0x1,
-    kTransparencyLayer = 0x2,
-    kCoatingLayer = 0x4,
-    kReflectionLayer = 0x8,
-    kDiffuseLayer = 0x10,
-    kRefractionLayer = 0x20,
-    kSSSLayer = 0x40,
-    kShadingNormalLayer = 0x80
-};
-
-// Material description
-typedef struct _Material
-{
-    union
-    {
-        struct
-        {
-            float4 kx;
-            float ni;
-            float ns;
-            int kxmapidx;
-            int nsmapidx;
-            float fresnel;
-            int padding0[3];
-        } simple;
-
-        struct
-        {
-            float weight;
-            int weight_map_idx;
-            int top_brdf_idx;
-            int base_brdf_idx;
-            int padding1[8];
-        } compound;
-
-        struct
-        {
-            float4 base_color;
-
-            float metallic;
-            float subsurface;
-            float specular;
-            float roughness;
-
-            float specular_tint;
-            float anisotropy;
-            float sheen;
-            float sheen_tint;
-
-            float clearcoat;
-            float clearcoat_gloss;
-            int base_color_map_idx;
-            int metallic_map_idx;
-
-            int specular_map_idx;
-            int roughness_map_idx;
-            int specular_tint_map_idx;
-            int anisotropy_map_idx;
-
-            int sheen_map_idx;
-            int sheen_tint_map_idx;
-            int clearcoat_map_idx;
-            int clearcoat_gloss_map_idx;
-        } disney;
-#ifdef ENABLE_UBERV2
-        struct
-        {
-            //material inputs
-            int diffuse_color_input_id;
-            int reflection_color_input_id;
-            int reflection_roughness_input_id;
-            int reflection_anisotropy_input_id;
-
-            int reflection_anisotropy_rotation_input_id;
-            int reflection_ior_input_id;
-            int reflection_metalness_input_id;
-            int coating_color_input_id;
-
-            int coating_ior_input_id;
-            int refraction_color_input_id;
-            int refraction_roughness_input_id;
-            int refraction_ior_input_id;
-
-            int emission_color_input_id;
-            int transparency_input_id;
-            int sss_absorption_color_input_id;
-            int sss_scatter_color_input_id;
-
-            int sss_subsurface_color_input_id;
-            int sss_absorption_distance_input_id;
-            int sss_scatter_distance_input_id;
-            int sss_scatter_direction_input_id;
-
-            // Normal mapping
-            int shading_normal_input_id;
-            //Material parameters
-            int layers;
-            int refraction_ior_mode;
-            int refraction_thin_surface;
-
-            int emission_mode;
-            int sss_multiscatter;
-            int padding[2];
-
-/*            float displacement;
-            int displacement_map_idx;*/
-        } uberv2;
-#endif
-    };
-
-    int type;
-    int bump_flag;
-    int thin;
-    int nmapidx;
-    int bxdf_flags;
-    int padding[3];
-} Material;
 
 enum LightType
 {
@@ -267,10 +150,7 @@ typedef struct
             int id;
             int shapeidx;
             int primidx;
-            int matidx;
             int padding0;
-            // offset for 16 byte alligment
-            int offset[3];
         };
 
         // IBL
@@ -288,7 +168,7 @@ typedef struct
             float ia;
             float oa;
             float f;
-            int padding2;
+            int padding1;
         };
     };
 
@@ -298,7 +178,7 @@ typedef struct
     int type;
     float multiplier;
     int tex_background;
-    int padding;
+    int padding2;
 } Light;
 
 typedef enum
@@ -379,7 +259,6 @@ struct _Texture
     int alignment;
 } Texture;
 
-
 // Hit data
 typedef struct _DifferentialGeometry
 {
@@ -399,16 +278,17 @@ typedef struct _DifferentialGeometry
     float dudy;
     float dvdx;
     float dvdy;
-    // Triangle area
-    float area;
 
     matrix4x4 world_to_tangent;
     matrix4x4 tangent_to_world;
 
     // Material
     Material mat;
-    int material_index;
+
+    // Triangle area
+    float  area;
     int transfer_mode;
+    int padding[2];
 } DifferentialGeometry;
 
 

@@ -119,6 +119,7 @@ public:
         ASSERT_NO_THROW(m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer));
         ASSERT_NO_THROW(m_controller = m_factory->CreateSceneController());
         ASSERT_NO_THROW(m_output = m_factory->CreateOutput(kOutputWidth, kOutputHeight));
+        m_output->Clear(RadeonRays::float3(0.0f));
         ASSERT_NO_THROW(m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get()));
 
 

@@ -57,7 +57,10 @@ set(UTILS_SOURCES
     Utils/cl_program.cpp
     Utils/cl_program.h
     Utils/cl_program_manager.cpp
-    Utils/cl_program_manager.h)
+    Utils/cl_program_manager.h
+    Utils/cl_uberv2_generator.h
+    Utils/cl_uberv2_generator.cpp
+)
 
 set(SCENEGRAPH_SOURCES
     SceneGraph/camera.cpp
@@ -91,7 +94,6 @@ set(XML_SOURCES
 
 set(KERNELS_SOURCES
     Kernels/CL/bxdf.cl
-    Kernels/CL/bxdf_basic.cl
     Kernels/CL/bxdf_uberv2.cl
     Kernels/CL/bxdf_uberv2_bricks.cl
     Kernels/CL/common.cl
@@ -100,7 +102,6 @@ set(KERNELS_SOURCES
     Kernels/CL/integrator_bdpt.cl
     Kernels/CL/isect.cl
     Kernels/CL/light.cl
-    Kernels/CL/material.cl
     Kernels/CL/monte_carlo_renderer.cl
     Kernels/CL/normalmap.cl
     Kernels/CL/path.cl
@@ -115,7 +116,10 @@ set(KERNELS_SOURCES
     Kernels/CL/vertex.cl
     Kernels/CL/volumetrics.cl
     Kernels/CL/wavelet_denoise.cl
-    Kernels/CL/mipmap_level_scaler.cl)
+    Kernels/CL/path_tracing_estimator_uberv2.cl
+    Kernels/CL/fill_aovs_uberv2.cl
+    Kernels/CL/mipmap_level_scaler.cl
+    )
 
 set(SOURCES
     ${CONTROLLERS_SOURCES}
@@ -153,10 +157,6 @@ endif(BAIKAL_ENABLE_DENOISER)
 if (BAIKAL_ENABLE_RAYMASK)
     target_compile_definitions(Baikal PUBLIC ENABLE_RAYMASK)
 endif (BAIKAL_ENABLE_RAYMASK)
-
-if (BAIKAL_ENABLE_UBERV2)
-    target_compile_definitions(Baikal PUBLIC ENABLE_UBERV2)
-endif (BAIKAL_ENABLE_UBERV2)
 
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
