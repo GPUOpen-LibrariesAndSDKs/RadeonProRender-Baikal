@@ -354,6 +354,12 @@ KERNEL void ShadeSurfaceUberV2(
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);
 
+        // Opacity flag for opacity AOV
+        if (!Bxdf_IsTransparency(&diffgeo))
+        {
+            Path_SetOpacityFlag(path);
+        }
+
         // Terminate if emissive
         if (Bxdf_IsEmissive(&diffgeo))
         {

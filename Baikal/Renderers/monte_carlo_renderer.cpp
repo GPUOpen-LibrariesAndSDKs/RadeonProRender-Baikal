@@ -77,18 +77,10 @@ namespace Baikal
 
     void MonteCarloRenderer::Render(ClwScene const& scene)
     {
-        auto output = FindFirstNonZeroOutput();
-
+        auto output = FindFirstNonZeroOutput(true, true);
         if (!output)
         {
-            if (GetOutput(OutputType::kVisibility))
-            {
-                throw std::runtime_error("Visibility AOV requires color AOV to be set");
-            }
-            else
-            {
-                throw std::runtime_error("No outputs set");
-            }
+            throw std::runtime_error("No outputs set");
         }
 
         auto output_size = int2(output->width(), output->height());
@@ -120,19 +112,15 @@ namespace Baikal
     void MonteCarloRenderer::RenderTile(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
         // Number of rays to generate
-        //auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
-        // Find output that need to be rendered in multi pass kernel
-        auto output = static_cast<ClwOutput*>(FindFirstNonZeroOutput(true, false));
+        auto color_output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
-        if (output)
+        if (color_output)
         {
             auto num_rays = tile_size.x * tile_size.y;
-            auto output_size = int2(output->width(), output->height());
+            auto output_size = int2(color_output->width(), color_output->height());
 
             GenerateTileDomain(output_size, tile_origin, tile_size);
-            GeneratePrimaryRays(scene, *output, tile_size);
-
-            auto color_output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
+            GeneratePrimaryRays(scene, *color_output, tile_size);
 
             if (scene.background_idx > -1)
             {
@@ -154,6 +142,17 @@ namespace Baikal
                     Estimator::QualityLevel::kStandard,
                     color_output->data());
 
+        }
+        else
+        {
+            // Check if we set intermediate value output without enabled color output
+            for (std::size_t i = 0; i < static_cast<std::size_t>(Estimator::IntermediateValue::kMax); ++i)
+            {
+                if (m_estimator->HasIntermediateValueBuffer(static_cast<Estimator::IntermediateValue>(i)))
+                {
+                    throw std::runtime_error("IntermediateValue AOV require color AOV to be set");
+                }
+            }
         }
 
         // Check if we have outputs that we can render in single pass
@@ -205,7 +204,7 @@ namespace Baikal
 
         std::uint32_t start_index = include_multipass ? 0
             : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
-        std::uint32_t end_index = include_singlepass ? static_cast<std::uint32_t>(Renderer::OutputType::kVisibility)
+        std::uint32_t end_index = include_singlepass ? static_cast<std::uint32_t>(Renderer::OutputType::kMax)
             : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput);
         
         Output* current_output = nullptr;
@@ -225,7 +224,7 @@ namespace Baikal
     {
         static const std::map<OutputType, Estimator::IntermediateValue> kOutputTypeToIntermediateValue = 
         {
-            { OutputType::kVisibility, Estimator::IntermediateValue::kVisibility },
+            { OutputType::kOpacity, Estimator::IntermediateValue::kOpacity },
             { OutputType::kVisibility, Estimator::IntermediateValue::kVisibility },
         };
         
@@ -234,14 +233,21 @@ namespace Baikal
         {
             if (!m_estimator->SupportsIntermediateValue(it->second))
             {
-                throw std::runtime_error("Visibility AOV not supported by an underlying estimator");
+                throw std::runtime_error("Visibility AOV is not supported by an underlying estimator");
             }
 
-            auto clw_output = static_cast<ClwOutput*>(output);
-
-            m_estimator->SetIntermediateValueBuffer(it->second, clw_output->data());
+            if (output)
+            {
+                auto clw_output = static_cast<ClwOutput*>(output);
+                m_estimator->SetIntermediateValueBuffer(it->second, clw_output->data());
+            }
+            else
+            {
+                // Set empty buffer
+                m_estimator->SetIntermediateValueBuffer(it->second, CLWBuffer<RadeonRays::float3>());
+            }
         }
-        // CHECK: do we need call this if we set intermediate value buffer?
+
         Renderer::SetOutput(type, output);
     }
 

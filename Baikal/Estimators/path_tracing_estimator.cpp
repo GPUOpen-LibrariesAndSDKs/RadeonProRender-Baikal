@@ -232,6 +232,11 @@ namespace Baikal
             if ((pass > 0) && has_some_environment)
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
+
+                if (has_opacity_buffer)
+                {
+                    GatherOpacity(scene, pass, num_estimates, opacity_buffer, use_output_indices);
+                }
             }
 
             // Convert intersections to predicates
@@ -378,7 +383,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->rays[(pass + 1) & 0x1]);
         shadekernel.SetArg(argc++, output);
         shadekernel.SetArg(argc++, scene.input_map_data);
-
+        
         // Run shading kernel
         {
             GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, shadekernel);
@@ -602,6 +607,32 @@ namespace Baikal
         }
     }
 
+    void PathTracingEstimator::GatherOpacity(ClwScene const& scene,
+        int pass,
+        std::size_t size,
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
+    )
+    {
+        // Fetch kernel
+        auto gatherkernel = GetKernel("GatherOpacity");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
+        // Set kernel parameters
+        int argc = 0;
+        gatherkernel.SetArg(argc++, m_render_data->intersections);
+        gatherkernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        gatherkernel.SetArg(argc++, output_indices);
+        gatherkernel.SetArg(argc++, m_render_data->hitcount);
+        gatherkernel.SetArg(argc++, m_render_data->paths);
+        gatherkernel.SetArg(argc++, output);
+
+        // Run shading kernel
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, gatherkernel);
+        }
+    }
 
     void PathTracingEstimator::RestorePixelIndices(int pass, std::size_t size)
     {

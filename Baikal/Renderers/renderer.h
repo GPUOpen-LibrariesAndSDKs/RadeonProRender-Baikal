@@ -55,6 +55,7 @@ namespace Baikal
             // be rendered in Estimator kernel
             kColor = 0,
             kOpacity,
+            kVisibility,
             kMaxMultiPassOutput,
             // Single-pass outputs that will
             // be rendered in AOV kernel
@@ -72,7 +73,6 @@ namespace Baikal
             kBackground,
             kDepth,
             kShapeId,
-            kVisibility,
             kMax
         };
 

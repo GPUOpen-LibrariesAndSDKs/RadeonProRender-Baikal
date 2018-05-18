@@ -127,10 +127,6 @@ KERNEL void FillAOVsUberV2(
     int background_enabled,
     // Background aov
     GLOBAL float4* restrict aov_background,
-    // Opacity enabled flag
-    //int opacity_enabled,
-    // Opacity aov
-    //GLOBAL float4* restrict aov_opacity,
     // Depth enabled flag
     int depth_enabled,
     // Depth map
@@ -141,8 +137,8 @@ KERNEL void FillAOVsUberV2(
     // And negative number if there is no any shape in the pixel
     GLOBAL float4* restrict aov_shape_ids,
     // NOTE: following are fake parameters, handled outside
-    int visibility_enabled,
-    GLOBAL float4* restrict aov_visibility,
+    //int visibility_enabled,
+    //GLOBAL float4* restrict aov_visibility,
     GLOBAL InputMapData const* restrict input_map_values
 )
 {
@@ -393,20 +389,7 @@ KERNEL void FillAOVsUberV2(
                     UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);
                 group_id[idx].w += 1.0f;
             }
-            /*
-            if (opacity_enabled)
-            {
-                // Select BxDF
-                UberV2ShaderData uber_shader_data;
-                UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
 
-                const float t = ((diffgeo.mat.layers & kTransparencyLayer) == kTransparencyLayer) ?
-                    uber_shader_data.transparency : 0.0f;
-
-                aov_opacity[idx].xyz += 1.0f - t;
-                aov_opacity[idx].w += 1.f;
-            }
-            */
             if (depth_enabled)
             {
                 float w = aov_depth[idx].w;

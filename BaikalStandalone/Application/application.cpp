@@ -733,6 +733,7 @@ namespace Baikal
         {
             { Renderer::OutputType::kColor, "Color" },
             { Renderer::OutputType::kOpacity, "Opacity" },
+            { Renderer::OutputType::kVisibility, "Visibility" },
             { Renderer::OutputType::kWorldPosition, "World Position" },
             { Renderer::OutputType::kWorldShadingNormal, "Shading Normal" },
             { Renderer::OutputType::kWorldGeometricNormal, "Geometric Normal" },
@@ -826,7 +827,7 @@ namespace Baikal
                 update = true;
             }
 
-            auto gui_out_type = kBaikalOutputs[output].first;//static_cast<Baikal::Renderer::OutputType>(output);
+            auto gui_out_type = kBaikalOutputs[output].first;
 
             if (gui_out_type != m_cl->GetOutputType())
             {

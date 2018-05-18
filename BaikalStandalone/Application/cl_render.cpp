@@ -157,8 +157,10 @@ namespace Baikal
         }
 
         m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
+        m_dummy_output_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_outputs[m_primary].output);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
+        m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_dummy_output_data.output);
     }
 
 
@@ -606,8 +608,17 @@ namespace Baikal
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
+            // Not good
+            if (m_output_type == Renderer::OutputType::kOpacity || m_output_type == Renderer::OutputType::kVisibility)
+            {
+                m_cfgs[i].renderer->SetOutput(Renderer::OutputType::kColor, nullptr);
+            }
             m_cfgs[i].renderer->SetOutput(m_output_type, nullptr);
             m_cfgs[i].renderer->SetOutput(type, m_outputs[i].output.get());
+            if (type == Renderer::OutputType::kOpacity || type == Renderer::OutputType::kVisibility)
+            {
+                m_cfgs[i].renderer->SetOutput(Renderer::OutputType::kColor, m_dummy_output_data.output.get());
+            }
         }
         m_output_type = type;
     }

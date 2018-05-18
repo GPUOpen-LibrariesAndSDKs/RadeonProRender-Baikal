@@ -228,6 +228,13 @@ namespace Baikal
             bool use_output_indices
         );
 
+        void GatherOpacity(ClwScene const& scene,
+            int pass,
+            std::size_t size,
+            CLWBuffer<RadeonRays::float3> output,
+            bool use_output_indices
+        );
+
         void ShadeVolume(
             ClwScene const& scene,
             int pass,
