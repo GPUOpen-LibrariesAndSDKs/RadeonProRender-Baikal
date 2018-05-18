@@ -288,16 +288,16 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
     std::vector<std::pair<std::uint32_t, std::string>> component_sampling =
     {
         {UberV2Material::Layers::kTransparencyLayer,
-            "\t\tcase kBxdfUberV2SampleTransparency: result = UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
+            "\t\tcase kBxdfUberV2SampleTransparency: result = UberV2_Passthrough_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;\n"},
         {UberV2Material::Layers::kCoatingLayer,
-            "\t\tcase kBxdfUberV2SampleCoating: result = UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n\t\t\tbreak;"},
+            "\t\tcase kBxdfUberV2SampleCoating: result = UberV2_Coating_Sample(shader_data, wi, TEXTURE_ARGS, wo, pdf);\n\t\t\tbreak;\n"},
         {UberV2Material::Layers::kReflectionLayer,
-            "\t\tcase kBxdfUberV2SampleReflection: result = UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"
+            "\t\tcase kBxdfUberV2SampleReflection: result = UberV2_Reflection_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;\n"
             },
         {UberV2Material::Layers::kRefractionLayer,
-            "\t\tcase kBxdfUberV2SampleRefraction: result = UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"},
+            "\t\tcase kBxdfUberV2SampleRefraction: result = UberV2_Refraction_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;\n"},
         {UberV2Material::Layers::kDiffuseLayer,
-            "\t\tcase kBxdfUberV2SampleDiffuse: result = UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;"
+            "\t\tcase kBxdfUberV2SampleDiffuse: result = UberV2_Lambert_Sample(shader_data, wi, TEXTURE_ARGS, sample, wo, pdf);\n\t\t\tbreak;\n"
             }
     };
 
@@ -311,7 +311,9 @@ void CLUberV2Generator::MaterialGenerateSample(UberV2Material::Ptr material, Ube
 
     sources->m_sample +=
         "\t}\n"
-        "\tif (!Bxdf_IsSingular(dg))\n"
+// Temporaty disable this code. It leads to incorrect work in UberV2Test
+//        "\tif (!Bxdf_IsSingular(dg))\n"
+        "\tif (false)\n"
         "\t{\n"
         "\t\t*pdf = UberV2_GetPdf" + std::to_string(layers) + "(dg, wi, *wo, TEXTURE_ARGS, shader_data);\n"
         "\t\treturn UberV2_Evaluate" + std::to_string(layers) + "(dg, wi, *wo, TEXTURE_ARGS, shader_data);\n"
@@ -389,7 +391,7 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
                 "\t\t{\n"
                 "\t\t\tbxdf_flags |= kBxdfFlagsSingular;\n"
                 "\t\t}\n"
-                "\t\tBxdf_SetFlags(dg, bxdf_flags);"
+                "\t\tBxdf_SetFlags(dg, bxdf_flags);\n"
                 "\t\treturn;\n") +
             (refraction_has_underlying_layer ? "\t}\n" : "");
     }

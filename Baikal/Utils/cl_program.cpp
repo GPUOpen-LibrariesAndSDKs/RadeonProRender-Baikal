@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include "cl_program_manager.h"
 #include "version.h"
 
-//#define DUMP_PROGRAM_SOURCE 1
+#define DUMP_PROGRAM_SOURCE 1
 
 using namespace Baikal;
 
@@ -185,7 +185,7 @@ CLWProgram CLProgram::Compile(const std::string &opts)
          */
 #ifdef DUMP_PROGRAM_SOURCE
         int e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        std::ofstream file(std::to_string(e));
+        std::ofstream file(std::to_string(e) + ".cl");
         file << m_compiled_source;
         file.close();
 #endif
