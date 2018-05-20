@@ -69,7 +69,6 @@ namespace Baikal
                     texturedata[i + 1] = texturedata[i];
                     texturedata[i + 2] = texturedata[i];
                     texturedata[i + 3] = texturedata[i];
-                    texturedata[i + 4] = texturedata[i];
                 }
 
             }
