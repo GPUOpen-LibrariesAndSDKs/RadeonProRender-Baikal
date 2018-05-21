@@ -90,56 +90,6 @@ namespace Baikal
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    Application::MaterialSelector::MaterialSelector(Material::Ptr root) :
-        m_root(root), m_current(m_root)
-    {  }
-
-    bool Application::MaterialSelector::IsRoot() const
-    { return (m_root == m_current); }
-
-    Material::Ptr Application::MaterialSelector::Get()
-    {
-        return m_current;
-    }
-
-    void Application::MaterialSelector::SelectMaterial(Material::Ptr material)
-    {
-        m_current = material;
-    }
-
-    void Application::MaterialSelector::GetParent()
-    {
-        if (m_root == m_current)
-        {
-            return;
-        }
-
-        std::queue<Material::Ptr> queue;
-        queue.push(m_root);
-
-        while (!queue.empty())
-        {
-            auto parent = queue.front();
-            for (size_t i = 0; i < queue.front()->GetNumInputs(); i++)
-            {
-                auto input = queue.front()->GetInput(static_cast<std::uint32_t>(i));
-
-                if (input.value.type == Material::InputType::kMaterial)
-                {
-                    if (input.value.mat_value == m_current)
-                    {
-                        m_current = parent;
-                        return;
-                    }
-                    queue.push(input.value.mat_value);
-                }
-            }
-            queue.pop();
-        }
-
-        return;
-    }
-
     bool Application::InputSettings::HasMultiplier() const
     { return m_multiplier.first; }
 
@@ -917,7 +867,7 @@ namespace Baikal
             {
                 m_current_shape_id = m_shape_id_future.get();
                 auto shape = m_cl->GetShapeById(m_current_shape_id);
-                m_material_selector = nullptr;
+                m_material = nullptr;
 
                 if (shape)
                 {
@@ -933,7 +883,11 @@ namespace Baikal
                         m_volume_settings.push_back(volume_settings);
                     }
 
-                    m_material_selector = std::make_unique<MaterialSelector>(MaterialSelector(shape->GetMaterial()));
+                    // can be nullptr
+                    m_material = 
+                        std::dynamic_pointer_cast<UberV2Material>(
+                            shape->GetMaterial());
+
                     m_object_name = shape->GetName();
                 }
             }
@@ -946,182 +900,196 @@ namespace Baikal
             }
 
             // draw material props
-            if (m_material_selector)
+            if (m_material)
             {
-                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 290), ImVec2(380, 290));
-                ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                std::uint32_t layers = m_material->GetLayers();
 
-                if (!m_object_name.empty())
+                if (layers & UberV2Material::kEmissionLayer != 0)
                 {
-                    ImGui::Text(m_object_name.c_str());
+                    auto emission_value = m_material->GetInputValue("uberv2.emission.color");
                 }
 
-                ImGui::Separator();
-                ImGui::Text("Material:");
-
-                bool is_scene_changed = false;
-
-                auto settings = std::find_if(m_material_settings.begin(), m_material_settings.end(),
-                    [&](const MaterialSettings& settings)
-                    {
-                        return (settings.id == m_current_shape_id);
-                    });
-
-                if (settings == m_material_settings.end())
-                    throw std::runtime_error(
-                        "Application::UpdateGui(...): there is no such shape id in material settings");
-
-                auto material = m_material_selector->Get();
-                for (size_t i = 0; i < material->GetNumInputs(); i++)
-                {
-                    ImGui::Separator();
-                    auto input = material->GetInput(static_cast<std::uint32_t>(i));
-
-                    if (settings->inputs_info.size() <= i)
-                    {
-                        settings->inputs_info.push_back(InputSettings());
-                    }
-
-                    auto input_info = settings->inputs_info[i];
-                    for (const auto& supported_type : input.info.supported_types)
-                    {
-                        auto name = input.info.name;
-                        switch (supported_type)
-                        {
-                            case Material::InputType::kFloat4:
-                            {
-                                auto result = ReadFloatInput(material, *settings, static_cast<std::uint32_t>(i));
-                                is_scene_changed = is_scene_changed ? is_scene_changed : result;
-                                break;
-                            }
-                            case Material::InputType::kTexture:
-                            {
-                                auto result = ReadTextruePath(material, *settings, static_cast<std::uint32_t>(i));
-                                is_scene_changed = is_scene_changed ? is_scene_changed : result;
-                                break;
-                            }
-                            case Material::InputType::kUint:
-                            {
-                                std::uint32_t input_value = input.value.uint_value;
-                                ImGui::InputInt(name.c_str(), (int*)(&input_value));
-
-                                if ((input.value.uint_value != input_value) &&
-                                    (input.value.tex_value == nullptr))
-                                {
-                                    settings->inputs_info[i].SetInteger(input_value);
-                                    material->SetInputValue(input.info.name, input_value);
-                                    is_scene_changed = true;
-                                }
-                                break;
-                            }
-                            case Material::InputType::kMaterial:
-                            {
-                                if (ImGui::Button((std::string("Into: ") + name).c_str()))
-                                {
-                                    m_material_selector->SelectMaterial(input.value.mat_value);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ImGui::Separator();
-                if (!m_material_selector->IsRoot())
-                {
-                    if (ImGui::Button("Back"))
-                    {
-                        m_material_selector->GetParent();
-                    }
-                }
-
-                // Get material type settings
-                std::string material_info;
-/*                MaterialAccessor material_accessor(m_material_selector->Get());
-                for (const auto& iter : material_accessor.GetTypeInfo())
-                {
-                    material_info += iter;
-                    material_info.push_back('\0');
-                }
-
-                int material_type_output = material_accessor.GetType();
-                ImGui::Separator();
-                ImGui::Combo("Material type", &material_type_output, material_info.c_str());*/
-
-                // process volume materials
-                auto volume = m_cl->GetShapeById(m_current_shape_id)->GetVolumeMaterial();
-
-                auto volume_settings = std::find_if(m_volume_settings.begin(), m_volume_settings.end(),
-                    [&](const MaterialSettings& settings)
-                {
-                    return (settings.id == m_current_shape_id);
-                });
-
-                if (volume && volume_settings == m_volume_settings.end())
-                    throw std::runtime_error(
-                        "Application::UpdateGui(...): there is no volume settings");
-
-                if ((volume == nullptr) && (ImGui::Button("Create volume")))
-                {
-                    auto new_volume = VolumeMaterial::Create();
-
-                    new_volume->SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
-                    new_volume->SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
-                    new_volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
-                    new_volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
-
-                    m_cl->GetShapeById(m_current_shape_id)->SetVolumeMaterial(new_volume);
-
-                    MaterialSettings volume_settings;
-                    volume_settings.id = m_current_shape_id;
-                    m_volume_settings.push_back(volume_settings);
-
-                    is_scene_changed = true;
-                }
-
-                ImGui::Separator();
-                if (ImGui::Button("Save materials"))
-                {
-                    auto material_io{ Baikal::MaterialIo::CreateMaterialIoXML() };
-                    material_io->SaveMaterialsFromScene(m_settings.path + "/materials.xml", *m_cl->GetScene());
-                    material_io->SaveIdentityMapping(m_settings.path + "/mapping.xml", *m_cl->GetScene());
-                }
-
-                if (volume != nullptr)
-                {
-                    ImGui::Separator();
-                    ImGui::Text("Volumes:");
-
-                    for (auto i = 0u; i < volume->GetNumInputs(); i++)
-                    {
-                        if (volume_settings->inputs_info.size() <= i)
-                        {
-                            volume_settings->inputs_info.push_back(InputSettings());
-                        }
-
-                        auto supported_types = volume->GetInput(i).info.supported_types;
-                        if (supported_types.find(Material::InputType::kFloat4) != supported_types.end())
-                        {
-                            auto result = ReadFloatInput(volume, *volume_settings, i, "volume");
-                            is_scene_changed = is_scene_changed ? is_scene_changed : result;
-                        }
-                    }
-
-                    if (ImGui::Button("Make world volume"))
-                    {
-                        m_cl->GetCamera()->SetVolume(volume);
-                        is_scene_changed = true;
-                    }
-                }
-
-                ImGui::End();
-
-                if (is_scene_changed)
-                {
-                    m_cl->UpdateScene();
-                }
             }
 
+            // draw material props
+//            if (m_material)
+//            {
+//                auto layers_desc = GetUberLayersDesc();
+//
+//                ImGui::SetNextWindowSizeConstraints(ImVec2(380, 290), ImVec2(380, 290));
+//                ImGui::Begin("Material info", 0, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+//
+//                if (!m_object_name.empty())
+//                {
+//                    ImGui::Text(m_object_name.c_str());
+//                }
+//
+//                ImGui::Separator();
+//                ImGui::Text("Material:");
+//
+//                bool is_scene_changed = false;
+//
+//                auto settings = std::find_if(m_material_settings.begin(), m_material_settings.end(),
+//                    [&](const MaterialSettings& settings)
+//                    {
+//                        return (settings.id == m_current_shape_id);
+//                    });
+//
+//                if (settings == m_material_settings.end())
+//                    throw std::runtime_error(
+//                        "Application::UpdateGui(...): there is no such shape id in material settings");
+//
+//                auto material = m_material_selector->Get();
+//                for (size_t i = 0; i < material->GetNumInputs(); i++)
+//                {
+//                    ImGui::Separator();
+//                    auto input = material->GetInput(static_cast<std::uint32_t>(i));
+//
+//                    if (settings->inputs_info.size() <= i)
+//                    {
+//                        settings->inputs_info.push_back(InputSettings());
+//                    }
+//
+//                    auto input_info = settings->inputs_info[i];
+//                    for (const auto& supported_type : input.info.supported_types)
+//                    {
+//                        auto name = input.info.name;
+//                        switch (supported_type)
+//                        {
+//                            case Material::InputType::kFloat4:
+//                            {
+//                                auto result = ReadFloatInput(material, *settings, static_cast<std::uint32_t>(i));
+//                                is_scene_changed = is_scene_changed ? is_scene_changed : result;
+//                                break;
+//                            }
+//                            case Material::InputType::kTexture:
+//                            {
+//                                auto result = ReadTextruePath(material, *settings, static_cast<std::uint32_t>(i));
+//                                is_scene_changed = is_scene_changed ? is_scene_changed : result;
+//                                break;
+//                            }
+//                            case Material::InputType::kUint:
+//                            {
+//                                std::uint32_t input_value = input.value.uint_value;
+//                                ImGui::InputInt(name.c_str(), (int*)(&input_value));
+//
+//                                if ((input.value.uint_value != input_value) &&
+//                                    (input.value.tex_value == nullptr))
+//                                {
+//                                    settings->inputs_info[i].SetInteger(input_value);
+//                                    material->SetInputValue(input.info.name, input_value);
+//                                    is_scene_changed = true;
+//                                }
+//                                break;
+//                            }
+//                            case Material::InputType::kMaterial:
+//                            {
+//                                if (ImGui::Button((std::string("Into: ") + name).c_str()))
+//                                {
+//                                    m_material_selector->SelectMaterial(input.value.mat_value);
+//                                }
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                ImGui::Separator();
+//                if (!m_material_selector->IsRoot())
+//                {
+//                    if (ImGui::Button("Back"))
+//                    {
+//                        m_material_selector->GetParent();
+//                    }
+//                }
+//
+//                // Get material type settings
+//                std::string material_info;
+///*                MaterialAccessor material_accessor(m_material_selector->Get());
+//                for (const auto& iter : material_accessor.GetTypeInfo())
+//                {
+//                    material_info += iter;
+//                    material_info.push_back('\0');
+//                }
+//
+//                int material_type_output = material_accessor.GetType();
+//                ImGui::Separator();
+//                ImGui::Combo("Material type", &material_type_output, material_info.c_str());*/
+//
+//                // process volume materials
+//                auto volume = m_cl->GetShapeById(m_current_shape_id)->GetVolumeMaterial();
+//
+//                auto volume_settings = std::find_if(m_volume_settings.begin(), m_volume_settings.end(),
+//                    [&](const MaterialSettings& settings)
+//                {
+//                    return (settings.id == m_current_shape_id);
+//                });
+//
+//                if (volume && volume_settings == m_volume_settings.end())
+//                    throw std::runtime_error(
+//                        "Application::UpdateGui(...): there is no volume settings");
+//
+//                if ((volume == nullptr) && (ImGui::Button("Create volume")))
+//                {
+//                    auto new_volume = VolumeMaterial::Create();
+//
+//                    new_volume->SetInputValue("absorption", RadeonRays::float4(.0f, .0f, .0f, .0f));
+//                    new_volume->SetInputValue("scattering", RadeonRays::float4(.0f, .0f, .0f, .0f));
+//                    new_volume->SetInputValue("emission", RadeonRays::float4(.0f, .0f, .0f, .0f));
+//                    new_volume->SetInputValue("g", RadeonRays::float4(.0f, .0f, .0f, .0f));
+//
+//                    m_cl->GetShapeById(m_current_shape_id)->SetVolumeMaterial(new_volume);
+//
+//                    MaterialSettings volume_settings;
+//                    volume_settings.id = m_current_shape_id;
+//                    m_volume_settings.push_back(volume_settings);
+//
+//                    is_scene_changed = true;
+//                }
+//
+//                ImGui::Separator();
+//                if (ImGui::Button("Save materials"))
+//                {
+//                    auto material_io{ Baikal::MaterialIo::CreateMaterialIoXML() };
+//                    material_io->SaveMaterialsFromScene(m_settings.path + "/materials.xml", *m_cl->GetScene());
+//                    material_io->SaveIdentityMapping(m_settings.path + "/mapping.xml", *m_cl->GetScene());
+//                }
+//
+//                if (volume != nullptr)
+//                {
+//                    ImGui::Separator();
+//                    ImGui::Text("Volumes:");
+//
+//                    for (auto i = 0u; i < volume->GetNumInputs(); i++)
+//                    {
+//                        if (volume_settings->inputs_info.size() <= i)
+//                        {
+//                            volume_settings->inputs_info.push_back(InputSettings());
+//                        }
+//
+//                        auto supported_types = volume->GetInput(i).info.supported_types;
+//                        if (supported_types.find(Material::InputType::kFloat4) != supported_types.end())
+//                        {
+//                            auto result = ReadFloatInput(volume, *volume_settings, i, "volume");
+//                            is_scene_changed = is_scene_changed ? is_scene_changed : result;
+//                        }
+//                    }
+//
+//                    if (ImGui::Button("Make world volume"))
+//                    {
+//                        m_cl->GetCamera()->SetVolume(volume);
+//                        is_scene_changed = true;
+//                    }
+//                }
+//
+//                ImGui::End();
+//
+//                if (is_scene_changed)
+//                {
+//                    m_cl->UpdateScene();
+//                }
+//            }
+//
 
             ImGui::Render();
         }
@@ -1153,6 +1121,63 @@ namespace Baikal
                 }
             }
         }
+    }
+
+    std::vector<Application::LayerDesc> Application::GetUberLayersDesc()
+    {
+        return std::vector<LayerDesc>
+        {
+            {
+                UberV2Material::Layers::kEmissionLayer,
+                { "uberv2.emission.color" }
+            },
+            {
+                UberV2Material::Layers::kCoatingLayer,
+                { "uberv2.coating.color", "uberv2.coating.ior" }
+            },
+            {
+                UberV2Material::Layers::kReflectionLayer,
+                {
+                    "uberv2.reflection.color",
+                    "uberv2.reflection.roughness",
+                    "uberv2.reflection.anisotropy",
+                    "uberv2.reflection.anisotropy_rotation",
+                    "uberv2.reflection.ior",
+                    "uberv2.reflection.metalness",
+                }
+            },
+            {
+                UberV2Material::Layers::kDiffuseLayer,
+                { "uberv2.diffuse.color" }
+            },
+            {
+                UberV2Material::Layers::kRefractionLayer,
+                {
+                    "uberv2.refraction.color",
+                    "uberv2.refraction.roughness",
+                    "uberv2.refraction.ior"
+                }
+            },
+            {
+                UberV2Material::Layers::kTransparencyLayer,
+                { "uberv2.transparency" }
+            },
+            {
+                UberV2Material::Layers::kShadingNormalLayer,
+                { "uberv2.shading_normal" }
+            },
+            {
+                UberV2Material::Layers::kSSSLayer,
+                {
+                    "uberv2.sss.absorption_color",
+                    "uberv2.sss.scatter_color",
+                    "uberv2.sss.subsurface_color",
+                    "uberv2.sss.absorption_distance",
+                    "uberv2.sss.scatter_distance",
+                    "uberv2.sss.scatter_direction"
+                }
+            },
+        };
     }
 
 }

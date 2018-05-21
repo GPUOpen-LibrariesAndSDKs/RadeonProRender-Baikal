@@ -56,6 +56,9 @@ namespace Baikal
         static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
         static void OnMouseScroll(GLFWwindow* window, double x, double y);
 
+        using LayerDesc = std::pair<UberV2Material::Layers, std::vector<std::string>>;
+        static std::vector<LayerDesc> GetUberLayersDesc();
+
         AppSettings m_settings;
         std::unique_ptr<AppClRender> m_cl;
         std::unique_ptr<AppGlRender> m_gl;
@@ -70,24 +73,6 @@ namespace Baikal
         int m_current_shape_id;
         std::string m_object_name;
         std::future<int> m_shape_id_future;
-
-        class MaterialSelector
-        {
-        public:
-            MaterialSelector(Material::Ptr root);
-
-            void GetParent();
-            void SelectMaterial(Material::Ptr);
-            Material::Ptr Get();
-
-            bool IsRoot() const;
-
-        private:
-
-            Material::Ptr m_root;
-            Material::Ptr m_current;
-            VolumeMaterial::Ptr  m_volume;
-        };
 
         class InputSettings
         {
@@ -124,7 +109,7 @@ namespace Baikal
         bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix = std::string());
         bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
 
-        std::unique_ptr<MaterialSelector> m_material_selector;
+        UberV2Material::Ptr m_material;
         std::unique_ptr<ImageIo> m_image_io;
         std::vector<MaterialSettings> m_material_settings;
         std::vector<MaterialSettings> m_volume_settings;

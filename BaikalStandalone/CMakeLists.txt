@@ -6,7 +6,13 @@ set(APPLICATION_SOURCES
     Application/cl_render.cpp
     Application/cl_render.h
     Application/gl_render.cpp
-    Application/gl_render.h)
+    Application/gl_render.h
+    Application/uber_node.h
+    Application/uber_node.cpp
+    Application/uber_tree.h
+    Application/uber_tree.cpp
+    Application/uber_graph.h
+    Application/uber_graph.cpp)
 
 set(IMGUI_SORUCES
     ImGUI/imconfig.h
