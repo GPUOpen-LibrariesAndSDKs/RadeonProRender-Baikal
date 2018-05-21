@@ -57,6 +57,7 @@ namespace Baikal
             auto size = spec.width * spec.height * spec.depth * 4;
 
             texturedata = new char[size];
+            memset(texturedata, 0, size);
 
             // Read data to storage
             input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
