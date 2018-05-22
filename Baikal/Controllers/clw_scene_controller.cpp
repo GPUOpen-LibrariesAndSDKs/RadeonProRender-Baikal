@@ -887,6 +887,8 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.texturedata, data);
     }
 
+#ifdef DEBUG
+    // We're not using this function on release
     // Convert Material:: types to ClwScene:: types
     static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
@@ -898,13 +900,11 @@ namespace Baikal
 
         return ClwScene::Bxdf::kZero;
     }
+#endif
 
     void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<std::int32_t> &material_data) const
     {
-        // Convert material type and sidedness
-        auto type = GetMaterialType(material);
-        assert(type == ClwScene::Bxdf::kUberV2);
-
+        assert(GetMaterialType(material) == ClwScene::Bxdf::kUberV2);
         const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
 
         std::uint32_t layers = uber_material.GetLayers();

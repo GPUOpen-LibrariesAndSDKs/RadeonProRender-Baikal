@@ -37,3 +37,4 @@ int main(int argc, char** argv)
     g_argv = argv;
     return RUN_ALL_TESTS();
 }
+
