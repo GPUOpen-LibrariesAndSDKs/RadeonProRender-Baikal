@@ -170,7 +170,7 @@ void SceneObject::AddEmissive()
         if (mat->HasEmission())
         {
             // Add area light for each polygon of emissive mesh
-            for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
+            for (std::size_t l = 0; l < mesh->GetNumIndices() / 3; ++l)
             {
                 auto light = Baikal::AreaLight::Create(mesh, l);
                 m_scene->AttachLight(light);
@@ -244,6 +244,7 @@ LightObject* SceneObject::GetEnvironmentOverride(OverrideType overrride)
     case OverrideType::kTransparency:
         return m_environment_override.m_transparency;
     }
+	return nullptr;
 }
 
 Baikal::Scene1::EnvironmentOverride SceneObject::EnvironmentOverride::ToScene1EnvironmentOverride() const

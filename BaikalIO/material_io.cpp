@@ -120,7 +120,7 @@ namespace Baikal
     static std::string ArrayToString(uint32_t *array, uint32_t size)
     {
         std::ostringstream oss;
-        for (int a = 0; a < size; ++a)
+        for (auto a = 0u; a < size; ++a)
         {
             oss << array[a] << " ";
         }
@@ -227,13 +227,13 @@ namespace Baikal
         UberV2Material::Ptr material = UberV2Material::Create();
         material->SetLayers(std::atoi(element.Attribute("layers")));
         material->SetThin(thin == "true");
-        material->SetDoubleSided(element.Attribute("emission_doublesided") == "true");
-        material->LinkRefractionIOR(element.Attribute("refraction_link_ior") == "true");
-        material->SetMultiscatter(element.Attribute("sss_multyscatter") == "true");
+        material->SetDoubleSided(strcmp(element.Attribute("emission_doublesided"), "true") == 0);
+        material->LinkRefractionIOR(strcmp(element.Attribute("refraction_link_ior"), "true") == 0);
+        material->SetMultiscatter(strcmp(element.Attribute("sss_multyscatter"), "true") == 0);
         material->SetName(name);
 
         auto num_inputs = material->GetNumInputs();
-        for (size_t a = 0; a < num_inputs; ++a)
+        for (std::size_t a = 0u; a < num_inputs; ++a)
         {
             auto inputs = material->GetInput(a);
             uint32_t input_id = element.UnsignedAttribute(inputs.info.name.c_str());
@@ -549,7 +549,7 @@ namespace Baikal
                 InputMap_Shuffle *i = static_cast<InputMap_Shuffle*>(inputMap.get());
                 printer.PushAttribute("input0", i->GetArg()->GetId());
                 auto mask = i->GetMask();
-                printer.PushAttribute("mask", ArrayToString(mask.data(), mask.size()).c_str());
+                printer.PushAttribute("mask", ArrayToString(mask.data(), static_cast<uint32_t>(mask.size())).c_str());
                 printer.CloseElement();
                 WriteInputMap(io, printer, i->GetArg());
                 break;
@@ -560,7 +560,7 @@ namespace Baikal
                 printer.PushAttribute("input0", i->GetA()->GetId());
                 printer.PushAttribute("input1", i->GetB()->GetId());
                 auto mask = i->GetMask();
-                printer.PushAttribute("mask", ArrayToString(mask.data(), mask.size()).c_str());
+                printer.PushAttribute("mask", ArrayToString(mask.data(), static_cast<uint32_t>(mask.size())).c_str());
                 printer.CloseElement();
                 WriteInputMap(io, printer, i->GetA());
                 WriteInputMap(io, printer, i->GetB());

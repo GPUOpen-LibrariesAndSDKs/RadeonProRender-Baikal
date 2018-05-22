@@ -245,7 +245,7 @@ namespace Baikal
     {
         ImGuiIO& io = ImGui::GetIO();
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        auto map = io.KeyMap;
+        
         const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
 
         if (action == GLFW_PRESS)
@@ -953,7 +953,7 @@ namespace Baikal
 
                 if (!m_object_name.empty())
                 {
-                    ImGui::Text(m_object_name.c_str());
+                    ImGui::Text("%s", m_object_name.c_str());
                 }
 
                 ImGui::Separator();
@@ -1022,6 +1022,8 @@ namespace Baikal
                                 }
                                 break;
                             }
+                            default:
+                                break;
                         }
                     }
                 }

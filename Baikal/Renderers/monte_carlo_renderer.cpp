@@ -31,7 +31,6 @@
 #include <random>
 #include <algorithm>
 
-#include "Utils/sobol.h"
 #include "math/int2.h"
 
 #ifdef BAIKAL_EMBED_KERNELS

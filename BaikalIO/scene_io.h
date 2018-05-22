@@ -56,7 +56,7 @@ namespace Baikal
      
      SceneIO implementation is responsible for translation of various scene formats into Baikal.
      */
-    class BAIKAL_API_ENTRY SceneIo
+    class SceneIo
     {
     public:
         /**
@@ -87,14 +87,14 @@ namespace Baikal
         };
 
         // Registers extension handler
-        static void RegisterLoader(const std::string& ext, SceneIo::Loader *loader);
+        static void BAIKAL_API_ENTRY RegisterLoader(const std::string& ext, SceneIo::Loader *loader);
         // Deregisters extension handler
-        static void UnregisterLoader(const std::string& ext);
+        static void BAIKAL_API_ENTRY UnregisterLoader(const std::string& ext);
       
         // Load the scene from file using resourse base path
-        static Scene1::Ptr LoadScene(std::string const& filename, std::string const& basepath);
+        static Scene1::Ptr BAIKAL_API_ENTRY LoadScene(std::string const& filename, std::string const& basepath);
         // Saves scene to file using resource base path
-        static void SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath);
+        static void BAIKAL_API_ENTRY SaveScene(Scene1 const& scene, std::string const& filename, std::string const& basepath);
 
 
     private:

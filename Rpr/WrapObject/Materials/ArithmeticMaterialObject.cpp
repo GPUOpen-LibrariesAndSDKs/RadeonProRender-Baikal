@@ -85,7 +85,7 @@ void ArithmeticMaterialObject::SetInputU(const std::string& input_name, rpr_uint
     {
         if (m_input_map)
         {
-            throw Exception(RPR_ERROR_INTERNAL_ERROR, "Arithmetic field \"op\ can not be set twice");
+            throw Exception(RPR_ERROR_INTERNAL_ERROR, "Arithmetic field \"op\" can not be set twice");
         }
 
         switch (val)
@@ -146,7 +146,7 @@ void ArithmeticMaterialObject::SetInputU(const std::string& input_name, rpr_uint
             m_input_map = Baikal::InputMap_Shuffle2::Create(
                 Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3()),
                 Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3()),
-                { 0, 4, 1, 5 }); // {c0.x, c1.x, c0.y, c1.y}
+                {{ 0, 4, 1, 5 }}); // {c0.x, c1.x, c0.y, c1.y}
             break;
         case RPR_MATERIAL_NODE_OP_DOT3:
             m_input_map = Baikal::InputMap_Dot3::Create(
@@ -218,17 +218,17 @@ void ArithmeticMaterialObject::SetInputU(const std::string& input_name, rpr_uint
         case RPR_MATERIAL_NODE_OP_SHUFFLE_YZWX:
             m_input_map = Baikal::InputMap_Shuffle::Create(
                 Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3()),
-                {1, 2, 3, 0});
+                {{1, 2, 3, 0}});
             break;
         case RPR_MATERIAL_NODE_OP_SHUFFLE_ZWXY:
             m_input_map = Baikal::InputMap_Shuffle::Create(
                 Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3()),
-                { 2, 3, 0, 1 });
+                {{2, 3, 0, 1}});
             break;
         case RPR_MATERIAL_NODE_OP_SHUFFLE_WXYZ:
             m_input_map = Baikal::InputMap_Shuffle::Create(
                 Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3()),
-                { 3, 0, 1, 2 });
+                {{3, 0, 1, 2}});
             break;
         case RPR_MATERIAL_NODE_OP_MAT_MUL:
             m_input_map = Baikal::InputMap_MatMul::Create(
@@ -390,5 +390,7 @@ void ArithmeticMaterialObject::SetInputMap(const std::string& input_name, Baikal
 
             break;
         }
+        default:
+            throw Exception(RPR_ERROR_INTERNAL_ERROR, "Unsupported input map type");
     }
 }

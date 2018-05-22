@@ -35,10 +35,6 @@ namespace Baikal
     {
         AppSettings();
 
-        // OpenCL platform & device settings
-        int platform_index;
-        int device_index;
-
         //model load settings
         std::string path;
         std::string modelname;
@@ -91,6 +87,10 @@ namespace Baikal
         int num_shadow_rays;
         int samplecount;
         float envmapmul;
+        // OpenCL platform & device settings
+        int platform_index;
+        int device_index;
+
     };
 
     class AppCliParser

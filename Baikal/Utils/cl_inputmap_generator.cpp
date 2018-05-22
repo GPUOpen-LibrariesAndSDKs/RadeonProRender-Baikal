@@ -101,8 +101,6 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
 
         case InputMap::InputMapType::kConstantFloat:
         {
-            InputMap_ConstantFloat *i = static_cast<InputMap_ConstantFloat*>(input.get());
-
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
             m_read_functions += "((float4)(input_map_values[" + std::to_string(index) + "].float_value.value, 0.0f))\n";
@@ -110,8 +108,6 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         }
         case InputMap::InputMapType::kConstantFloat3:
         {
-            InputMap_ConstantFloat3 *i = static_cast<InputMap_ConstantFloat3*>(input.get());
-
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
             m_read_functions += "((float4)(input_map_values[" + std::to_string(index) + "].float_value.value, 0.0f))\n";
@@ -119,8 +115,6 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         }
         case InputMap::InputMapType::kSampler:
         {
-            InputMap_Sampler *i = static_cast<InputMap_Sampler*>(input.get());
-
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
             m_read_functions += "Texture_Sample2D(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx))\n";
@@ -128,8 +122,6 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         }
         case InputMap::InputMapType::kSamplerBumpmap:
         {
-            InputMap_SamplerBumpMap *i = static_cast<InputMap_SamplerBumpMap*>(input.get());
-
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
             m_read_functions += "(float4)(Texture_SampleBump(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx)), 1.0f)\n";

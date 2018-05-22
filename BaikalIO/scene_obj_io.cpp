@@ -198,7 +198,7 @@ namespace Baikal
                 if (used_material >= 0 && emissives.find(materials[used_material]) != emissives.cend())
                 {
                     // Add area light for each polygon of emissive mesh
-                    for (int l = 0; l < mesh->GetNumIndices() / 3; ++l)
+                    for (std::size_t l = 0; l < mesh->GetNumIndices() / 3; ++l)
                     {
                         auto light = AreaLight::Create(mesh, l);
                         scene->AttachLight(light);

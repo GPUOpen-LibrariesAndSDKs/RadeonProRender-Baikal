@@ -109,7 +109,7 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
+    bool interop = (creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP) != 0;
     if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
     {
         try
@@ -320,8 +320,8 @@ FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum targ
     auto& c = m_cfgs[0];
     auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(c.renderer.get())->GetCopyKernel();
     FramebufferObject* result = new FramebufferObject(c.context, copykernel, target, miplevel, texture);
-    int w = result->Width();
-    int h = result->Height();
+    std::uint32_t w = static_cast<std::uint32_t>(result->Width());
+    std::uint32_t h = static_cast<std::uint32_t>(result->Height());
     Baikal::Output* out = c.factory->CreateOutput(w, h).release();
     result->SetOutput(out);
     return result;

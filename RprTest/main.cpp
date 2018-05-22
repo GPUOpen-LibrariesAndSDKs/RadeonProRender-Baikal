@@ -51,10 +51,10 @@ void MeshCreationTest()
 
     Vertex quad[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f }
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }}
     };
 
     rpr_int indices[] =
@@ -102,46 +102,46 @@ void SimpleRenderTest()
 
     rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
     assert(status == RPR_SUCCESS);
-
+/*
     Vertex cube[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { -1.0f, -1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { -1.0f, 1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ -1.0f, -1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { 1.0f, -1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ 1.0f, -1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, 0.f,  1.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, 0.f,  1.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 1.0f }},
     };
-
+*/
     Vertex plane[] =
     {
-        { -5.f, 0.f, -5.f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { -5.f, 0.f,  5.f, 0.f, 1.f, 0.f, 0.f, 1.f },
-        { 5.f, 0.f,  5.f, 0.f, 1.f, 0.f, 1.f, 1.f },
-        { 5.f, 0.f, -5.f, 0.f, 1.f, 0.f, 1.f, 0.f },
+        {{ -5.f, 0.f, -5.f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ -5.f, 0.f,  5.f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
+        {{ 5.f, 0.f,  5.f}, { 0.f, 1.f, 0.f}, { 1.f, 1.f }},
+        {{ 5.f, 0.f, -5.f}, { 0.f, 1.f, 0.f}, { 1.f, 0.f }},
     };
 
     rpr_int indices[] =
@@ -220,10 +220,10 @@ void SimpleRenderTest()
     //light
     rpr_light light = NULL; status = rprContextCreateSpotLight(context, &light);
     assert(status == RPR_SUCCESS);
-    matrix lightm = translation(float3(0, 16, 0)) * rotation_x(M_PI_2);
+    matrix lightm = translation(float3(0.0f, 16.0f, 0.0f)) * rotation_x(static_cast<float>(M_PI_2));
     status = rprLightSetTransform(light, true, &lightm.m00);
     assert(status == RPR_SUCCESS);
-    status = rprSpotLightSetConeShape(light, M_PI_4, M_PI * 2.f / 3.f);
+    status = rprSpotLightSetConeShape(light, static_cast<float>(M_PI_4), static_cast<float>(M_PI) * 2.f / 3.f);
     assert(status == RPR_SUCCESS);
     status = rprSpotLightSetRadiantPower3f(light, 350, 350, 350);
     assert(status == RPR_SUCCESS);
@@ -253,7 +253,7 @@ void SimpleRenderTest()
     assert(status == RPR_SUCCESS);
 
     //change light
-    status = rprSpotLightSetConeShape(light, M_PI_4 * 0.5f, M_PI_4 * 0.5f);
+    status = rprSpotLightSetConeShape(light, static_cast<float>(M_PI_4) * 0.5f, static_cast<float>(M_PI_4) * 0.5f);
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);  assert(status == RPR_SUCCESS);
     assert(status == RPR_SUCCESS);
@@ -312,43 +312,43 @@ void ComplexRenderTest()
 
     Vertex cube[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { -1.0f, -1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { -1.0f, 1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ -1.0f, -1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { 1.0f, -1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ 1.0f, -1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, 0.f,  1.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, 0.f,  1.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 1.0f }},
     };
 
     Vertex plane[] =
     {
-        { -15.f, 0.f, -15.f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { -15.f, 0.f,  15.f, 0.f, 1.f, 0.f, 0.f, 1.f },
-        { 15.f, 0.f,  15.f, 0.f, 1.f, 0.f, 1.f, 1.f },
-        { 15.f, 0.f, -15.f, 0.f, 1.f, 0.f, 1.f, 0.f },
+        {{ -15.f, 0.f, -15.f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ -15.f, 0.f,  15.f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
+        {{ 15.f, 0.f,  15.f}, { 0.f, 1.f, 0.f}, { 1.f, 1.f }},
+        {{ 15.f, 0.f, -15.f}, { 0.f, 1.f, 0.f}, { 1.f, 0.f }},
     };
 
     rpr_int indices[] =
@@ -533,46 +533,46 @@ void EnvLightClearTest()
         rpr_float norm[3];
         rpr_float tex[2];
     };
-
+/*
     Vertex cube[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { -1.0f, -1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { -1.0f, 1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ -1.0f, -1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { 1.0f, -1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ 1.0f, -1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, 0.f,  1.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, 0.f,  1.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 1.0f }},
     };
-
+*/
     Vertex plane[] =
     {
-        { -500.f, 0.f, -500.f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { -500.f, 0.f,  500.f, 0.f, 1.f, 0.f, 0.f, 1.f },
-        { 500.f, 0.f,  500.f, 0.f, 1.f, 0.f, 1.f, 1.f },
-        { 500.f, 0.f, -500.f, 0.f, 1.f, 0.f, 1.f, 0.f },
+        {{ -500.f, 0.f, -500.f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ -500.f, 0.f,  500.f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
+        {{ 500.f, 0.f,  500.f}, { 0.f, 1.f, 0.f}, { 1.f, 1.f }},
+        {{ 500.f, 0.f, -500.f}, { 0.f, 1.f, 0.f}, { 1.f, 0.f }},
     };
 
     rpr_int indices[] =
@@ -619,7 +619,7 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprShapeSetMaterial(mesh, diffuse);
     assert(status == RPR_SUCCESS);
-    matrix m = translation(float3(0, 1, 0)) * scale(float3(0.2, 0.2, 0.2));
+    matrix m = translation(float3(0.0f, 1.0f, 0.0f)) * scale(float3(0.2f, 0.2f, 0.2f));
     status = rprShapeSetTransform(mesh, false, &m.m00);
     assert(status == RPR_SUCCESS);
 
@@ -658,7 +658,7 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprEnvironmentLightSetIntensityScale(light, 5.f);
     assert(status == RPR_SUCCESS);
-    matrix lightm = rotation_y(M_PI);
+    matrix lightm = rotation_y(static_cast<float>(M_PI));
     status = rprLightSetTransform(light, false, &lightm.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachLight(scene, light);
@@ -695,7 +695,7 @@ void EnvLightClearTest()
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, plane_mesh);
     assert(status == RPR_SUCCESS);
-    lightm = rotation_y(-M_PI_2);
+    lightm = rotation_y(-static_cast<float>(M_PI_2));
     status = rprLightSetTransform(light, true, &lightm.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachLight(scene, light);
@@ -779,10 +779,10 @@ void DefaultMaterialTest()
 
     Vertex quad[] =
     {
-        { -5.0f, -1.0f, -5.0f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { 5.0f, -1.0f, -5.0f, 0.f, 1.f,  0.f, 1.f, 0.f },
-        { 5.0f, -1.0f, 5.0f, 0.f, 1.f, 0.f,  1.f, 1.f },
-        { -5.0f, -1.0f, 5.0f, 0.f, 1.f, 0.f, 0.f, 1.f },
+        {{ -5.0f, -1.0f, -5.0f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ 5.0f, -1.0f, -5.0f}, { 0.f, 1.f,  0.f}, { 1.f, 0.f }},
+        {{ 5.0f, -1.0f, 5.0f}, { 0.f, 1.f, 0.f}, {  1.f, 1.f }},
+        {{ -5.0f, -1.0f, 5.0f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
     };
 
 
@@ -807,7 +807,7 @@ void DefaultMaterialTest()
         (rpr_int const*)indices, sizeof(rpr_int),
         num_face_vertices, 2, &mesh);
     assert(status == RPR_SUCCESS);
-    matrix r = rotation_x(M_PI_2);
+    matrix r = rotation_x(static_cast<float>(M_PI_2));
     status = rprShapeSetTransform(mesh, false, &r.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, mesh);
@@ -899,10 +899,10 @@ void NullShaderTest()
 
     Vertex quad[] =
     {
-        { -5.0f, -1.0f, -5.0f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { 5.0f, -1.0f, -5.0f, 0.f, 1.f,  0.f, 1.f, 0.f },
-        { 5.0f, -1.0f, 5.0f, 0.f, 1.f, 0.f,  1.f, 1.f },
-        { -5.0f, -1.0f, 5.0f, 0.f, 1.f, 0.f, 0.f, 1.f },
+        {{ -5.0f, -1.0f, -5.0f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ 5.0f, -1.0f, -5.0f}, { 0.f, 1.f,  0.f}, { 1.f, 0.f }},
+        {{ 5.0f, -1.0f, 5.0f}, { 0.f, 1.f, 0.f}, {  1.f, 1.f }},
+        {{ -5.0f, -1.0f, 5.0f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
     };
 
 
@@ -927,7 +927,7 @@ void NullShaderTest()
         (rpr_int const*)indices, sizeof(rpr_int),
         num_face_vertices, 2, &mesh);
     assert(status == RPR_SUCCESS);
-    matrix r = rotation_x(M_PI_2);
+    matrix r = rotation_x(static_cast<float>(M_PI_2));
     status = rprShapeSetTransform(mesh, false, &r.m00);
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, mesh);
@@ -1044,43 +1044,43 @@ void TiledRender()
 
     Vertex cube[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { -1.0f, -1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { -1.0f, 1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ -1.0f, -1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { 1.0f, -1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ 1.0f, -1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, 0.f,  1.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, 0.f,  1.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 1.0f }},
     };
 
     Vertex plane[] =
     {
-        { -500.f, 0.f, -500.f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { -500.f, 0.f,  500.f, 0.f, 1.f, 0.f, 0.f, 1.f },
-        { 500.f, 0.f,  500.f, 0.f, 1.f, 0.f, 1.f, 1.f },
-        { 500.f, 0.f, -500.f, 0.f, 1.f, 0.f, 1.f, 0.f },
+        {{ -500.f, 0.f, -500.f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ -500.f, 0.f,  500.f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
+        {{ 500.f, 0.f,  500.f}, { 0.f, 1.f, 0.f}, { 1.f, 1.f }},
+        {{ 500.f, 0.f, -500.f}, { 0.f, 1.f, 0.f}, { 1.f, 0.f }},
     };
 
     rpr_int indices[] =
@@ -1121,7 +1121,7 @@ void TiledRender()
     assert(status == RPR_SUCCESS);
     status = rprSceneAttachShape(scene, mesh);
     assert(status == RPR_SUCCESS);
-    matrix m = rotation_x(M_PI_4) * rotation_y(M_PI);
+    matrix m = rotation_x(static_cast<float>(M_PI_4)) * rotation_y(static_cast<float>(M_PI));
     status = rprShapeSetTransform(mesh, false, &m.m00);
     assert(status == RPR_SUCCESS);
 
@@ -1238,43 +1238,43 @@ void AOVTest()
 
     Vertex cube[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { -1.0f, -1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { -1.0f, 1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ -1.0f, -1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { 1.0f, -1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ 1.0f, -1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, 0.f,  1.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, 0.f,  1.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 1.0f }},
     };
 
     Vertex plane[] =
     {
-        { -15.f, 0.f, -15.f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { -15.f, 0.f,  15.f, 0.f, 1.f, 0.f, 0.f, 1.f },
-        { 15.f, 0.f,  15.f, 0.f, 1.f, 0.f, 1.f, 1.f },
-        { 15.f, 0.f, -15.f, 0.f, 1.f, 0.f, 1.f, 0.f },
+        {{ -15.f, 0.f, -15.f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ -15.f, 0.f,  15.f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
+        {{ 15.f, 0.f,  15.f}, { 0.f, 1.f, 0.f}, { 1.f, 1.f }},
+        {{ 15.f, 0.f, -15.f}, { 0.f, 1.f, 0.f}, { 1.f, 0.f }},
     };
 
     rpr_int indices[] =
@@ -1487,7 +1487,7 @@ void test_feature_cameraDOF()
     //create context, material system and scene
     rpr_context	context;
     status = rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, NULL, NULL, &context);
-    rpr_material_system matsys = NULL;
+    //rpr_material_system matsys = NULL;
     rpr_scene scene = NULL; status = rprContextCreateScene(context, &scene);
     assert(status == RPR_SUCCESS);
     status = rprContextSetScene(context, scene);
@@ -1500,31 +1500,31 @@ void test_feature_cameraDOF()
 
     Vertex meshVertices[] =
     {
-        { -1.0f*x,   (0.0f + 0.5f)*c,  0.0f + o,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f },//0
-        { 1.0f*x,    (0.0f + 0.5f)*c,   0.0f + o,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f },//1
-        { 1.0f*x,   (-0.5f + 0.5f)*c,  0.0f + o ,  0.0f, 0.0f, 1.0f,    1.0f, 1.0f },//2
-        { -1.0f*x,    (-0.5f + 0.5f)*c, 0.0f + o , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f },//3
+        {{ -1.0f*x,   (0.0f + 0.5f)*c,  0.0f + o}, {    0.0f, 0.0f, 1.0f}, {    0.0f, 0.0f }},//0
+        {{ 1.0f*x,    (0.0f + 0.5f)*c,   0.0f + o}, {    0.0f, 0.0f, 1.0f}, {    1.0f, 0.0f }},//1
+        {{ 1.0f*x,   (-0.5f + 0.5f)*c,  0.0f + o }, {  0.0f, 0.0f, 1.0f}, {    1.0f, 1.0f }},//2
+        {{ -1.0f*x,    (-0.5f + 0.5f)*c, 0.0f + o }, { 0.0f, 0.0f, 1.0f}, {    0.0f, 1.0f }},//3
 
-        { -1.0f*x,   (0.0f + 0.8f)*c, 1.0f*d + o,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f },//4
-        { 1.0f*x,   (0.0f + 0.8f)*c, 1.0f*d + o,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f },//5
-        { 1.0f*x,    (-0.5f + 0.8f)*c, 1.0f*d + o ,  0.0f, 0.0f, 1.0f,    1.0f, 1.0f },//6
-        { -1.0f*x,    (-0.5f + 0.8f)*c, 1.0f*d + o , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f },//7
+        {{ -1.0f*x,   (0.0f + 0.8f)*c, 1.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    0.0f, 0.0f }},//4
+        {{ 1.0f*x,   (0.0f + 0.8f)*c, 1.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    1.0f, 0.0f }},//5
+        {{ 1.0f*x,    (-0.5f + 0.8f)*c, 1.0f*d + o }, {  0.0f, 0.0f, 1.0f}, {    1.0f, 1.0f }},//6
+        {{ -1.0f*x,    (-0.5f + 0.8f)*c, 1.0f*d + o }, { 0.0f, 0.0f, 1.0f}, {    0.0f, 1.0f }},//7
 
                                                                                        // in the DOF unit test, we will focus on those 4 vertices :
-        { -1.0f*x,   (0.0f + 1.5f)*c, 2.0f*d + o,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f },//8
-        { 1.0f*x,    (0.0f + 1.5f)*c, 2.0f*d + o,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f },//9
-        { 1.0f*x,    (-0.5f + 1.5f)*c, 2.0f*d + o ,  0.0f, 0.0f, 1.0f,    1.0f, 1.0f },//10
-        { -1.0f*x,    (-0.5f + 1.5f)*c, 2.0f*d + o , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f },//11
+        {{ -1.0f*x,   (0.0f + 1.5f)*c, 2.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    0.0f, 0.0f }},//8
+        {{ 1.0f*x,    (0.0f + 1.5f)*c, 2.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    1.0f, 0.0f }},//9
+        {{ 1.0f*x,    (-0.5f + 1.5f)*c, 2.0f*d + o }, {  0.0f, 0.0f, 1.0f}, {    1.0f, 1.0f }},//10
+        {{ -1.0f*x,    (-0.5f + 1.5f)*c, 2.0f*d + o }, { 0.0f, 0.0f, 1.0f}, {    0.0f, 1.0f }},//11
 
-        { -1.0f*x,   (0.0f + 2.5f)*c, 3.0f*d + o,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f },//12
-        { 1.0f*x,    (0.0f + 2.5f)*c, 3.0f*d + o,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f },//13
-        { 1.0f*x,    (-0.5f + 2.5f)*c, 3.0f*d + o ,  0.0f, 0.0f, 1.0f,    1.0f, 1.0f },//14
-        { -1.0f*x,    (-0.5f + 2.5f)*c, 3.0f*d + o , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f },//15
+        {{ -1.0f*x,   (0.0f + 2.5f)*c, 3.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    0.0f, 0.0f }},//12
+        {{ 1.0f*x,    (0.0f + 2.5f)*c, 3.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    1.0f, 0.0f }},//13
+        {{ 1.0f*x,    (-0.5f + 2.5f)*c, 3.0f*d + o }, {  0.0f, 0.0f, 1.0f}, {    1.0f, 1.0f }},//14
+        {{ -1.0f*x,    (-0.5f + 2.5f)*c, 3.0f*d + o }, { 0.0f, 0.0f, 1.0f}, {    0.0f, 1.0f }},//15
 
-        { -1.0f*x,   (0.0f + 4.0f)*c, 4.0f*d + o,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f },//16
-        { 1.0f*x,    (0.0f + 4.0f)*c, 4.0f*d + o,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f },//17
-        { 1.0f*x,    (-0.5f + 4.0f)*c, 4.0f*d + o ,  0.0f, 0.0f, 1.0f,    1.0f, 1.0f },//18
-        { -1.0f*x,    (-0.5f + 4.0f)*c, 4.0f*d + o , 0.0f, 0.0f, 1.0f,    0.0f, 1.0f },//19
+        {{ -1.0f*x,   (0.0f + 4.0f)*c, 4.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    0.0f, 0.0f }},//16
+        {{ 1.0f*x,    (0.0f + 4.0f)*c, 4.0f*d + o}, {    0.0f, 0.0f, 1.0f}, {    1.0f, 0.0f }},//17
+        {{ 1.0f*x,    (-0.5f + 4.0f)*c, 4.0f*d + o }, {  0.0f, 0.0f, 1.0f}, {    1.0f, 1.0f }},//18
+        {{ -1.0f*x,    (-0.5f + 4.0f)*c, 4.0f*d + o }, { 0.0f, 0.0f, 1.0f}, {    0.0f, 1.0f }},//19
     };
 
 
@@ -1612,11 +1612,12 @@ void test_feature_cameraDOF()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i< kRenderIterations; i++)
+    for (rpr_int i = 0; i< kRenderIterations; i++)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_cameraDOF.png");
 
     //cleanup
@@ -1710,10 +1711,12 @@ void test_feature_ContextImageFromData()
     std::vector<float>().swap(dataImage);
 
     //mesh
-    Vertex meshVertices[] = { { -2.0f, 2.0f, 0.0f, 0.0f, 0.0f, +1.0f, 0.0f, 0.0f },
-    { 2.0f, 2.0f, 0.0f, 0.0f, 0.0f, +1.0f, 1.0f, 0.0f },
-    { 2.0f, -2.0f, 0.0f, 0.0f, 0.0f, +1.0f, 1.0f, 1.0f },
-    { -2.0f, -2.0f, 0.0f, 0.0f, 0.0f, +1.0f, 0.0f, 1.0f }, };
+    Vertex meshVertices[] = {
+        {{-2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+        {{ 2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+        {{ 2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}
+    };
     rpr_int indices[] = { 3, 2, 1, 0, };
     rpr_int num_face_vertices[] = { 4, };
 
@@ -1774,11 +1777,12 @@ void test_feature_ContextImageFromData()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_ContextImageFromData.png");
 
     //cleanup
@@ -1830,10 +1834,10 @@ void test_feature_multiUV()
       
     VertexMT meshVertices[] =
     {
-        { -2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    0.0f, 0.0f ,    1.0f, 1.0f },
-        { 2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    1.0f, 0.0f ,    0.0f, 1.0f },
-        { 2.0f, -2.0f, 0.0f ,  0.0f, 0.0f, +1.0f,    1.0f, 1.0f ,    0.0f, 0.0f },
-        { -2.0f, -2.0f, 0.0f , 0.0f, 0.0f, +1.0f,    0.0f, 1.0f ,    1.0f, 0.0f },
+        {{-2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{ 2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{-2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}}
     };
     rpr_int indices[] =
     {
@@ -1998,18 +2002,19 @@ void test_feature_LightDirectional()
     status = rprContextSetScene(context, scene);
     assert(status == RPR_SUCCESS);
 
+/*
     //vertex data
     float c = 0.5f;
     float d = -7.0f;
     float o = -7.0f;
     float x = 0.6f;
-
+*/
     Vertex meshVertices[] =
     {
-        { -2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    0.0f, 0.0f },
-        {  2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    1.0f, 0.0f  },
-        {  2.0f, -2.0f, 0.0f ,  0.0f, 0.0f, +1.0f,    1.0f, 1.0f  },
-        {  -2.0f, -2.0f, 0.0f , 0.0f, 0.0f, +1.0f,    0.0f, 1.0f },
+        {{ -2.0f, 2.0f, 0.0f}, {    0.0f, 0.0f, +1.0f}, {    0.0f, 0.0f }},
+        {{  2.0f, 2.0f, 0.0f}, {    0.0f, 0.0f, +1.0f}, {    1.0f, 0.0f  }},
+        {{  2.0f, -2.0f, 0.0f }, {  0.0f, 0.0f, +1.0f}, {    1.0f, 1.0f  }},
+        {{  -2.0f, -2.0f, 0.0f }, { 0.0f, 0.0f, +1.0f}, {    0.0f, 1.0f }},
     };
     rpr_int indices[] =
     {
@@ -2075,7 +2080,7 @@ void test_feature_LightDirectional()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i<kRenderIterations; i++)
+    for (rpr_int i = 0; i < kRenderIterations; i++)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2091,11 +2096,12 @@ void test_feature_LightDirectional()
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
 
-    for (rpr_uint i = 0; i<kRenderIterations; i++)
+    for (rpr_int i = 0; i < kRenderIterations; i++)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_LightDirectional_dynamic.png");
 
     //cleanup
@@ -2160,7 +2166,7 @@ void InstancingTest()
             assert(status == RPR_SUCCESS);
 
             float s = 0.75f + rand_float();
-            matrix m = translation(float3(x, y, rand_float() * 10.f - 5.f)) * scale(float3(s, s, s));
+            matrix m = translation(float3(static_cast<float>(x), static_cast<float>(y), rand_float() * 10.f - 5.f)) * scale(float3(s, s, s));
             status = rprShapeSetTransform(instance, true, &m.m00);
             assert(status == RPR_SUCCESS);
 
@@ -2334,10 +2340,10 @@ void BumpmapTest()
 
     vertex quad[] =
     {
-        { -5.0f, -1.0f, -5.0f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { 5.0f, -1.0f, -5.0f, 0.f, 1.f,  0.f, 1.f, 0.f },
-        { 5.0f, -1.0f, 5.0f, 0.f, 1.f, 0.f,  1.f, 1.f },
-        { -5.0f, -1.0f, 5.0f, 0.f, 1.f, 0.f, 0.f, 1.f },
+        {{ -5.0f, -1.0f, -5.0f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ 5.0f, -1.0f, -5.0f}, { 0.f, 1.f,  0.f}, { 1.f, 0.f }},
+        {{ 5.0f, -1.0f, 5.0f}, { 0.f, 1.f, 0.f}, {  1.f, 1.f }},
+        {{ -5.0f, -1.0f, 5.0f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
     };
 
 
@@ -2505,10 +2511,10 @@ void test_feature_shaderBumpmap()
 
     Vertex meshVertices[] =
     {
-        { -2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    0.0f, 0.0f },
-        { 2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    1.0f, 0.0f },
-        { 2.0f, -2.0f, 0.0f ,  0.0f, 0.0f, +1.0f,    1.0f, 1.0f },
-        { -2.0f, -2.0f, 0.0f , 0.0f, 0.0f, +1.0f,    0.0f, 1.0f },
+        {{ -2.0f, 2.0f, 0.0f}, {    0.0f, 0.0f, +1.0f}, {    0.0f, 0.0f }},
+        {{ 2.0f, 2.0f, 0.0f}, {    0.0f, 0.0f, +1.0f}, {    1.0f, 0.0f }},
+        {{ 2.0f, -2.0f, 0.0f }, {  0.0f, 0.0f, +1.0f}, {    1.0f, 1.0f }},
+        {{ -2.0f, -2.0f, 0.0f }, { 0.0f, 0.0f, +1.0f}, {    0.0f, 1.0f }},
     };
     rpr_int indices[] =
     {
@@ -2566,11 +2572,12 @@ void test_feature_shaderBumpmap()
     assert(status == RPR_SUCCESS);
     
     //render
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
     }
+
     rprFrameBufferSaveToFile(frame_buffer, "Output/feature_shaderBumpmap_0.png");
 
     //dynamic : change parameters
@@ -2591,7 +2598,8 @@ void test_feature_shaderBumpmap()
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2606,7 +2614,8 @@ void test_feature_shaderBumpmap()
 
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2690,10 +2699,10 @@ void test_feature_shaderTypeLayered()
 
     Vertex meshVertices[] =
     {
-        { -2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    0.0f, 0.0f },
-        { 2.0f, 2.0f, 0.0f,    0.0f, 0.0f, +1.0f,    1.0f, 0.0f },
-        { 2.0f, -2.0f, 0.0f ,  0.0f, 0.0f, +1.0f,    1.0f, 1.0f },
-        { -2.0f, -2.0f, 0.0f , 0.0f, 0.0f, +1.0f,    0.0f, 1.0f },
+        {{ -2.0f, 2.0f, 0.0f}, {    0.0f, 0.0f, +1.0f}, {    0.0f, 0.0f }},
+        {{ 2.0f, 2.0f, 0.0f}, {    0.0f, 0.0f, +1.0f}, {    1.0f, 0.0f }},
+        {{ 2.0f, -2.0f, 0.0f }, {  0.0f, 0.0f, +1.0f}, {    1.0f, 1.0f }},
+        {{ -2.0f, -2.0f, 0.0f }, { 0.0f, 0.0f, +1.0f}, {    0.0f, 1.0f }},
     };
     rpr_int indices[] =
     {
@@ -2751,7 +2760,7 @@ void test_feature_shaderTypeLayered()
     assert(status == RPR_SUCCESS);
 
     //render
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -2775,7 +2784,7 @@ void test_feature_shaderTypeLayered()
     assert(status == RPR_SUCCESS);
     status = rprFrameBufferClear(frame_buffer);
     assert(status == RPR_SUCCESS);
-    for (rpr_uint i = 0; i < kRenderIterations; ++i)
+    for (rpr_int i = 0; i < kRenderIterations; ++i)
     {
         status = rprContextRender(context);
         assert(status == RPR_SUCCESS);
@@ -3122,43 +3131,43 @@ void OrthoRenderTest()
 
     Vertex cube[] =
     {
-        { -1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f}, { 0.f, 1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f , 0.f, -1.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, -1.0f, 1.0f , 0.f, -1.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, -1.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { -1.0f, -1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { -1.0f, 1.0f, -1.0f , -1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , -1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ -1.0f, -1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, { -1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { -1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { 1.0f, -1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  1.f, 0.f, 0.f, 1.0f, 1.0f },
-        { 1.0f, 1.0f, 1.0f ,  1.f, 0.f, 0.f, 0.0f, 1.0f },
+        {{ 1.0f, -1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  1.f, 0.f, 0.f}, { 1.0f, 1.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, {  1.f, 0.f, 0.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,0.0f, 0.0f },
-        { 1.0f, -1.0f, -1.0f ,  0.f, 0.f, -1.f ,1.0f, 0.0f },
-        { 1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, -1.0f ,  0.f, 0.f, -1.f, 0.0f, 1.0f },
+        {{ -1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, -1.0f }, {  0.f, 0.f, -1.f }, {1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, -1.0f }, {  0.f, 0.f, -1.f}, { 0.0f, 1.0f }},
 
-        { -1.0f, -1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 0.0f },
-        { 1.0f, -1.0f, 1.0f , 0.f, 0.f,  1.f, 1.0f, 0.0f },
-        { 1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f, 1.0f, 1.0f },
-        { -1.0f, 1.0f, 1.0f , 0.f, 0.f, 1.f,0.0f, 1.0f },
+        {{ -1.0f, -1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 0.0f }},
+        {{ 1.0f, -1.0f, 1.0f }, { 0.f, 0.f,  1.f}, { 1.0f, 0.0f }},
+        {{ 1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, { 1.0f, 1.0f }},
+        {{ -1.0f, 1.0f, 1.0f }, { 0.f, 0.f, 1.f}, {0.0f, 1.0f }},
     };
 
     Vertex plane[] =
     {
-        { -15.f, 0.f, -15.f, 0.f, 1.f, 0.f, 0.f, 0.f },
-        { -15.f, 0.f,  15.f, 0.f, 1.f, 0.f, 0.f, 1.f },
-        { 15.f, 0.f,  15.f, 0.f, 1.f, 0.f, 1.f, 1.f },
-        { 15.f, 0.f, -15.f, 0.f, 1.f, 0.f, 1.f, 0.f },
+        {{ -15.f, 0.f, -15.f}, { 0.f, 1.f, 0.f}, { 0.f, 0.f }},
+        {{ -15.f, 0.f,  15.f}, { 0.f, 1.f, 0.f}, { 0.f, 1.f }},
+        {{ 15.f, 0.f,  15.f}, { 0.f, 1.f, 0.f}, { 1.f, 1.f }},
+        {{ 15.f, 0.f, -15.f}, { 0.f, 1.f, 0.f}, { 1.f, 0.f }},
     };
 
     rpr_int indices[] =
@@ -3231,7 +3240,7 @@ void OrthoRenderTest()
     assert(status == RPR_SUCCESS);
     status = rprCameraLookAt(camera, 2, 3, 10, 0, 0, 0, 0, 1, 0);
     /* Uncomment for transform testing */
-    /*rpr_float float_P16_2[] = { 0.983885f,0.177811f,-0.018824f,0.000000f,-0.141231f,0.708249f,-0.691692f,0.000000f,-0.109659f,0.683203f,0.721948f,0.000000f,-0.097421f,0.540490f,0.568043f,1.000000f };
+    /*rpr_float float_P16_2[] = {{ 0.983885f,0.177811f,-0.018824f,0.000000f,-0.141231f,0.708249f,-0.691692f,0.000000f,-0.109659f,0.683203f,0.721948f}, {0.000000f,-0.097421f,0.540490f}, {0.568043f,1.000000f }};
     status = rprCameraSetTransform(camera, false, (rpr_float*)&float_P16_2);*/
 
     assert(status == RPR_SUCCESS);

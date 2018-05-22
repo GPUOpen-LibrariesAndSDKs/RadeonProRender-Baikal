@@ -20,7 +20,7 @@ endif (BAIKAL_ENABLE_GLTF AND NOT BAIKAL_ENABLE_RPR)
 
 #global settings
 if (WIN32)
-    add_definitions(/MP -D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(/MP -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS)
 elseif (UNIX)
     add_definitions(-fvisibility=hidden -Wno-ignored-attributes)
 endif (WIN32)
@@ -88,9 +88,11 @@ endif (BAIKAL_ENABLE_STANDALONE)
 if (BAIKAL_ENABLE_TESTS)
     add_subdirectory(Gtest)
     add_subdirectory(BaikalTest)
-    if (BAIKAL_ENABLE_RPR)
-        add_subdirectory(RprTest)
-    endif (BAIKAL_ENABLE_RPR)
+# Temporarily remove RprTest from build
+# it will be rewrited in gtest
+#    if (BAIKAL_ENABLE_RPR)
+#        add_subdirectory(RprTest)
+#    endif (BAIKAL_ENABLE_RPR)
     set(3RDPARTY_DST $<TARGET_FILE_DIR:BaikalTest>)
 endif (BAIKAL_ENABLE_TESTS)
 
