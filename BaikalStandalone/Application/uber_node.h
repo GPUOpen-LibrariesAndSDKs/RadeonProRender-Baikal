@@ -21,7 +21,23 @@
  THE SOFTWARE.
  ********************************************************************/
 
+#pragma once 
+
 #include "Baikal/SceneGraph/inputmap.h"
+// #include "math/float3.h"
+enum class UberNodeType
+{
+    kLeafNode_Float = 0,
+    kLeafNode_Float3,
+    kLeafNode_Texture,
+    kInputOneArg,
+    kInputOneArg_Select,
+    kInputOneArg_Shuffle,
+    kInputOneArg_MatMul,
+    kInputTwoArg,
+    kInputTwoArg_Shuffle2,
+    kInputThreeArg_Remap
+};
 
 class UberNode
 {
@@ -29,11 +45,16 @@ public:
     using Ptr = std::shared_ptr<UberNode>;
     using InputMap = Baikal::InputMap;
 
-    UberNode(InputMap::Ptr);
+    // for root element parent is nullptr
+    UberNode(InputMap::Ptr input_map, Ptr parent);
 
-    bool AddChild(InputMap::Ptr child);
-    void ExcludeChild(InputMap::Ptr child);
-    InputMap::Ptr GetValue();
+    // data accessors
+    InputMap::Ptr GetFirstArg();
+    InputMap::Ptr GetSecondArg();
+    InputMap::Ptr GetThirdArg();
+    float GetFloat();
+    //Baikal::RadeonRays::float3 GetFloat3();
+
 
 private:
     std::uint32_t m_id;
