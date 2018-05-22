@@ -30,7 +30,7 @@ namespace Baikal
                 elems_count).Wait();
         }
 
-        void Clear(RadeonRays::float3 const& val)
+        void Clear(RadeonRays::float3 const& val) override
         {
             m_context.FillBuffer(0, m_data, val, m_data.GetElementCount()).Wait();
         }

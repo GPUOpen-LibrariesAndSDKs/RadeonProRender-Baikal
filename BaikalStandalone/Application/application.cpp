@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
+#include <OpenImageIO/imageio.h>
+
 #ifdef __APPLE__
 #include <OpenCL/OpenCL.h>
 #define GLFW_INCLUDE_GLCOREARB
@@ -55,8 +57,6 @@ THE SOFTWARE.
 #include <fstream>
 #include <functional>
 #include <queue>
-
-#include <OpenImageIO/imageio.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
