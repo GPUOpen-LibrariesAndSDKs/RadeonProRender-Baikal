@@ -197,8 +197,6 @@ KERNEL void GatherVisibility(
 }
 
 KERNEL void GatherOpacity(
-    // Intersection data
-    GLOBAL Intersection const* restrict isects,
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
     // Output indices
@@ -206,7 +204,10 @@ KERNEL void GatherOpacity(
     // Number of rays
     GLOBAL int* restrict num_rays,
     // Paths
-    GLOBAL Path const* restrict paths,
+    GLOBAL Path const* restrict paths,    
+    // Predicate
+    GLOBAL int* restrict predicate,
+    int last_bounce,
     // Radiance sample buffer
     GLOBAL float4* restrict output
 )
@@ -218,10 +219,10 @@ KERNEL void GatherOpacity(
         int output_index = output_indices[pixel_idx];
         GLOBAL Path* path = paths + pixel_idx;
         // In case of a miss
-        if (isects[global_id].shapeid < 0 && Path_IsAlive(path))
+        if (!predicate[global_id] || last_bounce)
         {
             float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
-            if (Path_ContainsOpacity(path))
+            if (Path_ContainsOpacity(path) || last_bounce)
             {
                 v.xyz = 1.0f;
             }

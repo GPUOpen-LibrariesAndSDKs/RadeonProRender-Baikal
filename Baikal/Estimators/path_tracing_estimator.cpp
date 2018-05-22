@@ -232,15 +232,16 @@ namespace Baikal
             if ((pass > 0) && has_some_environment)
             {
                 ShadeMiss(scene, pass, num_estimates, output, use_output_indices);
-
-                if (has_opacity_buffer)
-                {
-                    GatherOpacity(scene, pass, num_estimates, opacity_buffer, use_output_indices);
-                }
             }
 
             // Convert intersections to predicates
             FilterPathStream(pass, num_estimates);
+            
+            // Gather opacity if we have opacity buffer
+            if ((pass > 0) && has_opacity_buffer)
+            {
+                GatherOpacity(scene, pass, num_estimates, opacity_buffer, use_output_indices);
+            }
 
             // Compact batch
             m_render_data->pp.Compact(
@@ -318,7 +319,11 @@ namespace Baikal
 
             GetContext().Flush(0);
         }
-
+        // Gather opacity if we have opacity buffer
+        if (has_opacity_buffer)
+        {
+            GatherOpacity(scene, GetMaxBounces(), num_estimates, opacity_buffer, use_output_indices);
+        }
         ++m_sample_counter;
     }
 
@@ -621,11 +626,12 @@ namespace Baikal
 
         // Set kernel parameters
         int argc = 0;
-        gatherkernel.SetArg(argc++, m_render_data->intersections);
         gatherkernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
         gatherkernel.SetArg(argc++, output_indices);
         gatherkernel.SetArg(argc++, m_render_data->hitcount);
         gatherkernel.SetArg(argc++, m_render_data->paths);
+        gatherkernel.SetArg(argc++, m_render_data->hits);
+        gatherkernel.SetArg(argc++, (int)(pass == GetMaxBounces()));
         gatherkernel.SetArg(argc++, output);
 
         // Run shading kernel
