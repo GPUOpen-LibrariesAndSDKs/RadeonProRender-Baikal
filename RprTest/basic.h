@@ -22,6 +22,9 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "math/matrix.h"
 #include "math/mathutils.h"
 
@@ -35,8 +38,6 @@
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
-#define _USE_MATH_DEFINES
-#include <cmath>
 
 using namespace RadeonRays;
 
@@ -634,7 +635,7 @@ public:
     }
     
 protected:
-    rpr_context	                             m_context     = nullptr;
+    rpr_context                              m_context     = nullptr;
     rpr_material_system                      m_matsys      = nullptr;
     rpr_scene                                m_scene       = nullptr;
     rpr_camera                               m_camera      = nullptr;
