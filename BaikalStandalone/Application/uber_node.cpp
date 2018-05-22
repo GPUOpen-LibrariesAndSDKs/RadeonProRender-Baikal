@@ -23,8 +23,8 @@ THE SOFTWARE.
 
 #include "uber_node.h"
 
+using namespace Baikal;
 
 UberNode::UberNode(InputMap::Ptr input_map, Ptr parent) :
     m_input_map(input_map), m_parent(parent)
 {  }
-

@@ -24,10 +24,12 @@
 #pragma once 
 
 #include "Baikal/SceneGraph/inputmap.h"
-// #include "math/float3.h"
+#include "Baikal/SceneGraph/inputmaps.h"
+
 enum class UberNodeType
 {
-    kLeafNode_Float = 0,
+    kNone = 0, // invalid type
+    kLeafNode_Float,
     kLeafNode_Float3,
     kLeafNode_Texture,
     kInputOneArg,
@@ -48,13 +50,26 @@ public:
     // for root element parent is nullptr
     UberNode(InputMap::Ptr input_map, Ptr parent);
 
-    // data accessors
-    InputMap::Ptr GetFirstArg();
+    // data accessors, returns nullptr in case of type mismatch
+    template <class type>
+    InputMap::Ptr GetFirstArg()
+    {
+        auto input_map = std::dynamic_pointer_cast<InputMap_OneArg<type>>(m_input_map);
+
+        if (!input_map)
+            return nullptr;
+
+        return input_map->GetArg();
+    }
+
     InputMap::Ptr GetSecondArg();
     InputMap::Ptr GetThirdArg();
     float GetFloat();
-    //Baikal::RadeonRays::float3 GetFloat3();
+    RadeonRays::float3 GetFloat3();
+    Baikal::Texture::Ptr GetTexture();
 
+    // input map type accessor
+    UberNodeType GetType() const;
 
 private:
     std::uint32_t m_id;
