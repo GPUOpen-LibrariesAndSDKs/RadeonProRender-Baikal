@@ -196,6 +196,7 @@ KERNEL void GatherVisibility(
     }
 }
 
+///< Gather opacity information and store it in opacity buffer
 KERNEL void GatherOpacity(
     // Pixel indices
     GLOBAL int const* restrict pixel_indices,
@@ -218,11 +219,11 @@ KERNEL void GatherOpacity(
         int pixel_idx = pixel_indices[global_id];
         int output_index = output_indices[pixel_idx];
         GLOBAL Path* path = paths + pixel_idx;
-        // In case of a miss
+        
         if (!predicate[global_id] || last_bounce)
         {
             float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
-            if (Path_ContainsOpacity(path) || last_bounce)
+            if (Path_ContainsOpacity(path) || last_bounce || !Path_IsAlive(path))
             {
                 v.xyz = 1.0f;
             }

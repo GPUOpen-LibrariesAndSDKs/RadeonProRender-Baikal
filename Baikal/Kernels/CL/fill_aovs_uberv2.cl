@@ -56,6 +56,7 @@ KERNEL void FillAOVsUberV2(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
+    GLOBAL ShapeAdditionalData const* restrict shapes_additional,
     // Materials
     GLOBAL int const* restrict material_attributes,
     // Textures
@@ -383,7 +384,7 @@ KERNEL void FillAOVsUberV2(
             if (group_id_enabled)
             {
                 Sampler groupid_sampler;
-                groupid_sampler.index = shapes[isect.shapeid - 1].group_id;
+                groupid_sampler.index = shapes_additional[isect.shapeid - 1].group_id;
                 group_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&groupid_sampler),
                     UniformSampler_Sample1D(&groupid_sampler),
                     UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);

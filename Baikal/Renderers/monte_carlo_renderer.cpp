@@ -281,6 +281,7 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.uvs);
         fill_kernel.SetArg(argc++, scene.indices);
         fill_kernel.SetArg(argc++, scene.shapes);
+        fill_kernel.SetArg(argc++, scene.shapes_additional);
         fill_kernel.SetArg(argc++, scene.material_attributes);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);

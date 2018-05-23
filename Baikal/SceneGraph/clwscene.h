@@ -30,6 +30,7 @@ namespace Baikal
         CLWBuffer<int> indices;
 
         CLWBuffer<Shape> shapes;
+        CLWBuffer<ShapeAdditionalData> shapes_additional;
 
         CLWBuffer<int32_t> material_attributes;
         CLWBuffer<Light> lights;
