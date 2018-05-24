@@ -26,7 +26,7 @@
 #include "Baikal/SceneGraph/inputmap.h"
 #include "Baikal/SceneGraph/inputmaps.h"
 
-enum class UberNodeType
+enum class NodeType
 {
     kNone = 0, // invalid type
     kLeafNode_Float,
@@ -41,6 +41,7 @@ enum class UberNodeType
     kInputThreeArg_Remap
 };
 
+
 class UberNode
 {
 public:
@@ -48,32 +49,168 @@ public:
     using InputMap = Baikal::InputMap;
 
     // for root element parent is nullptr
-    UberNode(InputMap::Ptr input_map, Ptr parent);
-
-    // data accessors, returns nullptr in case of type mismatch
-    template <class type>
-    InputMap::Ptr GetFirstArg()
-    {
-        auto input_map = std::dynamic_pointer_cast<InputMap_OneArg<type>>(m_input_map);
-
-        if (!input_map)
-            return nullptr;
-
-        return input_map->GetArg();
-    }
-
-    InputMap::Ptr GetSecondArg();
-    InputMap::Ptr GetThirdArg();
-    float GetFloat();
-    RadeonRays::float3 GetFloat3();
-    Baikal::Texture::Ptr GetTexture();
+    static Ptr Create(InputMap::Ptr input_map, Ptr parent);
 
     // input map type accessor
-    UberNodeType GetType() const;
+    virtual NodeType GetType() const
+    { return NodeType::kNone; }
 
-private:
-    std::uint32_t m_id;
+    // input map data type accessor
+    InputMap::InputMapType GetDataType()
+    { return m_input_map->m_type; }
+
+protected:
+    UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
+
     InputMap::Ptr m_input_map;
     Ptr m_parent;
     std::vector<Ptr> m_children;
+};
+
+// UberNode_OneArg common class
+class UberNode_OneArg : public UberNode
+{
+public:
+    // input map type accessor
+    NodeType UberNode_OneArg::GetType() const override
+    { return NodeType::kInputOneArg; }
+
+    // Get InputMap_OneArg child
+    UberNode::InputMap::Ptr GetArg();
+    // Set InputMap_OneArg child
+    void SetArg(UberNode::InputMap::Ptr);
+
+protected:
+    UberNode_OneArg(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+// UberNode_OneArg specific classes
+class UberNode_Select : public UberNode_OneArg
+{
+public:
+    // get selection parametr (Not InputMap)
+    Baikal::InputMap_Select::Selection GetSelection();
+    // set selection parametr (Not InputMap)
+    void SetSelection(Baikal::InputMap_Select::Selection selection);
+
+protected:
+    UberNode_Select(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+class UberNode_Shuffle : public UberNode_OneArg
+{
+public:
+    // get mask parameter (Not InputMap)
+    std::array<uint32_t, 4> GetMask() const;
+    // set mask parameter (Not InputMap)
+    void SetMask(const std::array<uint32_t, 4> &mask);
+protected:
+    UberNode_Shuffle(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+class UberNode_Matmul : public UberNode_OneArg
+{
+public:
+    // get matrix parameter
+    void SetMatrix(const RadeonRays::matrix &mat4);
+    // get matrix parameter
+    RadeonRays::matrix GetMatrix() const;
+protected:
+    UberNode_Matmul(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+// UberNode_TwoArgs common class
+class UberNode_TwoArgs : public UberNode
+{
+public:
+    // input map type accessor
+    NodeType GetType() const override;
+
+    // Get InputMap_TwoArg child A
+    InputMap::Ptr GetArgA();
+    // Get InputMap_TwoArg child B
+    InputMap::Ptr GetArgB();
+
+protected:
+    UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+// UberNode_TwoArgs specific class
+class UberNode_Lerp : public UberNode_TwoArgs
+{
+public:
+    // get control parameter (not child argument)
+    Baikal::InputMap::Ptr GetCntrol();
+    // set control parameter (not child argument)
+    void SetCntrol(Baikal::InputMap::Ptr control);
+
+protected:
+    UberNode_Lerp(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+class UberNode_Shuffle2 : public UberNode_TwoArgs
+{
+public:
+    // get mask parameter (Not InputMap)
+    std::array<uint32_t, 4> GetMask() const;
+    // set mask parameter (Not InputMap)
+    void SetMask(const std::array<uint32_t, 4> &mask);
+
+protected:
+    UberNode_Shuffle2(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+// UberNode_ThreeArgs common class
+class UberNode_ThreeArgs : public UberNode
+{
+public:
+    // input map type accessor
+    NodeType GetType() const override;
+
+    // Get InputMap_ThreeArg child A
+    InputMap::Ptr GetArgA();
+    // Get InputMap_ThreeArg child B
+    InputMap::Ptr GetArgB();
+    // Get InputMap_ThreeArg child C
+    InputMap::Ptr GetArgC();
+
+protected:
+    UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+// lead nodes
+class UberNode_Float : public UberNode
+{
+public:
+    NodeType GetType() const override;
+
+    void SetValue(float value);
+    float GetValue() const;
+
+protected:
+    UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+class UberNode_Float3 : public UberNode
+{
+public:
+    NodeType GetType() const override;
+
+    void SetValue(RadeonRays::float3 value);
+    RadeonRays::float3 GetValue() const;
+
+protected:
+    UberNode_Float3(InputMap::Ptr input_map, UberNode::Ptr parent);
+};
+
+class UberNode_Sampler : public UberNode
+{
+public:
+    NodeType GetType() const override;
+
+    void SetValue(Baikal::Texture::Ptr value);
+    Baikal::Texture::Ptr GetValue() const;
+
+protected:
+    UberNode_Sampler(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
