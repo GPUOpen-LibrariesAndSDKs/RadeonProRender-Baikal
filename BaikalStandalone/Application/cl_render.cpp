@@ -404,7 +404,7 @@ namespace Baikal
             auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
             auto color_sensitivity = (radius / 10.f) * 2.f;
             auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
-            m_outputs[m_primary].denoiser->SetParameter("radius", radius);
+            m_outputs[m_primary].denoiser->SetParameter("radius", static_cast<float>(radius));
             m_outputs[m_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
             m_outputs[m_primary].denoiser->SetParameter("normal_sensitivity", normal_sensitivity);
             m_outputs[m_primary].denoiser->SetParameter("position_sensitivity", position_sensitivity);
