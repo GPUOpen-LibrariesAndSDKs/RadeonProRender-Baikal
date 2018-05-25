@@ -73,6 +73,7 @@ namespace
     { RPR_CONTEXT_TONE_MAPPING_REINHARD02_POST_SCALE,{ "tonemapping.reinhard02.postscale", "Reinhard postscale", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_TONE_MAPPING_REINHARD02_BURN,{ "tonemapping.reinhard02.burn", "Reinhard burn", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_MAX_RECURSION,{ "maxRecursion", "Ray trace depth", RPR_PARAMETER_TYPE_UINT } },
+    { RPR_CONTEXT_RANDOM_SEED,{ "randseed", "Random seed", RPR_PARAMETER_TYPE_UINT } },
     { RPR_CONTEXT_RAY_CAST_EPISLON,{ "raycastepsilon", "Ray epsilon", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_RADIANCE_CLAMP,{ "radianceclamp", "Max radiance value", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_X_FLIP,{ "xflip", "Flip framebuffer output along X axis", RPR_PARAMETER_TYPE_UINT } },
@@ -327,6 +328,32 @@ FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum targ
     return result;
 }
 
+void ContextObject::SetParameter(const std::string& input, rpr_uint value)
+{
+    auto it = std::find_if(kContextParameterDescriptions.begin(), kContextParameterDescriptions.end(),
+        [input](std::pair<uint32_t, ParameterDesc> desc) { return desc.second.name == input; });
+
+    if (it == kContextParameterDescriptions.end())
+    {
+        throw Exception(RPR_ERROR_INVALID_TAG, "ContextObject: invalid context input parameter.");
+    }
+    else if (it->second.type != RPR_PARAMETER_TYPE_UINT)
+    {
+        throw Exception(RPR_ERROR_INVALID_PARAMETER_TYPE, "ContextObject: invalid context input type.");
+    }
+
+    switch (it->first)
+    {
+    case RPR_CONTEXT_RANDOM_SEED:
+        for (auto& c : m_cfgs)
+        {
+            c.renderer->SetRandomSeed(value);
+        }
+        break;
+    default:
+        throw Exception(RPR_ERROR_UNIMPLEMENTED, "ContextObject: requested parameter is not implemented");
+    }
+}
 
 void ContextObject::SetParameter(const std::string& input, float x, float y, float z, float w)
 {

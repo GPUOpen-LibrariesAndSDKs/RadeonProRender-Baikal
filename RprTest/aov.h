@@ -27,9 +27,19 @@
 class AovTest : public BasicTest
 {
 public:
+    void CreateFramebuffer() override
+    {
+        // Create Framebuffer
+        rpr_framebuffer_desc desc = { kOutputWidth, kOutputHeight };
+        rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+        ASSERT_EQ(rprContextCreateFrameBuffer(m_context, fmt, &desc, &m_framebuffer), RPR_SUCCESS);
+    }
+
     void TestAovImplemented(rpr_aov aov)
     {
-        CreateScene(SceneType::kSphereIbl);
+        CreateScene(SceneType::kSphereAndPlane);
+        AddEnvironmentLight("../Resources/Textures/studio015.hdr");
+
         ASSERT_EQ(rprContextSetAOV(m_context, aov, m_framebuffer), RPR_SUCCESS);
         Render();
         SaveAndCompare();

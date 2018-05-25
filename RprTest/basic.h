@@ -73,14 +73,9 @@ public:
         m_output_path.append("/");
 
         ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, nullptr, nullptr, &m_context), RPR_SUCCESS);
-        
-        // Create Framebuffer
-        rpr_framebuffer_desc desc = { kOutputWidth, kOutputHeight };
-        rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
-        ASSERT_EQ(rprContextCreateFrameBuffer(m_context, fmt, &desc, &m_framebuffer), RPR_SUCCESS);
-        // Set color output
-        ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_COLOR, m_framebuffer), RPR_SUCCESS);
+        ASSERT_EQ(rprContextSetParameter1u(m_context, "randseed", 0u), RPR_SUCCESS);
 
+        CreateFramebuffer();
     }
 
     virtual void TearDown()
@@ -142,6 +137,15 @@ public:
             ASSERT_EQ(rprObjectDelete(m_context), RPR_SUCCESS);
             m_context = nullptr;
         }
+    }
+
+    virtual void CreateFramebuffer()
+    {
+        rpr_framebuffer_desc desc = { kOutputWidth, kOutputHeight };
+        rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+        ASSERT_EQ(rprContextCreateFrameBuffer(m_context, fmt, &desc, &m_framebuffer), RPR_SUCCESS);
+        // Set color output
+        ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_COLOR, m_framebuffer), RPR_SUCCESS);
     }
 
     void ClearFramebuffer() const
