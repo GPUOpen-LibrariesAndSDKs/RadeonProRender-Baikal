@@ -96,9 +96,7 @@ namespace Baikal
 
     inline void PostEffect::RegisterParameter(std::string const& name, RadeonRays::float4 const& initial_value)
     {
-        auto iter = m_parameters.find(name);
-
-        assert(iter == m_parameters.cend());
+        assert(m_parameters.find(name) == m_parameters.cend());
 
         m_parameters.emplace(name, initial_value);
     }
