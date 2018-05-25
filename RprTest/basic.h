@@ -710,7 +710,7 @@ TEST_F(BasicTest, Basic_Instancing)
         float s = rand_float() * 0.5f + 0.1f;
         matrix m = translation(float3(x, y, z) * 2.0f) * scale(float3(s, s, s));
         ASSERT_EQ(rprShapeSetTransform(instance, true, &m.m00), RPR_SUCCESS);
-        AddShape("instance" + i, instance);
+        AddShape("instance" + std::to_string(i), instance);
         ASSERT_EQ(rprShapeSetMaterial(instance, sphere_mtl), RPR_SUCCESS);
     }
     
@@ -735,10 +735,10 @@ TEST_F(BasicTest, Basic_MultiUV)
     
     VertexMT vertices[] =
     {
-        { -2.0f,  2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f },
-        {  2.0f,  2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f },
-        {  2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
-        { -2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f }
+        {{-2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{ 2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{-2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}}
     };
 
     rpr_int indices[] =
