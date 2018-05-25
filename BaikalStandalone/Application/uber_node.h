@@ -28,19 +28,11 @@
 
 enum class NodeType
 {
-    kNone = 0, // invalid type
-    kLeafNode_Float,
-    kLeafNode_Float3,
-    kLeafNode_Texture,
-    kInputOneArg,
-    kInputOneArg_Select,
-    kInputOneArg_Shuffle,
-    kInputOneArg_MatMul,
-    kInputTwoArg,
-    kInputTwoArg_Shuffle2,
-    kInputThreeArg_Remap
+    kNoneArgs = 0,
+    kOneArg,
+    kTwoArgs,
+    kThreeArgs
 };
-
 
 class UberNode
 {
@@ -51,16 +43,16 @@ public:
     // for root element parent is nullptr
     static Ptr Create(InputMap::Ptr input_map, Ptr parent);
 
-    // input map type accessor
-    virtual NodeType GetType() const
-    { return NodeType::kNone; }
-
     // input map data type accessor
     InputMap::InputMapType GetDataType()
     { return m_input_map->m_type; }
 
+    bool IsValid() const;
+
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
+    void AddChild(Ptr child);
+    virtual NodeType GetType() const = 0;
 
     InputMap::Ptr m_input_map;
     Ptr m_parent;
@@ -71,16 +63,15 @@ protected:
 class UberNode_OneArg : public UberNode
 {
 public:
-    // input map type accessor
-    NodeType UberNode_OneArg::GetType() const override
-    { return NodeType::kInputOneArg; }
-
     // Get InputMap_OneArg child
     UberNode::InputMap::Ptr GetArg();
     // Set InputMap_OneArg child
     void SetArg(UberNode::InputMap::Ptr);
 
 protected:
+    NodeType GetType() const override
+    { return NodeType::kOneArg; }
+
     UberNode_OneArg(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
@@ -123,15 +114,19 @@ protected:
 class UberNode_TwoArgs : public UberNode
 {
 public:
-    // input map type accessor
-    NodeType GetType() const override;
-
     // Get InputMap_TwoArg child A
     InputMap::Ptr GetArgA();
     // Get InputMap_TwoArg child B
     InputMap::Ptr GetArgB();
+    // Set InputMap_TwoArg child A
+    void SetArgA(UberNode::InputMap::Ptr);
+    // Set InputMap_TwoArg child B
+    void SetArgB(UberNode::InputMap::Ptr);
 
 protected:
+    NodeType GetType() const override
+    { return NodeType::kTwoArgs; }
+
     UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
@@ -140,9 +135,9 @@ class UberNode_Lerp : public UberNode_TwoArgs
 {
 public:
     // get control parameter (not child argument)
-    Baikal::InputMap::Ptr GetCntrol();
+    Baikal::InputMap::Ptr GetControl();
     // set control parameter (not child argument)
-    void SetCntrol(Baikal::InputMap::Ptr control);
+    void SetControl(Baikal::InputMap::Ptr control);
 
 protected:
     UberNode_Lerp(InputMap::Ptr input_map, UberNode::Ptr parent);
@@ -164,17 +159,23 @@ protected:
 class UberNode_ThreeArgs : public UberNode
 {
 public:
-    // input map type accessor
-    NodeType GetType() const override;
-
-    // Get InputMap_ThreeArg child A
-    InputMap::Ptr GetArgA();
-    // Get InputMap_ThreeArg child B
-    InputMap::Ptr GetArgB();
-    // Get InputMap_ThreeArg child C
-    InputMap::Ptr GetArgC();
+    // Get InputMap_ThreeArg child
+    InputMap::Ptr GetSourceRange();
+    // Get InputMap_ThreeArg child
+    InputMap::Ptr GetDestinationRange();
+    // Get InputMap_ThreeArg child
+    InputMap::Ptr GetData();
+    // Set InputMap_ThreeArg child
+    void SetSourceRange(UberNode::InputMap::Ptr);
+    // Set InputMap_ThreeArg child
+    void SetDestinationRange(UberNode::InputMap::Ptr);
+    // Set InputMap_ThreeArg child
+    void SetData(UberNode::InputMap::Ptr);
 
 protected:
+    NodeType GetType() const override
+    { return NodeType::kThreeArgs; }
+
     UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
@@ -182,35 +183,38 @@ protected:
 class UberNode_Float : public UberNode
 {
 public:
-    NodeType GetType() const override;
-
     void SetValue(float value);
     float GetValue() const;
 
 protected:
+    NodeType GetType() const override
+    { return NodeType::kNoneArgs; }
+
     UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
 class UberNode_Float3 : public UberNode
 {
 public:
-    NodeType GetType() const override;
-
     void SetValue(RadeonRays::float3 value);
     RadeonRays::float3 GetValue() const;
 
 protected:
+    NodeType GetType() const override
+    { return NodeType::kNoneArgs; }
+
     UberNode_Float3(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
 class UberNode_Sampler : public UberNode
 {
 public:
-    NodeType GetType() const override;
-
     void SetValue(Baikal::Texture::Ptr value);
     Baikal::Texture::Ptr GetValue() const;
 
 protected:
+    NodeType GetType() const override
+    { return NodeType::kNoneArgs; }
+
     UberNode_Sampler(InputMap::Ptr input_map, UberNode::Ptr parent);
 };

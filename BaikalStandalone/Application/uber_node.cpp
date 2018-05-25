@@ -29,21 +29,99 @@ using namespace Baikal;
 // UberNode_OneArg implementation
 ////////////////////////////////////////
 
-#define GET_ONE_ARG(X)\
+#define GET_ONE_ARG(type, sufix)\
     {\
-        auto input_map = std::dynamic_pointer_cast<InputMap_OneArg<X>>(m_input_map);\
+        auto input_map = std::dynamic_pointer_cast<type>(m_input_map);\
         if (!input_map)\
-            throw std::runtime_error("UberNode_OneArg::GetArg(...): invalid dynamic_cast");\
-        return input_map->GetArg();\
+            throw std::runtime_error("Dynamic_cast failure");\
+        return input_map->Get##sufix();\
     }\
 
-#define SET_ONE_ARG(X)\
+#define SET_ONE_ARG(param, type, sufix)\
     {\
-        auto OneArg_InputMap = std::dynamic_pointer_cast<InputMap_Sin>(m_input_map);\
-        if (!OneArg_InputMap)\
-            throw std::runtime_error("UberNode_OneArg::SetArg(...): invalid dynamic_cast");\
-        OneArg_InputMap->SetArg(input_map);\
+        auto input_map_ = std::dynamic_pointer_cast<type>(m_input_map);\
+        if (!input_map_)\
+            throw std::runtime_error("Dynamic_cast failure");\
+        input_map_->Set##sufix(param);\
+        break;\
     }\
+
+#define GET_ARG(X) GET_ONE_ARG(X,Arg)
+#define GET_ARG_A(X) GET_ONE_ARG(X, A)
+#define GET_ARG_B(X) GET_ONE_ARG(X, B)
+#define GET_ARG_C(X) GET_ONE_ARG(X, C)
+#define SET_ARG(param, X) SET_ONE_ARG(param, X, Arg)
+#define SET_ARG_A(param, X) SET_ONE_ARG(param, X, A)
+#define SET_ARG_B(param, X) SET_ONE_ARG(param, X, B)
+#define SET_ARG_C(param, X) SET_ONE_ARG(param, X, C)
+
+#define GET_ARG_HANDLER(input_type, sufix)\
+        switch (input_type)\
+        {\
+            case InputMap::InputMapType::kAdd:\
+                GET_ARG_##sufix(InputMap_Add);\
+            case InputMap::InputMapType::kSub:\
+                GET_ARG_##sufix(InputMap_Sub);\
+            case InputMap::InputMapType::kMul:\
+                GET_ARG_##sufix(InputMap_Mul);\
+            case InputMap::InputMapType::kDiv:\
+                GET_ARG_##sufix(InputMap_Div);\
+            case InputMap::InputMapType::kMin:\
+                GET_ARG_##sufix(InputMap_Min);\
+            case InputMap::InputMapType::kMax:\
+                GET_ARG_##sufix(InputMap_Max);\
+            case InputMap::InputMapType::kDot3:\
+                GET_ARG_##sufix(InputMap_Dot3);\
+            case InputMap::InputMapType::kCross3:\
+                GET_ARG_##sufix(InputMap_Cross3);\
+            case InputMap::InputMapType::kDot4:\
+                GET_ARG_##sufix(InputMap_Dot4);\
+            case InputMap::InputMapType::kCross4:\
+                GET_ARG_##sufix(InputMap_Cross4);\
+            case InputMap::InputMapType::kPow:\
+                GET_ARG_##sufix(InputMap_Pow);\
+            case InputMap::InputMapType::kMod:\
+                GET_ARG_##sufix(InputMap_Mod);\
+            case InputMap::InputMapType::kLerp:\
+                GET_ARG_##sufix(InputMap_TwoArg<InputMap::InputMapType::kLerp>)\
+            case InputMap::InputMapType::kShuffle2:\
+                GET_ARG_##sufix(InputMap_TwoArg<InputMap::InputMapType::kShuffle2>);\
+            default:\
+                return nullptr;\
+        }\
+
+#define SET_ARG_HANDLER(param, input_type, sufix)\
+        switch (input_type)\
+        {\
+            case InputMap::InputMapType::kAdd:\
+                SET_ARG_##sufix(param, InputMap_Add);\
+            case InputMap::InputMapType::kSub:\
+                SET_ARG_##sufix(param, InputMap_Sub);\
+            case InputMap::InputMapType::kMul:\
+                SET_ARG_##sufix(param, InputMap_Mul);\
+            case InputMap::InputMapType::kDiv:\
+                SET_ARG_##sufix(param, InputMap_Div);\
+            case InputMap::InputMapType::kMin:\
+                SET_ARG_##sufix(param, InputMap_Min);\
+            case InputMap::InputMapType::kMax:\
+                SET_ARG_##sufix(param, InputMap_Max);\
+            case InputMap::InputMapType::kDot3:\
+                SET_ARG_##sufix(param, InputMap_Dot3);\
+            case InputMap::InputMapType::kCross3:\
+                SET_ARG_##sufix(param,InputMap_Cross3);\
+            case InputMap::InputMapType::kDot4:\
+                SET_ARG_##sufix(param, InputMap_Dot4);\
+            case InputMap::InputMapType::kCross4:\
+                SET_ARG_##sufix(param, InputMap_Cross4);\
+            case InputMap::InputMapType::kPow:\
+                SET_ARG_##sufix(param, InputMap_Pow);\
+            case InputMap::InputMapType::kMod:\
+                SET_ARG_##sufix(param, InputMap_Mod);\
+            case InputMap::InputMapType::kLerp:\
+                SET_ARG_##sufix(param, InputMap_TwoArg<InputMap::InputMapType::kLerp>)\
+            case InputMap::InputMapType::kShuffle2:\
+                SET_ARG_##sufix(param, InputMap_TwoArg<InputMap::InputMapType::kShuffle2>);\
+        }\
 
 // Get InputMap_OneArg child
 UberNode::InputMap::Ptr UberNode_OneArg::GetArg()
@@ -51,25 +129,25 @@ UberNode::InputMap::Ptr UberNode_OneArg::GetArg()
     switch (m_input_map->m_type)
     {
         case InputMap::InputMapType::kSin:
-            GET_ONE_ARG(InputMap::InputMapType::kSin);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kSin>);
         case InputMap::InputMapType::kCos:
-            GET_ONE_ARG(InputMap::InputMapType::kCos);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kCos>);
         case InputMap::InputMapType::kTan:
-            GET_ONE_ARG(InputMap::InputMapType::kTan);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kTan>);
         case InputMap::InputMapType::kAsin:
-            GET_ONE_ARG(InputMap::InputMapType::kAsin);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kAsin>);
         case InputMap::InputMapType::kAcos:
-            GET_ONE_ARG(InputMap::InputMapType::kAcos);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kAcos>);
         case InputMap::InputMapType::kAtan:
-            GET_ONE_ARG(InputMap::InputMapType::kAtan);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kAtan>);
         case InputMap::InputMapType::kLength3:
-            GET_ONE_ARG(InputMap::InputMapType::kLength3);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kLength3>);
         case InputMap::InputMapType::kNormalize3:
-            GET_ONE_ARG(InputMap::InputMapType::kNormalize3);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kNormalize3>);
         case InputMap::InputMapType::kFloor:
-            GET_ONE_ARG(InputMap::InputMapType::kFloor);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kFloor>);
         case InputMap::InputMapType::kAbs:
-            GET_ONE_ARG(InputMap::InputMapType::kAbs);
+            GET_ARG(InputMap_OneArg<InputMap::InputMapType::kAbs>);
         default:
             return nullptr;
     }
@@ -81,44 +159,51 @@ void UberNode_OneArg::SetArg(UberNode::InputMap::Ptr input_map)
     switch (input_map->m_type)
     {
         case InputMap::InputMapType::kSin:
-            SET_ONE_ARG(InputMap::InputMapType::kSin);
+            SET_ARG(input_map, InputMap_Sin);
         case InputMap::InputMapType::kCos:
-            SET_ONE_ARG(InputMap::InputMapType::kCos);
+            SET_ARG(input_map, InputMap_Cos);
         case InputMap::InputMapType::kTan:
-            SET_ONE_ARG(InputMap::InputMapType::kTan);
+            SET_ARG(input_map, InputMap_Tan);
         case InputMap::InputMapType::kAsin:
-            SET_ONE_ARG(InputMap::InputMapType::kAsin);
+            SET_ARG(input_map, InputMap_Asin);
         case InputMap::InputMapType::kAcos:
-            SET_ONE_ARG(InputMap::InputMapType::kAcos);
+            SET_ARG(input_map, InputMap_Acos);
         case InputMap::InputMapType::kAtan:
-            SET_ONE_ARG(InputMap::InputMapType::kAtan);
+            SET_ARG(input_map, InputMap_Atan);
         case InputMap::InputMapType::kLength3:
-            SET_ONE_ARG(InputMap::InputMapType::kLength3);
+            SET_ARG(input_map, InputMap_Length3);
         case InputMap::InputMapType::kNormalize3:
-            SET_ONE_ARG(InputMap::InputMapType::kNormalize3);
+            SET_ARG(input_map, InputMap_Normalize3);
         case InputMap::InputMapType::kFloor:
-            SET_ONE_ARG(InputMap::InputMapType::kFloor);
+            SET_ARG(input_map, InputMap_Floor);
         case InputMap::InputMapType::kAbs:
-            SET_ONE_ARG(InputMap::InputMapType::kAbs);
+            SET_ARG(input_map, InputMap_Abs);
         case InputMap::InputMapType::kSelect:
-            SET_ONE_ARG(InputMap::InputMapType::kSelect);
+            SET_ARG(input_map, InputMap_OneArg<InputMap::InputMapType::kSelect>);
         case InputMap::InputMapType::kShuffle:
-            SET_ONE_ARG(InputMap::InputMapType::kShuffle);
+            SET_ARG(input_map, InputMap_OneArg<InputMap::InputMapType::kShuffle>);
         case InputMap::InputMapType::kMatMul:
-            SET_ONE_ARG(InputMap::InputMapType::kMatMul);
+            SET_ARG(input_map, InputMap_OneArg<InputMap::InputMapType::kMatMul>);
     }
 }
 
+bool UberNode::IsValid() const
+{ return m_children.size() == (size_t)GetType(); }
+
+void UberNode::AddChild(UberNode::Ptr child)
+{
+    m_parent->m_children.push_back(child);
+}
 
 ////////////////////////////////////////
 // UberNode_Select implementation
 ////////////////////////////////////////
 
-Baikal::InputMap_Select::Selection UberNode_Select::GetSelection()
+InputMap_Select::Selection UberNode_Select::GetSelection()
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Select>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_OneArg::GetSelection(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Select::GetSelection(...): invalid dynamic_cast");
     return input_map->GetSelection();
 }
 
@@ -127,10 +212,179 @@ void UberNode_Select::SetSelection(Baikal::InputMap_Select::Selection selection)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Select>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_OneArg::GetSelection(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Select::SetSelection(...): invalid dynamic_cast");
     input_map->SetSelection(selection);
 }
 
+////////////////////////////////////////
+// UberNode_Shuffle implementation
+////////////////////////////////////////
+
+std::array<uint32_t, 4> UberNode_Shuffle::GetMask() const
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+    return input_map->GetMask();
+}
+
+void UberNode_Shuffle::SetMask(const std::array<uint32_t, 4>& mask)
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+    input_map->SetMask(mask);
+}
+
+////////////////////////////////////////
+// UberNode_Matmul implementation
+////////////////////////////////////////
+
+RadeonRays::matrix UberNode_Matmul::GetMatrix() const
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_MatMul>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Matmul::GetMatrix(...): invalid dynamic_cast");
+    return input_map->GetMatrix();
+}
+
+void UberNode_Matmul::SetMatrix(const RadeonRays::matrix &mat4)
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_MatMul>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Matmul::SetMatrix(...): invalid dynamic_cast");
+    input_map->SetMatrix(mat4);
+}
+
+////////////////////////////////////////
+// UberNode_TwoArgs implementation
+////////////////////////////////////////
+
+// Get InputMap_TwoArg child A
+InputMap::Ptr UberNode_TwoArgs::GetArgA()
+{
+    GET_ARG_HANDLER(m_input_map->m_type, A)
+}
+
+// Get InputMap_TwoArg child B
+InputMap::Ptr UberNode_TwoArgs::GetArgB()
+{
+    GET_ARG_HANDLER(m_input_map->m_type, B)
+}
+
+// Set InputMap_TwoArg child A
+void UberNode_TwoArgs::SetArgA(UberNode::InputMap::Ptr arg)
+{
+    SET_ARG_HANDLER(arg, m_input_map->m_type, A)
+}
+
+// Set InputMap_TwoArg child B
+void UberNode_TwoArgs::SetArgB(UberNode::InputMap::Ptr arg)
+{
+    SET_ARG_HANDLER(arg, m_input_map->m_type, B)
+}
+////////////////////////////////////////
+// UberNode_Lerp implementation
+////////////////////////////////////////
+
+// get control parameter (not child argument)
+Baikal::InputMap::Ptr UberNode_Lerp::GetControl()
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Lerp>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+    return input_map->GetControl();
+}
+
+// set control parameter (not child argument)
+void UberNode_Lerp::SetControl(Baikal::InputMap::Ptr control)
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Lerp>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+    return input_map->SetControl(control);
+}
+
+////////////////////////////////////////
+// UberNode_Shuffle2 implementation
+////////////////////////////////////////
+
+// get mask parameter (Not InputMap)
+std::array<uint32_t, 4> UberNode_Shuffle2::GetMask() const
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Shuffle2>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+    return input_map->GetMask();
+}
+
+// set mask parameter (Not InputMap)
+void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Shuffle2>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+    input_map->SetMask(mask);
+}
+
+
+////////////////////////////////////
+// UberNode_ThreeArgs
+////////////////////////////////////
+
+// Get UberNode_ThreeArgs child B
+InputMap::Ptr UberNode_ThreeArgs::GetSourceRange()
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("Dynamic_cast failure");
+    return input_map->GetSourceRange();
+}
+
+// Get UberNode_ThreeArgs child B
+InputMap::Ptr UberNode_ThreeArgs::GetDestinationRange()
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("Dynamic_cast failure");
+    return input_map->GetDestinationRange();
+}
+
+// Get UberNode_ThreeArgs child C
+InputMap::Ptr UberNode_ThreeArgs::GetData()
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("Dynamic_cast failure");
+    return input_map->GetData();
+}
+
+// Set UberNode_ThreeArgs child A
+void UberNode_ThreeArgs::SetSourceRange(UberNode::InputMap::Ptr input)
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("Dynamic_cast failure"); 
+    input_map->SetSourceRange(input);
+}
+
+// Set UberNode_ThreeArgs child B
+void UberNode_ThreeArgs::SetDestinationRange(UberNode::InputMap::Ptr input)
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("Dynamic_cast failure");
+    input_map->SetDestinationRange(input);
+}
+
+// Set UberNode_ThreeArgs child C
+void UberNode_ThreeArgs::SetData(UberNode::InputMap::Ptr input)
+{
+    auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_TwoArgs::SetArgA(...): invalid dynamic_cast");
+    return input_map->SetData(input);
+}
 
 namespace {
     struct UberNode_OneArgConcrete : public UberNode_OneArg

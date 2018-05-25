@@ -21,6 +21,7 @@
  THE SOFTWARE.
  ********************************************************************/
 
+#include <functional>
 #include "uber_node.h"
 
 class UberTreeIterator;
@@ -40,6 +41,8 @@ public:
     UberTreeIterator GetIter(const std::string &name);
 
 private:
+    void Traversal(std::function<bool(UberNode::Ptr)>& rule);
+
     std::vector<UberNode::Ptr> m_nodes;
 };
 
