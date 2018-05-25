@@ -617,10 +617,10 @@ public:
     // Use formatting in filename
     void SaveAndCompare(char const* const format, ...) const
     {
-        char buffer[32];
+        char buffer[128];
         va_list args;
         va_start(args, format);
-        vsnprintf(buffer, 32, format, args);
+        vsnprintf(buffer, 128, format, args);
         va_end(args);
         std::ostringstream oss;
         oss << TestName() << "_" << buffer << ".png";
