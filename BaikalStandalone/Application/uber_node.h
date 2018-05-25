@@ -48,14 +48,18 @@ public:
     { return m_input_map->m_type; }
 
     bool IsValid() const;
+    virtual NodeType GetType() const = 0;
+
+    std::array<bool, 3> GetChildrenLayout() const
+    { return m_children_layout; }
 
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
     void AddChild(Ptr child);
-    virtual NodeType GetType() const = 0;
 
-    InputMap::Ptr m_input_map;
     Ptr m_parent;
+    InputMap::Ptr m_input_map;
+    std::array<bool, 3> m_children_layout;
     std::vector<Ptr> m_children;
 };
 
@@ -64,9 +68,9 @@ class UberNode_OneArg : public UberNode
 {
 public:
     // Get InputMap_OneArg child
-    UberNode::InputMap::Ptr GetArg();
+    UberNode::InputMap::Ptr GetArgA();
     // Set InputMap_OneArg child
-    void SetArg(UberNode::InputMap::Ptr);
+    void SetArgA(UberNode::InputMap::Ptr);
 
 protected:
     NodeType GetType() const override
@@ -160,17 +164,17 @@ class UberNode_ThreeArgs : public UberNode
 {
 public:
     // Get InputMap_ThreeArg child
-    InputMap::Ptr GetSourceRange();
+    InputMap::Ptr GetArgA();
     // Get InputMap_ThreeArg child
-    InputMap::Ptr GetDestinationRange();
+    InputMap::Ptr GetArgB();
     // Get InputMap_ThreeArg child
-    InputMap::Ptr GetData();
+    InputMap::Ptr GetArgC();
     // Set InputMap_ThreeArg child
-    void SetSourceRange(UberNode::InputMap::Ptr);
+    void SetArgA(UberNode::InputMap::Ptr);
     // Set InputMap_ThreeArg child
-    void SetDestinationRange(UberNode::InputMap::Ptr);
+    void SetArgB(UberNode::InputMap::Ptr);
     // Set InputMap_ThreeArg child
-    void SetData(UberNode::InputMap::Ptr);
+    void SetArgC(UberNode::InputMap::Ptr);
 
 protected:
     NodeType GetType() const override
