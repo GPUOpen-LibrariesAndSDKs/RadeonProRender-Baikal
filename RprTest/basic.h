@@ -690,8 +690,9 @@ TEST_F(BasicTest, Basic_TiledRender)
     SaveAndCompare();
 
 }
-
 // Add instancing test
+// Instancing doesn't work on osx
+#ifndef __APPLE__
 TEST_F(BasicTest, Basic_Instancing)
 {
     CreateScene(SceneType::kSphereAndPlane);
@@ -718,7 +719,7 @@ TEST_F(BasicTest, Basic_Instancing)
     SaveAndCompare();
 
 }
-
+#endif
 //test RPR_MATERIAL_NODE_INPUT_LOOKUP and rprContextCreateMeshEx unsupported
 TEST_F(BasicTest, Basic_MultiUV)
 {
