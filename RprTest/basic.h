@@ -682,7 +682,7 @@ TEST_F(BasicTest, Basic_TiledRender)
     AddEnvironmentLight("../Resources/Textures/studio015.hdr");
 
     ClearFramebuffer();
-    for (int i = 0; i < kRenderIterations; ++i)
+    for (std::size_t i = 0; i < kRenderIterations; ++i)
     {
         ASSERT_EQ(rprContextRenderTile(m_context, 0, 128, 0, 128), RPR_SUCCESS);
     }
