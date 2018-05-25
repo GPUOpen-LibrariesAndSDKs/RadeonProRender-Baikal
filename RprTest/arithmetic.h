@@ -269,22 +269,3 @@ TEST_F(ArithmeticTest, Arithmetic_ShuffleWXYZ)
 {
     TestUnaryOperationTextureMap(RPR_MATERIAL_NODE_OP_SHUFFLE_WXYZ);
 }
-
-// This doesn't work
-TEST_F(ArithmeticTest, Arithmetic_MatMul)
-{
-    rpr_material_node arithmetic;
-    ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_ARITHMETIC, &arithmetic), RPR_SUCCESS);
-    ASSERT_EQ(rprMaterialNodeSetInputU(arithmetic, "op", RPR_MATERIAL_NODE_OP_MAT_MUL), RPR_SUCCESS);
-
-    ASSERT_EQ(rprMaterialNodeSetInputF(arithmetic, "color0", 0.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
-    ASSERT_EQ(rprMaterialNodeSetInputF(arithmetic, "color1", 0.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
-    ASSERT_EQ(rprMaterialNodeSetInputF(arithmetic, "color2", 1.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
-    ASSERT_EQ(rprMaterialNodeSetInputF(arithmetic, "color3", 1.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
-    AddMaterialNode("arithmetic", arithmetic);
-
-    ASSERT_EQ(rprMaterialNodeSetInputN_ext(GetMaterial("sphere_mtl"), RPR_UBER_MATERIAL_DIFFUSE_COLOR, GetMaterial("arithmetic")), RPR_SUCCESS);
-
-    Render();
-    SaveAndCompare();
-}

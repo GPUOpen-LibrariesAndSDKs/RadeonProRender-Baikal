@@ -73,7 +73,6 @@ namespace
     { RPR_CONTEXT_TONE_MAPPING_REINHARD02_POST_SCALE,{ "tonemapping.reinhard02.postscale", "Reinhard postscale", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_TONE_MAPPING_REINHARD02_BURN,{ "tonemapping.reinhard02.burn", "Reinhard burn", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_MAX_RECURSION,{ "maxRecursion", "Ray trace depth", RPR_PARAMETER_TYPE_UINT } },
-    { RPR_CONTEXT_RANDOM_SEED,{ "randseed", "Random seed", RPR_PARAMETER_TYPE_UINT } },
     { RPR_CONTEXT_RAY_CAST_EPISLON,{ "raycastepsilon", "Ray epsilon", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_RADIANCE_CLAMP,{ "radianceclamp", "Max radiance value", RPR_PARAMETER_TYPE_FLOAT } },
     { RPR_CONTEXT_X_FLIP,{ "xflip", "Flip framebuffer output along X axis", RPR_PARAMETER_TYPE_UINT } },
@@ -94,6 +93,7 @@ namespace
     { RPR_CONTEXT_GPU6_NAME,{ "gpu6name", "Name of the GPU index 6 in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
     { RPR_CONTEXT_GPU7_NAME,{ "gpu7name", "Name of the GPU index 7 in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
     { RPR_CONTEXT_CPU_NAME,{ "cpuname", "Name of the CPU in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
+    { RPR_CONTEXT_RANDOM_SEED,{ "randseed", "Random seed", RPR_PARAMETER_TYPE_UINT } },
     };
 
     std::map<uint32_t, Baikal::Renderer::OutputType> kOutputTypeMap = { {RPR_AOV_COLOR, Baikal::Renderer::OutputType::kColor},
