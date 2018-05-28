@@ -348,6 +348,65 @@ void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
     input_map->SetMask(mask);
 }
 
+////////////////////////////////////
+// UberNode_Float implementation
+////////////////////////////////////
+
+float UberNode_Float::GetValue() const
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Float>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Float::GetValue(...): invalid dynamic_cast");
+    return input_map->GetValue();
+}
+
+void UberNode_Float::SetValue(float value)
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Float>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Float::SetValue(...): invalid dynamic_cast");
+    input_map->SetValue(value);
+}
+
+////////////////////////////////////
+// UberNode_Float3 implementation
+////////////////////////////////////
+
+RadeonRays::float3 UberNode_Float3::GetValue() const
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Float3>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Float3::GetValue(...): invalid dynamic_cast");
+    return input_map->GetValue();
+}
+
+void UberNode_Float3::SetValue(RadeonRays::float3 value)
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Float3>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Float3::SetValue(...): invalid dynamic_cast");
+    input_map->SetValue(value);
+}
+
+////////////////////////////////////
+// UberNode_Sampler implementation
+////////////////////////////////////
+
+Texture::Ptr UberNode_Sampler::GetValue() const
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Sampler>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Sampler::GetValue(...): invalid dynamic_cast");
+    return input_map->GetValue();
+}
+
+void UberNode_Sampler::SetValue(Texture::Ptr value)
+{
+    auto input_map = std::dynamic_pointer_cast<UberNode_Sampler>(m_input_map);
+    if (!input_map)
+        throw std::runtime_error("UberNode_Sampler::SetValue(...): invalid dynamic_cast");
+    input_map->SetValue(value);
+}
 
 ////////////////////////////////////
 // UberNode_ThreeArgs

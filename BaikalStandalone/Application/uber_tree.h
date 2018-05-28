@@ -24,8 +24,6 @@
 #include <functional>
 #include "uber_node.h"
 
-class UberTreeIterator;
-
 class UberTree
 {
 public:
@@ -37,21 +35,10 @@ public:
     bool AddSubTree(UberTree::Ptr tree);
     void ExcludeSubTree(UberNode::Ptr node);
 
-    UberTreeIterator GetIter();
-    UberTreeIterator GetIter(const std::string &name);
-
+    bool IsValid() const;
 private:
+    void BuildTree(UberNode::Ptr root);
     void Traversal(std::function<bool(UberNode::Ptr)>& rule);
 
     std::vector<UberNode::Ptr> m_nodes;
-};
-
-class UberTreeIterator
-{
-public:
-    UberNode::Ptr Value();
-    bool Next();
-    bool IsNull();
-private:
-    UberTree::Ptr m_tree;
 };
