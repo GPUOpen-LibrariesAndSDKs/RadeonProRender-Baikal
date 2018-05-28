@@ -47,7 +47,7 @@ extern char** g_argv;
 class BasicTest : public ::testing::Test
 {
 public:
-    static std::uint32_t constexpr kRenderIterations = 32;
+    static std::uint32_t constexpr kRenderIterations = 256;
     static std::uint32_t constexpr kOutputWidth = 256;
     static std::uint32_t constexpr kOutputHeight = 256;
 

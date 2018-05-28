@@ -263,6 +263,14 @@ namespace Baikal
                                     , false);
             scene->AttachShape(floor);
 
+            auto mat = UberV2Material::Create();
+            mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            mat->SetInputValue("uberv2.diffuse.color",
+                InputMap_ConstantFloat3::Create(float3(0.8f, 0.8f, 0.8f)));
+
+            floor->SetMaterial(mat);
+            mesh->SetMaterial(mat);
+
             auto emissive = UberV2Material::Create();
             emissive->SetLayers(UberV2Material::Layers::kEmissionLayer);
             emissive->SetInputValue("uberv2.emission.color",
