@@ -52,15 +52,28 @@ bool UberTree::IsValid() const
     return true;
 }
 
-bool UberTree::AddSubTree(std::uint32_t id, UberNode::Ptr node)
+bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::Ptr node)
 {
     // build tree for input node
     Ptr tree = std::make_shared<UberTree>(node);
     // add this tree as sub tree to main tree
-    return AddSubTree(id, tree);
+    return AddSubTree(id, arg_number, tree);
 }
 
-bool UberTree::AddSubTree(std::uint32_t id, UberTree::Ptr node)
+bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr node)
 {
-    return false;
+    auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
+        [id](UberNode::Ptr node) 
+        {
+            return node->GetId() == id;
+        });
+
+    if (iter == m_nodes.end())
+        return false;
+
+    // if argument number is bigger than 
+    if (arg_number > (std::uint32_t)(*iter)->GetType())
+        return false;
+
+    
 }

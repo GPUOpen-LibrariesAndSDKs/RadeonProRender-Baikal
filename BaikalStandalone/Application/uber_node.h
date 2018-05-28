@@ -26,6 +26,9 @@
 #include "Baikal/SceneGraph/inputmap.h"
 #include "Baikal/SceneGraph/inputmaps.h"
 
+// do not change the order
+// if you want to add four, five and etc arguments
+// than make it in increasing order
 enum class NodeType
 {
     kNoneArgs = 0,
@@ -46,44 +49,47 @@ public:
     // for root element parent is nullptr
     static Ptr Create(InputMap::Ptr input_map, Ptr parent);
 
-    // input map data type accessor
-    InputMap::InputMapType GetDataType()
-    { return m_input_map->m_type; }
-
     bool IsValid() const;
     virtual NodeType GetType() const = 0;
 
-    std::array<bool, 3> GetChildrenLayout() const
-    { return m_children_layout; }
+    std::uint32_t GetId() const
+    { return m_id; }
+
+    // input map data type accessor
+    InputMap::InputMapType GetDataType() const;
+
+    std::array<bool, 3> GetChildrenLayout() const;
 
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
     void AddChild(Ptr child);
 
+    std::uint32_t m_id;
     Ptr m_parent;
     InputMap::Ptr m_input_map;
-    std::array<bool, 3> m_children_layout;
     std::vector<Ptr> m_children;
+    std::array<bool, 3> m_children_layout;
+    static std::uint32_t m_next_id;
 };
 
 // UberNode_OneArg common class
-class UberNode_OneArg : public UberNode
+class UberNode_Arg : public UberNode
 {
 public:
     // Get InputMap_OneArg child
-    UberNode::InputMap::Ptr GetArgA();
+    virtual UberNode::InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
     // Set InputMap_OneArg child
-    void SetArgA(UberNode::InputMap::Ptr);
+    virtual void SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number = 0);
 
-protected:
     NodeType GetType() const override
     { return NodeType::kOneArg; }
 
-    UberNode_OneArg(InputMap::Ptr input_map, UberNode::Ptr parent);
+protected:
+    UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
 // UberNode_OneArg specific classes
-class UberNode_Select : public UberNode_OneArg
+class UberNode_Select : public UberNode_Arg
 {
 public:
     // get selection parametr (Not InputMap)
@@ -95,7 +101,7 @@ protected:
     UberNode_Select(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
-class UberNode_Shuffle : public UberNode_OneArg
+class UberNode_Shuffle : public UberNode_Arg
 {
 public:
     // get mask parameter (Not InputMap)
@@ -106,7 +112,7 @@ protected:
     UberNode_Shuffle(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
-class UberNode_Matmul : public UberNode_OneArg
+class UberNode_Matmul : public UberNode_Arg
 {
 public:
     // get matrix parameter
@@ -118,22 +124,18 @@ protected:
 };
 
 // UberNode_TwoArgs common class
-class UberNode_TwoArgs : public UberNode
+class UberNode_TwoArgs : public UberNode_Arg
 {
 public:
-    // Get InputMap_TwoArg child A
-    InputMap::Ptr GetArgA();
-    // Get InputMap_TwoArg child B
-    InputMap::Ptr GetArgB();
-    // Set InputMap_TwoArg child A
-    void SetArgA(UberNode::InputMap::Ptr);
-    // Set InputMap_TwoArg child B
-    void SetArgB(UberNode::InputMap::Ptr);
+    // Get InputMap_OneArg child
+    virtual UberNode::InputMap::Ptr GetArg(std::uint32_t arg_number) override;
+    // Set InputMap_OneArg child
+    virtual void SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number) override;
 
-protected:
     NodeType GetType() const override
     { return NodeType::kTwoArgs; }
 
+protected:
     UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 
@@ -163,25 +165,18 @@ protected:
 };
 
 // UberNode_ThreeArgs common class
-class UberNode_ThreeArgs : public UberNode
+class UberNode_ThreeArgs : public UberNode_Arg
 {
 public:
-    // Get InputMap_ThreeArg child
-    InputMap::Ptr GetArgA();
-    // Get InputMap_ThreeArg child
-    InputMap::Ptr GetArgB();
-    // Get InputMap_ThreeArg child
-    InputMap::Ptr GetArgC();
-    // Set InputMap_ThreeArg child
-    void SetArgA(UberNode::InputMap::Ptr);
-    // Set InputMap_ThreeArg child
-    void SetArgB(UberNode::InputMap::Ptr);
-    // Set InputMap_ThreeArg child
-    void SetArgC(UberNode::InputMap::Ptr);
-
-protected:
     NodeType GetType() const override
     { return NodeType::kThreeArgs; }
+
+    // Get InputMap_OneArg child
+    virtual UberNode::InputMap::Ptr GetArg(std::uint32_t arg_number) override;
+    // Set InputMap_OneArg child
+    virtual void SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number) override;
+
+protected:
 
     UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
 };

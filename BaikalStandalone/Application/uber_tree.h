@@ -34,8 +34,10 @@ public:
     UberTree(UberNode::Ptr node);
 
     // 'id' is an id ofthe node to add subtree ('node' or 'tree' arg)
-    bool AddSubTree(std::uint32_t id, UberNode::Ptr node);
-    bool AddSubTree(std::uint32_t id, UberTree::Ptr tree);
+    // 'arg_number' is a number of the argument in
+    // parent node (id of this node is argument "id") which will be set
+    bool AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::Ptr node);
+    bool AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree);
 
     void ExcludeSubTree(UberNode::Ptr node);
 
