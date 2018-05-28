@@ -78,14 +78,28 @@ if (BAIKAL_ENABLE_RPR)
 endif (BAIKAL_ENABLE_RPR)
 
 
+set (BAIKAL_COPY_FILES
+    "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
+    "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
+    $<$<CONFIG:Debug>:
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
+    >
+    $<$<NOT:$<CONFIG:Debug>>:
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
+    >
+)
+
 if (BAIKAL_ENABLE_STANDALONE)
+    set(BAIKAL_STANDALONE_COPY_FILES ${BAIKAL_COPY_FILES})
+
     find_package(GLFW3 REQUIRED)
 
     add_subdirectory(BaikalStandalone)
-    set(3RDPARTY_DST $<TARGET_FILE_DIR:BaikalStandalone>)
 endif (BAIKAL_ENABLE_STANDALONE)
 
 if (BAIKAL_ENABLE_TESTS)
+    set(BAIKAL_TESTS_COPY_FILES ${BAIKAL_COPY_FILES})
+
     add_subdirectory(Gtest)
     add_subdirectory(BaikalTest)
 # Temporarily remove RprTest from build
@@ -93,15 +107,4 @@ if (BAIKAL_ENABLE_TESTS)
 #    if (BAIKAL_ENABLE_RPR)
 #        add_subdirectory(RprTest)
 #    endif (BAIKAL_ENABLE_RPR)
-    set(3RDPARTY_DST $<TARGET_FILE_DIR:BaikalTest>)
 endif (BAIKAL_ENABLE_TESTS)
-
-if (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_TESTS)
-    add_custom_target(Baikal_copy_3rdparty ALL
-        COMMAND "${CMAKE_COMMAND}" -E copy
-            "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
-            "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
-            "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
-            "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-        "${3RDPARTY_DST}")
-endif (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_TESTS)

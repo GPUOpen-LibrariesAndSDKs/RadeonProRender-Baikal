@@ -16,3 +16,10 @@ target_include_directories(BaikalTest PRIVATE .)
 target_link_libraries(BaikalTest PRIVATE Baikal BaikalIO GTest)
 set_target_properties(BaikalTest
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalTest)
+
+add_custom_command(TARGET BaikalTest POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "$<1:${BAIKAL_TESTS_COPY_FILES}>"
+        "$<TARGET_FILE_DIR:BaikalTest>"
+    COMMAND_EXPAND_LISTS
+)
