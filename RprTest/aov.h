@@ -79,13 +79,16 @@ TEST_F(AovTest, Aov_ShadingNormal)
 
 TEST_F(AovTest, Aov_Opacity)
 {
-    CreateScene(SceneType::kSphereAndPlane);
+    // Create dummy framebuffer
+    rpr_framebuffer_desc desc = { kOutputWidth, kOutputHeight };
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer dummy_fb = nullptr;
+    ASSERT_EQ(rprContextCreateFrameBuffer(m_context, fmt, &desc, &dummy_fb), RPR_SUCCESS);
+    ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_COLOR, dummy_fb), RPR_SUCCESS);
+
+    CreateScene(SceneType::kOpacityPlanes);
     AddEnvironmentLight("../Resources/Textures/studio015.hdr");
-
-    const rpr_material_node sphere_mtl = GetMaterial("sphere_mtl");
-    ASSERT_EQ(rprMaterialNodeSetInputU_ext(sphere_mtl, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_TRANSPARENCY), RPR_SUCCESS);
-    ASSERT_EQ(rprMaterialNodeSetInputF_ext(sphere_mtl, RPR_UBER_MATERIAL_TRANSPARENCY, 0.5f, 0.5f, 0.5f, 0.5f), RPR_SUCCESS);
-
+    
     ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_OPACITY, m_framebuffer), RPR_SUCCESS);
     Render();
     SaveAndCompare();

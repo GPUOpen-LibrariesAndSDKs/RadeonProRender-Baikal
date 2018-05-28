@@ -55,7 +55,8 @@ public:
     {
         kSphereIbl = 0,
         kSphereAndPlane,
-        kThreeSpheres
+        kThreeSpheres,
+        kOpacityPlanes
     };
 
     virtual void SetUp()
@@ -264,7 +265,7 @@ public:
     {
         rpr_material_node material = nullptr;
         ASSERT_EQ(rprMaterialSystemCreateNode(m_matsys, RPR_MATERIAL_NODE_UBERV2, &material), RPR_SUCCESS);
-        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_TRANSPARENCY), RPR_SUCCESS);
+        ASSERT_EQ(rprMaterialNodeSetInputU_ext(material, RPR_UBER_MATERIAL_LAYERS, RPR_UBER_MATERIAL_LAYER_DIFFUSE | RPR_UBER_MATERIAL_LAYER_TRANSPARENCY), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_DIFFUSE_COLOR, 1.0f, 0.0f, 0.0f, 0.0f), RPR_SUCCESS);
         ASSERT_EQ(rprMaterialNodeSetInputF_ext(material, RPR_UBER_MATERIAL_TRANSPARENCY, transparency.x, transparency.y, transparency.z, 0.0f), RPR_SUCCESS);
 
@@ -529,6 +530,20 @@ public:
             AddSphere("sphere_transparent", 64, 32, 2.f, float3(-4.0f, 0.0f, 0.0f));
             AddTransparentMaterial("transparent_mtl", float3(0.8f, 0.8f, 0.8f));
             ApplyMaterialToObject("sphere_transparent", "transparent_mtl");
+            break;
+        case SceneType::kOpacityPlanes:
+            ASSERT_EQ(rprCameraLookAt(m_camera, 0.0f, 2.0f, -10.0f, 0.0f, 2.0f, 0.0f, 0.0f, 1.0f, 0.0f), RPR_SUCCESS);
+
+            AddDiffuseMaterial("floor_mtl", float3(0.8f, 0.8f, 0.8f));
+            AddPlane("floor", float3(0.0f, -2.0f, 0.0f), float2(8.0f, 8.0f), float3(0.0f, 1.0f, 0.0f));
+            ApplyMaterialToObject("floor", "floor_mtl");
+
+            AddTransparentMaterial("transparent_mtl", 0.9f);
+            for (std::size_t i = 0; i < 8; ++i)
+            {
+                AddPlane("plane" + std::to_string(i), float3(0.0f, 0.0f, i * 0.5f), float2(4.0f - i * 0.5f, 4.0f - i * 0.5f), float3(0.0f, 0.0f, -1.0f));
+                ApplyMaterialToObject("plane" + std::to_string(i), "transparent_mtl");
+            }
             break;
         }
     }

@@ -449,3 +449,38 @@ TEST_F(AovTest, Aov_Visibility)
     SaveOutput(oss.str(), output_ws.get());
     ASSERT_TRUE(CompareToReference(oss.str()));
 }
+
+TEST_F(AovTest, Aov_Opacity)
+{
+    auto output_ws = m_factory->CreateOutput(
+        m_output->width(), m_output->height()
+    );
+
+    auto output_dummy = m_factory->CreateOutput(
+        m_output->width(), m_output->height()
+    );
+
+    m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor,
+        output_dummy.get());
+
+    m_renderer->SetOutput(Baikal::Renderer::OutputType::kOpacity,
+        output_ws.get());
+
+    m_scene = Baikal::SceneIo::LoadScene("transparent_planes.test", "");
+    m_scene->SetCamera(m_camera);
+
+    ClearOutput(output_ws.get());
+    ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+    auto& scene = m_controller->GetCachedScene(m_scene);
+
+    for (auto i = 0u; i < kNumIterations; ++i)
+    {
+        ASSERT_NO_THROW(m_renderer->Render(scene));
+    }
+
+    std::ostringstream oss;
+    oss << test_name() << ".png";
+    SaveOutput(oss.str(), output_ws.get());
+    ASSERT_TRUE(CompareToReference(oss.str()));
+}
