@@ -29,6 +29,8 @@ using namespace Baikal;
 // UberNode_OneArg implementation
 ////////////////////////////////////////
 
+std::uint32_t UberNode::m_next_id = 0;
+
 #define GET_ONE_ARG(type, sufix)\
     {\
         auto input_map = std::dynamic_pointer_cast<type>(m_input_map);\

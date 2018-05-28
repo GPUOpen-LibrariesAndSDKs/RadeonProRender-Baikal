@@ -75,5 +75,5 @@ bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::
     if (arg_number > (std::uint32_t)(*iter)->GetType())
         return false;
 
-    
+    return false;
 }
