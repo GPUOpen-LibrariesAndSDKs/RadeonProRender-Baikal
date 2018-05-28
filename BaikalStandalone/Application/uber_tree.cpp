@@ -21,15 +21,46 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "uber_tree.h"
-#include <stack>
+#include <queue>
+
+UberTree::UberTree(UberNode::Ptr node)
+{
+    BuildTree(node);
+}
 
 void UberTree::BuildTree(UberNode::Ptr root)
 {
-    //std::stack<UberNode::Ptr> stack;
-    //stack.push(root);
+    std::queue<UberNode::Ptr> queue;
+    queue.push(root);
 
-    //while (!stack.empty())
-    //{
-    //    
-    //}
+    while (!queue.empty())
+    {
+        for (auto item : queue.front()->m_children)
+            queue.push(item);
+        m_nodes.push_back(queue.back());
+        queue.pop();
+    }
+}
+
+bool UberTree::IsValid() const
+{
+    for (auto item : m_nodes)
+    {
+        if (!item->IsValid())
+            return false;
+    }
+    return true;
+}
+
+bool UberTree::AddSubTree(std::uint32_t id, UberNode::Ptr node)
+{
+    // build tree for input node
+    Ptr tree = std::make_shared<UberTree>(node);
+    // add this tree as sub tree to main tree
+    return AddSubTree(id, tree);
+}
+
+bool UberTree::AddSubTree(std::uint32_t id, UberTree::Ptr node)
+{
+    return false;
 }

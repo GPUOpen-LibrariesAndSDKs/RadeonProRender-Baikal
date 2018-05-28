@@ -34,8 +34,11 @@ enum class NodeType
     kThreeArgs
 };
 
+class UberTree;
+
 class UberNode
 {
+    friend class UberTree;
 public:
     using Ptr = std::shared_ptr<UberNode>;
     using InputMap = Baikal::InputMap;

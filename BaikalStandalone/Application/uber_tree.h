@@ -21,6 +21,8 @@
  THE SOFTWARE.
  ********************************************************************/
 
+#pragma once 
+
 #include <functional>
 #include "uber_node.h"
 
@@ -31,14 +33,15 @@ public:
 
     UberTree(UberNode::Ptr node);
 
-    bool AddSubTree(UberNode::Ptr node);
-    bool AddSubTree(UberTree::Ptr tree);
+    // 'id' is an id ofthe node to add subtree ('node' or 'tree' arg)
+    bool AddSubTree(std::uint32_t id, UberNode::Ptr node);
+    bool AddSubTree(std::uint32_t id, UberTree::Ptr tree);
+
     void ExcludeSubTree(UberNode::Ptr node);
 
     bool IsValid() const;
 private:
     void BuildTree(UberNode::Ptr root);
-    void Traversal(std::function<bool(UberNode::Ptr)>& rule);
 
     std::vector<UberNode::Ptr> m_nodes;
 };
