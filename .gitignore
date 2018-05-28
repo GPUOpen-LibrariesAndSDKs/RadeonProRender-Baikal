@@ -22,3 +22,7 @@
 */OutputImages/*
 */ReferenceImages/*
 */cache/*.bin
+
+.vs/
+CMakeSettings.json
+CppProperties.json
