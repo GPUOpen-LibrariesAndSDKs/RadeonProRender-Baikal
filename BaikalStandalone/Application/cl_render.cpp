@@ -123,7 +123,6 @@ namespace Baikal
         }
 
         //create renderer
-#pragma omp parallel for
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             m_outputs[i].output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
@@ -407,7 +406,7 @@ namespace Baikal
             auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
             auto color_sensitivity = (radius / 10.f) * 2.f;
             auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
-            m_outputs[m_primary].denoiser->SetParameter("radius", radius);
+            m_outputs[m_primary].denoiser->SetParameter("radius", static_cast<float>(radius));
             m_outputs[m_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
             m_outputs[m_primary].denoiser->SetParameter("normal_sensitivity", normal_sensitivity);
             m_outputs[m_primary].denoiser->SetParameter("position_sensitivity", position_sensitivity);

@@ -22,6 +22,8 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 #include "math/matrix.h"
 #include "math/mathutils.h"
@@ -36,8 +38,6 @@
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 using namespace RadeonRays;
 
@@ -47,7 +47,7 @@ extern char** g_argv;
 class BasicTest : public ::testing::Test
 {
 public:
-    static std::uint32_t constexpr kRenderIterations = 32;
+    static std::uint32_t constexpr kRenderIterations = 256;
     static std::uint32_t constexpr kOutputWidth = 256;
     static std::uint32_t constexpr kOutputHeight = 256;
 
@@ -73,7 +73,8 @@ public:
         m_output_path.append("/");
 
         ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, nullptr, nullptr, &m_context), RPR_SUCCESS);
-        
+        ASSERT_EQ(rprContextSetParameter1u(m_context, "randseed", 0u), RPR_SUCCESS);
+
         CreateFramebuffer();
     }
 
@@ -616,10 +617,10 @@ public:
     // Use formatting in filename
     void SaveAndCompare(char const* const format, ...) const
     {
-        char buffer[32];
+        char buffer[128];
         va_list args;
         va_start(args, format);
-        vsnprintf(buffer, 32, format, args);
+        vsnprintf(buffer, 128, format, args);
         va_end(args);
         std::ostringstream oss;
         oss << TestName() << "_" << buffer << ".png";
@@ -638,7 +639,7 @@ public:
     }
     
 protected:
-    rpr_context	                             m_context     = nullptr;
+    rpr_context                              m_context     = nullptr;
     rpr_material_system                      m_matsys      = nullptr;
     rpr_scene                                m_scene       = nullptr;
     rpr_camera                               m_camera      = nullptr;
@@ -681,7 +682,7 @@ TEST_F(BasicTest, Basic_TiledRender)
     AddEnvironmentLight("../Resources/Textures/studio015.hdr");
 
     ClearFramebuffer();
-    for (int i = 0; i < kRenderIterations; ++i)
+    for (std::size_t i = 0; i < kRenderIterations; ++i)
     {
         ASSERT_EQ(rprContextRenderTile(m_context, 0, 128, 0, 128), RPR_SUCCESS);
     }
@@ -689,8 +690,9 @@ TEST_F(BasicTest, Basic_TiledRender)
     SaveAndCompare();
 
 }
-
 // Add instancing test
+// Instancing doesn't work on osx
+#ifndef __APPLE__
 TEST_F(BasicTest, Basic_Instancing)
 {
     CreateScene(SceneType::kSphereAndPlane);
@@ -709,7 +711,7 @@ TEST_F(BasicTest, Basic_Instancing)
         float s = rand_float() * 0.5f + 0.1f;
         matrix m = translation(float3(x, y, z) * 2.0f) * scale(float3(s, s, s));
         ASSERT_EQ(rprShapeSetTransform(instance, true, &m.m00), RPR_SUCCESS);
-        AddShape("instance" + i, instance);
+        AddShape("instance" + std::to_string(i), instance);
         ASSERT_EQ(rprShapeSetMaterial(instance, sphere_mtl), RPR_SUCCESS);
     }
     
@@ -717,7 +719,7 @@ TEST_F(BasicTest, Basic_Instancing)
     SaveAndCompare();
 
 }
-
+#endif
 //test RPR_MATERIAL_NODE_INPUT_LOOKUP and rprContextCreateMeshEx unsupported
 TEST_F(BasicTest, Basic_MultiUV)
 {
@@ -734,10 +736,10 @@ TEST_F(BasicTest, Basic_MultiUV)
     
     VertexMT vertices[] =
     {
-        { -2.0f,  2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f },
-        {  2.0f,  2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f },
-        {  2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
-        { -2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f }
+        {{-2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 1.0f}},
+        {{ 2.0f,  2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{ 2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{-2.0f, -2.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}}
     };
 
     rpr_int indices[] =

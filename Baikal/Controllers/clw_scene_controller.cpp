@@ -742,6 +742,9 @@ namespace Baikal
         std::vector<int> mat_buffer;
         mat_buffer.reserve(1024 * 1024); //Reserv 1M of ints for material buffer.
 
+        // Cleanup material mapping
+        m_materialid_to_offset.clear();
+
         CLUberV2Generator uberv2_generator;
 
         // Serialize materials
@@ -911,6 +914,8 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.texturedata, data);
     }
 
+#ifndef NDEBUG
+    // We're not using this function on release
     // Convert Material:: types to ClwScene:: types
     static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
@@ -922,21 +927,19 @@ namespace Baikal
 
         return ClwScene::Bxdf::kZero;
     }
+#endif
 
-    void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<int32_t> &material_data) const
+    void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<std::int32_t> &material_data) const
     {
-        // Convert material type and sidedness
-        auto type = GetMaterialType(material);
-        assert(type == ClwScene::Bxdf::kUberV2);
-
+        assert(GetMaterialType(material) == ClwScene::Bxdf::kUberV2);
         const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
 
-        uint32_t layers = uber_material.GetLayers();
+        std::uint32_t layers = uber_material.GetLayers();
         
         m_materialid_to_offset[material.GetId()] = static_cast<int>(material_data.size());
 
         // Pack material parameters
-        int32_t params = 0;
+        std::int32_t params = 0;
         params |= ((uber_material.IsLinkRefractionIOR()) ? 1 : 0) << 0;
         params |= ((uber_material.IsThin()) ? 1 : 0) << 1;
         params |= ((uber_material.isDoubleSided()) ? 1 : 0) << 2;
@@ -1381,7 +1384,7 @@ namespace Baikal
         }
     }
 
-    int32_t ClwSceneController::ResolveMaterialPtr(Material::Ptr material) const
+    std::int32_t ClwSceneController::ResolveMaterialPtr(Material::Ptr material) const
     {
         auto it = m_materialid_to_offset.find(material->GetId());
         return (it == m_materialid_to_offset.end()) ? -1 : it->second;

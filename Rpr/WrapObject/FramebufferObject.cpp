@@ -118,15 +118,15 @@ void FramebufferObject::SaveToFile(const char* path)
     OIIO_NAMESPACE_USING;
 
     std::size_t width = Width();
-    std::size_t height = Height();
+    size_t height = Height();
     std::vector<RadeonRays::float3> tempbuf(width * height);
     GetData(tempbuf.data());
     std::vector<RadeonRays::float3> data(tempbuf);
 
     //convert pixels
-    for (auto y = 0; y < height; ++y)
+    for (std::size_t y = 0; y < height; ++y)
     {
-        for (auto x = 0; x < width; ++x)
+        for (std::size_t x = 0; x < width; ++x)
         {
 
             RadeonRays::float3 val = data[(height - 1 - y) * width + x];

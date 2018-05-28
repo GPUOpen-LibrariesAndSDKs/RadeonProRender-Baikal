@@ -45,7 +45,7 @@ public:
 
     const std::vector<float> iors =
     {
-        1.1f, 1.3f, 1.6f, 2.2f, 5.f, 10.f
+        1.1f, 1.6f, 2.2f, 5.f
     };
 
     const std::vector<float> roughnesses =
@@ -109,8 +109,8 @@ TEST_F(MaterialTest, Material_ImageFromMemory)
     {
         for (rpr_uint x = 0; x < imageDesc.image_width; x++)
         {
-            dataImage[x * 4 + y * imageDesc.image_width * 4 + 0] = (std::sinf(x * 2.0f) + std::cosf(y * 2.0f)) * 0.25f + 0.5f; // R
-            dataImage[x * 4 + y * imageDesc.image_width * 4 + 1] = (std::cosf(x * 2.0f) + std::sinf(y * 2.0f)) * 0.25f + 0.5f; // G
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 0] = (std::sin(x * 2.0f) + std::cos(y * 2.0f)) * 0.25f + 0.5f; // R
+            dataImage[x * 4 + y * imageDesc.image_width * 4 + 1] = (std::cos(x * 2.0f) + std::sin(y * 2.0f)) * 0.25f + 0.5f; // G
             dataImage[x * 4 + y * imageDesc.image_width * 4 + 2] = 0.0f; // B
             dataImage[x * 4 + y * imageDesc.image_width * 4 + 3] = 1.0f; // A
         }
@@ -188,7 +188,7 @@ TEST_F(MaterialTest, Material_MicrofacetGGX)
                 ASSERT_EQ(rprMaterialNodeSetInputF_ext(sphere_mtl, RPR_UBER_MATERIAL_REFLECTION_IOR, ior, ior, ior, ior), RPR_SUCCESS);
                 
                 Render();
-                SaveAndCompare("%f_%f_%f", r, c, ior);
+                SaveAndCompare("%f_%f_%f_%f_%f", r, c.x, c.y, c.z, ior);
             }
         }
     }
@@ -270,7 +270,7 @@ TEST_F(MaterialTest, Material_MicrofacetRefractGGX)
                 ASSERT_EQ(rprMaterialNodeSetInputF_ext(sphere_mtl, RPR_UBER_MATERIAL_REFRACTION_IOR, ior, ior, ior, ior), RPR_SUCCESS);
 
                 Render();
-                SaveAndCompare("%f_%f_%f", r, c, ior);
+                SaveAndCompare("%f_%f_%f_%f_%f", r, c.x, c.y, c.z, ior);
             }
         }
     }
