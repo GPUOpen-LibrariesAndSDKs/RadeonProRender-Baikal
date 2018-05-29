@@ -466,6 +466,7 @@ TEST_F(AovTest, Aov_Opacity)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kOpacity,
         output_ws.get());
 
+    m_camera->MoveForward(-8.0f);
     m_scene = Baikal::SceneIo::LoadScene("transparent_planes.test", "");
     m_scene->SetCamera(m_camera);
 

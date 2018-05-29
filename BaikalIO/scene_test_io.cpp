@@ -594,23 +594,19 @@ namespace Baikal
             transparent_mtl->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f)));
             transparent_mtl->SetInputValue("uberv2.transparency", InputMap_ConstantFloat::Create(0.9f));
             transparent_mtl->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kTransparencyLayer);
-            auto transparent_wall = CreateQuad(
-                {
-                    RadeonRays::float3(-5, 8, -8),
-                    RadeonRays::float3(-5, 0, -8),
-                    RadeonRays::float3(-5, 0,  8),
-                    RadeonRays::float3(-5, 8,  8),
-                }
-            , false);
-            transparent_wall->SetMaterial(transparent_mtl);
-            scene->AttachShape(transparent_wall);
 
-            for (int i = 1; i < 8; ++i)
+            for (int i = 0; i < 8; ++i)
             {
-                auto instance = Instance::Create(transparent_wall);
-                instance->SetTransform(RadeonRays::translation(float3((float)i, 0.0f, 0.0f)));
-                instance->SetMaterial(transparent_mtl);
-                scene->AttachShape(instance);
+                auto wall = CreateQuad(
+                    {
+                        RadeonRays::float3(-8, 8, i * 2.0f),
+                        RadeonRays::float3(-8, 0, i * 2.0f),
+                        RadeonRays::float3( 8, 0, i * 2.0f),
+                        RadeonRays::float3( 8, 8, i * 2.0f),
+                    }
+                    , false);
+                wall->SetMaterial(transparent_mtl);
+                scene->AttachShape(wall);
             }
 
             auto floor_mtl = UberV2Material::Create();

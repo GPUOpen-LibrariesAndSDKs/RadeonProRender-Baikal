@@ -190,10 +190,10 @@ namespace Baikal
     }
     
     inline Shape::Shape() 
-        : m_group_id(-1)
-        , m_material(nullptr)
+        : m_material(nullptr)
         , m_volume(nullptr)
         , m_visibility_mask(0xffffffffu)
+        , m_group_id(-1)
     {
     }
     

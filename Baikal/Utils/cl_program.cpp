@@ -184,7 +184,7 @@ CLWProgram CLProgram::Compile(const std::string &opts)
          * Code below usable for cache debugging
          */
 #ifdef DUMP_PROGRAM_SOURCE
-        int e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        auto e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         std::ofstream file(std::to_string(e) + ".cl");
         file << m_compiled_source;
         file.close();
