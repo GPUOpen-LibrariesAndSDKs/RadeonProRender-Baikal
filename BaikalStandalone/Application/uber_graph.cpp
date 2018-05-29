@@ -19,3 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+
+#include "uber_graph.h"
+
+UberGraph::UberGraph(UberNode::InputMap::Ptr input_map)
+{
+
+}
+
+namespace {
+    struct UberGraphConcrete : public UberGraph
+    {
+        UberGraphConcrete(UberNode::InputMap::Ptr input_map) :
+            UberGraph(input_map)
+        {  }
+
+    };
+}
+
+UberGraph::Ptr UberGraph::Create(UberNode::InputMap::Ptr input_map)
+{
+    return std::make_shared<UberGraphConcrete>(input_map);
+}

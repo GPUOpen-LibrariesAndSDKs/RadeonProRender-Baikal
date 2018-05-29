@@ -26,8 +26,9 @@
 class UberGraph
 {
 public:
-    UberGraph(UberNode::Ptr node);
-    UberGraph(UberTree::Ptr tree);
+    using Ptr = std::shared_ptr<UberGraph>;
+
+    static Ptr Create(UberNode::InputMap::Ptr input_map);
 
     bool AddSubTree(UberNode::Ptr node);
     bool AddSubTree(UberTree::Ptr tree);
@@ -38,6 +39,9 @@ public:
 
     UberTree::Ptr GetMainTree();
     const std::vector<UberTree::Ptr>& GetTrees() const;
+
+protected:
+    UberGraph(UberNode::InputMap::Ptr input_map);
 
 private:
     std::vector<UberTree::Ptr> m_trees;

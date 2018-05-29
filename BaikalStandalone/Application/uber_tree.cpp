@@ -24,11 +24,6 @@ THE SOFTWARE.
 #include <algorithm>
 #include <queue>
 
-UberTree::UberTree(UberNode::Ptr node)
-{
-    BuildTree(node);
-}
-
 void UberTree::BuildTree(UberNode::Ptr root)
 {
     std::queue<UberNode::Ptr> queue;
@@ -141,4 +136,22 @@ void UberTree::ExcludeSubTree(UberNode::Ptr node)
             break;
         }
     }
+}
+
+UberTree::UberTree(UberNode::Ptr node)
+{ BuildTree(node); }
+
+
+namespace {
+    struct UberTreeConcrete : public UberTree
+    {
+        UberTreeConcrete(UberNode::Ptr node) :
+            UberTree(node)
+        {   }
+    };
+}
+
+UberTree::Ptr UberTree::Create(UberNode::Ptr node)
+{
+    return std::make_shared<UberTreeConcrete>(node);
 }

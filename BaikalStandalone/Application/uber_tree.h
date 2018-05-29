@@ -31,7 +31,7 @@ class UberTree
 public:
     using Ptr = std::shared_ptr<UberTree>;
 
-    UberTree(UberNode::Ptr node);
+    static Ptr Create(UberNode::Ptr node);
 
     // 'id' is an id ofthe node to add subtree ('node' or 'tree' arg)
     // 'arg_number' is a number of the argument in
@@ -42,6 +42,10 @@ public:
     void ExcludeSubTree(UberNode::Ptr node);
 
     bool IsValid() const;
+
+protected:
+    UberTree(UberNode::Ptr node);
+
 private:
     void BuildTree(UberNode::Ptr root);
 
