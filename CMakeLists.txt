@@ -88,11 +88,9 @@ endif (BAIKAL_ENABLE_STANDALONE)
 if (BAIKAL_ENABLE_TESTS)
     add_subdirectory(Gtest)
     add_subdirectory(BaikalTest)
-# Temporarily remove RprTest from build
-# it will be rewrited in gtest
-#    if (BAIKAL_ENABLE_RPR)
-#        add_subdirectory(RprTest)
-#    endif (BAIKAL_ENABLE_RPR)
+    if (BAIKAL_ENABLE_RPR)
+        add_subdirectory(RprTest)
+    endif (BAIKAL_ENABLE_RPR)
     set(3RDPARTY_DST $<TARGET_FILE_DIR:BaikalTest>)
 endif (BAIKAL_ENABLE_TESTS)
 

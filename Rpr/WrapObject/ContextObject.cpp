@@ -93,6 +93,7 @@ namespace
     { RPR_CONTEXT_GPU6_NAME,{ "gpu6name", "Name of the GPU index 6 in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
     { RPR_CONTEXT_GPU7_NAME,{ "gpu7name", "Name of the GPU index 7 in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
     { RPR_CONTEXT_CPU_NAME,{ "cpuname", "Name of the CPU in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
+    { RPR_CONTEXT_RANDOM_SEED,{ "randseed", "Random seed", RPR_PARAMETER_TYPE_UINT } },
     };
 
     std::map<uint32_t, Baikal::Renderer::OutputType> kOutputTypeMap = { {RPR_AOV_COLOR, Baikal::Renderer::OutputType::kColor},
@@ -327,6 +328,32 @@ FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum targ
     return result;
 }
 
+void ContextObject::SetParameter(const std::string& input, rpr_uint value)
+{
+    auto it = std::find_if(kContextParameterDescriptions.begin(), kContextParameterDescriptions.end(),
+        [input](std::pair<uint32_t, ParameterDesc> desc) { return desc.second.name == input; });
+
+    if (it == kContextParameterDescriptions.end())
+    {
+        throw Exception(RPR_ERROR_INVALID_TAG, "ContextObject: invalid context input parameter.");
+    }
+    else if (it->second.type != RPR_PARAMETER_TYPE_UINT)
+    {
+        throw Exception(RPR_ERROR_INVALID_PARAMETER_TYPE, "ContextObject: invalid context input type.");
+    }
+
+    switch (it->first)
+    {
+    case RPR_CONTEXT_RANDOM_SEED:
+        for (auto& c : m_cfgs)
+        {
+            c.renderer->SetRandomSeed(value);
+        }
+        break;
+    default:
+        throw Exception(RPR_ERROR_UNIMPLEMENTED, "ContextObject: requested parameter is not implemented");
+    }
+}
 
 void ContextObject::SetParameter(const std::string& input, float x, float y, float z, float w)
 {
