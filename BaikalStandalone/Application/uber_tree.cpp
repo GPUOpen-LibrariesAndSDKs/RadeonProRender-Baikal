@@ -21,6 +21,7 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "uber_tree.h"
+#include <algorithm>
 #include <queue>
 
 UberTree::UberTree(UberNode::Ptr node)
@@ -33,6 +34,16 @@ void UberTree::BuildTree(UberNode::Ptr root)
     std::queue<UberNode::Ptr> queue;
     queue.push(root);
 
+    auto SetChild_Func = 
+        [](UberNode::Ptr parent,
+           int arg_number,
+           std::queue<UberNode::Ptr>& queue)
+           {
+               auto child = UberNode::Create(parent->GetArg(), parent);
+               parent->SetChild(0, child->GetId());
+               queue.push(child);
+           };
+
     while (!queue.empty())
     {
         auto parent = queue.back();
@@ -40,35 +51,20 @@ void UberTree::BuildTree(UberNode::Ptr root)
         {
             case NodeType::kOneArg:
             {
-                auto one_arg_node = std::dynamic_pointer_cast<UberNode_Arg>(parent);
-                auto child = UberNode::Create(one_arg_node->GetArg(), parent);
-                parent->SetChild(0, child->GetId());
-                queue.push(child);
+                SetChild_Func(parent, 0, queue);
                 break;
             }
             case NodeType::kTwoArgs:
             {
-                auto two_args_node = std::dynamic_pointer_cast<UberNode_TwoArgs>(parent);
-                auto child1 = UberNode::Create(two_args_node->GetArg(0), parent);
-                auto child2 = UberNode::Create(two_args_node->GetArg(1), parent);
-                parent->SetChild(0, child1->GetId());
-                parent->SetChild(1, child2->GetId());
-                queue.push(child1);
-                queue.push(child2);
+                SetChild_Func(parent, 0, queue);
+                SetChild_Func(parent, 1, queue);
                 break;
             }
             case NodeType::kThreeArgs:
             {
-                auto three_args_node = std::dynamic_pointer_cast<UberNode_ThreeArgs>(parent);
-                auto child1 = UberNode::Create(three_args_node->GetArg(0), parent);
-                auto child2 = UberNode::Create(three_args_node->GetArg(1), parent);
-                auto child3 = UberNode::Create(three_args_node->GetArg(2), parent);
-                parent->SetChild(0, child1->GetId());
-                parent->SetChild(1, child2->GetId());
-                parent->SetChild(2, child3->GetId());
-                queue.push(child1);
-                queue.push(child2);
-                queue.push(child3);
+                SetChild_Func(parent, 0, queue);
+                SetChild_Func(parent, 1, queue);
+                SetChild_Func(parent, 2, queue);
                 break;
             }
         default:
@@ -97,7 +93,7 @@ bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::
     return AddSubTree(id, arg_number, tree);
 }
 
-bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr node)
+bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree)
 {
     auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
         [id](UberNode::Ptr node) 
@@ -108,9 +104,41 @@ bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::
     if (iter == m_nodes.end())
         return false;
 
-    // if argument number is bigger than 
-    if (arg_number > (std::uint32_t)(*iter)->GetType())
+    // node should support arguments
+    if ((*iter)->GetType() == NodeType::kNoneArgs)
+        return false;
+    // check 'arg_number' and NodeType compatibility
+    if (arg_number >= (std::uint32_t)(*iter)->GetType())
         return false;
 
-    return false;
+    (*iter)->SetArg((*iter)->m_input_map, arg_number);
+    (*iter)->SetChild(arg_number, m_nodes[0]->GetId());
+    return true;
+}
+
+void UberTree::ExcludeSubTree(UberNode::Ptr node)
+{
+    int id = node->GetId();
+
+    auto iter = std::find_if(
+        m_nodes.begin(), m_nodes.end(),
+        [id](UberNode::Ptr node)
+        { return id == node->GetId(); });
+
+    auto parent = (*iter)->m_parent;
+
+    // can not exclude root
+    if (parent == nullptr)
+        return;
+
+    int arg_num = 0;
+    for (int i = 0; i < MAX_ARGS; i++)
+    {
+        if (parent->m_children[i] == id)
+        {
+            parent->m_children[i] = INVALID_ID;
+            parent->SetArg(nullptr, i);
+            break;
+        }
+    }
 }

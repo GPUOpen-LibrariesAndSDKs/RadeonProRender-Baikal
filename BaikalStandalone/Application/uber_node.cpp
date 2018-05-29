@@ -31,8 +31,6 @@ using namespace Baikal;
 
 int UberNode::m_next_id = 0;
 
-#define INVALID_ID (-1)
-
 #define GET_ONE_ARG(type, sufix)\
     {\
         auto input_map = std::dynamic_pointer_cast<type>(m_input_map);\
@@ -230,7 +228,14 @@ bool UberNode::IsValid() const
             arg_number = 3;
             break;
     }
-    return m_children.size() == arg_number;
+
+    for (size_t i = 0; i < arg_number; i++)
+    {
+        if (m_children[i] < 0)
+            return false;
+    }
+
+    return true;
 }
 
 void UberNode::SetChild(std::uint32_t arg_number, int child_id)
@@ -564,6 +569,16 @@ namespace {
 ////////////////////////////////////
 // UberNode implementation
 ////////////////////////////////////
+
+InputMap::Ptr UberNode::GetArg(std::uint32_t arg_number)
+{ return nullptr; }
+
+void UberNode::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
+{
+    // unused variables
+    (void)arg;
+    (void)arg_number;
+}
 
 std::array<int, 3> UberNode::GetChildren() const
 { return m_children; }

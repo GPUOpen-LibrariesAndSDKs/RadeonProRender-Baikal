@@ -40,6 +40,7 @@ enum class NodeType
 class UberTree;
 
 #define MAX_ARGS (3)
+#define INVALID_ID (-1)
 
 class UberNode
 {
@@ -56,6 +57,11 @@ public:
 
     // input map data type accessor
     InputMap::InputMapType GetDataType() const;
+
+    // Get InputMap argument
+    virtual InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
+    // Set InputMap argument
+    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number = 0);
 
     std::uint32_t GetId() const
     { return m_id; }
@@ -82,9 +88,9 @@ class UberNode_Arg : public UberNode
 {
 public:
     // Get InputMap_OneArg child
-    virtual InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
+    virtual InputMap::Ptr GetArg(std::uint32_t arg_number = 0) override;
     // Set InputMap_OneArg child
-    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number = 0);
+    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number = 0) override;
 
     NodeType GetType() const override
     { return NodeType::kOneArg; }
