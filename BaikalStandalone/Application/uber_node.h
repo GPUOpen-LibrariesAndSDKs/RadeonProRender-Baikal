@@ -39,6 +39,8 @@ enum class NodeType
 
 class UberTree;
 
+#define MAX_ARGS (3)
+
 class UberNode
 {
     friend class UberTree;
@@ -52,24 +54,27 @@ public:
     bool IsValid() const;
     virtual NodeType GetType() const = 0;
 
-    std::uint32_t GetId() const
-    { return m_id; }
-
     // input map data type accessor
     InputMap::InputMapType GetDataType() const;
 
-    std::array<bool, 3> GetChildrenLayout() const;
+    std::uint32_t GetId() const
+    { return m_id; }
+
 
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
-    void AddChild(Ptr child);
 
-    std::uint32_t m_id;
+    void SetChild(std::uint32_t arg_number, int child_id);
+    std::array<int, 3> GetChildren() const;
+
+    // fields
+    std::array<int, MAX_ARGS> m_children;
     Ptr m_parent;
     InputMap::Ptr m_input_map;
-    std::vector<Ptr> m_children;
-    std::array<bool, 3> m_children_layout;
-    static std::uint32_t m_next_id;
+
+private:
+    int m_id;
+    static int m_next_id;
 };
 
 // UberNode_OneArg common class
@@ -77,9 +82,9 @@ class UberNode_Arg : public UberNode
 {
 public:
     // Get InputMap_OneArg child
-    virtual UberNode::InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
+    virtual InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
     // Set InputMap_OneArg child
-    virtual void SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number = 0);
+    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number = 0);
 
     NodeType GetType() const override
     { return NodeType::kOneArg; }
@@ -128,9 +133,9 @@ class UberNode_TwoArgs : public UberNode_Arg
 {
 public:
     // Get InputMap_OneArg child
-    virtual UberNode::InputMap::Ptr GetArg(std::uint32_t arg_number) override;
+    virtual InputMap::Ptr GetArg(std::uint32_t arg_number) override;
     // Set InputMap_OneArg child
-    virtual void SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number) override;
+    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number) override;
 
     NodeType GetType() const override
     { return NodeType::kTwoArgs; }
@@ -172,12 +177,11 @@ public:
     { return NodeType::kThreeArgs; }
 
     // Get InputMap_OneArg child
-    virtual UberNode::InputMap::Ptr GetArg(std::uint32_t arg_number) override;
+    virtual InputMap::Ptr GetArg(std::uint32_t arg_number) override;
     // Set InputMap_OneArg child
-    virtual void SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number) override;
+    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number) override;
 
 protected:
-
     UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent);
 };
 

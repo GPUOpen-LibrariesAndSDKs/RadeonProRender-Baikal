@@ -35,8 +35,45 @@ void UberTree::BuildTree(UberNode::Ptr root)
 
     while (!queue.empty())
     {
-        for (auto item : queue.front()->m_children)
-            queue.push(item);
+        auto parent = queue.back();
+        switch (queue.front()->GetType())
+        {
+            case NodeType::kOneArg:
+            {
+                auto one_arg_node = std::dynamic_pointer_cast<UberNode_Arg>(parent);
+                auto child = UberNode::Create(one_arg_node->GetArg(), parent);
+                parent->SetChild(0, child->GetId());
+                queue.push(child);
+                break;
+            }
+            case NodeType::kTwoArgs:
+            {
+                auto two_args_node = std::dynamic_pointer_cast<UberNode_TwoArgs>(parent);
+                auto child1 = UberNode::Create(two_args_node->GetArg(0), parent);
+                auto child2 = UberNode::Create(two_args_node->GetArg(1), parent);
+                parent->SetChild(0, child1->GetId());
+                parent->SetChild(1, child2->GetId());
+                queue.push(child1);
+                queue.push(child2);
+                break;
+            }
+            case NodeType::kThreeArgs:
+            {
+                auto three_args_node = std::dynamic_pointer_cast<UberNode_ThreeArgs>(parent);
+                auto child1 = UberNode::Create(three_args_node->GetArg(0), parent);
+                auto child2 = UberNode::Create(three_args_node->GetArg(1), parent);
+                auto child3 = UberNode::Create(three_args_node->GetArg(2), parent);
+                parent->SetChild(0, child1->GetId());
+                parent->SetChild(1, child2->GetId());
+                parent->SetChild(2, child3->GetId());
+                queue.push(child1);
+                queue.push(child2);
+                queue.push(child3);
+                break;
+            }
+        default:
+            break;
+        }
         m_nodes.push_back(queue.back());
         queue.pop();
     }

@@ -29,7 +29,9 @@ using namespace Baikal;
 // UberNode_OneArg implementation
 ////////////////////////////////////////
 
-std::uint32_t UberNode::m_next_id = 0;
+int UberNode::m_next_id = 0;
+
+#define INVALID_ID (-1)
 
 #define GET_ONE_ARG(type, sufix)\
     {\
@@ -132,13 +134,13 @@ std::uint32_t UberNode::m_next_id = 0;
 #define SET_ARG_HANDLER_B(param, input_type) SET_ARG_HANDLER(param, input_type, B)
 #define SET_ARG_HANDLER_C(param, input_type) SET_ARG_HANDLER(param, input_type, C)
 
-UberNode::InputMap::Ptr UberNode_Arg::GetArg(std::uint32_t arg_number)
+InputMap::Ptr UberNode_Arg::GetArg(std::uint32_t arg_number)
 {
     if (arg_number != 0)
         throw std::logic_error(
             "UberNode_Arg::GetArg(...): attempt to set arg_number distinguish");
 
-    if (!m_children_layout[arg_number])
+    if (m_children[arg_number] < 0)
         return nullptr;
 
     switch (m_input_map->m_type)
@@ -168,16 +170,17 @@ UberNode::InputMap::Ptr UberNode_Arg::GetArg(std::uint32_t arg_number)
     }
 }
 
-void UberNode_Arg::SetArg(UberNode::InputMap::Ptr input_map, std::uint32_t arg_number)
+void UberNode_Arg::SetArg(InputMap::Ptr input_map, std::uint32_t arg_number)
 {
     if (arg_number != 0)
         throw std::logic_error(
             "UberNode_Arg::SetArg(...): attempt to set arg_number distinguish");
 
-    m_children_layout[0] = !input_map ? false : true;
+    m_children[arg_number] = input_map ?
+        input_map->GetId() : INVALID_ID;
 
-    if (!m_children_layout[0])
-        return;
+    if (!input_map)
+    { return; }
 
     switch (input_map->m_type)
     {
@@ -211,11 +214,28 @@ void UberNode_Arg::SetArg(UberNode::InputMap::Ptr input_map, std::uint32_t arg_n
 }
 
 bool UberNode::IsValid() const
-{ return m_children.size() == (size_t)GetType(); }
-
-void UberNode::AddChild(UberNode::Ptr child)
 {
-    m_parent->m_children.push_back(child);
+    size_t arg_number = 0;
+    switch (GetType())
+    {
+        case NodeType::kNoneArgs:
+            return true;
+        case NodeType::kOneArg:
+            arg_number = 1;
+            break;
+        case NodeType::kTwoArgs:
+            arg_number = 2;
+            break;
+        case NodeType::kThreeArgs:
+            arg_number = 3;
+            break;
+    }
+    return m_children.size() == arg_number;
+}
+
+void UberNode::SetChild(std::uint32_t arg_number, int child_id)
+{
+    m_parent->m_children[arg_number] = child_id;
 }
 
 ////////////////////////////////////////
@@ -283,13 +303,13 @@ void UberNode_Matmul::SetMatrix(const RadeonRays::matrix &mat4)
 // UberNode_TwoArgs implementation
 ////////////////////////////////////////
 
-UberNode::InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
+InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
 {
     if (arg_number > 2)
         throw std::logic_error(
             "UberNode_TwoArgs::GetArg(...): 'arg_number' can not be bigger than 1");
 
-    if (!m_children_layout[arg_number])
+    if (m_children[arg_number] < 0)
         return nullptr;
 
     if (arg_number == 0)
@@ -298,15 +318,15 @@ UberNode::InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
         GET_ARG_HANDLER_B(m_input_map->m_type)
 }
 
-void UberNode_TwoArgs::SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number)
+void UberNode_TwoArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
     if (arg_number > 2)
         throw std::logic_error(
             "UberNode_TwoArgs::SetArg(...): 'arg_number' can not be bigger than 1");
 
-    m_children_layout[arg_number] = !arg ? false : true;
+    m_children[arg_number] = !arg ? INVALID_ID : arg->GetId();
 
-    if (!m_children_layout[arg_number])
+    if (!arg)
         return;
 
     if (arg_number == 0)
@@ -429,7 +449,7 @@ InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
         throw std::logic_error(
             "UberNode_ThreeArgs::GetArg(...): 'arg_number can not be bigger than two");
 
-    if (!m_children_layout[arg_number])
+    if (m_children[arg_number] < 0)
         return nullptr;
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
@@ -446,22 +466,22 @@ InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
 }
 
 // Set UberNode_ThreeArgs child
-void UberNode_ThreeArgs::SetArg(UberNode::InputMap::Ptr arg, std::uint32_t arg_number)
+void UberNode_ThreeArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
     if (arg_number > 2)
         throw std::logic_error(
             "UberNode_ThreeArgs::SetArg(...): 'arg_number can not be bigger than two");
 
-    m_children_layout[arg_number] = !arg ? false : true;
+    m_children[arg_number] = !arg ? INVALID_ID : arg->GetId();
 
-    if (!m_children_layout[arg_number])
+    if (m_children[arg_number] == INVALID_ID)
         return;
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(arg);
 
     if (!input_map)
         throw std::runtime_error(
-            "UberNode_ThreeArgs::SetArg_(...): dynamic_cast failure");
+            "UberNode_ThreeArgs::SetArg(...): dynamic_cast failure");
 
     if (arg_number == 0)
         input_map->SetSourceRange(input_map);
@@ -545,8 +565,8 @@ namespace {
 // UberNode implementation
 ////////////////////////////////////
 
-std::array<bool, 3> UberNode::GetChildrenLayout() const
-{ return m_children_layout; }
+std::array<int, 3> UberNode::GetChildren() const
+{ return m_children; }
 
 // input map data type accessor
 InputMap::InputMapType UberNode::GetDataType() const
@@ -555,8 +575,8 @@ InputMap::InputMapType UberNode::GetDataType() const
 UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent) :
     m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
 {
-    for (auto& iter : m_children_layout)
-        iter = false;
+    for (auto& iter : m_children)
+        iter = -1; // if id bellow zero is invalid
 }
 
 UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent) :
@@ -615,7 +635,7 @@ UberNode::Ptr UberNode::Create(InputMap::Ptr input_map, Ptr parent)
             return std::make_shared<UberNode_ShuffleConcrete>(input_map, parent);
         case InputMap::InputMapType::kMatMul:
             return std::make_shared<UberNode_MatmulConcrete>(input_map, parent);
-        // two arg input maps
+        // two args input maps
         case InputMap::InputMapType::kAdd:
         case InputMap::InputMapType::kSub:
         case InputMap::InputMapType::kMul:
@@ -634,11 +654,12 @@ UberNode::Ptr UberNode::Create(InputMap::Ptr input_map, Ptr parent)
         case InputMap::InputMapType::kShuffle2:
             return std::make_shared<UberNode_Shuffle2Concrete>(input_map, parent);
     }
-
+    // three args input maps
     if (std::dynamic_pointer_cast<InputMap_Remap>(input_map) != nullptr)
     {
         return std::make_shared<UberNode_ThreeArgsConcrete>(input_map, parent);
     }
+    // leaf input maps
     if (std::dynamic_pointer_cast<InputMap_ConstantFloat>(input_map) != nullptr)
     {
         return std::make_shared<UberNode_FloatConcrete>(input_map, parent);
