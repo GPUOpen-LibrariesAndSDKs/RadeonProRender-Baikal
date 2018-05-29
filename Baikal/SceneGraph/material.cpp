@@ -96,8 +96,10 @@ namespace Baikal
 
         for (auto &input : m_inputs)
         {
-            if (input.second.value.type == InputType::kInputMap)
+            if (IsActive(input.second) && (input.second.value.type == InputType::kInputMap))
+            {
                 input_maps.insert(input.second.value.input_map_value);
+            }
         }
 
         return std::make_unique<ContainerIterator<std::set<Baikal::InputMap::Ptr>>>(std::move(input_maps));
@@ -110,7 +112,7 @@ namespace Baikal
 
         for (auto &input : m_inputs)
         {
-            if (input.second.value.type == InputType::kInputMap)
+            if ((input.second.value.type == InputType::kInputMap) && IsActive(input.second))
             {
                 if (!input.second.value.input_map_value->IsLeaf())
                 {
