@@ -564,7 +564,7 @@ namespace Baikal
                 uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
                 uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer);
                 instance->SetMaterial(uberv2);
-                matrix t = RadeonRays::translation(float3((a/1024-512)/512., 0, -10.f));
+                matrix t = RadeonRays::translation(float3((a/1024-512)/512.f, 0.f, -10.f));
                 instance->SetTransform(t);
                 scene->AttachShape(instance);
             }
