@@ -73,5 +73,32 @@ void UberGraph::RemoveSubTree(UberTree::Ptr tree)
     }
 
     RemoveNode(tree->GetRootId());
+}
 
+void UberGraph::AddTree(UberTree::Ptr tree)
+{
+    m_trees.push_back(tree);
+}
+
+void UberGraph::AddTree(UberNode::Ptr node)
+{
+    m_trees.push_back(UberTree::Create(node));
+}
+
+bool UberGraph::AddSubTree(int id, int arg_number, UberTree::Ptr tree)
+{
+    for (auto item : m_trees)
+    {
+        if (!item->FindNode(id))
+        {
+            item->AddSubTree(id, arg_number, tree);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool UberGraph::AddSubTree(int id, int arg_number, UberNode::Ptr node)
+{
+    return AddSubTree(id, arg_number, UberTree::Create(node));
 }

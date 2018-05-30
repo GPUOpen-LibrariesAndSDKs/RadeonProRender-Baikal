@@ -34,6 +34,12 @@ public:
     void RemoveNode(UberNode::Ptr node);
     void RemoveSubTree(UberTree::Ptr tree);
 
+    void AddTree(UberNode::Ptr node);
+    void AddTree(UberTree::Ptr tree);
+
+    bool AddSubTree(int id, int arg_number, UberTree::Ptr tree);
+    bool AddSubTree(int id, int arg_number, UberNode::Ptr node);
+
     const std::vector<UberTree::Ptr>& GetTrees() const
     { return m_trees; }
 
