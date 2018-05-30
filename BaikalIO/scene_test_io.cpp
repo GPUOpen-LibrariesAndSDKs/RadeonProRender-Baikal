@@ -544,6 +544,38 @@ namespace Baikal
             light->SetConeShape(RadeonRays::float2(0.05f, 0.1f));
             scene->AttachLight(light);
         }
+        else if (fname == "4kmaterials")
+        {
+            auto mesh = CreateSphere(64, 32, 0.1f, float3(0.f, 0.0f, 0.f));
+            scene->AttachShape(mesh);
+            auto roughness = InputMap_ConstantFloat::Create(0.05f);
+
+            auto uberv2 = UberV2Material::Create();
+            uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            mesh->SetMaterial(uberv2);
+            matrix t = RadeonRays::translation(float3(0, 0, -10.f));
+            mesh->SetTransform(t);
+
+            for (int a = 0 ; a < 400; ++a)
+            {
+                auto instance = Instance::Create(mesh);
+                auto uberv2 = UberV2Material::Create();
+                uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
+                uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+                instance->SetMaterial(uberv2);
+                matrix t = RadeonRays::translation(float3((a/1024-512)/512.f, 0.f, -10.f));
+                instance->SetTransform(t);
+                scene->AttachShape(instance);
+            }
+
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+
+            auto ibl = ImageBasedLight::Create();
+            ibl->SetTexture(ibl_texture);
+            ibl->SetMultiplier(1.f);
+            scene->AttachLight(ibl);
+        }
 
 
         return scene;
