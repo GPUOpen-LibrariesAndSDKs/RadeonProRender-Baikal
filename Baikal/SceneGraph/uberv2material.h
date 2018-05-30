@@ -104,7 +104,7 @@ namespace Baikal
             return layers_;
         }
 
-        bool IsActive(const Input &input) const;
+        bool IsActive(const Input &input) const override;
 
     protected:
         UberV2Material();
