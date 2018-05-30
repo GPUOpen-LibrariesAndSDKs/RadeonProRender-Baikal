@@ -17,8 +17,24 @@ UberMaterialObject::UberMaterialObject() :
 
 void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonRays::float4 & val)
 {
-    auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
-    m_mat->SetInputValue(input_name, inputMap);
+    // Optimization: if we create a new input, it will take additional time for kernel compilation,
+    // so we try to find existing input and set a new float value
+    try
+    {
+        auto& input = m_mat->GetInput(input_name, Baikal::Material::InputType::kInputMap);
+        auto float_map = std::dynamic_pointer_cast<Baikal::InputMap_ConstantFloat3>(input.value.input_map_value);
+        if (float_map == nullptr)
+        {
+            throw std::exception("no input map found");
+        }
+        float_map->SetValue(val);
+    }
+    catch (std::exception& )
+    {
+        // No float input map found, create a new constant float input
+        auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
+        m_mat->SetInputValue(input_name, inputMap);
+    }
 }
 
 void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val) 
