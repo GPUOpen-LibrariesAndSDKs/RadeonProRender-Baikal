@@ -25,7 +25,7 @@ void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonR
         auto float_map = std::dynamic_pointer_cast<Baikal::InputMap_ConstantFloat3>(input.value.input_map_value);
         if (float_map == nullptr)
         {
-            throw std::exception("no input map found");
+            throw std::exception();
         }
         float_map->SetValue(val);
     }
