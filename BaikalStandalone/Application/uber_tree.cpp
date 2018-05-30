@@ -82,8 +82,15 @@ bool UberTree::IsValid() const
 
 bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::Ptr node)
 {
+    // check that tree doesn't contain this node already
+    for (auto item : m_nodes)
+    {
+        if (item->GetId() == node->GetId())
+            return false;
+    }
+
     // build tree for input node
-    Ptr tree = std::make_shared<UberTree>(node);
+    Ptr tree = Create(node);
     // add this tree as sub tree to main tree
     return AddSubTree(id, arg_number, tree);
 }
@@ -143,7 +150,7 @@ UberTree::UberTree(UberNode::Ptr node)
 
 
 namespace {
-    struct UberTreeConcrete : public UberTree
+    struct UberTreeConcrete: public UberTree
     {
         UberTreeConcrete(UberNode::Ptr node) :
             UberTree(node)
