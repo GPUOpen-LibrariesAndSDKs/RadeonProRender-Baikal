@@ -26,8 +26,11 @@
 #include <functional>
 #include "uber_node.h"
 
+class UberGraph;
+
 class UberTree
 {
+    friend class UberGraph;
 public:
     using Ptr = std::shared_ptr<UberTree>;
 
@@ -36,6 +39,8 @@ public:
     // 'id' is an id ofthe node to add subtree ('node' or 'tree' arg)
     // 'arg_number' is a number of the argument in
     // parent node (id of this node is argument "id") which will be set
+    // this methods garanty adding items in Ubertree model,
+    // and only if input value and tree itself are valid than update baikal material
     bool AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::Ptr node);
     bool AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree);
 
@@ -43,9 +48,14 @@ public:
 
     bool IsValid() const;
 
+    int GetRootId() const;
+
+    // synchronize 
+    void Synchronize();
 protected:
     UberTree(UberNode::Ptr node);
 
+    UberNode::Ptr FindNode(int id);
 private:
     void BuildTree(UberNode::Ptr root);
 

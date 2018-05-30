@@ -24,7 +24,9 @@ THE SOFTWARE.
 
 UberGraph::UberGraph(UberNode::InputMap::Ptr input_map)
 {
-
+    m_trees.push_back(
+        UberTree::Create(
+            UberNode::Create(input_map, nullptr)));
 }
 
 namespace {
@@ -40,4 +42,36 @@ namespace {
 UberGraph::Ptr UberGraph::Create(UberNode::InputMap::Ptr input_map)
 {
     return std::make_shared<UberGraphConcrete>(input_map);
+}
+
+void UberGraph::RemoveNode(UberNode::Ptr node)
+{
+    return RemoveNode(node->GetId());
+}
+
+void UberGraph::RemoveNode(int node_id)
+{
+    for (auto tree : m_trees)
+    {
+        auto node = tree->FindNode(node_id);
+        if (node)
+        {
+            tree->ExcludeSubTree(node);
+        }
+    }
+}
+
+void UberGraph::RemoveSubTree(UberTree::Ptr tree)
+{
+    for (auto iter = m_trees.begin(); iter != m_trees.end(); iter++)
+    {
+        if ((*iter)->GetRootId() == tree->GetRootId())
+        {
+            m_trees.erase(iter);
+            return;
+        }
+    }
+
+    RemoveNode(tree->GetRootId());
+
 }

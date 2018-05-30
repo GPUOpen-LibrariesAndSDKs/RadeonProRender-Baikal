@@ -71,10 +71,10 @@ protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
 
     void SetChild(std::uint32_t arg_number, int child_id);
-    std::array<int, 3> GetChildren() const;
+    std::vector<std::pair<int, int>> GetChildren() const;
 
     // fields
-    std::array<int, MAX_ARGS> m_children;
+    std::vector<std::pair<int, int>> m_children;
     Ptr m_parent;
     InputMap::Ptr m_input_map;
 
@@ -135,7 +135,7 @@ protected:
 };
 
 // UberNode_TwoArgs common class
-class UberNode_TwoArgs : public UberNode_Arg
+class UberNode_TwoArgs : public UberNode
 {
 public:
     // Get InputMap_OneArg child
@@ -176,7 +176,7 @@ protected:
 };
 
 // UberNode_ThreeArgs common class
-class UberNode_ThreeArgs : public UberNode_Arg
+class UberNode_ThreeArgs : public UberNode
 {
 public:
     NodeType GetType() const override

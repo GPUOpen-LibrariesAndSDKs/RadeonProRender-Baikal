@@ -30,15 +30,12 @@ public:
 
     static Ptr Create(UberNode::InputMap::Ptr input_map);
 
-    bool AddSubTree(UberNode::Ptr node);
-    bool AddSubTree(UberTree::Ptr tree);
-    void ExcludeSubTree(UberNode::Ptr node);
-    void ExcludeSubTree(UberTree::Ptr tree);
-    void RemoveSubtree(UberTree::Ptr tree);
-    void RemoveSubtree(UberNode::Ptr node);
+    void RemoveNode(int node_id);
+    void RemoveNode(UberNode::Ptr node);
+    void RemoveSubTree(UberTree::Ptr tree);
 
-    UberTree::Ptr GetMainTree();
-    const std::vector<UberTree::Ptr>& GetTrees() const;
+    const std::vector<UberTree::Ptr>& GetTrees() const
+    { return m_trees; }
 
 protected:
     UberGraph(UberNode::InputMap::Ptr input_map);
