@@ -41,8 +41,8 @@ const std::string float4_selector_footer = "\t}\n\treturn 0.0f;\n}\n";
 
 const std::string float_selector_header =
     "float GetInputMapFloat(uint input_id, DifferentialGeometry const* dg, GLOBAL InputMapData const* restrict input_map_values, TEXTURE_ARG_LIST)\n{\n"
-    "\tswitch(input_id)\n\t{\n";
-const std::string float_selector_footer = "\t}\n\treturn 0.0f;\n}\n";
+    "\treturn GetInputMapFloat4(input_id, dg, input_map_values, TEXTURE_ARGS).x;\n"
+    "}\n";
 
 void CLInputMapGenerator::Generate(const Collector& input_map_collector, const Collector& input_map_leaf_collector)
 {
@@ -70,7 +70,7 @@ void CLInputMapGenerator::Generate(const Collector& input_map_collector, const C
 
     m_source_code += m_read_functions;
     m_source_code += m_float4_selector + float4_selector_footer;
-    m_source_code += m_float_selector + float_selector_footer;
+    m_source_code += float_selector_header;
     m_source_code += footer;
 }
 

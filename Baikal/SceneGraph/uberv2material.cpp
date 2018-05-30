@@ -110,3 +110,77 @@ bool UberV2Material::HasEmission() const
 {
     return (layers_ & Layers::kEmissionLayer) == Layers::kEmissionLayer;
 }
+
+void UberV2Material::SetLayers(uint32_t layers)
+{
+    layers_ = layers;
+
+    static const std::vector<std::string> diffuse_inputs = {"uberv2.diffuse.color"};
+    static const std::vector<std::string> emission_inputs = {"uberv2.emission.color"};
+    static const std::vector<std::string> transparency_inputs = {"uberv2.transparency"};
+    static const std::vector<std::string> normalmap_inputs = {"uberv2.shading_normal"};
+
+    static const std::vector<std::string> coating_inputs =
+        {"uberv2.coating.color", "uberv2.coating.ior"};
+
+    static const std::vector<std::string> reflection_inputs =
+        {"uberv2.reflection.color", "uberv2.reflection.roughness", "uberv2.reflection.anisotropy",
+         "uberv2.reflection.anisotropy_rotation", "uberv2.reflection.ior", "uberv2.reflection.metalness"};
+
+    static const std::vector<std::string> refraction_inputs =
+        {"uberv2.refraction.color", "uberv2.refraction.roughness", "uberv2.refraction.ior"};
+
+    static const std::vector<std::string> sss_inputs =
+        {"uberv2.sss.absorption_color", "uberv2.sss.scatter_color", "uberv2.sss.absorption_distance",
+         "uberv2.sss.scatter_distance", "uberv2.sss.scatter_direction", "uberv2.sss.subsurface_color"};
+
+    auto add_inputs = [&](const std::vector<std::string> inputs)
+    {
+        for (auto input_name : inputs)
+        {
+            m_active_inputs.insert(input_name);
+        }
+    };
+
+    m_active_inputs.clear();
+
+    if ((layers_ & Layers::kCoatingLayer) == Layers::kCoatingLayer)
+    {
+        add_inputs(coating_inputs);
+    }
+    if ((layers_ & Layers::kDiffuseLayer) == Layers::kDiffuseLayer)
+    {
+        add_inputs(diffuse_inputs);
+    }
+    if ((layers_ & Layers::kEmissionLayer) == Layers::kEmissionLayer)
+    {
+        add_inputs(emission_inputs);
+    }
+    if ((layers_ & Layers::kReflectionLayer) == Layers::kReflectionLayer)
+    {
+        add_inputs(reflection_inputs);
+    }
+    if ((layers_ & Layers::kRefractionLayer) == Layers::kRefractionLayer)
+    {
+        add_inputs(refraction_inputs);
+    }
+    if ((layers_ & Layers::kShadingNormalLayer) == Layers::kShadingNormalLayer)
+    {
+        add_inputs(normalmap_inputs);
+    }
+    if ((layers_ & Layers::kSSSLayer) == Layers::kSSSLayer)
+    {
+        add_inputs(sss_inputs);
+    }
+    if ((layers_ & Layers::kTransparencyLayer) == Layers::kTransparencyLayer)
+    {
+        add_inputs(transparency_inputs);
+    }
+
+
+}
+
+bool UberV2Material::IsActive(const Input &input) const
+{
+    return (m_active_inputs.find(input.info.name) != m_active_inputs.end());
+}
