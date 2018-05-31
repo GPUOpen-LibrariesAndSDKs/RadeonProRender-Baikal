@@ -140,6 +140,11 @@ namespace Baikal
         // Set thin flag
         void SetThin(bool thin);
 
+        virtual bool IsActive(const Input &input) const
+        {
+            return true;
+        }
+
         size_t GetNumInputs() const;
         Input GetInput(std::size_t idx) const;
 
