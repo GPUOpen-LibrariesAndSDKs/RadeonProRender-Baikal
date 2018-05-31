@@ -144,7 +144,8 @@ source_group("SceneGraph\\Collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
 source_group("XML" FILES ${XML_SOURCES})
 source_group("Kernels\\CL" FILES ${KERNELS_SOURCES})
 
-add_library(Baikal STATIC ${SOURCES})
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+add_library(Baikal SHARED ${SOURCES})
 
 if (BAIKAL_ENABLE_DENOISER)
     target_compile_definitions(Baikal PUBLIC ENABLE_DENOISER)

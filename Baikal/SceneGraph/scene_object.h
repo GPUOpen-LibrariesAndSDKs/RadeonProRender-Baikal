@@ -57,6 +57,8 @@ namespace Baikal
         inline std::uint32_t GetId() const
         { return m_id; }
 
+        static void ResetId();
+
     protected:
         // Constructor
         SceneObject();
@@ -66,15 +68,9 @@ namespace Baikal
 
         std::string m_name;
         std::uint32_t m_id;
-        static std::uint32_t m_next_id;
         
     };
 
-    inline SceneObject::SceneObject()
-    : m_dirty(false), m_id(m_next_id++)
-    {
-    }
-    
     inline SceneObject::~SceneObject()
     {
     }

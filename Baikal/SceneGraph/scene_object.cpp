@@ -1,3 +1,16 @@
 #include "scene_object.h"
 
-std::uint32_t Baikal::SceneObject::m_next_id = 0;
+namespace Baikal
+{
+    std::uint32_t g_next_id = 0;
+
+    SceneObject::SceneObject()
+        : m_dirty(false), m_id(g_next_id++)
+    {
+    }
+
+    void SceneObject::ResetId()
+    {
+        g_next_id = 0;
+    }
+}

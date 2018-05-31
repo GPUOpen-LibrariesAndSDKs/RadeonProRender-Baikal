@@ -220,10 +220,16 @@ KERNEL void GatherOpacity(
         int output_index = output_indices[pixel_idx];
         GLOBAL Path* path = paths + pixel_idx;
         
-        if (!predicate[global_id] || last_bounce)
+        if (last_bounce)
+        {
+            ADD_FLOAT4(&output[output_index], make_float4(1.f, 1.f, 1.f, 1.f));
+            return;
+        }
+
+        if (!Path_IsAlive(path))
         {
             float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
-            if (Path_ContainsOpacity(path) || last_bounce || !Path_IsAlive(path))
+            if (Path_ContainsOpacity(path))
             {
                 v.xyz = 1.0f;
             }
@@ -278,11 +284,11 @@ KERNEL void FilterPathStream(
 
         if (Path_IsAlive(path))
         {
-            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT);
+            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT) && (isects[global_id].shapeid < 0);
 
             if (!kill)
             {
-                predicate[global_id] = isects[global_id].shapeid >= 0 ? 1 : 0;
+                predicate[global_id] = 1;
             }
             else
             {

@@ -23,6 +23,7 @@
 #pragma once
 
 #include "basic.h"
+#include "SceneGraph/scene_object.h"
 
 class AovTest : public BasicTest
 {
@@ -96,6 +97,7 @@ TEST_F(AovTest, Aov_Opacity)
 
 TEST_F(AovTest, Aov_ObjectID)
 {
+    Baikal::SceneObject::ResetId();
     TestAovImplemented(RPR_AOV_OBJECT_ID);
 }
 
