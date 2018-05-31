@@ -23,6 +23,8 @@
 */ReferenceImages/*
 */cache/*.bin
 
+build/
+
 .vs/
 CMakeSettings.json
 CppProperties.json

@@ -63,7 +63,20 @@ endif (BAIKAL_ENABLE_GLTF)
 set_target_properties(BaikalStandalone
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalStandalone)
 
-add_dependencies(BaikalStandalone ResourcesDir CLKernelsDir GLSLKernelsDir)
+add_custom_target(BaikalStandaloneKernelsDir)
+
+set(BAIKALSTANDALONE_KERNELS_DIR BaikalStandalone/Kernels)
+FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_SRC)
+FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_DST)
+
+if (WIN32)
+    add_custom_command(TARGET BaikalStandaloneKernelsDir POST_BUILD
+        COMMAND IF NOT EXIST ${BAIKALSTANDALONE_KERNELS_DST} mklink /D ${BAIKALSTANDALONE_KERNELS_DST} ${BAIKALSTANDALONE_KERNELS_SRC}
+        DEPENDS ${BAIKALSTANDALONE_KERNELS_DST}
+    )
+endif ()
+
+add_dependencies(BaikalStandalone ResourcesDir BaikalKernelsDir BaikalStandaloneKernelsDir)
 
 add_custom_command(TARGET BaikalStandalone POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
