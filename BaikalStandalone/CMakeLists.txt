@@ -63,8 +63,10 @@ endif (BAIKAL_ENABLE_GLTF)
 set_target_properties(BaikalStandalone
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalStandalone)
 
+add_dependencies(BaikalStandalone ResourcesDir CLKernelsDir GLSLKernelsDir)
+
 add_custom_command(TARGET BaikalStandalone POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<1:${BAIKAL_STANDALONE_COPY_FILES}>"
         "$<TARGET_FILE_DIR:BaikalStandalone>"
     COMMAND_EXPAND_LISTS

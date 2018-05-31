@@ -108,3 +108,33 @@ if (BAIKAL_ENABLE_TESTS)
 #        add_subdirectory(RprTest)
 #    endif (BAIKAL_ENABLE_RPR)
 endif (BAIKAL_ENABLE_TESTS)
+
+add_custom_target(ResourcesDir)
+add_custom_target(CLKernelsDir)
+add_custom_target(GLSLKernelsDir)
+
+if (NOT(${Baikal_SOURCE_DIR} EQUAL ${CMAKE_CURRENT_BINARY_DIR}))
+    set(RESOURCES_DIR Resources)
+    FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${RESOURCES_DIR} RESOURCES_SRC)
+    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${RESOURCES_DIR} RESOURCES_DST)
+
+    set(CL_KERNELS_DIR Baikal/Kernels/CL)
+    FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${CL_KERNELS_DIR} CL_KERNELS_SRC)
+    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${CL_KERNELS_DIR} CL_KERNELS_DST)
+
+    set(GLSL_KERNELS_DIR BaikalStandalone/Kernels/GLSL)
+    FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${GLSL_KERNELS_DIR} GLSL_KERNELS_SRC)
+    FILE(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${GLSL_KERNELS_DIR} GLSL_KERNELS_DST)
+
+    add_custom_command(TARGET ResourcesDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${RESOURCES_SRC} ${RESOURCES_DST}
+    )
+
+    add_custom_command(TARGET CLKernelsDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CL_KERNELS_SRC} ${CL_KERNELS_DST}
+    )
+
+    add_custom_command(TARGET GLSLKernelsDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${GLSL_KERNELS_SRC} ${GLSL_KERNELS_DST}
+    )
+endif ()
