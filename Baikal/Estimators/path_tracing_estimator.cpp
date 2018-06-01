@@ -322,7 +322,10 @@ namespace Baikal
         // Gather opacity if we have opacity buffer
         if (has_opacity_buffer)
         {
+            // Convert intersections to predicates
+            FilterPathStream(GetMaxBounces(), num_estimates);
             GatherOpacity(scene, GetMaxBounces(), num_estimates, opacity_buffer, use_output_indices);
+            GetContext().Flush(0);
         }
         ++m_sample_counter;
     }
@@ -630,7 +633,6 @@ namespace Baikal
         gatherkernel.SetArg(argc++, output_indices);
         gatherkernel.SetArg(argc++, m_render_data->hitcount);
         gatherkernel.SetArg(argc++, m_render_data->paths);
-        gatherkernel.SetArg(argc++, m_render_data->hits);
         gatherkernel.SetArg(argc++, (int)(pass == GetMaxBounces()));
         gatherkernel.SetArg(argc++, output);
 

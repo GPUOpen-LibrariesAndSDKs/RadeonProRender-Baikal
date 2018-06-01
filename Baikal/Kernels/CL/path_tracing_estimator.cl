@@ -205,9 +205,7 @@ KERNEL void GatherOpacity(
     // Number of rays
     GLOBAL int* restrict num_rays,
     // Paths
-    GLOBAL Path const* restrict paths,    
-    // Predicate
-    GLOBAL int* restrict predicate,
+    GLOBAL Path const* restrict paths,
     int last_bounce,
     // Radiance sample buffer
     GLOBAL float4* restrict output
@@ -220,13 +218,7 @@ KERNEL void GatherOpacity(
         int output_index = output_indices[pixel_idx];
         GLOBAL Path* path = paths + pixel_idx;
         
-        if (last_bounce)
-        {
-            ADD_FLOAT4(&output[output_index], make_float4(1.f, 1.f, 1.f, 1.f));
-            return;
-        }
-
-        if (!Path_IsAlive(path))
+        if (!Path_IsAlive(path) || last_bounce)
         {
             float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
             if (Path_ContainsOpacity(path))
@@ -284,7 +276,7 @@ KERNEL void FilterPathStream(
 
         if (Path_IsAlive(path))
         {
-            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT) && (isects[global_id].shapeid < 0);
+            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT) || (isects[global_id].shapeid < 0);
 
             if (!kill)
             {
