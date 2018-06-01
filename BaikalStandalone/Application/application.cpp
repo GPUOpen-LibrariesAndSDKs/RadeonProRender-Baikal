@@ -129,12 +129,6 @@ namespace Baikal
         m_texture_path.second = texture_path;
     }
 
-
-    void Application::MaterialSettings::Clear()
-    {
-        inputs_info.clear();
-    }
-
     void Application::OnMouseMove(GLFWwindow* window, double x, double y)
     {
         if (g_is_mouse_tracking)
@@ -566,113 +560,6 @@ namespace Baikal
         }
     }
 
-    bool Application::ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix)
-    {
-        auto input = material->GetInput(input_idx);
-        auto name = input.info.name;
-        auto input_info = settings.inputs_info[input_idx];
-        
-        if (!settings.inputs_info[input_idx].HasMultiplier())
-        {
-            auto mult = std::max(
-                std::max(input.value.float_value.x, input.value.float_value.y),
-                input.value.float_value.z);
-
-            mult = (mult > 1) ? (mult) : (1.f);
-
-            input_info.SetMultiplier(mult);
-
-            input_info.SetColor(RadeonRays::float3(
-                input.value.float_value.x / mult,
-                input.value.float_value.y / mult,
-                input.value.float_value.z / mult));
-
-            material->SetInputValue(input.info.name, input_info.GetColor());
-        }
-
-        auto mult = input_info.GetMultiplier();
-        float color[3] = { 0 };
-        auto input_color = input_info.GetColor();
-
-        color[0] = input_color.x;
-        color[1] = input_color.y;
-        color[2] = input_color.z;
-
-        if (!id_suffix.empty())
-            ImGui::PushID(id_suffix.c_str());
-
-        ImGui::InputFloat(name.c_str(), &mult, .0f, .0f, -1, ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::ColorEdit3(name.c_str(), color);
-
-        if (!id_suffix.empty())
-            ImGui::PopID();
-
-        if ((input.value.tex_value == nullptr) &&
-            ((input_color.x != color[0]) ||
-             (input_color.y != color[1]) ||
-             (input_color.z != color[2]) ||
-             (input_info.GetMultiplier() != mult)))
-        {
-            RadeonRays::float4 value(
-                mult * color[0],
-                mult * color[1],
-                mult * color[2],
-                0);
-            input_info.SetColor(RadeonRays::float3(color[0], color[1], color[2]));
-            input_info.SetMultiplier(mult);
-            settings.inputs_info[input_idx] = input_info;
-            material->SetInputValue(input.info.name, value);
-            return true;
-        }
-        return false;
-    }
-
-    bool Application::ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx)
-    {
-        const size_t buffer_size = 2048;
-        char text_buffer[buffer_size] = { 0 };
-        auto input = material->GetInput(input_idx);
-        auto name = input.info.name;
-
-        auto input_info = settings.inputs_info[input_idx];
-
-        if (input_info.GetTexturePath().empty() && 
-           (input.value.tex_value != nullptr))
-        {
-            strcpy(text_buffer, input.info.name.c_str());
-        }
-        else
-        {
-            strcpy(text_buffer, input_info.GetTexturePath().c_str());
-        }
-
-        if (ImGui::InputText((name + std::string("_texture")).c_str(), text_buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue))
-        {
-            Texture::Ptr texture = nullptr;
-            if (strlen(text_buffer) != 0)
-            {
-                try
-                {
-                    texture = m_image_io->LoadImage(text_buffer);
-                    material->SetInputValue(input.info.name, texture);
-                }
-                catch (std::exception&)
-                {
-                    printf("WARNING: Can not load texture by specified path\n");
-                }
-            }
-            else
-            {
-                material->SetInputValue(name, texture);
-            }
-            input_info.SetTexturePath(text_buffer);
-            settings.inputs_info[input_idx] = input_info;
-
-            return true;
-        }
-        return false;
-    }
-
     bool Application::UpdateGui()
     {
         static float aperture = 0.0f;
@@ -862,19 +749,6 @@ namespace Baikal
 #endif
             ImGui::End();
 
-            //ImGui::BeginGroup();
-
-            //// Create our child canvas
-            //ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(IM_COL32(60, 60, 70, 200)));
-            //ImGui::BeginChild("scrolling_region", ImVec2(0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
-            //ImGui::PushItemWidth(120.0f);
-
-
-            //ImGui::PopItemWidth();
-            //ImGui::EndChild();
-            //ImGui::PopStyleColor();
-            //ImGui::EndGroup();
-
             // Get shape/material info from renderer
             if (m_shape_id_future.valid())
             {
@@ -885,19 +759,10 @@ namespace Baikal
                 if (shape)
                 {
                     // set basic material settings
-                    MaterialSettings material_settings;
-                    material_settings.id = m_current_shape_id;
-                    m_material_settings.push_back(material_settings);
-                    // set volume material settings
-                    if (shape->GetVolumeMaterial())
-                    {
-                        MaterialSettings volume_settings;
-                        volume_settings.id = m_current_shape_id;
-                        m_volume_settings.push_back(volume_settings);
-                    }
+                    m_material_id = m_current_shape_id;
 
                     // can be nullptr
-                    m_material = 
+                    m_material =
                         std::dynamic_pointer_cast<UberV2Material>(
                             shape->GetMaterial());
 

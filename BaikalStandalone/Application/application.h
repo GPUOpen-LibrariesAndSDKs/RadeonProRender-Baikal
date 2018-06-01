@@ -98,22 +98,9 @@ namespace Baikal
             std::pair<bool, std::string> m_texture_path;
         };
 
-        // this struct needs to save material parametrs from gui
-        struct MaterialSettings
-        {
-            int id; // shape id
-            std::vector<InputSettings> inputs_info;
-
-            void Clear();
-        };
-
-        bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix = std::string());
-        bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
-
+        int m_material_id;
         UberV2Material::Ptr m_material;
         UberGraph::Ptr m_uber_graph;
         std::unique_ptr<ImageIo> m_image_io;
-        std::vector<MaterialSettings> m_material_settings;
-        std::vector<MaterialSettings> m_volume_settings;
     };
 }
