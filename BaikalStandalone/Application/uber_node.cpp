@@ -590,7 +590,12 @@ InputMap::InputMapType UberNode::GetDataType() const
 
 UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent) :
     m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
-{   }
+{
+    if (parent)
+        m_level = parent->m_level + 1;
+    else
+        m_level = 1;
+}
 
 UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)

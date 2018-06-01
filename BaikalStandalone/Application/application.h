@@ -26,6 +26,7 @@
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
 #include "image_io.h"
+#include "uber_graph.h"
 
 #include <future>
 #include <memory>
@@ -110,6 +111,7 @@ namespace Baikal
         bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
 
         UberV2Material::Ptr m_material;
+        UberGraph::Ptr m_uber_graph;
         std::unique_ptr<ImageIo> m_image_io;
         std::vector<MaterialSettings> m_material_settings;
         std::vector<MaterialSettings> m_volume_settings;

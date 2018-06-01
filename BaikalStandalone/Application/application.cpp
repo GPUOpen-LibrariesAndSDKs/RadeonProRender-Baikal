@@ -862,6 +862,19 @@ namespace Baikal
 #endif
             ImGui::End();
 
+            //ImGui::BeginGroup();
+
+            //// Create our child canvas
+            //ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(IM_COL32(60, 60, 70, 200)));
+            //ImGui::BeginChild("scrolling_region", ImVec2(0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
+            //ImGui::PushItemWidth(120.0f);
+
+
+            //ImGui::PopItemWidth();
+            //ImGui::EndChild();
+            //ImGui::PopStyleColor();
+            //ImGui::EndGroup();
+
             // Get shape/material info from renderer
             if (m_shape_id_future.valid())
             {
@@ -899,7 +912,7 @@ namespace Baikal
                 g_is_double_click = false;
             }
 
-            // draw material props
+            // draw material
             if (m_material)
             {
                 std::uint32_t layers = m_material->GetLayers();
@@ -909,6 +922,18 @@ namespace Baikal
                     auto emission_value = m_material->GetInputValue("uberv2.emission.color");
                 }
 
+                // draw material explorer canvas
+                ImGui::BeginGroup();
+
+                // Create our child canvas
+                ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(IM_COL32(60, 60, 70, 200)));
+                ImGui::BeginChild("scrolling_region", ImVec2(0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
+                ImGui::PushItemWidth(120.0f);
+
+                ImGui::PopItemWidth();
+                ImGui::EndChild();
+                ImGui::PopStyleColor();
+                ImGui::EndGroup();
             }
             ImGui::Render();
         }

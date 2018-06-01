@@ -74,6 +74,7 @@ protected:
     std::vector<std::pair<int, int>> GetChildren() const;
 
     // fields
+    std::uint32_t m_level;
     std::vector<std::pair<int, int>> m_children;
     Ptr m_parent;
     InputMap::Ptr m_input_map;

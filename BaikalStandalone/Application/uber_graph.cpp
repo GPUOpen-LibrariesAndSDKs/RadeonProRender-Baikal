@@ -22,11 +22,9 @@ THE SOFTWARE.
 
 #include "uber_graph.h"
 
-UberGraph::UberGraph(UberNode::InputMap::Ptr input_map)
+UberGraph::UberGraph(Baikal::InputMap::Ptr input_map)
 {
-    m_trees.push_back(
-        UberTree::Create(
-            UberNode::Create(input_map, nullptr)));
+    m_trees.push_back(UberTree::Create(input_map));
 }
 
 namespace {
@@ -80,11 +78,6 @@ void UberGraph::AddTree(UberTree::Ptr tree)
     m_trees.push_back(tree);
 }
 
-void UberGraph::AddTree(UberNode::Ptr node)
-{
-    m_trees.push_back(UberTree::Create(node));
-}
-
 bool UberGraph::AddSubTree(int id, int arg_number, UberTree::Ptr tree)
 {
     for (auto item : m_trees)
@@ -96,9 +89,4 @@ bool UberGraph::AddSubTree(int id, int arg_number, UberTree::Ptr tree)
         }
     }
     return false;
-}
-
-bool UberGraph::AddSubTree(int id, int arg_number, UberNode::Ptr node)
-{
-    return AddSubTree(id, arg_number, UberTree::Create(node));
 }

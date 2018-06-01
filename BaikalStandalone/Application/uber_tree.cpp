@@ -1,5 +1,5 @@
 /**********************************************************************
-Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2017 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,10 @@ THE SOFTWARE.
 #include <algorithm>
 #include <queue>
 
-void UberTree::BuildTree(UberNode::Ptr root)
+void UberTree::BuildTree(InputMap::Ptr input_map)
 {
     std::queue<UberNode::Ptr> queue;
-    queue.push(root);
+    queue.push(UberNode::Create(input_map, nullptr));
 
     while (!queue.empty())
     {
@@ -63,7 +63,7 @@ bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::
     }
 
     // build tree for input node
-    Ptr tree = Create(node);
+    Ptr tree = Create(node->m_input_map);
     // add this tree as sub tree to main tree
     return AddSubTree(id, arg_number, tree);
 }
@@ -86,7 +86,14 @@ bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::
     if (arg_number >= (std::uint32_t)(*iter)->GetType())
         return false;
 
-    (*iter)->SetChild(arg_number, m_nodes[0]->GetId());
+    (*iter)->SetChild(arg_number, tree->m_nodes[0]->GetId());
+
+    int levels_num = GetLevelsNum();
+    for (auto node : tree->m_nodes)
+        node->m_level += levels_num;
+
+    m_nodes.insert(m_nodes.end(), tree->m_nodes.begin(), tree->m_nodes.end());
+
     // update material input maps, if tree is valid
     if (IsValid())
     {
@@ -95,6 +102,15 @@ bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::
     return true;
 }
 
+std::uint32_t UberTree::GetLevelsNum() const
+{
+    std::uint32_t levels_num = 0;
+    for (auto item : m_nodes)
+    {
+        levels_num = std::max(levels_num, item->m_level);
+    }
+    return levels_num;
+}
 void UberTree::ExcludeSubTree(UberNode::Ptr node)
 {
     int id = node->GetId();
@@ -172,20 +188,20 @@ UberNode::Ptr UberTree::FindNode(int id)
     return *iter;
 }
 
-UberTree::UberTree(UberNode::Ptr node)
-{ BuildTree(node); }
+UberTree::UberTree(InputMap::Ptr input_map)
+{ BuildTree(input_map); }
 
 
 namespace {
     struct UberTreeConcrete: public UberTree
     {
-        UberTreeConcrete(UberNode::Ptr node) :
+        UberTreeConcrete(InputMap::Ptr node) :
             UberTree(node)
         {   }
     };
 }
 
-UberTree::Ptr UberTree::Create(UberNode::Ptr node)
+UberTree::Ptr UberTree::Create(InputMap::Ptr input_map)
 {
-    return std::make_shared<UberTreeConcrete>(node);
+    return std::make_shared<UberTreeConcrete>(input_map);
 }

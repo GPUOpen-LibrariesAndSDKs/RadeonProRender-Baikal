@@ -33,8 +33,9 @@ class UberTree
     friend class UberGraph;
 public:
     using Ptr = std::shared_ptr<UberTree>;
+    using InputMap = UberNode::InputMap;
 
-    static Ptr Create(UberNode::Ptr node);
+    static Ptr Create(InputMap::Ptr input_map);
 
     // 'id' is an id ofthe node to add subtree ('node' or 'tree' arg)
     // 'arg_number' is a number of the argument in
@@ -50,14 +51,16 @@ public:
 
     int GetRootId() const;
 
+    std::uint32_t GetLevelsNum() const;
+
     // synchronize 
     void Synchronize();
 protected:
-    UberTree(UberNode::Ptr node);
+    UberTree(InputMap::Ptr input_map);
 
     UberNode::Ptr FindNode(int id);
 private:
-    void BuildTree(UberNode::Ptr root);
+    void BuildTree(InputMap::Ptr root);
 
     std::vector<UberNode::Ptr> m_nodes;
 };
