@@ -356,7 +356,7 @@ TEST_F(MaterialTest, Material_NormalMapping)
     ASSERT_EQ(rprMaterialNodeSetInputN_ext(sphere_mtl, RPR_UBER_MATERIAL_NORMAL, inputTexture), RPR_SUCCESS);
     AddMaterialNode("tex", inputTexture);
 
-    Render();
+    Render(256);
     SaveAndCompare();
 
 }
@@ -371,7 +371,7 @@ TEST_F(MaterialTest, Material_BumpMapping)
     ASSERT_EQ(rprMaterialNodeSetInputN_ext(sphere_mtl, RPR_UBER_MATERIAL_BUMP, inputTexture), RPR_SUCCESS);
     AddMaterialNode("tex", inputTexture);
 
-    Render();
+    Render(256);
     SaveAndCompare();
 
 }
