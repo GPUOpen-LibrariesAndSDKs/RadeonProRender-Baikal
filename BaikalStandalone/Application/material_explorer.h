@@ -54,7 +54,7 @@ public:
         NodeLink(int input_idx_, int input_slot_, int output_idx_, int output_slot_);
     };
 
-    void DrawInput(const ImVec2 &win_size);
+    static void DrawInput(const ImVec2 &win_size);
 
 protected:
     InputMapExplorer(Baikal::InputMap::Ptr input_map);
