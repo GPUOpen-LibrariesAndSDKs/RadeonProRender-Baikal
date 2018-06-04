@@ -633,7 +633,7 @@ namespace Baikal
         gatherkernel.SetArg(argc++, output_indices);
         gatherkernel.SetArg(argc++, m_render_data->hitcount);
         gatherkernel.SetArg(argc++, m_render_data->paths);
-        gatherkernel.SetArg(argc++, (int)(pass == GetMaxBounces()));
+        gatherkernel.SetArg(argc++, (pass == (int)GetMaxBounces()));
         gatherkernel.SetArg(argc++, output);
 
         // Run shading kernel
