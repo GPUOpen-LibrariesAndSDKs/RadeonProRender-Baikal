@@ -17,8 +17,19 @@ UberMaterialObject::UberMaterialObject() :
 
 void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonRays::float4 & val)
 {
-    auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
-    m_mat->SetInputValue(input_name, inputMap);
+    // Optimization: if we create a new input, it will take additional time for kernel compilation,
+    // so we try to find existing input and set a new float value
+    auto& input = m_mat->GetInput(input_name, Baikal::Material::InputType::kInputMap);
+    if (input.value.input_map_value->m_type == Baikal::InputMap::InputMapType::kConstantFloat3)
+    {
+        auto float_map = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(input.value.input_map_value);
+        float_map->SetValue(val);
+    }
+    else
+    {
+        auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
+        m_mat->SetInputValue(input_name, inputMap);
+    }
 }
 
 void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val) 

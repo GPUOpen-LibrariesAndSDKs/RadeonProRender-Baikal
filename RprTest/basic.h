@@ -47,7 +47,7 @@ extern char** g_argv;
 class BasicTest : public ::testing::Test
 {
 public:
-    static std::uint32_t constexpr kRenderIterations = 256;
+    static std::uint32_t constexpr kRenderIterations = 32;
     static std::uint32_t constexpr kOutputWidth = 256;
     static std::uint32_t constexpr kOutputHeight = 256;
 
@@ -548,10 +548,10 @@ public:
         }
     }
 
-    void Render() const
+    void Render(std::uint32_t num_iterations = kRenderIterations) const
     {
         ClearFramebuffer();
-        for (std::uint32_t i = 0; i < kRenderIterations; ++i)
+        for (std::uint32_t i = 0; i < num_iterations; ++i)
         {
             ASSERT_EQ(rprContextRender(m_context), RPR_SUCCESS);
         }

@@ -52,6 +52,8 @@ namespace Baikal
         m_material_collector.Clear();
         m_texture_collector.Clear();
         m_volume_collector.Clear();
+        m_input_maps_collector.Clear();
+        m_input_map_leafs_collector.Clear();
 
         // Create shape and light iterators
         auto shape_iter = scene->CreateShapeIterator();
