@@ -80,7 +80,15 @@ add_dependencies(BaikalStandalone ResourcesDir BaikalKernelsDir BaikalStandalone
 
 add_custom_command(TARGET BaikalStandalone POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<1:${BAIKAL_STANDALONE_COPY_FILES}>"
+        ${BAIKALSTANDALONE_COPY_FILES}
         "$<TARGET_FILE_DIR:BaikalStandalone>"
-    COMMAND_EXPAND_LISTS
 )
+
+install(TARGETS BaikalStandalone RUNTIME DESTINATION bin)
+install(FILES ${BAIKALSTANDALONE_COPY_FILES} DESTINATION bin)
+install(DIRECTORY ${RESOURCES_SRC} DESTINATION .)
+install(DIRECTORY ${BAIKAL_KERNELS_SRC} DESTINATION Baikal)
+install(DIRECTORY ${BAIKALSTANDALONE_KERNELS_SRC} DESTINATION BaikalStandalone)
+
+#TODO: add install(TARGETS RadeonRays RUNTIME DESTINATION bin) to CMakeLists.txt of RadeonRays, and remove the following line
+install(FILES $<TARGET_FILE_DIR:BaikalStandalone>/RadeonRays.dll DESTINATION bin)

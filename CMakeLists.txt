@@ -81,33 +81,16 @@ endif (BAIKAL_ENABLE_RPR)
 set (BAIKAL_COPY_FILES
     "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
     "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
-    $<$<CONFIG:Debug>:
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-    >
-    $<$<NOT:$<CONFIG:Debug>>:
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
-    >
 )
-
-if (BAIKAL_ENABLE_STANDALONE)
-    set(BAIKAL_STANDALONE_COPY_FILES ${BAIKAL_COPY_FILES})
-
-    find_package(GLFW3 REQUIRED)
-
-    add_subdirectory(BaikalStandalone)
-endif (BAIKAL_ENABLE_STANDALONE)
-
-if (BAIKAL_ENABLE_TESTS)
-    set(BAIKAL_TESTS_COPY_FILES ${BAIKAL_COPY_FILES})
-
-    add_subdirectory(Gtest)
-    add_subdirectory(BaikalTest)
-# Temporarily remove RprTest from build
-# it will be rewrited in gtest
-#    if (BAIKAL_ENABLE_RPR)
-#        add_subdirectory(RprTest)
-#    endif (BAIKAL_ENABLE_RPR)
-endif (BAIKAL_ENABLE_TESTS)
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    list(APPEND BAIKAL_COPY_FILES 
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
+    )
+else ()
+    list(APPEND BAIKAL_COPY_FILES 
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
+    )
+endif ()
 
 add_custom_target(ResourcesDir)
 add_custom_target(BaikalKernelsDir)
@@ -131,3 +114,23 @@ if (WIN32)
         DEPENDS ${BAIKAL_KERNELS_DST}
     )
 endif ()
+
+if (BAIKAL_ENABLE_STANDALONE)
+    set(BAIKALSTANDALONE_COPY_FILES ${BAIKAL_COPY_FILES})
+
+    find_package(GLFW3 REQUIRED)
+
+    add_subdirectory(BaikalStandalone)
+endif (BAIKAL_ENABLE_STANDALONE)
+
+if (BAIKAL_ENABLE_TESTS)
+    set(BAIKAL_TESTS_COPY_FILES ${BAIKAL_COPY_FILES})
+
+    add_subdirectory(Gtest)
+    add_subdirectory(BaikalTest)
+# Temporarily remove RprTest from build
+# it will be rewrited in gtest
+#    if (BAIKAL_ENABLE_RPR)
+#        add_subdirectory(RprTest)
+#    endif (BAIKAL_ENABLE_RPR)
+endif (BAIKAL_ENABLE_TESTS)
