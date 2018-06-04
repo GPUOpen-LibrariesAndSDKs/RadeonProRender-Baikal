@@ -12,7 +12,9 @@ set(APPLICATION_SOURCES
     Application/uber_tree.h
     Application/uber_tree.cpp
     Application/uber_graph.h
-    Application/uber_graph.cpp)
+    Application/uber_graph.cpp
+    Application/material_explorer.h
+    Application/material_explorer.cpp)
 
 set(IMGUI_SORUCES
     ImGUI/imconfig.h

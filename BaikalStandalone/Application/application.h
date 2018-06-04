@@ -26,7 +26,6 @@
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
 #include "image_io.h"
-#include "uber_graph.h"
 
 #include <future>
 #include <memory>
@@ -56,9 +55,6 @@ namespace Baikal
         static void OnMouseMove(GLFWwindow* window, double x, double y);
         static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
         static void OnMouseScroll(GLFWwindow* window, double x, double y);
-
-        using LayerDesc = std::pair<UberV2Material::Layers, std::vector<std::string>>;
-        static std::vector<LayerDesc> GetUberLayersDesc();
 
         AppSettings m_settings;
         std::unique_ptr<AppClRender> m_cl;
@@ -100,7 +96,6 @@ namespace Baikal
 
         int m_material_id;
         UberV2Material::Ptr m_material;
-        UberGraph::Ptr m_uber_graph;
         std::unique_ptr<ImageIo> m_image_io;
     };
 }
