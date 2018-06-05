@@ -88,12 +88,19 @@ MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
 
 void MaterialExplorer::DrawExplorer(ImVec2 win_size)
 {
+    const float NODE_SLOT_RADIUS = 4.0f;
+    const ImVec2 NODE_WINDOW_PADDING(8.0f, 8.0f);
+    const int left_side_width = 150;
+
+    // static variables
+    static bool show_grid = true;
     static int input_selected = -1;
+    static ImVec2 scrolling = ImVec2(0.0f, 0.0f);
 
     ImGui::SetNextWindowSize(win_size, ImGuiSetCond_FirstUseEver);
 
     // Draw a list of layers on the left side
-    ImGui::BeginChild("layers_list", ImVec2(150, 0));
+    ImGui::BeginChild("layers_list", ImVec2(left_side_width, 0));
     ImGui::Text("Layers:");
     ImGui::Separator();
 
@@ -115,6 +122,44 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
     }
 
     ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+
+    // draw canvas with inputs graph
+    ImGui::Text("Input map graph");
+    ImGui::SameLine(ImGui::GetWindowWidth() - left_side_width);
+    ImGui::Checkbox("Show grid", &show_grid);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1, 1));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(IM_COL32(60, 60, 70, 200)));
+    ImGui::BeginChild("scrolling_region", ImVec2(0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
+    // ImGui::PushItemWidth(120.0f);
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    // show grid
+    if (show_grid)
+    {
+        ImU32 GRID_COLOR = IM_COL32(200, 200, 200, 40);
+        float GRID_SZ = 64.0f;
+        ImVec2 win_pos = ImGui::GetCursorScreenPos();
+        ImVec2 canvas_sz = ImGui::GetWindowSize();
+        for (float x = fmodf(scrolling.x, GRID_SZ); x < canvas_sz.x; x += GRID_SZ)
+            draw_list->AddLine(ImVec2(x, 0.0f) + win_pos, ImVec2(x, canvas_sz.y) + win_pos, GRID_COLOR);
+        for (float y = fmodf(scrolling.y, GRID_SZ); y < canvas_sz.y; y += GRID_SZ)
+            draw_list->AddLine(ImVec2(0.0f, y) + win_pos, ImVec2(canvas_sz.x, y) + win_pos, GRID_COLOR);
+    }
+
+    // Display links
+    draw_list->ChannelsSplit(2);
+    draw_list->ChannelsSetCurrent(0); // Background
+
+
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(2);
+    ImGui::EndGroup();
 }
 
 std::vector<MaterialExplorer::LayerDesc> MaterialExplorer::GetUberLayersDesc()
@@ -173,3 +218,34 @@ std::vector<MaterialExplorer::LayerDesc> MaterialExplorer::GetUberLayersDesc()
         },
     };
 }
+
+////////////////////////////////////////////////////////
+// MaterialExplorer::Node implementation
+////////////////////////////////////////////////////////
+
+MaterialExplorer::Node::Node(
+    int id_, const std::string& name_,
+    const ImVec2& pos_, float value_,
+    const ImVec4& color_, int inputs_count_, int outputs_count_) :
+    id(id_), name(name_), pos(pos_), value(value_),color(color_),
+    inputs_count(inputs_count_), outputs_count(outputs_count_)
+{  }
+
+ImVec2 MaterialExplorer::Node::GetInputSlotPos(int slot_no) const
+{ 
+    return ImVec2(pos.x, pos.y + size.y * ((float)slot_no + 1) / ((float)inputs_count + 1));
+}
+
+ImVec2 MaterialExplorer::Node::GetOutputSlotPos(int slot_no) const
+{
+    return ImVec2(pos.x + size.x, pos.y + size.y * ((float)slot_no + 1) / ((float)outputs_count + 1));
+}
+
+
+////////////////////////////////////////////////////////
+// MaterialExplorer::NodeLink implementation
+////////////////////////////////////////////////////////
+
+MaterialExplorer::NodeLink::NodeLink(int input_id_, int input_slot_, int output_id_, int output_slot_) :
+    input_id(input_id_), input_slot(input_slot_), output_id(output_id_), output_slot(output_slot_)
+{   }

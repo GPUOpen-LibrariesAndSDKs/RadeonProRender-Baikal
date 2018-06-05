@@ -43,6 +43,34 @@ protected:
     MaterialExplorer(UberV2Material::Ptr material);
 
 private:
+
+    struct Node
+    {
+        int     id;
+        std::string name;
+        ImVec2  pos, size;
+        float   value;
+        ImVec4  color;
+        int     inputs_count, outputs_count;
+
+        Node(
+            int id, const std::string& name,
+            const ImVec2& pos, float value,
+            const ImVec4& color, int inputs_count, int outputs_count);
+
+        ImVec2 GetInputSlotPos(int slot_no) const;
+        ImVec2 GetOutputSlotPos(int slot_no) const;
+    };
+    struct NodeLink
+    {
+        int input_id;
+        int input_slot;
+        int output_id;
+        int output_slot;
+
+        NodeLink(int input_id_, int input_slot_, int output_id_, int output_slot_);
+    };
+
     static std::vector<LayerDesc> GetUberLayersDesc();
 
     UberV2Material::Ptr m_material;
