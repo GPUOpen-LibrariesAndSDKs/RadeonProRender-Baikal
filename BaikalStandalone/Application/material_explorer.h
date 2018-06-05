@@ -25,53 +25,19 @@
 #include "SceneGraph/uberv2material.h"
 #include "uber_graph.h"
 
-class InputMapExplorer
-{
-public:
-    using Ptr = std::shared_ptr<InputMapExplorer>;
-
-    static Ptr Create(Baikal::InputMap::Ptr input_map);
-
-    struct Node
-    {
-        int     id;
-        std::string name;
-        ImVec2  pos, size;
-        float   value;
-        ImVec4  color;
-        int     inputs_count, outputs_count;
-
-        Node(int id_, const std::string& name_, const ImVec2& pos_, float value_, const ImVec4& color_, int inputs_count_, int outputs_count_);
-
-        ImVec2 GetInputSlotPos(int slot_no) const;
-        ImVec2 GetOutputSlotPos(int slot_no) const;
-    };
-
-    struct NodeLink
-    {
-        int input_idx, input_slot, output_idx, output_slot;
-
-        NodeLink(int input_idx_, int input_slot_, int output_idx_, int output_slot_);
-    };
-
-    static void DrawInput(const ImVec2 &win_size);
-
-protected:
-    InputMapExplorer(Baikal::InputMap::Ptr input_map);
-
-private:
-    UberGraph::Ptr m_uber_graph;
-    ImVector<Node> nodes;
-    ImVector<NodeLink> links;
-};
-
 class MaterialExplorer
 {
 public:
+    using InputMap = Baikal::InputMap;
+    using Ptr = std::shared_ptr<MaterialExplorer>;
     using LayerDesc = std::pair<Baikal::UberV2Material::Layers, std::vector<std::string>>;
 
+    static Ptr Create(InputMap::Ptr input_map);
     static std::vector<LayerDesc> GetUberLayersDesc();
 
+protected:
+    MaterialExplorer(InputMap::Ptr input_map);
+
 private:
-    InputMapExplorer::Ptr m_input;
+    UberGraph::Ptr m_uber_graph;
 };

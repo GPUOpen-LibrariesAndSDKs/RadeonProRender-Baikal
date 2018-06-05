@@ -793,7 +793,6 @@ namespace Baikal
                 }
 
                 ImVec2 explorer_win_size(win_size.x, win_size.y);
-                InputMapExplorer::DrawInput(explorer_win_size);
             }
             ImGui::Render();
         }
