@@ -37,7 +37,7 @@ public:
 
     static Ptr Create(UberV2Material::Ptr material);
 
-    void ChangeLayer();
+    void DrawExplorer(ImVec2 win_size);
 
 protected:
     MaterialExplorer(UberV2Material::Ptr material);

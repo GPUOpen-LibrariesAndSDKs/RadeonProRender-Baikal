@@ -86,27 +86,35 @@ MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
         m_layers.push_back(find_layer(UberV2Material::kShadingNormalLayer));
 }
 
-void MaterialExplorer::ChangeLayer()
+void MaterialExplorer::DrawExplorer(ImVec2 win_size)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+    static int input_selected = -1;
 
-    ImGui::OpenPopup("Layers_desc");
-    if (ImGui::BeginPopup("Layers_desc"))
+    ImGui::SetNextWindowSize(win_size, ImGuiSetCond_FirstUseEver);
+
+    // Draw a list of layers on the left side
+    ImGui::BeginChild("layers_list", ImVec2(150, 0));
+    ImGui::Text("Layers:");
+    ImGui::Separator();
+
+    int offset = 0;
+    for (size_t i = 0; i < m_layers.size(); i++, offset)
     {
-        ImGui::Text("Layers desc");
-        ImGui::Separator();
-
-        for (const auto &item : m_layers)
+        const auto& inputs = m_layers[i].second;
+        for (size_t j = 0; j < inputs.size(); j++)
         {
-            for (const auto& input : item.second)
-            {
-                if (ImGui::MenuItem(input.c_str(), NULL, false, false))
-                {   }
-            }
+            int id = offset + (int)j;
+            ImGui::PushID(id);
+
+            if (ImGui::Selectable(inputs[j].c_str(), input_selected == id))
+                input_selected = id;
+
+            ImGui::PopID();
         }
+        offset += (int)inputs.size();
     }
-    ImGui::EndPopup();
-    ImGui::PopStyleVar();
+
+    ImGui::EndChild();
 }
 
 std::vector<MaterialExplorer::LayerDesc> MaterialExplorer::GetUberLayersDesc()
