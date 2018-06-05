@@ -771,6 +771,7 @@ namespace Baikal
                         std::dynamic_pointer_cast<UberV2Material>(
                             shape->GetMaterial());
 
+                    m_material_explorer = MaterialExplorer::Create(m_material);
                     m_object_name = shape->GetName();
                 }
             }
@@ -793,6 +794,7 @@ namespace Baikal
                 }
 
                 ImVec2 explorer_win_size(win_size.x, win_size.y);
+                m_material_explorer->ChangeLayer();
             }
             ImGui::Render();
         }

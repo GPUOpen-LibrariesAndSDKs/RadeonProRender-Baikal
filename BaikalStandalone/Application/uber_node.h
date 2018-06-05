@@ -21,7 +21,7 @@
  THE SOFTWARE.
  ********************************************************************/
 
-#pragma once 
+#pragma once
 
 #include "Baikal/SceneGraph/inputmap.h"
 #include "Baikal/SceneGraph/inputmaps.h"

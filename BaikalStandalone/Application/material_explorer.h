@@ -21,6 +21,8 @@
  THE SOFTWARE.
  ********************************************************************/
 
+#pragma once
+
 #include "ImGUI/imgui.h"
 #include "SceneGraph/uberv2material.h"
 #include "uber_graph.h"
@@ -29,15 +31,21 @@ class MaterialExplorer
 {
 public:
     using InputMap = Baikal::InputMap;
+    using UberV2Material = Baikal::UberV2Material;
     using Ptr = std::shared_ptr<MaterialExplorer>;
     using LayerDesc = std::pair<Baikal::UberV2Material::Layers, std::vector<std::string>>;
 
-    static Ptr Create(InputMap::Ptr input_map);
-    static std::vector<LayerDesc> GetUberLayersDesc();
+    static Ptr Create(UberV2Material::Ptr material);
+
+    void ChangeLayer();
 
 protected:
-    MaterialExplorer(InputMap::Ptr input_map);
+    MaterialExplorer(UberV2Material::Ptr material);
 
 private:
+    static std::vector<LayerDesc> GetUberLayersDesc();
+
+    UberV2Material::Ptr m_material;
+    std::vector<LayerDesc> m_layers;
     UberGraph::Ptr m_uber_graph;
 };

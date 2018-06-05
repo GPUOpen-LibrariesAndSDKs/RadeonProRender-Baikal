@@ -25,6 +25,7 @@
 #include "Application/app_utils.h"
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
+#include "Application/material_explorer.h"
 #include "image_io.h"
 
 #include <future>
@@ -96,6 +97,7 @@ namespace Baikal
 
         int m_material_id;
         UberV2Material::Ptr m_material;
+        MaterialExplorer::Ptr m_material_explorer;
         std::unique_ptr<ImageIo> m_image_io;
     };
 }

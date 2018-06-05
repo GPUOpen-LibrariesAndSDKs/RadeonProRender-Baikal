@@ -21,6 +21,8 @@
  THE SOFTWARE.
  ********************************************************************/
 
+#pragma once
+
 #include "uber_tree.h"
 
 class UberGraph

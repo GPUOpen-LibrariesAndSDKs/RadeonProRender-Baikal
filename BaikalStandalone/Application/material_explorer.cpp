@@ -23,10 +23,11 @@ THE SOFTWARE.
 #include "material_explorer.h"
 #include <memory>
 
-using namespace Baikal;
+static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs)
+{ return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 
-static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
-static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
+static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs)
+{ return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
 
 ////////////////////////////////////////////////////////
 //// MaterialExplorer implementation
@@ -36,20 +37,77 @@ namespace
 {
     struct MaterialExplorerConcrete : public MaterialExplorer
     {
-        MaterialExplorerConcrete(InputMap::Ptr input_map) :
-            MaterialExplorer(input_map)
+        MaterialExplorerConcrete(UberV2Material::Ptr material) :
+            MaterialExplorer(material)
         {   }
     };
 }
 
-MaterialExplorer::Ptr MaterialExplorer::Create(InputMap::Ptr input_map)
+MaterialExplorer::Ptr MaterialExplorer::Create(UberV2Material::Ptr material)
 {
-    return std::make_shared<MaterialExplorer>(MaterialExplorerConcrete(input_map));
+    return std::make_shared<MaterialExplorer>(MaterialExplorerConcrete(material));
 }
 
-MaterialExplorer::MaterialExplorer(InputMap::Ptr input_map) :
-    m_uber_graph(UberGraph::Create(input_map))
-{   }
+MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
+    m_material(material)
+{
+    auto layers = m_material->GetLayers();
+    auto layers_desc = GetUberLayersDesc();
+
+    auto find_layer =
+        [&layers_desc](UberV2Material::Layers layers)
+        {
+            return *(std::find_if(
+                layers_desc.begin(), layers_desc.end(),
+                [layers](LayerDesc desc)
+                {
+                    if (static_cast<std::uint32_t>(desc.first) == layers)
+                        return true;
+                    return false;
+                }));
+        };
+
+    // collect all supported layers
+    if (layers & UberV2Material::kEmissionLayer)
+        m_layers.push_back(find_layer(UberV2Material::kEmissionLayer));
+    if (layers & UberV2Material::kTransparencyLayer)
+        m_layers.push_back(find_layer(UberV2Material::kTransparencyLayer));
+    if (layers & UberV2Material::kCoatingLayer)
+        m_layers.push_back(find_layer(UberV2Material::kCoatingLayer));
+    if (layers & UberV2Material::kReflectionLayer)
+        m_layers.push_back(find_layer(UberV2Material::kReflectionLayer));
+    if (layers & UberV2Material::kDiffuseLayer)
+        m_layers.push_back(find_layer(UberV2Material::kDiffuseLayer));
+    if (layers & UberV2Material::kRefractionLayer)
+        m_layers.push_back(find_layer(UberV2Material::kRefractionLayer));
+    if (layers & UberV2Material::kSSSLayer)
+        m_layers.push_back(find_layer(UberV2Material::kSSSLayer));
+    if (layers & UberV2Material::kShadingNormalLayer)
+        m_layers.push_back(find_layer(UberV2Material::kShadingNormalLayer));
+}
+
+void MaterialExplorer::ChangeLayer()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+
+    ImGui::OpenPopup("Layers_desc");
+    if (ImGui::BeginPopup("Layers_desc"))
+    {
+        ImGui::Text("Layers desc");
+        ImGui::Separator();
+
+        for (const auto &item : m_layers)
+        {
+            for (const auto& input : item.second)
+            {
+                if (ImGui::MenuItem(input.c_str(), NULL, false, false))
+                {   }
+            }
+        }
+    }
+    ImGui::EndPopup();
+    ImGui::PopStyleVar();
+}
 
 std::vector<MaterialExplorer::LayerDesc> MaterialExplorer::GetUberLayersDesc()
 {
