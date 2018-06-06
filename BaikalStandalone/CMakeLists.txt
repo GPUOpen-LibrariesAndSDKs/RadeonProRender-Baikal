@@ -11,8 +11,6 @@ set(APPLICATION_SOURCES
     Application/uber_node.cpp
     Application/uber_tree.h
     Application/uber_tree.cpp
-    Application/uber_graph.h
-    Application/uber_graph.cpp
     Application/material_explorer.h
     Application/material_explorer.cpp)
 

@@ -63,6 +63,8 @@ public:
     // Set InputMap argument
     virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number = 0);
 
+    std::uint32_t GetArgNumber();
+
     std::uint32_t GetId() const
     { return m_id; }
 
@@ -70,12 +72,11 @@ public:
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
 
-    void SetChild(std::uint32_t arg_number, int child_id);
-    std::vector<std::pair<int, int>> GetChildren() const;
+    void SetChild(std::uint32_t arg_number, Ptr child);
+    Ptr GetChildren(std::uint32_t arg_number) const;
 
     // fields
-    std::uint32_t m_level;
-    std::vector<std::pair<int, int>> m_children;
+    std::vector<Ptr> m_children;
     Ptr m_parent;
     InputMap::Ptr m_input_map;
 
@@ -229,5 +230,5 @@ protected:
     NodeType GetType() const override
     { return NodeType::kNoneArgs; }
 
-    UberNode_Sampler(InputMap::Ptr input_map, UberNode::Ptr parent);
+    UberNode_Sampler(InputMap::Ptr input_map, UberNode::Ptr paren);
 };

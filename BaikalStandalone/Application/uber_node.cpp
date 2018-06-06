@@ -138,7 +138,7 @@ InputMap::Ptr UberNode_Arg::GetArg(std::uint32_t arg_number)
         throw std::logic_error(
             "UberNode_Arg::GetArg(...): attempt to set arg_number distinguish");
 
-    if (m_children[arg_number].second < 0)
+    if (m_children[arg_number] < 0)
         return nullptr;
 
     switch (m_input_map->m_type)
@@ -173,9 +173,6 @@ void UberNode_Arg::SetArg(InputMap::Ptr input_map, std::uint32_t arg_number)
     if (arg_number != 0)
         throw std::logic_error(
             "UberNode_Arg::SetArg(...): attempt to set arg_number distinguish");
-
-    m_children[arg_number].second = input_map ?
-        input_map->GetId() : INVALID_ID;
 
     if (!input_map)
     { return; }
@@ -231,17 +228,17 @@ bool UberNode::IsValid() const
 
     for (size_t i = 0; i < arg_number; i++)
     {
-        if (m_children[i].second < 0)
+        if (m_children[i] < 0)
             return false;
     }
 
     return true;
 }
 
-void UberNode::SetChild(std::uint32_t arg_number, int child_id)
+void UberNode::SetChild(std::uint32_t arg_number, Ptr child)
 {
     if ((size_t)arg_number < m_parent->m_children.size())
-        m_parent->m_children[arg_number].second = child_id;
+        m_parent->m_children[arg_number] = child;
 }
 
 ////////////////////////////////////////
@@ -311,11 +308,11 @@ void UberNode_Matmul::SetMatrix(const RadeonRays::matrix &mat4)
 
 InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
 {
-    if (arg_number > 2)
+    if (arg_number > MAX_ARGS - 1)
         throw std::logic_error(
             "UberNode_TwoArgs::GetArg(...): 'arg_number' can not be bigger than 1");
 
-    if (m_children[arg_number].second < 0)
+    if (m_children[arg_number] < 0)
         return nullptr;
 
     if (arg_number == 0)
@@ -326,11 +323,9 @@ InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
 
 void UberNode_TwoArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
-    if (arg_number > 2)
+    if (arg_number > MAX_ARGS - 1)
         throw std::logic_error(
             "UberNode_TwoArgs::SetArg(...): 'arg_number' can not be bigger than 1");
-
-    m_children[arg_number].second = !arg ? INVALID_ID : arg->GetId();
 
     if (!arg)
         return;
@@ -451,11 +446,11 @@ void UberNode_Sampler::SetValue(Texture::Ptr value)
 
 InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
 {
-    if (arg_number > 2)
+    if (arg_number > MAX_ARGS - 1)
         throw std::logic_error(
             "UberNode_ThreeArgs::GetArg(...): 'arg_number can not be bigger than two");
 
-    if (m_children[arg_number].second < 0)
+    if (m_children[arg_number] < 0)
         return nullptr;
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
@@ -474,14 +469,9 @@ InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
 // Set UberNode_ThreeArgs child
 void UberNode_ThreeArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
-    if (arg_number > 2)
+    if (arg_number > MAX_ARGS - 1)
         throw std::logic_error(
             "UberNode_ThreeArgs::SetArg(...): 'arg_number can not be bigger than two");
-
-    m_children[arg_number].second = !arg ? INVALID_ID : arg->GetId();
-
-    if (m_children[arg_number].second == INVALID_ID)
-        return;
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(arg);
 
@@ -581,27 +571,42 @@ void UberNode::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
     (void)arg_number;
 }
 
-std::vector<std::pair<int, int>> UberNode::GetChildren() const
-{ return m_children; }
+UberNode::Ptr UberNode::GetChildren(std::uint32_t arg_number) const
+{
+    if ((size_t)arg_number > m_children.size())
+        throw std::logic_error("UberNode::GetChildren(...): attempt to get nonexistent 'arg_number'");
+
+    return m_children[arg_number];
+}
 
 // input map data type accessor
 InputMap::InputMapType UberNode::GetDataType() const
 { return m_input_map->m_type; }
 
+std::uint32_t UberNode::GetArgNumber()
+{
+    switch (GetType())
+    {
+        case NodeType::kNoneArgs:
+            return 0;
+        case NodeType::kOneArg:
+            return 1;
+        case NodeType::kTwoArgs:
+            return 2;
+        case NodeType::kThreeArgs:
+            return 3;
+        default:
+            return 0;
+    }
+}
+
 UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent) :
     m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
-{
-    if (parent)
-        m_level = parent->m_level + 1;
-    else
-        m_level = 1;
-}
+{  }
 
 UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
-{
-    m_children.push_back(std::make_pair<int, int>(0, -1));
-}
+{   }
 UberNode_Select::UberNode_Select(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode_Arg(input_map, parent)
 {   }
@@ -613,10 +618,7 @@ UberNode_Matmul::UberNode_Matmul(InputMap::Ptr input_map, UberNode::Ptr parent) 
 {   }
 UberNode_TwoArgs::UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
-{
-    m_children.push_back(std::make_pair<int, int>(0, -1));
-    m_children.push_back(std::make_pair<int, int>(1, -1));
-}
+{   }
 UberNode_Lerp::UberNode_Lerp(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode_TwoArgs(input_map, parent)
 {   }
@@ -625,12 +627,8 @@ UberNode_Shuffle2::UberNode_Shuffle2(InputMap::Ptr input_map, UberNode::Ptr pare
 {   }
 UberNode_ThreeArgs::UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
-{
-    m_children.push_back(std::make_pair<int, int>(0, -1));
-    m_children.push_back(std::make_pair<int, int>(1, -1));
-    m_children.push_back(std::make_pair<int, int>(2, -1));
-}
-UberNode_Float::UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent) : 
+{   }
+UberNode_Float::UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
 {   }
 UberNode_Float3::UberNode_Float3(InputMap::Ptr input_map, UberNode::Ptr parent) :

@@ -26,167 +26,121 @@ THE SOFTWARE.
 
 void UberTree::BuildTree(InputMap::Ptr input_map)
 {
+    auto root = UberNode::Create(input_map, nullptr);
     std::queue<UberNode::Ptr> queue;
-    queue.push(UberNode::Create(input_map, nullptr));
 
-    while (!queue.empty())
+    queue.push(root);
+
+    while (queue.empty())
     {
-        auto parent = queue.back();
-        for (int i = 0; i < (int)queue.front()->GetType(); i++)
+        auto node = queue.back();
+
+        for (auto i = 0u; i < node->GetArgNumber(); i++)
         {
-            auto child = UberNode::Create(parent->GetArg(i), parent);
-            parent->SetChild(i, child->GetId());
-            queue.push(child);
+            auto child = UberNode::Create(node->GetArg(i), node);
+            node->SetChild(i, child);
+            queue.push(node);
         }
-        m_nodes.push_back(queue.back());
         queue.pop();
     }
+
+}
+
+bool UberTree::AddTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree)
+{
+    if (arg_number > MAX_ARGS - 1)
+        return false;
+
+    UberNode::Ptr parent = nullptr;
+
+    for (const auto& node : m_nodes)
+    {
+        if (node->GetId() == id)
+            parent = node;
+    }
+
+    if (!parent)
+        return false; // there is no Node with such id (argument 'id')
+
+    auto child = tree->m_nodes.begin();
+
+    m_nodes.insert(
+        m_nodes.end(),
+        tree->m_nodes.begin(),
+        tree->m_nodes.end());
+
+    parent->SetChild(arg_number, *child);
+    (*child)->m_parent = parent;
+    tree = nullptr;
+    return true;
+}
+
+std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
+{
+    UberNode::Ptr removed_node = nullptr;
+
+    for (const auto& node : m_nodes)
+    {
+        if (node->GetId() == id)
+            removed_node = node;
+    }
+
+    if (!removed_node)
+    {
+        throw std::logic_error("UberTree::ExcludeNode(...): attempt to exclude nonexistent node");
+    }
+
+    auto parent = removed_node->m_parent;
+
+    if (parent)
+    {
+        for (auto i = 0u; i < parent->GetArgNumber(); i++)
+        {
+            auto child = parent->m_children[i];
+            if (child->GetId() == id)
+                parent->m_children[i] = nullptr;
+        }
+    }
+
+    std::vector<UberTree::Ptr> trees;
+    for (auto i = 0u; i < removed_node->GetArgNumber(); i++)
+    {
+        std::list<UberNode::Ptr> tree;
+        auto child = removed_node->GetChildren(i);
+        child->m_parent = nullptr;
+
+        std::queue<UberNode::Ptr> queue;
+        queue.push(child);
+        while (queue.empty())
+        {
+            for (auto i = 0u; i < queue.back()->GetArgNumber(); i++)
+            {
+                queue.push(queue.back()->m_children[i]);
+            }
+            m_nodes.remove(queue.back());
+            tree.push_back(queue.back());
+            queue.pop();
+        }
+
+        trees.push_back(std::make_shared<UberTree>(UberTree(tree)));
+    }
+
+    return trees;
 }
 
 bool UberTree::IsValid() const
 {
-    for (auto item : m_nodes)
+    for (const auto& node : m_nodes)
     {
-        if (!item->IsValid())
+        if (!node->IsValid())
             return false;
     }
     return true;
 }
 
-bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::Ptr node)
-{
-    // check that tree doesn't contain this node already
-    for (auto item : m_nodes)
-    {
-        if (item->GetId() == node->GetId())
-            return false;
-    }
-
-    // build tree for input node
-    Ptr tree = Create(node->m_input_map);
-    // add this tree as sub tree to main tree
-    return AddSubTree(id, arg_number, tree);
-}
-
-bool UberTree::AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree)
-{
-    auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
-        [id](UberNode::Ptr node) 
-        {
-            return node->GetId() == id;
-        });
-
-    if (iter == m_nodes.end())
-        return false;
-
-    // node should support arguments
-    if ((*iter)->GetType() == NodeType::kNoneArgs)
-        return false;
-    // check 'arg_number' and NodeType compatibility
-    if (arg_number >= (std::uint32_t)(*iter)->GetType())
-        return false;
-
-    (*iter)->SetChild(arg_number, tree->m_nodes[0]->GetId());
-
-    int levels_num = GetLevelsNum();
-    for (auto node : tree->m_nodes)
-        node->m_level += levels_num;
-
-    m_nodes.insert(m_nodes.end(), tree->m_nodes.begin(), tree->m_nodes.end());
-
-    // update material input maps, if tree is valid
-    if (IsValid())
-    {
-        (*iter)->SetArg(tree->m_nodes[0]->m_input_map, arg_number);
-    }
-    return true;
-}
-
-std::uint32_t UberTree::GetLevelsNum() const
-{
-    std::uint32_t levels_num = 0;
-    for (auto item : m_nodes)
-    {
-        levels_num = std::max(levels_num, item->m_level);
-    }
-    return levels_num;
-}
-void UberTree::ExcludeSubTree(UberNode::Ptr node)
-{
-    int id = node->GetId();
-
-    auto iter = std::find_if(
-        m_nodes.begin(), m_nodes.end(),
-        [id](UberNode::Ptr node)
-        { return id == node->GetId(); });
-
-    auto parent = (*iter)->m_parent;
-
-    // can not exclude root
-    if (parent == nullptr)
-        return;
-
-    int arg_num = 0;
-    for (size_t i = 0; i < parent->m_children.size(); i++)
-    {
-        if (parent->m_children[i].second == id)
-        {
-            parent->m_children[i].second = INVALID_ID;
-            parent->SetArg(nullptr, (std::uint32_t)i);
-            break;
-        }
-    }
-}
-
-int UberTree::GetRootId() const
-{
-    return (*m_nodes.begin())->GetId();
-}
-
-void UberTree::Synchronize()
-{
-    if (!IsValid())
-        return;
-
-    std::queue<UberNode::Ptr> queue;
-    queue.push(m_nodes[0]);
-
-    while (!queue.empty())
-    {
-        auto parent = queue.back()->m_parent;
-        if (!parent)
-        {
-            auto children = queue.back()->m_parent->GetChildren();
-            for (auto child : children)
-            {
-                int id = child.second;
-                auto node = FindNode(id);
-
-                if (node == nullptr)
-                {
-                    throw std::logic_error
-                        ("UberTree::Synchronize(...): missed necessary id in tree");
-                }
-
-                parent->SetArg(node->GetArg(child.first), child.first);
-            }
-        }
-        queue.pop();
-    }
-}
-
-UberNode::Ptr UberTree::FindNode(int id)
-{
-    auto iter = std::find_if(
-        m_nodes.begin(), m_nodes.end(),
-        [id](UberNode::Ptr node)
-        { return id == node->GetId(); });
-
-    if (iter == m_nodes.end())
-        return nullptr;
-
-    return *iter;
-}
+UberTree::UberTree(std::list<UberNode::Ptr> nodes) :
+    m_nodes(nodes)
+{   }
 
 UberTree::UberTree(InputMap::Ptr input_map)
 { BuildTree(input_map); }

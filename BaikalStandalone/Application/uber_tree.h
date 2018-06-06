@@ -24,6 +24,7 @@
 #pragma once 
 
 #include <functional>
+#include <list>
 #include "uber_node.h"
 
 class UberGraph;
@@ -42,25 +43,19 @@ public:
     // parent node (id of this node is argument "id") which will be set
     // this methods garanty adding items in Ubertree model,
     // and only if input value and tree itself are valid than update baikal material
-    bool AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberNode::Ptr node);
-    bool AddSubTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree);
-
-    void ExcludeSubTree(UberNode::Ptr node);
+    // Note: 'tree' arg will be nullptr if adding was successful
+    bool AddTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree);
 
     bool IsValid() const;
-
-    int GetRootId() const;
-
-    std::uint32_t GetLevelsNum() const;
-
-    // synchronize 
-    void Synchronize();
 protected:
+    // returns vector of the new trees (primary tree not included)
+    std::vector<UberTree::Ptr> ExcludeNode(std::uint32_t id);
+
     UberTree(InputMap::Ptr input_map);
+    UberTree(std::list<UberNode::Ptr> nodes);
 
-    UberNode::Ptr FindNode(int id);
 private:
-    void BuildTree(InputMap::Ptr root);
+    void BuildTree(InputMap::Ptr input_map);
 
-    std::vector<UberNode::Ptr> m_nodes;
+    std::list<UberNode::Ptr> m_nodes;
 };
