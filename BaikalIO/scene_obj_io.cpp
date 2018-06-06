@@ -247,7 +247,7 @@ namespace Baikal
 
         RadeonRays::float3 emission(mat.emission[0], mat.emission[1], mat.emission[2]);
 
-        bool apply_gamma = false;
+        bool apply_gamma = true;
 
         uint32_t material_layers = 0;
         auto uberv2_set_texture = [](UberV2Material::Ptr material, const std::string input_name, Texture::Ptr texture, bool apply_gamma)
