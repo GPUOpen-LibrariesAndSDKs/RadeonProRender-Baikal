@@ -78,16 +78,16 @@ if (BAIKAL_ENABLE_RPR)
 endif (BAIKAL_ENABLE_RPR)
 
 
-set (BAIKAL_COPY_FILES
+set (BAIKAL_DLLS
     "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
     "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
 )
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    list(APPEND BAIKAL_COPY_FILES 
+    list(APPEND BAIKAL_DLLS
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
     )
 else ()
-    list(APPEND BAIKAL_COPY_FILES 
+    list(APPEND BAIKAL_DLLS
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
     )
 endif ()
@@ -106,17 +106,19 @@ FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_DST
 if (WIN32)
     add_custom_command(TARGET ResourcesDir POST_BUILD
         COMMAND IF NOT EXIST ${RESOURCES_DST} mklink /D ${RESOURCES_DST} ${RESOURCES_SRC}
-        DEPENDS ${RESOURCES_DST}
-    )
-
-    add_custom_command(TARGET BaikalKernelsDir POST_BUILD
         COMMAND IF NOT EXIST ${BAIKAL_KERNELS_DST} mklink /D ${BAIKAL_KERNELS_DST} ${BAIKAL_KERNELS_SRC}
-        DEPENDS ${BAIKAL_KERNELS_DST}
+        DEPENDS ${RESOURCES_DST} ${BAIKAL_KERNELS_DST}
+    )
+else ()
+    add_custom_command(TARGET ResourcesDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESOURCES_SRC} ${RESOURCES_DST}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKAL_KERNELS_SRC} ${BAIKAL_KERNELS_DST}
+        DEPENDS ${RESOURCES_DST} ${BAIKAL_KERNELS_DST}
     )
 endif ()
 
 if (BAIKAL_ENABLE_STANDALONE)
-    set(BAIKALSTANDALONE_COPY_FILES ${BAIKAL_COPY_FILES})
+    set(BAIKALSTANDALONE_DLLS ${BAIKAL_DLLS})
 
     find_package(GLFW3 REQUIRED)
 
@@ -124,7 +126,7 @@ if (BAIKAL_ENABLE_STANDALONE)
 endif (BAIKAL_ENABLE_STANDALONE)
 
 if (BAIKAL_ENABLE_TESTS)
-    set(BAIKAL_TESTS_COPY_FILES ${BAIKAL_COPY_FILES})
+    set(BAIKAL_TESTS_DLLS ${BAIKAL_DLLS})
 
     add_subdirectory(Gtest)
     add_subdirectory(BaikalTest)

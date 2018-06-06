@@ -74,21 +74,43 @@ if (WIN32)
         COMMAND IF NOT EXIST ${BAIKALSTANDALONE_KERNELS_DST} mklink /D ${BAIKALSTANDALONE_KERNELS_DST} ${BAIKALSTANDALONE_KERNELS_SRC}
         DEPENDS ${BAIKALSTANDALONE_KERNELS_DST}
     )
+else ()
+    add_custom_command(TARGET BaikalStandaloneKernelsDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKALSTANDALONE_KERNELS_SRC} ${BAIKALSTANDALONE_KERNELS_DST}
+        DEPENDS ${BAIKALSTANDALONE_KERNELS_DST}
+    )
 endif ()
 
 add_dependencies(BaikalStandalone ResourcesDir BaikalKernelsDir BaikalStandaloneKernelsDir)
 
-add_custom_command(TARGET BaikalStandalone POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${BAIKALSTANDALONE_COPY_FILES}
-        "$<TARGET_FILE_DIR:BaikalStandalone>"
-)
+if (WIN32)
+    add_custom_command(TARGET BaikalStandalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${BAIKALSTANDALONE_DLLS}
+            "$<TARGET_FILE_DIR:BaikalStandalone>"
+    )
+endif ()
 
 install(TARGETS BaikalStandalone RUNTIME DESTINATION bin)
-install(FILES ${BAIKALSTANDALONE_COPY_FILES} DESTINATION bin)
+if (WIN32)
+    install(FILES ${BAIKALSTANDALONE_DLLS} DESTINATION bin)
+endif ()
 install(DIRECTORY ${RESOURCES_SRC} DESTINATION .)
 install(DIRECTORY ${BAIKAL_KERNELS_SRC} DESTINATION Baikal)
 install(DIRECTORY ${BAIKALSTANDALONE_KERNELS_SRC} DESTINATION BaikalStandalone)
 
-#TODO: add install(TARGETS RadeonRays RUNTIME DESTINATION bin) to CMakeLists.txt of RadeonRays, and remove the following line
-install(FILES $<TARGET_FILE_DIR:BaikalStandalone>/RadeonRays.dll DESTINATION bin)
+#TODO: the following should be added to CMakeLists.txt of RadeonRays
+#if (WIN32)
+#    install(TARGETS RadeonRays RUNTIME DESTINATION bin)
+#else ()
+#    install(TARGETS RadeonRays LIBRARY DESTINATION lib)
+#endif ()
+
+#TODO: the following should be removed after the above being add to CMakeLists.txt of RadeonRays
+if (WIN32)
+    install(FILES $<TARGET_FILE_DIR:BaikalStandalone>/RadeonRays.dll DESTINATION bin)
+else ()
+    file(GLOB_RECURSE RADEONRAYS_SO ${CMAKE_BINARY_DIR}/libRadeonRays.*)
+    install(FILES ${RADEONRAYS_SO} DESTINATION lib)
+endif ()
+

@@ -34,12 +34,21 @@ if (WIN32)
         COMMAND IF NOT EXIST ${BAIKALTEST_OUTPUTIMAGES_DST} mklink /D ${BAIKALTEST_OUTPUTIMAGES_DST} ${BAIKALTEST_OUTPUTIMAGES_SRC}
         DEPENDS ${BAIKALTEST_REFERENCEIMAGES_DST} ${BAIKALTEST_OUTPUTIMAGES_DST}
     )
+else ()
+    add_custom_command(TARGET BaikalTestImagesDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKALTEST_REFERENCEIMAGES_SRC} ${BAIKALTEST_REFERENCEIMAGES_DST}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKALTEST_OUTPUTIMAGES_SRC} ${BAIKALTEST_OUTPUTIMAGES_DST}
+        DEPENDS ${BAIKALTEST_REFERENCEIMAGES_DST} ${BAIKALTEST_OUTPUTIMAGES_DST}
+    )
 endif ()
 
 add_dependencies(BaikalTest ResourcesDir BaikalKernelsDir BaikalTestImagesDir)
 
-add_custom_command(TARGET BaikalTest POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-        ${BAIKAL_TESTS_COPY_FILES}
-        "$<TARGET_FILE_DIR:BaikalTest>"
-)
+if (WIN32)
+    add_custom_command(TARGET BaikalTest POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            ${BAIKAL_TESTS_DLLS}
+            "$<TARGET_FILE_DIR:BaikalTest>"
+    )
+endif ()
+

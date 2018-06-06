@@ -25,4 +25,9 @@ if (BAIKAL_ENABLE_FBX)
     target_link_libraries(BaikalIO PUBLIC fbxsdk::fbxsdk)
 endif (BAIKAL_ENABLE_FBX)
 
-install(TARGETS BaikalIO RUNTIME DESTINATION bin)
+if (WIN32)
+    install(TARGETS BaikalIO RUNTIME DESTINATION bin)
+else ()
+    install(TARGETS BaikalIO LIBRARY DESTINATION lib)
+endif ()
+
