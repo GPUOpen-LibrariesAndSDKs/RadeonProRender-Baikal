@@ -22,7 +22,6 @@ THE SOFTWARE.
 
 #include "uber_tree.h"
 #include <algorithm>
-#include <queue>
 
 ////////////////////////////////////////////
 //// UberTree implementation
@@ -167,11 +166,13 @@ UberTree::Ptr UberTree::Create(InputMap::Ptr input_map)
 //// UberTreeIterator implementation
 ////////////////////////////////////////////
 
-UberTreeIterator::UberTreeIterator(UberTree::Ptr tree) :
-    m_tree(tree), m_index(-1)
+UberTreeIterator::UberTreeIterator(UberTree::Ptr tree) : m_tree(tree)
 {
     if (m_tree && (m_tree->m_nodes.size() > 0))
-        m_index = 0;
+    {
+        m_queue.push(
+            std::pair<int, UberNode::Ptr>(0, m_tree->m_nodes[0]));
+    }
 }
 
 bool UberTreeIterator::IsValid() const
@@ -179,19 +180,35 @@ bool UberTreeIterator::IsValid() const
     if (!m_tree)
         return false;
 
-    return (size_t)m_index < m_tree->m_nodes.size();
+    return m_queue.size() < m_tree->m_nodes.size();
 }
 
 UberNode::Ptr UberTreeIterator::Item() const
-{
-    return m_tree->m_nodes[m_index];
-}
+{ return m_queue.back().second; }
+
+int UberTreeIterator::GetLevel() const
+{ return m_queue.back().first; }
 
 void UberTreeIterator::Reset()
-{ m_index = 0; }
+{
+    // clear queue
+    while (!m_queue.empty())
+        m_queue.pop();
+}
 
 void UberTreeIterator::Next()
-{ m_index++; }
+{
+    int level = m_queue.back().first;
+    auto node = m_queue.back().second;
+
+    for (auto i = 0u; i < node->GetArgNumber(); i++)
+    {
+        m_queue.push(
+            std::pair<int, UberNode::Ptr>
+                (level + 1, node->GetChildren(i)));
+    }
+    m_queue.pop();
+}
 
 namespace {
     struct UberTreeIteratorConcrete : public UberTreeIterator

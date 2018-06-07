@@ -24,7 +24,7 @@
 #pragma once 
 
 #include <functional>
-#include <list>
+#include <queue>
 #include "uber_node.h"
 #include "SceneGraph/iterator.h"
 
@@ -70,15 +70,19 @@ public:
 
     static Ptr Create(UberTree::Ptr tree);
 
+    // operations
     bool IsValid() const;
     void Next();
     UberNode::Ptr Item() const;
     void Reset();
 
+    // accessor
+    int GetLevel() const;
+
 protected:
     UberTreeIterator(UberTree::Ptr tree);
 
 private:
-    int m_index;
     UberTree::Ptr m_tree;
+    std::queue<std::pair<int, UberNode::Ptr>> m_queue;
 };

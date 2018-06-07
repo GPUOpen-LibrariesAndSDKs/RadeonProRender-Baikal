@@ -38,6 +38,7 @@ enum class NodeType
 };
 
 class UberTree;
+class UberTreeIterator;
 
 #define MAX_ARGS (3)
 #define INVALID_ID (-1)
@@ -45,6 +46,7 @@ class UberTree;
 class UberNode
 {
     friend class UberTree;
+    friend class UberTreeIterator;
 public:
     using Ptr = std::shared_ptr<UberNode>;
     using InputMap = Baikal::InputMap;
