@@ -19,32 +19,3 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ********************************************************************/
-
-#pragma once
-
-#include "uber_tree.h"
-
-class UberGraph
-{
-public:
-    using Ptr = std::shared_ptr<UberGraph>;
-
-    static Ptr Create(Baikal::InputMap::Ptr input_map);
-
-    void RemoveNode(int node_id);
-    void RemoveNode(UberNode::Ptr node);
-    void RemoveSubTree(UberTree::Ptr tree);
-
-    void AddTree(UberTree::Ptr tree);
-
-    bool AddSubTree(int id, int arg_number, UberTree::Ptr tree);
-
-    const std::vector<UberTree::Ptr>& GetTrees() const
-    { return m_trees; }
-
-protected:
-    UberGraph(Baikal::InputMap::Ptr input_map);
-
-private:
-    std::vector<UberTree::Ptr> m_trees;
-};
