@@ -19,3 +19,30 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ********************************************************************/
+
+#include "uber_tree.h"
+
+class GraphScheme
+{
+public:
+    struct Link
+    {
+        std::uint32_t src_id;
+        std::uint32_t dst_id;
+    };
+
+    struct Node
+    {
+        std::uint32_t id;
+        std::string name;
+        RadeonRays::int2 pos; // position of the top left corner
+        RadeonRays::int2 size;
+    };
+
+protected:
+    GraphScheme(std::vector<UberTree> trees);
+
+private:
+    std::vector<Node> m_nodes;
+    std::vector<Link> links;
+};
