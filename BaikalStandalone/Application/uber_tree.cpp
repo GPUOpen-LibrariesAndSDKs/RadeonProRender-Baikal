@@ -24,6 +24,10 @@ THE SOFTWARE.
 #include <algorithm>
 #include <queue>
 
+////////////////////////////////////////////
+//// UberTree implementation
+////////////////////////////////////////////
+
 void UberTree::BuildTree(InputMap::Ptr input_map)
 {
     auto root = UberNode::Create(input_map, nullptr);
@@ -105,7 +109,7 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
     std::vector<UberTree::Ptr> trees;
     for (auto i = 0u; i < removed_node->GetArgNumber(); i++)
     {
-        std::list<UberNode::Ptr> tree;
+        std::vector<UberNode::Ptr> tree;
         auto child = removed_node->GetChildren(i);
         child->m_parent = nullptr;
 
@@ -117,7 +121,7 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
             {
                 queue.push(queue.back()->m_children[i]);
             }
-            m_nodes.remove(queue.back());
+            m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), queue.back()));
             tree.push_back(queue.back());
             queue.pop();
         }
@@ -138,13 +142,12 @@ bool UberTree::IsValid() const
     return true;
 }
 
-UberTree::UberTree(std::list<UberNode::Ptr> nodes) :
+UberTree::UberTree(std::vector<UberNode::Ptr> nodes) :
     m_nodes(nodes)
 {   }
 
 UberTree::UberTree(InputMap::Ptr input_map)
 { BuildTree(input_map); }
-
 
 namespace {
     struct UberTreeConcrete: public UberTree
@@ -158,4 +161,48 @@ namespace {
 UberTree::Ptr UberTree::Create(InputMap::Ptr input_map)
 {
     return std::make_shared<UberTreeConcrete>(input_map);
+}
+
+////////////////////////////////////////////
+//// UberTreeIterator implementation
+////////////////////////////////////////////
+
+UberTreeIterator::UberTreeIterator(UberTree::Ptr tree) :
+    m_tree(tree), m_index(-1)
+{
+    if (m_tree && (m_tree->m_nodes.size() > 0))
+        m_index = 0;
+}
+
+bool UberTreeIterator::IsValid() const
+{
+    if (!m_tree)
+        return false;
+
+    return (size_t)m_index < m_tree->m_nodes.size();
+}
+
+UberNode::Ptr UberTreeIterator::Item() const
+{
+    return m_tree->m_nodes[m_index];
+}
+
+void UberTreeIterator::Reset()
+{ m_index = 0; }
+
+void UberTreeIterator::Next()
+{ m_index++; }
+
+namespace {
+    struct UberTreeIteratorConcrete : public UberTreeIterator
+    {
+        UberTreeIteratorConcrete(UberTree::Ptr tree) :
+            UberTreeIterator(tree)
+        {   }
+    };
+}
+
+UberTreeIterator::Ptr UberTreeIterator::Create(UberTree::Ptr tree)
+{
+    return std::make_shared<UberTreeIteratorConcrete>(tree);
 }

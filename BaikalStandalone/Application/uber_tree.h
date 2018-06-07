@@ -26,12 +26,14 @@
 #include <functional>
 #include <list>
 #include "uber_node.h"
+#include "SceneGraph/iterator.h"
 
-class UberGraph;
+class UberTreeIterator;
 
 class UberTree
 {
-    friend class UberGraph;
+    friend class UberTreeIterator;
+
 public:
     using Ptr = std::shared_ptr<UberTree>;
     using InputMap = UberNode::InputMap;
@@ -47,15 +49,36 @@ public:
     bool AddTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree);
 
     bool IsValid() const;
+
 protected:
     // returns vector of the new trees (primary tree not included)
     std::vector<UberTree::Ptr> ExcludeNode(std::uint32_t id);
 
     UberTree(InputMap::Ptr input_map);
-    UberTree(std::list<UberNode::Ptr> nodes);
+    UberTree(std::vector<UberNode::Ptr> nodes);
 
 private:
     void BuildTree(InputMap::Ptr input_map);
 
-    std::list<UberNode::Ptr> m_nodes;
+    std::vector<UberNode::Ptr> m_nodes;
+};
+
+class UberTreeIterator
+{
+public:
+    using Ptr = std::shared_ptr<UberTreeIterator>;
+
+    static Ptr Create(UberTree::Ptr tree);
+
+    bool IsValid() const;
+    void Next();
+    UberNode::Ptr Item() const;
+    void Reset();
+
+protected:
+    UberTreeIterator(UberTree::Ptr tree);
+
+private:
+    int m_index;
+    UberTree::Ptr m_tree;
 };

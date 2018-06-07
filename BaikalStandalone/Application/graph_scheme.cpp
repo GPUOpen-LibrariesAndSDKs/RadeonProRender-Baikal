@@ -19,3 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+
+#include "graph_scheme.h"
+
+namespace {
+    struct GraphSchemeConcrete : public GraphScheme
+    {
+        GraphSchemeConcrete(std::vector<UberTree>& trees, RadeonRays::int2 root_pos) :
+            GraphScheme(trees, root_pos)
+        {   }
+    };
+}
+
+GraphScheme::GraphScheme(std::vector<UberTree>& trees, RadeonRays::int2 root_pos)
+{ /* Not implemented */ }
+
+GraphScheme::Ptr GraphScheme::Create(std::vector<UberTree>& trees, RadeonRays::int2 root_pos)
+{
+    return std::make_shared<GraphScheme>(
+        GraphSchemeConcrete(trees, root_pos));
+}
+
+void GraphScheme::ComputeInitialCords(std::vector<UberTree>& trees, RadeonRays::int2 root_pos)
+{
+
+}

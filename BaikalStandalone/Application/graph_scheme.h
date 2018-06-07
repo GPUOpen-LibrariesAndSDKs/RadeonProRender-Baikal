@@ -25,6 +25,8 @@
 class GraphScheme
 {
 public:
+    using Ptr = std::shared_ptr<GraphScheme>;
+
     struct Link
     {
         std::uint32_t src_id;
@@ -39,10 +41,19 @@ public:
         RadeonRays::int2 size;
     };
 
+    static Ptr Create(
+        std::vector<UberTree>& trees,
+        RadeonRays::int2 root_pos = RadeonRays::int2(0, 0));
+
+    const std::vector<Node>& GetNodes() const;
+    const std::vector<Link>& GetLinks() const;
+
 protected:
-    GraphScheme(std::vector<UberTree> trees);
+    GraphScheme(std::vector<UberTree>& trees, RadeonRays::int2 root_pos);
 
 private:
+    void ComputeInitialCords(std::vector<UberTree>& trees, RadeonRays::int2 root_pos);
+
     std::vector<Node> m_nodes;
     std::vector<Link> links;
 };
