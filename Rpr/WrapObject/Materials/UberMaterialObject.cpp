@@ -27,8 +27,8 @@ void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonR
     }
     else
     {
-        auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
-        m_mat->SetInputValue(input_name, inputMap);
+        auto input_map = Baikal::InputMap_ConstantFloat3::Create(val);
+        m_mat->SetInputValue(input_name, input_map);
     }
 }
 
