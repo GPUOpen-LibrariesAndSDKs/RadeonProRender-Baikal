@@ -600,6 +600,13 @@ std::uint32_t UberNode::GetArgNumber()
     }
 }
 
+int UberNode::GetParentId() const
+{
+    if (m_parent)
+        return m_parent->GetId();
+    return -1;
+}
+
 UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent) :
     m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
 {  }

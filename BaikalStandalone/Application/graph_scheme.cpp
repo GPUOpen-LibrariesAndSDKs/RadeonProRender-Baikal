@@ -22,25 +22,89 @@ THE SOFTWARE.
 
 #include "graph_scheme.h"
 
+////////////////////////////////////////////////
+//// GraphScheme implemenataion
+////////////////////////////////////////////////
+
 namespace {
     struct GraphSchemeConcrete : public GraphScheme
     {
-        GraphSchemeConcrete(std::vector<UberTree>& trees, RadeonRays::int2 root_pos) :
-            GraphScheme(trees, root_pos)
+        GraphSchemeConcrete(UberTree::Ptr tree, RadeonRays::int2 root_pos) :
+            GraphScheme(tree, root_pos)
         {   }
     };
 }
 
-GraphScheme::GraphScheme(std::vector<UberTree>& trees, RadeonRays::int2 root_pos)
-{ /* Not implemented */ }
-
-GraphScheme::Ptr GraphScheme::Create(std::vector<UberTree>& trees, RadeonRays::int2 root_pos)
+GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos) : m_is_dirty(false)
 {
-    return std::make_shared<GraphScheme>(
-        GraphSchemeConcrete(trees, root_pos));
+    if (!tree)
+        throw std::logic_error(
+            "GraphScheme::GraphScheme(...): 'tree' is nullptr");
+
+    m_trees.push_back(tree);
 }
 
-void GraphScheme::ComputeInitialCords(std::vector<UberTree>& trees, RadeonRays::int2 root_pos)
+GraphScheme::Ptr GraphScheme::Create(UberTree::Ptr tree, RadeonRays::int2 root_pos)
 {
+    return std::make_shared<GraphScheme>(
+        GraphSchemeConcrete(tree, root_pos));
+}
 
+void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos)
+{
+    const int x_offset = 120;
+    const int y_offset = 60;
+    const RadeonRays::int2 node_size = RadeonRays::int2(100, 70);
+    // primary tree
+    auto iter = UberTreeIterator::Create(m_trees[0]);
+
+    int level = 0;
+    int level_item_counter = 0;
+    while (iter->IsValid())
+    {
+        level_item_counter = (iter->GetLevel() == level) ?
+            (level_item_counter + 1) : (0);
+        level = iter->GetLevel();
+
+        RadeonRays::int2 position(
+            root_pos.x + level * x_offset,
+            root_pos.y + level_item_counter * y_offset);
+
+        m_nodes.push_back(Node(iter->Item(), position, node_size));
+
+        if (iter->Item()->GetParentId() >= 0)
+        {
+            m_links.push_back(
+                Link(iter->Item()->GetParentId(),
+                     iter->Item()->GetId()));
+        }
+
+        iter->Next();
+    }
+}
+
+void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+////////////////////////////////////////////////
+//// Node implemenataion
+////////////////////////////////////////////////
+
+GraphScheme::Node::Node(
+    std::uint32_t id_,
+    std::string name_,
+    RadeonRays::int2 pos_,
+    RadeonRays::int2 size_) :
+    id(id_), name(name_), pos(pos_), size(size_)
+{   }
+
+GraphScheme::Node::Node(
+    UberNode::Ptr node_,
+    RadeonRays::int2 pos_,
+    RadeonRays::int2 size_) :
+    id(node_->GetId()), pos(pos_), size(size_)
+{
+    name = "Don't forget about me";
 }

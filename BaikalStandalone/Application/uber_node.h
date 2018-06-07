@@ -67,9 +67,10 @@ public:
 
     std::uint32_t GetArgNumber();
 
-    std::uint32_t GetId() const
+    int GetId() const
     { return m_id; }
 
+    int GetParentId() const;
 
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);

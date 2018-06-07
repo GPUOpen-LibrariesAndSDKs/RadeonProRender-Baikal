@@ -29,8 +29,12 @@ public:
 
     struct Link
     {
-        std::uint32_t src_id;
-        std::uint32_t dst_id;
+        int src_id;
+        int dst_id;
+
+        Link(int src_id_, int dst_id_) :
+            src_id(src_id_), dst_id(dst_id_)
+        {   }
     };
 
     struct Node
@@ -39,21 +43,37 @@ public:
         std::string name;
         RadeonRays::int2 pos; // position of the top left corner
         RadeonRays::int2 size;
+
+        Node(
+            std::uint32_t id,
+            std::string name,
+            RadeonRays::int2 pos,
+            RadeonRays::int2 size);
+
+        Node(
+            UberNode::Ptr node,
+            RadeonRays::int2 pos,
+            RadeonRays::int2 size);
     };
 
     static Ptr Create(
-        std::vector<UberTree>& trees,
+        UberTree::Ptr tree,
         RadeonRays::int2 root_pos = RadeonRays::int2(0, 0));
 
-    const std::vector<Node>& GetNodes() const;
-    const std::vector<Link>& GetLinks() const;
+    void RemoveNode(int id);
+    void UpdateNodePos(int id, RadeonRays::int2 pos);
+    void AddTree(UberTree::Ptr tree);
+    void MergeTrees(UberTree::Ptr tree_1, UberTree::Ptr tree_2);
 
 protected:
-    GraphScheme(std::vector<UberTree>& trees, RadeonRays::int2 root_pos);
+    GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos);
 
 private:
-    void ComputeInitialCords(std::vector<UberTree>& trees, RadeonRays::int2 root_pos);
+    void RemoveLink(int src_id, int dst_id);
+    void RecomputeCoordinates(RadeonRays::int2 root_pos);
 
+    bool m_is_dirty;
+    std::vector<UberTree::Ptr> m_trees;
     std::vector<Node> m_nodes;
-    std::vector<Link> links;
+    std::vector<Link> m_links;
 };
