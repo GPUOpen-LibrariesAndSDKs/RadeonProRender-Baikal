@@ -96,6 +96,16 @@ void GraphScheme::RemoveLink(int src_id, int dst_id)
     }
 }
 
+void GraphScheme::AddTree(UberTree::Ptr tree)
+{
+    throw std::runtime_error("Not implemented");
+}
+
+void GraphScheme::MergeTrees(UberTree::Ptr tree_1, UberTree::Ptr tree_2)
+{
+    throw std::runtime_error("Not implemented");
+}
+
 void GraphScheme::RemoveNode(int id)
 {
     UberTree::Ptr tree = nullptr;
@@ -103,7 +113,9 @@ void GraphScheme::RemoveNode(int id)
     // find tree
     for (auto item : m_trees)
     {
-        if (item->Find(id))
+        // nullptr if 'id' wasn't found
+        node = item->Find(id);
+        if (node)
         {
             tree = item;
             break;
@@ -115,21 +127,17 @@ void GraphScheme::RemoveNode(int id)
 
     auto trees_vector = tree->ExcludeNode(id);
 
-    auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
-        [id](UberNode::Ptr node)
-        {
-            if (node->GetId() == id)
-                return true;
-        });
+    RemoveLink(node->GetParentId(), id);
 
-    if (iter == m_nodes.end())
-    {
-        throw std::logic_error(
-            "GraphScheme::RemoveNode(...): nodes in graph_sceme and uber_tree missmatched");
-    }
+    std::remove_if(m_links.begin(), m_links.end(),
+        [id](const Link &link)
+        { return link.src_id == id; });
 
-    RemoveLink(id)
+    std::remove_if(m_nodes.begin(), m_nodes.end(),
+        [id](const Node &node)
+        { return node.id == id; });
 
+    m_trees.insert(m_trees.end(), trees_vector.begin(), trees_vector.end());
 }
 
 void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
