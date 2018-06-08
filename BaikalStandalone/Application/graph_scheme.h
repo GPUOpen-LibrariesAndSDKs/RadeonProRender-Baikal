@@ -65,6 +65,12 @@ public:
     void AddTree(UberTree::Ptr tree);
     void MergeTrees(UberTree::Ptr tree_1, UberTree::Ptr tree_2);
 
+    const std::vector<Node>& GetNodes() const
+    { return m_nodes; }
+
+    const std::vector<Link>& GetLinks() const
+    { return m_links; }
+
 protected:
     GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos);
 

@@ -25,7 +25,7 @@
 
 #include "ImGUI/imgui.h"
 #include "SceneGraph/uberv2material.h"
-#include "uber_tree.h"
+#include "graph_scheme.h"
 
 class MaterialExplorer
 {
@@ -75,4 +75,5 @@ private:
 
     UberV2Material::Ptr m_material;
     std::vector<LayerDesc> m_layers;
+    GraphScheme::Ptr m_graph;
 };

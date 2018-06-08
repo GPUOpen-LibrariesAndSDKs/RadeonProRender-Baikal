@@ -104,16 +104,18 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
     ImGui::Text("Layers:");
     ImGui::Separator();
 
+    int input_index = 0;
+    int layer_index = 0;
     int offset = 0;
-    for (size_t i = 0; i < m_layers.size(); i++, offset)
+    for (; (size_t)layer_index < m_layers.size(); layer_index++, offset)
     {
-        const auto& inputs = m_layers[i].second;
-        for (size_t j = 0; j < inputs.size(); j++)
+        const auto& inputs = m_layers[layer_index].second;
+        for (; (size_t)input_index < inputs.size(); input_index++)
         {
-            int id = offset + (int)j;
+            int id = offset + input_index;
             ImGui::PushID(id);
 
-            if (ImGui::Selectable(inputs[j].c_str(), input_selected == id))
+            if (ImGui::Selectable(inputs[input_index].c_str(), input_selected == id))
                 input_selected = id;
 
             ImGui::PopID();
@@ -125,6 +127,14 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
 
     ImGui::SameLine();
     ImGui::BeginGroup();
+
+   /* if (((size_t)layer_index < m_layers.size()) &&
+        (size_t)input_index < m_layers[layer_index].second.size())*/
+    {
+        auto input_name = m_layers[0].second[0];
+        auto input_map = m_material->GetInputValue(input_name).input_map_value;
+        m_graph = GraphScheme::Create(UberTree::Create(input_map));
+    }
 
     // draw canvas with inputs graph
     ImGui::Text("Input map graph");
@@ -151,10 +161,30 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
             draw_list->AddLine(ImVec2(0.0f, y) + win_pos, ImVec2(canvas_sz.x, y) + win_pos, GRID_COLOR);
     }
 
-    // Display links
-    draw_list->ChannelsSplit(2);
-    draw_list->ChannelsSetCurrent(0); // Background
 
+    // Display nodes
+    if (m_graph)
+    {
+        // Display links
+        draw_list->ChannelsSplit(2);
+        draw_list->ChannelsSetCurrent(0); // Background
+
+        auto nodes = m_graph->GetNodes();
+
+        for (const auto& node : nodes)
+        {
+            ImVec2 top_left_corner((float)node.pos.x, (float)node.pos.y);
+            ImVec2 bottom_right_corner(
+                (float)(node.pos.x + node.size.x + 200),
+                (float)(node.pos.y + node.size.y));
+
+            ImU32 node_bg_color = IM_COL32(75, 75, 75, 255); // : IM_COL32(60, 60, 60, 255);
+
+            draw_list->AddRectFilled(top_left_corner, bottom_right_corner, node_bg_color, 4.0f);
+            draw_list->AddRect(top_left_corner, bottom_right_corner, IM_COL32(100, 100, 100, 255), 4.0f);
+        }
+
+    }
 
     ImGui::EndChild();
     ImGui::PopStyleColor();

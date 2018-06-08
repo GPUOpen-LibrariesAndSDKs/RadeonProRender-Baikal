@@ -42,6 +42,7 @@ GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos) : m_is_d
             "GraphScheme::GraphScheme(...): 'tree' is nullptr");
 
     m_trees.push_back(tree);
+    RecomputeCoordinates(root_pos);
 }
 
 GraphScheme::Ptr GraphScheme::Create(UberTree::Ptr tree, RadeonRays::int2 root_pos)
