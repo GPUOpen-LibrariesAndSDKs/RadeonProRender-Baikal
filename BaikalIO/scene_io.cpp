@@ -62,6 +62,9 @@ namespace Baikal
 
     Texture::Ptr SceneIo::Loader::LoadTexture(ImageIo const& io, Scene1& scene, std::string const& basepath, std::string const& name) const
     {
+        std::string fname = basepath + name;
+        std::replace(fname.begin(), fname.end(), '\\', '/');
+
         auto iter = m_texture_cache.find(name);
 
         if (iter != m_texture_cache.cend())
@@ -73,7 +76,7 @@ namespace Baikal
             try
             {
                 LogInfo("Loading ", name, "\n");
-                auto texture = io.LoadImage(basepath + name);
+                auto texture = io.LoadImage(fname);
                 texture->SetName(name);
                 m_texture_cache[name] = texture;
                 return texture;

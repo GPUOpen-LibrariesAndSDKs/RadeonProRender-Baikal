@@ -147,12 +147,12 @@ namespace Baikal
 
         size_t GetNumInputs() const;
         Input GetInput(std::size_t idx) const;
+        Input& GetInput(const std::string& name, InputType type);
 
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
 
     protected:
-        Input& GetInput(const std::string& name, InputType type);
 
         Material();
 

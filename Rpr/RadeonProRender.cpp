@@ -239,22 +239,13 @@ rpr_int rprContextSetParameter1u(rpr_context in_context, rpr_char const * name, 
         return RPR_ERROR_INVALID_CONTEXT;
     }
 
-    //TODO: handle context parameters
-    return RPR_SUCCESS;
-
-    if (!strcmp(name, "rendermode"))
+    try
     {
-        switch (x)
-        {
-        case RPR_RENDER_MODE_GLOBAL_ILLUMINATION:
-            break;
-        default:
-            UNIMLEMENTED_FUNCTION
-        }
+        context->SetParameter(name, x);
     }
-    else
+    catch (Exception& e)
     {
-        UNIMLEMENTED_FUNCTION
+        return e.m_error;
     }
 
     return RPR_SUCCESS;
