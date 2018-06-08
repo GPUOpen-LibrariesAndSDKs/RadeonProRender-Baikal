@@ -778,18 +778,6 @@ namespace Baikal
             { Renderer::OutputType::kDepth, "Depth" }
         };
 
-        // Convert from vector of pairs to vector of single values
-        static std::vector<char const*> output_names;
-        static bool first_frame = true;
-        if (first_frame)
-        {
-            for (auto it = kBaikalOutputs.begin(); it != kBaikalOutputs.end(); ++it)
-            {
-                output_names.push_back(it->second);
-            }
-            first_frame = false;
-        }
-
         static int output = 0;
         bool update = false;
         if (m_settings.gui_visible)
@@ -868,7 +856,15 @@ namespace Baikal
             eye = camera->GetPosition();
             at = eye + camera->GetForwardVector();
 
-            ImGui::Combo("Output", &output, &output_names[0], (int)output_names.size());
+            ImGui::Combo("Output", &output,
+                [](void* , int idx, const char** out_text)
+                {
+                    if (out_text)
+                        *out_text = kBaikalOutputs[idx].second;
+                    return true;
+                },
+                nullptr, (int)kBaikalOutputs.size()
+            );
             ImGui::Text(" ");
             ImGui::Text("Number of samples: %d", m_settings.samplecount);
             ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
