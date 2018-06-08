@@ -141,6 +141,16 @@ bool UberTree::IsValid() const
     return true;
 }
 
+UberNode::Ptr UberTree::Find(int id)
+{
+    for (auto node : m_nodes)
+    {
+        if (node->GetId() == id)
+            return node;
+    }
+    return nullptr;
+}
+
 UberTree::UberTree(std::vector<UberNode::Ptr> nodes) :
     m_nodes(nodes)
 {   }

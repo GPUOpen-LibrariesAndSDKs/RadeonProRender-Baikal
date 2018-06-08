@@ -83,9 +83,65 @@ void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos)
     }
 }
 
+void GraphScheme::RemoveLink(int src_id, int dst_id)
+{
+    for (auto link = m_links.begin(); link != m_links.end(); ++link)
+    {
+        if (link->src_id == src_id &&
+            link->dst_id == dst_id)
+        {
+            m_links.erase(link);
+            return;
+        }
+    }
+}
+
+void GraphScheme::RemoveNode(int id)
+{
+    UberTree::Ptr tree = nullptr;
+    UberNode::Ptr node = nullptr;
+    // find tree
+    for (auto item : m_trees)
+    {
+        if (item->Find(id))
+        {
+            tree = item;
+            break;
+        }
+    }
+    // thre is no such id
+    if (!tree)
+        return;
+
+    auto trees_vector = tree->ExcludeNode(id);
+
+    auto iter = std::find_if(m_nodes.begin(), m_nodes.end(),
+        [id](UberNode::Ptr node)
+        {
+            if (node->GetId() == id)
+                return true;
+        });
+
+    if (iter == m_nodes.end())
+    {
+        throw std::logic_error(
+            "GraphScheme::RemoveNode(...): nodes in graph_sceme and uber_tree missmatched");
+    }
+
+    RemoveLink(id)
+
+}
+
 void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
 {
-    throw std::runtime_error("Not implemented");
+    for (auto& node : m_nodes)
+    {
+        if (node.id == id)
+        {
+            node.pos.x = pos.x;
+            node.pos.y = pos.y;
+        }
+    }
 }
 
 ////////////////////////////////////////////////
