@@ -391,7 +391,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->rays[(pass + 1) & 0x1]);
         shadekernel.SetArg(argc++, output);
         shadekernel.SetArg(argc++, scene.input_map_data);
-        
+
         // Run shading kernel
         {
             GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, shadekernel);

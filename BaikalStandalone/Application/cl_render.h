@@ -103,6 +103,10 @@ namespace Baikal
         // Denoiser
         void SetDenoiserFloatParam(const std::string& name, const float4& value);
         float4 GetDenoiserFloatParam(const std::string& name);
+        void CreateDenoiserOutputs(std::size_t cfg_index, int width, int height);
+        void SetDenoiserOutputs(std::size_t cfg_index) const;
+        void ClearDenoiserOutputs(std::size_t cfg_index) const;
+        void RestoreDenoiserOutput(std::size_t cfg_index, Renderer::OutputType type) const;
 #endif
     private:
         void InitCl(AppSettings& settings, GLuint tex);
