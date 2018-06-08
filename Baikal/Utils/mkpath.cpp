@@ -2,6 +2,8 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#else
+#include <sys/stat.h>
 #endif
 
 namespace Baikal
@@ -30,12 +32,14 @@ namespace Baikal
             // they can either be existed or a root path or something like . and ..
 #ifdef _WIN32
             err = _mkdir(p.c_str());
-            if (err != 0 && errno == EEXIST)
-                err = 0;
 #else
             err = mkdir(p.c_str(), 0755);
 #endif
         }
+
+        // ignore error if final directory existed
+        if (err != 0 && errno == EEXIST)
+            err = 0;
 
         return err;
     }
