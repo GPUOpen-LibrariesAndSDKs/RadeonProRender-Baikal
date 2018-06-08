@@ -386,7 +386,6 @@ namespace Baikal
         std::size_t num_uvs_written = 0;
         std::size_t num_indices_written = 0;
         std::size_t num_shapes_written = 0;
-        std::size_t num_shapes_additional_written = 0;
 
         auto shape_iter = scene.CreateShapeIterator();
 
@@ -522,11 +521,11 @@ namespace Baikal
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
 
             ClwScene::ShapeAdditionalData shape_additional;
             shape_additional.group_id = mesh->GetGroupId();
-            shapes_additional[num_shapes_additional_written++] = shape_additional;
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         // Excluded shapes are handled in almost the same way
@@ -583,11 +582,11 @@ namespace Baikal
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
 
             ClwScene::ShapeAdditionalData shape_additional;
             shape_additional.group_id = mesh->GetGroupId();
-            shapes_additional[num_shapes_additional_written++] = shape_additional;
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         // Handle instances
@@ -617,11 +616,11 @@ namespace Baikal
 
             shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
 
             ClwScene::ShapeAdditionalData shape_additional;
             shape_additional.group_id = iter->GetGroupId();
-            shapes_additional[num_shapes_additional_written++] = shape_additional;
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         LogInfo("Unmapping buffers...\n");
