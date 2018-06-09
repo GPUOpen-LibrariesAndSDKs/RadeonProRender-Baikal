@@ -42,7 +42,7 @@ void UberTree::BuildTree(InputMap::Ptr input_map)
         {
             auto child = UberNode::Create(node->GetArg(i), node);
             node->SetChild(i, child);
-            queue.push(node);
+            queue.push(child);
         }
         m_nodes.push_back(node);
         queue.pop();

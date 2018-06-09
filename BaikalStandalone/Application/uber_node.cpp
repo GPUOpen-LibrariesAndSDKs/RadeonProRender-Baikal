@@ -237,8 +237,12 @@ bool UberNode::IsValid() const
 
 void UberNode::SetChild(std::uint32_t arg_number, Ptr child)
 {
-    if ((size_t)arg_number < m_parent->m_children.size())
-        m_parent->m_children[arg_number] = child;
+    auto size = m_children.size();
+
+    if ((size_t)arg_number < m_children.size())
+    {
+        m_children[arg_number] = child;
+    }
 }
 
 ////////////////////////////////////////
@@ -311,9 +315,6 @@ InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
     if (arg_number > MAX_ARGS - 1)
         throw std::logic_error(
             "UberNode_TwoArgs::GetArg(...): 'arg_number' can not be bigger than 1");
-
-    if (m_children[arg_number] < 0)
-        return nullptr;
 
     if (arg_number == 0)
         GET_ARG_HANDLER_A(m_input_map->m_type)
@@ -449,9 +450,6 @@ InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
     if (arg_number > MAX_ARGS - 1)
         throw std::logic_error(
             "UberNode_ThreeArgs::GetArg(...): 'arg_number can not be bigger than two");
-
-    if (m_children[arg_number] < 0)
-        return nullptr;
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
 
@@ -613,7 +611,7 @@ UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent) :
 
 UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
-{   }
+{ m_children.push_back(nullptr); }
 UberNode_Select::UberNode_Select(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode_Arg(input_map, parent)
 {   }
@@ -625,7 +623,10 @@ UberNode_Matmul::UberNode_Matmul(InputMap::Ptr input_map, UberNode::Ptr parent) 
 {   }
 UberNode_TwoArgs::UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
-{   }
+{
+    m_children.push_back(nullptr);
+    m_children.push_back(nullptr);
+}
 UberNode_Lerp::UberNode_Lerp(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode_TwoArgs(input_map, parent)
 {   }
@@ -634,7 +635,11 @@ UberNode_Shuffle2::UberNode_Shuffle2(InputMap::Ptr input_map, UberNode::Ptr pare
 {   }
 UberNode_ThreeArgs::UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
-{   }
+{
+    m_children.push_back(nullptr);
+    m_children.push_back(nullptr);
+    m_children.push_back(nullptr);
+}
 UberNode_Float::UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent) :
     UberNode(input_map, parent)
 {   }

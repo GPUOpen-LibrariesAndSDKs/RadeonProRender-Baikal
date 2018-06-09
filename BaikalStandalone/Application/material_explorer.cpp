@@ -138,7 +138,11 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
         m_selected_input != input_name)
     {
         auto input_map = m_material->GetInputValue(input_name).input_map_value;
-        m_graph = GraphScheme::Create(UberTree::Create(input_map), RadeonRays::int2(left_side_width + 10, 100));
+
+        m_graph = GraphScheme::Create(
+            UberTree::Create(input_map),
+            RadeonRays::int2(left_side_width + 10, 100));
+
         m_selected_input = input_name;
     }
 
@@ -176,7 +180,7 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
                 (float)(top_left_corner.y + node.size.y));
 
             ImGui::SetCursorScreenPos(top_left_corner);
-            ImGui::InvisibleButton("node", ImVec2(node.size.x, node.size.y));
+            ImGui::InvisibleButton(std::to_string((int)node.id).c_str(), ImVec2(node.size.x, node.size.y));
 
             bool node_hovered_in_scene = false;
             if (ImGui::IsItemHovered())
@@ -202,6 +206,42 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
             }
         }
 
+        // draw links
+        for (const auto link : m_graph->GetLinks())
+        {
+            auto src_node_iter = std::find_if(nodes.begin(), nodes.end(),
+                [link](const GraphScheme::Node& node)
+                { return node.id == link.src_id; });
+
+            auto dst_node_iter = std::find_if(nodes.begin(), nodes.end(),
+                [link](const GraphScheme::Node& node)
+                { return node.id == link.dst_id; });
+
+            if (src_node_iter == nodes.end() ||
+                dst_node_iter == nodes.end())
+            {
+                throw std::logic_error(
+                    "MaterialExplorer::DrawExplorer(...): incorrect links in material graph scheme");
+            }
+
+            ImVec2 src_p = offset;
+            src_p = src_p + ImVec2(
+                src_node_iter->pos.x + src_node_iter->size.x,
+                src_node_iter->pos.y + src_node_iter->size.y / 2);
+
+            ImVec2 dst_p = offset;
+            dst_p = dst_p + ImVec2(
+                dst_node_iter->pos.x,
+                dst_node_iter->pos.y + dst_node_iter->size.y / 2);
+
+            // draw link
+            draw_list->AddBezierCurve(
+                src_p,
+                src_p + ImVec2(+50, 0),
+                dst_p + ImVec2(-50, 0),
+                dst_p,
+                IM_COL32(200, 200, 100, 255), 3.0f);
+        }
     }
 
     // Scrolling
