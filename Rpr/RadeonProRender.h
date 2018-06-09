@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-#define RPR_API_VERSION 0x010028300 
+#define RPR_API_VERSION 0x010029700
 
 /* rpr_status */
 #define RPR_SUCCESS 0 
@@ -1449,6 +1449,16 @@ extern RPR_API_ENTRY rpr_int rprShapeSetDisplacementScale(rpr_shape shape, rpr_f
 *  @return             RPR_SUCCESS in case of success, error code otherwise
 */
 extern RPR_API_ENTRY rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint objectGroupID);
+
+/** @brief Set object rendering layer mask
+ *          then, use   rprContextSetParameter1u(context,"renderLayerMask",mask)..
+ *          in order to render only a group of shape
+ *
+ *  @param  shape       The shape to set
+ *  @param  layerMask   The render mask
+ *  @return             RPR_SUCCESS in case of success, error code otherwise
+ */
+extern RPR_API_ENTRY rpr_int rprShapeSetLayerMask(rpr_shape shape, rpr_uint layerMask);
 
 /** @brief Set displacement texture
 *

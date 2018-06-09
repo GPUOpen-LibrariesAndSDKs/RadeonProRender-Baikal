@@ -2541,3 +2541,8 @@ rpr_int rprMaterialNodeSetInputBufferData_ext(rpr_material_node in_node, rpr_mat
         rprMaterialNodeSetInputBufferData(in_node, name_it->second.c_str(), buffer)
         : RPR_ERROR_UNSUPPORTED;
 }
+
+rpr_int rprShapeSetLayerMask(rpr_shape shape, rpr_uint layerMask)
+{
+    UNIMLEMENTED_FUNCTION
+}
