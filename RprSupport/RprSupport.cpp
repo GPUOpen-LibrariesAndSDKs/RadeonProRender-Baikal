@@ -153,7 +153,7 @@ rpr_int rprxMaterialSetParameterF(rprx_context context, rprx_material material, 
     rpr_uint layers = 0;
     rpr_uint status;
 
-     rprMaterialNodeGetInputInfo((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, RPR_MATERIAL_NODE_INPUT_VALUE, 4, &layers, 0);
+    rprMaterialNodeGetInputInfo((rpr_material_node)material, RPR_UBER_MATERIAL_LAYERS, RPR_MATERIAL_NODE_INPUT_VALUE, 4, &layers, 0);
 
     switch (parameter)
     {

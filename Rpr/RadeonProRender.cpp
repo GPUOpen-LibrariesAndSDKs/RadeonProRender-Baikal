@@ -1007,12 +1007,6 @@ rpr_int rprImageSetWrap(rpr_image image, rpr_image_wrap_type type)
     UNSUPPORTED_FUNCTION
 }
 
-rpr_int rprImageSetOption(rpr_image image, rpr_image_option option)
-{
-    UNSUPPORTED_FUNCTION
-}
-
-
 rpr_int rprShapeSetTransform(rpr_shape in_shape, rpr_bool transpose, rpr_float const * transform)
 {
     //cast data
@@ -2546,3 +2540,9 @@ rpr_int rprShapeSetLayerMask(rpr_shape shape, rpr_uint layerMask)
 {
     UNIMLEMENTED_FUNCTION
 }
+
+rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void const * indicesList, size_t numberOfIndices, rpr_hetero_volume_indices_topology indicesListTopology, void const * gridData, size_t gridDataSizeByte, rpr_uint gridDataTopology___unused)
+{
+    UNSUPPORTED_FUNCTION
+}
+
