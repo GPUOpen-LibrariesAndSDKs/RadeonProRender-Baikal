@@ -100,27 +100,23 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
     ImGui::SetNextWindowSize(win_size, ImGuiSetCond_FirstUseEver);
 
     // Draw a list of layers on the left side
-    ImGui::BeginChild("layers_list", ImVec2(left_side_width, 0));
+    ImGui::BeginChild("layers_list", ImVec2((float)left_side_width, 0));
     ImGui::Text("Layers:");
     ImGui::Separator();
 
-    int input_index = 0;
-    int layer_index = 0;
-    int offset = 0;
-    for (; (size_t)layer_index < m_layers.size(); layer_index++, offset)
+    int selected_id = 0;
+    std::string input_name;
+    for (const auto& layer : m_layers)
     {
-        const auto& inputs = m_layers[layer_index].second;
-        for (; (size_t)input_index < inputs.size(); input_index++)
+        for (const auto& input : layer.second)
         {
-            int id = offset + input_index;
-            ImGui::PushID(id);
-
-            if (ImGui::Selectable(inputs[input_index].c_str(), input_selected == id))
-                input_selected = id;
-
-            ImGui::PopID();
+            if (ImGui::Selectable(input.c_str(), selected_id == input_selected))
+            {
+                input_selected = selected_id;
+                input_name = input;
+            }
+            selected_id++;
         }
-        offset += (int)inputs.size();
     }
 
     ImGui::EndChild();
@@ -128,16 +124,8 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
     ImGui::SameLine();
     ImGui::BeginGroup();
 
-   /* if (((size_t)layer_index < m_layers.size()) &&
-        (size_t)input_index < m_layers[layer_index].second.size())*/
-    {
-        auto input_name = m_layers[0].second[0];
-        auto input_map = m_material->GetInputValue(input_name).input_map_value;
-        m_graph = GraphScheme::Create(UberTree::Create(input_map));
-    }
-
     // draw canvas with inputs graph
-    ImGui::Text("Input map graph");
+    ImGui::Text("Hold middle mouse button to scroll (%.2f,%.2f)", scrolling.x, scrolling.y);
     ImGui::SameLine(ImGui::GetWindowWidth() - left_side_width);
     ImGui::Checkbox("Show grid", &show_grid);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1, 1));
@@ -146,6 +134,15 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
     ImGui::BeginChild("scrolling_region", ImVec2(0, 0), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove);
     // ImGui::PushItemWidth(120.0f);
 
+    if (!input_name.empty() &&
+        m_selected_input != input_name)
+    {
+        auto input_map = m_material->GetInputValue(input_name).input_map_value;
+        m_graph = GraphScheme::Create(UberTree::Create(input_map), RadeonRays::int2(left_side_width + 10, 100));
+        m_selected_input = input_name;
+    }
+
+    ImVec2 offset = ImGui::GetCursorScreenPos() + scrolling;
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
     // show grid
@@ -173,10 +170,10 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
 
         for (const auto& node : nodes)
         {
-            ImVec2 top_left_corner((float)node.pos.x, (float)node.pos.y);
+            auto top_left_corner = ImVec2((float)node.pos.x, (float)node.pos.y) + offset;
             ImVec2 bottom_right_corner(
-                (float)(node.pos.x + node.size.x + 200),
-                (float)(node.pos.y + node.size.y));
+                (float)(top_left_corner.x + node.size.x),
+                (float)(top_left_corner.y + node.size.y));
 
             ImU32 node_bg_color = IM_COL32(75, 75, 75, 255); // : IM_COL32(60, 60, 60, 255);
 
@@ -185,6 +182,10 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
         }
 
     }
+
+    // Scrolling
+    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
+        scrolling = scrolling + ImGui::GetIO().MouseDelta;
 
     ImGui::EndChild();
     ImGui::PopStyleColor();

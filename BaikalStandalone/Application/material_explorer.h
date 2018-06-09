@@ -74,6 +74,7 @@ private:
     static std::vector<LayerDesc> GetUberLayersDesc();
 
     UberV2Material::Ptr m_material;
+    std::string m_selected_input;
     std::vector<LayerDesc> m_layers;
     GraphScheme::Ptr m_graph;
 };

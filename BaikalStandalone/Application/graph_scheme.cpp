@@ -55,7 +55,7 @@ void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos)
 {
     const int x_offset = 120;
     const int y_offset = 60;
-    const RadeonRays::int2 node_size = RadeonRays::int2(100, 70);
+    const RadeonRays::int2 node_size = RadeonRays::int2(120, 80);
     // primary tree
     auto iter = UberTreeIterator::Create(m_trees[0]);
 
