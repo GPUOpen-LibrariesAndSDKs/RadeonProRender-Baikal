@@ -13,6 +13,7 @@ UberMaterialObject::UberMaterialObject() :
     MaterialObject(kUberV2)
 {
     m_mat = UberV2Material::Create();
+    m_mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
 }
 
 void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonRays::float4 & val)

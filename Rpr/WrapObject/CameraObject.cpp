@@ -127,7 +127,7 @@ void CameraObject::RemoveFromScene(::SceneObject* scene)
 
 void CameraObject::SetFocalLength(rpr_float flen) 
 { 
-    m_camera_focal_length = flen / 1000.f; 
+    m_camera_focal_length = flen / 1000.f;
     UpdateCameraParams(); 
 }
 
@@ -139,24 +139,24 @@ void CameraObject::SetFocusDistance(rpr_float fdist)
 
 void CameraObject::SetSensorSize(RadeonRays::float2 size) 
 { 
-    m_camera_sensor_size = size * 0.001f; 
+    m_camera_sensor_size = size * 0.001f;
     UpdateCameraParams(); 
 }
 
 void CameraObject::SetOrthoWidth(float width) 
 { 
-    m_camera_sensor_size.x = width; 
+    //m_camera_sensor_size.x = width;
     UpdateCameraParams(); 
 }
 
 void CameraObject::SetOrthoHeight(float height) 
 { 
-    m_camera_sensor_size.y = height; 
+    //m_camera_sensor_size.y = height;
     UpdateCameraParams(); 
 }
 
 void CameraObject::SetAperture(rpr_float fstop) 
 { 
-    m_camera_aperture = fstop / 1000.f; 
+    m_camera_aperture = 100000.f;//fstop / 1000.f;
     UpdateCameraParams(); 
 }
