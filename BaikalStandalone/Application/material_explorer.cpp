@@ -175,10 +175,31 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
                 (float)(top_left_corner.x + node.size.x),
                 (float)(top_left_corner.y + node.size.y));
 
-            ImU32 node_bg_color = IM_COL32(75, 75, 75, 255); // : IM_COL32(60, 60, 60, 255);
+            ImGui::SetCursorScreenPos(top_left_corner);
+            ImGui::InvisibleButton("node", ImVec2(node.size.x, node.size.y));
+
+            bool node_hovered_in_scene = false;
+            if (ImGui::IsItemHovered())
+            {
+                node_hovered_in_scene = true;
+            }
+
+            ImU32 node_bg_color = node_hovered_in_scene ? IM_COL32(75, 75, 75, 255) : IM_COL32(60, 60, 60, 255); // : IM_COL32(60, 60, 60, 255);
 
             draw_list->AddRectFilled(top_left_corner, bottom_right_corner, node_bg_color, 4.0f);
             draw_list->AddRect(top_left_corner, bottom_right_corner, IM_COL32(100, 100, 100, 255), 4.0f);
+
+            // enable node drag
+            bool node_moving_active = ImGui::IsItemActive();
+
+            if (node_moving_active && ImGui::IsMouseDragging(0))
+            {
+                auto delta = ImGui::GetIO().MouseDelta;
+                auto new_pos = RadeonRays::int2(
+                    node.pos.x + (int)delta.x,
+                    node.pos.y + (int)delta.y);
+                m_graph->UpdateNodePos(node.id, new_pos);
+            }
         }
 
     }
