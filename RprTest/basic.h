@@ -31,6 +31,7 @@
 #include "RadeonProRender.h"
 #include "gtest/gtest.h"
 #include "OpenImageIO/imageio.h"
+#include "SceneGraph/scene_object.h"
 
 #include <vector>
 #include <memory>
@@ -72,6 +73,8 @@ public:
         m_output_path = outpath_option ? outpath_option : "OutputImages";
         m_reference_path.append("/");
         m_output_path.append("/");
+
+        Baikal::SceneObject::ResetId();
 
         ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, nullptr, nullptr, &m_context), RPR_SUCCESS);
         ASSERT_EQ(rprContextSetParameter1u(m_context, "randseed", 0u), RPR_SUCCESS);

@@ -225,8 +225,6 @@ TEST_F(AovTest, Aov_Uv)
 
 TEST_F(AovTest, Aov_ObjectId)
 {
-    Baikal::SceneObject::ResetId();
-
     auto output_ws = m_factory->CreateOutput(
         m_output->width(), m_output->height()
     );
