@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
 #include <../Baikal/Kernels/CL/path.cl>
+#include <../Baikal/Kernels/CL/bxdf.cl>
 
 enum LightInteractionType
 {

@@ -24,7 +24,7 @@ THE SOFTWARE.
 
 #include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
-#include <../Baikal/Kernels/CL/bxdf.cl>
+#include <../Baikal/Kernels/CL/bxdf_flags.cl>
 
 typedef struct _Path
 {
