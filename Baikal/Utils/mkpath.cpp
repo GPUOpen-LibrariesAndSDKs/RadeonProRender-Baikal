@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #endif
 
+#include <errno.h>
+
 namespace Baikal
 {
     static const std::string delimiters = "/\\";
