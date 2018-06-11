@@ -62,3 +62,55 @@ endif (BAIKAL_ENABLE_GLTF)
 
 set_target_properties(BaikalStandalone
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalStandalone)
+
+add_custom_target(BaikalStandaloneKernelsDir)
+
+set(BAIKALSTANDALONE_KERNELS_DIR BaikalStandalone/Kernels)
+FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_SRC)
+FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_DST)
+
+if (WIN32)
+    add_custom_command(TARGET BaikalStandaloneKernelsDir POST_BUILD
+        COMMAND IF NOT EXIST ${BAIKALSTANDALONE_KERNELS_DST} mklink /D ${BAIKALSTANDALONE_KERNELS_DST} ${BAIKALSTANDALONE_KERNELS_SRC}
+        DEPENDS ${BAIKALSTANDALONE_KERNELS_DST}
+    )
+else ()
+    add_custom_command(TARGET BaikalStandaloneKernelsDir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKALSTANDALONE_KERNELS_SRC} ${BAIKALSTANDALONE_KERNELS_DST}
+        DEPENDS ${BAIKALSTANDALONE_KERNELS_DST}
+    )
+endif ()
+
+add_dependencies(BaikalStandalone ResourcesDir BaikalKernelsDir BaikalStandaloneKernelsDir)
+
+if (WIN32)
+    add_custom_command(TARGET BaikalStandalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${BAIKALSTANDALONE_DLLS}
+            "$<TARGET_FILE_DIR:BaikalStandalone>"
+    )
+endif ()
+
+install(TARGETS BaikalStandalone RUNTIME DESTINATION bin)
+if (WIN32)
+    install(FILES ${BAIKALSTANDALONE_DLLS} DESTINATION bin)
+endif ()
+install(DIRECTORY ${RESOURCES_SRC} DESTINATION .)
+install(DIRECTORY ${BAIKAL_KERNELS_SRC} DESTINATION Baikal)
+install(DIRECTORY ${BAIKALSTANDALONE_KERNELS_SRC} DESTINATION BaikalStandalone)
+
+#TODO: the following should be added to CMakeLists.txt of RadeonRays
+#if (WIN32)
+#    install(TARGETS RadeonRays RUNTIME DESTINATION bin)
+#else ()
+#    install(TARGETS RadeonRays LIBRARY DESTINATION lib)
+#endif ()
+
+#TODO: the following should be removed after the above being add to CMakeLists.txt of RadeonRays
+if (WIN32)
+    install(FILES $<TARGET_FILE_DIR:BaikalStandalone>/RadeonRays.dll DESTINATION bin)
+else ()
+    file(GLOB_RECURSE RADEONRAYS_SO ${CMAKE_BINARY_DIR}/libRadeonRays.*)
+    install(FILES ${RADEONRAYS_SO} DESTINATION lib)
+endif ()
+
