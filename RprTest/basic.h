@@ -72,10 +72,45 @@ public:
         m_reference_path.append("/");
         m_output_path.append("/");
 
-        ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, RPR_CREATION_FLAGS_ENABLE_GPU0, nullptr, nullptr, &m_context), RPR_SUCCESS);
+        rpr_creation_flags flags = RPR_CREATION_FLAGS_ENABLE_GPU0 | RPR_CREATION_FLAGS_ENABLE_GPU1;//GetCreationFlags();
+
+        ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, flags, nullptr, nullptr, &m_context), RPR_SUCCESS);
         ASSERT_EQ(rprContextSetParameter1u(m_context, "randseed", 0u), RPR_SUCCESS);
 
         CreateFramebuffer();
+    }
+
+    rpr_creation_flags GetCreationFlags() const
+    {
+        char* device_index_option = GetCmdOption(g_argv, g_argv + g_argc, "-device");
+
+        if (!device_index_option)
+        {
+            // Use gpu0 by default
+            return RPR_CREATION_FLAGS_ENABLE_GPU0;
+        }
+
+        rpr_creation_flags flags = 0;
+
+#define FLAGS_GPU(i) RPR_CREATION_FLAGS_ENABLE_GPU##i
+#define CHECK_AND_ADD_GPU_FLAG(i) if (strcmp(device_index_option, "gpu"#i) == 0) { flags |= FLAGS_GPU(i); }
+        CHECK_AND_ADD_GPU_FLAG(0)
+        CHECK_AND_ADD_GPU_FLAG(1)
+        CHECK_AND_ADD_GPU_FLAG(2)
+        CHECK_AND_ADD_GPU_FLAG(3)
+        CHECK_AND_ADD_GPU_FLAG(4)
+        CHECK_AND_ADD_GPU_FLAG(5)
+        CHECK_AND_ADD_GPU_FLAG(6)
+        CHECK_AND_ADD_GPU_FLAG(7)
+#undef FLAGS_GPU
+#undef CHECK_AND_ADD_GPU_FLAG
+
+        if (strcmp(device_index_option, "cpu") == 0)
+        {
+            flags |= RPR_CREATION_FLAGS_ENABLE_CPU;
+        }
+
+        return flags;
     }
 
     virtual void TearDown()

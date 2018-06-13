@@ -110,24 +110,16 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = (creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP) != 0;
-    if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
+    try
     {
-        try
-        {
-            //TODO: check num_bounces 
-            ConfigManager::CreateConfigs(ConfigManager::kUseSingleGpu, interop, m_cfgs, 5);
-        }
-        catch (...)
-        {
-            // failed to create context with interop
-            result = RPR_ERROR_UNSUPPORTED;
-        }
+        //TODO: check num_bounces
+        ConfigManager::CreateConfigs(creation_flags, m_cfgs, 5);
     }
-    else
+    catch (...)
     {
-        result = RPR_ERROR_UNIMPLEMENTED;
-    }    
+        // failed to create context with interop
+        result = RPR_ERROR_UNSUPPORTED;
+    }
 
     if (result != RPR_SUCCESS)
     {
