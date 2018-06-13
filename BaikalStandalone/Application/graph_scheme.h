@@ -37,23 +37,36 @@ public:
         {   }
     };
 
-    struct Node
+    enum class NodeType
     {
-        std::uint32_t id;
-        std::string name;
-        RadeonRays::int2 pos; // position of the top left corner
-        RadeonRays::int2 size;
+        kIntermidiate = 0,
+        kFloat,
+        kFloat3,
+        kTexture
+    };
 
-        Node(
-            std::uint32_t id,
-            std::string name,
-            RadeonRays::int2 pos,
-            RadeonRays::int2 size);
-
+    class Node
+    {
+    public:
         Node(
             UberNode::Ptr node,
             RadeonRays::int2 pos,
             RadeonRays::int2 size);
+
+        float GetFloat() const;
+        void SetFloat(float value);
+        RadeonRays::float3 GetFloat3() const;
+        void SetFloat3(RadeonRays::float3 value);
+        void SetTexture(Baikal::Texture::Ptr texture);
+
+        // fields
+        std::uint32_t id;
+        NodeType type;
+        std::string name;
+        RadeonRays::int2 pos; // position of the top left corner
+        RadeonRays::int2 size;
+    private:
+        UberNode::Ptr node;
     };
 
     static Ptr Create(
@@ -78,7 +91,6 @@ private:
     void RemoveLink(int src_id, int dst_id);
     void RecomputeCoordinates(RadeonRays::int2 root_pos);
 
-    bool m_is_dirty;
     std::vector<UberTree::Ptr> m_trees;
     std::vector<Node> m_nodes;
     std::vector<Link> m_links;

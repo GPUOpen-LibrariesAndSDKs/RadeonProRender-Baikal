@@ -26,6 +26,8 @@ THE SOFTWARE.
 //// GraphScheme implemenataion
 ////////////////////////////////////////////////
 
+using namespace Baikal;
+
 namespace {
     struct GraphSchemeConcrete : public GraphScheme
     {
@@ -35,7 +37,7 @@ namespace {
     };
 }
 
-GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos) : m_is_dirty(false)
+GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos)
 {
     if (!tree)
         throw std::logic_error(
@@ -158,18 +160,99 @@ void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
 ////////////////////////////////////////////////
 
 GraphScheme::Node::Node(
-    std::uint32_t id_,
-    std::string name_,
-    RadeonRays::int2 pos_,
-    RadeonRays::int2 size_) :
-    id(id_), name(name_), pos(pos_), size(size_)
-{   }
-
-GraphScheme::Node::Node(
     UberNode::Ptr node_,
     RadeonRays::int2 pos_,
     RadeonRays::int2 size_) :
-    id(node_->GetId()), pos(pos_), size(size_)
+    // initialize list
+    id(node_->GetId()), pos(pos_), size(size_),
+    name (node_->GetDataTypeText()), node(node_)
 {
-    name = "Don't forget about me";
+    switch (node->GetDataType())
+    {
+    case InputMap::InputMapType::kConstantFloat:
+        type = NodeType::kFloat;
+        return;
+    case InputMap::InputMapType::kConstantFloat3:
+        type = NodeType::kFloat3;
+        return;
+    case InputMap::InputMapType::kSampler:
+        type = NodeType::kTexture;
+        return;
+    default:
+        type = NodeType::kIntermidiate;
+    }
+}
+
+float GraphScheme::Node::GetFloat() const
+{
+    if (node->GetDataType() != InputMap::InputMapType::kConstantFloat)
+        return 0.f;
+
+    auto float_node = std::dynamic_pointer_cast<UberNode_Float>(node);
+
+    if (!float_node)
+    {
+        throw std::runtime_error(
+            "Node::GetFloat(...): dynamic_pointer_cast failure");
+    }
+    return float_node->GetValue();
+}
+
+void GraphScheme::Node::SetFloat(float value)
+{
+    if (node->GetDataType() != InputMap::InputMapType::kConstantFloat)
+        return;
+
+    auto float_node = std::dynamic_pointer_cast<UberNode_Float>(node);
+
+    if (!float_node)
+    {
+        throw std::runtime_error(
+            "Node::SetFloat(...): dynamic_pointer_cast failure");
+    }
+    float_node->SetValue(value);
+}
+
+RadeonRays::float3 GraphScheme::Node::GetFloat3() const
+{
+    if (node->GetDataType() != InputMap::InputMapType::kConstantFloat3)
+        return RadeonRays::float3(0);
+    
+    auto float_node = std::dynamic_pointer_cast<UberNode_Float3>(node);
+
+    if (!float_node)
+    {
+        throw std::runtime_error(
+            "Node::GetFloat3(...): dynamic_pointer_cast failure");
+    }
+    return float_node->GetValue();
+}
+
+void GraphScheme::Node::SetFloat3(RadeonRays::float3 value)
+{
+    if (node->GetDataType() != InputMap::InputMapType::kConstantFloat3)
+        return;
+
+        auto float_node = std::dynamic_pointer_cast<UberNode_Float3>(node);
+
+        if (!float_node)
+        {
+            throw std::runtime_error("Node::SetFloat3(...): dynamic_pointer_cast failure");
+        }
+
+        float_node->SetValue(value);
+}
+
+void GraphScheme::Node::SetTexture(Texture::Ptr texture)
+{
+    if (node->GetDataType() != InputMap::InputMapType::kSampler)
+        return;
+
+    auto texture_node = std::dynamic_pointer_cast<UberNode_Sampler>(node);
+
+    if (!texture_node)
+    {
+        throw std::runtime_error("Node::SetTexture(...): dynamic_pointer_cast failure");
+    }
+    texture_node->SetValue(texture);
 }

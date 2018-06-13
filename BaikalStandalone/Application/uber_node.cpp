@@ -344,7 +344,7 @@ void UberNode_TwoArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 // get control parameter (not child argument)
 Baikal::InputMap::Ptr UberNode_Lerp::GetControl()
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Lerp>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_Lerp>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Lerp::GetControl(...): invalid dynamic_cast");
     return input_map->GetControl();
@@ -353,7 +353,7 @@ Baikal::InputMap::Ptr UberNode_Lerp::GetControl()
 // set control parameter (not child argument)
 void UberNode_Lerp::SetControl(Baikal::InputMap::Ptr control)
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Lerp>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_Lerp>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Lerp::GetControl(...): invalid dynamic_cast");
     return input_map->SetControl(control);
@@ -366,7 +366,7 @@ void UberNode_Lerp::SetControl(Baikal::InputMap::Ptr control)
 // get mask parameter (Not InputMap)
 std::array<uint32_t, 4> UberNode_Shuffle2::GetMask() const
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Shuffle2>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle2>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
     return input_map->GetMask();
@@ -375,7 +375,7 @@ std::array<uint32_t, 4> UberNode_Shuffle2::GetMask() const
 // set mask parameter (Not InputMap)
 void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Shuffle2>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle2>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
     input_map->SetMask(mask);
@@ -387,7 +387,7 @@ void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
 
 float UberNode_Float::GetValue() const
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Float>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Float::GetValue(...): invalid dynamic_cast");
     return input_map->GetValue();
@@ -395,7 +395,7 @@ float UberNode_Float::GetValue() const
 
 void UberNode_Float::SetValue(float value)
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Float>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Float::SetValue(...): invalid dynamic_cast");
     input_map->SetValue(value);
@@ -407,7 +407,7 @@ void UberNode_Float::SetValue(float value)
 
 RadeonRays::float3 UberNode_Float3::GetValue() const
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Float3>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat3>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Float3::GetValue(...): invalid dynamic_cast");
     return input_map->GetValue();
@@ -415,7 +415,7 @@ RadeonRays::float3 UberNode_Float3::GetValue() const
 
 void UberNode_Float3::SetValue(RadeonRays::float3 value)
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Float3>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat3>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Float3::SetValue(...): invalid dynamic_cast");
     input_map->SetValue(value);
@@ -427,18 +427,18 @@ void UberNode_Float3::SetValue(RadeonRays::float3 value)
 
 Texture::Ptr UberNode_Sampler::GetValue() const
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Sampler>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_Sampler>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Sampler::GetValue(...): invalid dynamic_cast");
-    return input_map->GetValue();
+    return input_map->GetTexture();
 }
 
 void UberNode_Sampler::SetValue(Texture::Ptr value)
 {
-    auto input_map = std::dynamic_pointer_cast<UberNode_Sampler>(m_input_map);
+    auto input_map = std::dynamic_pointer_cast<InputMap_Sampler>(m_input_map);
     if (!input_map)
         throw std::runtime_error("UberNode_Sampler::SetValue(...): invalid dynamic_cast");
-    input_map->SetValue(value);
+    input_map->SetTexture(value);
 }
 
 ////////////////////////////////////
@@ -580,6 +580,53 @@ UberNode::Ptr UberNode::GetChildren(std::uint32_t arg_number) const
 // input map data type accessor
 InputMap::InputMapType UberNode::GetDataType() const
 { return m_input_map->m_type; }
+
+#define RETURN_TEXT_INCASE(type)\
+    case InputMap::InputMapType::##type:\
+    {\
+        return #type;\
+    }\
+
+std::string UberNode::GetDataTypeText() const
+{
+    switch (m_input_map->m_type)
+    {
+        RETURN_TEXT_INCASE(kConstantFloat3)
+        RETURN_TEXT_INCASE(kConstantFloat)
+        RETURN_TEXT_INCASE(kSampler)
+        RETURN_TEXT_INCASE(kAdd)
+        RETURN_TEXT_INCASE(kSub)
+        RETURN_TEXT_INCASE(kMul)
+        RETURN_TEXT_INCASE(kDiv)
+        RETURN_TEXT_INCASE(kSin)
+        RETURN_TEXT_INCASE(kCos)
+        RETURN_TEXT_INCASE(kTan)
+        RETURN_TEXT_INCASE(kSelect)
+        RETURN_TEXT_INCASE(kDot3)
+        RETURN_TEXT_INCASE(kCross3)
+        RETURN_TEXT_INCASE(kLength3)
+        RETURN_TEXT_INCASE(kNormalize3)
+        RETURN_TEXT_INCASE(kPow)
+        RETURN_TEXT_INCASE(kAcos)
+        RETURN_TEXT_INCASE(kAsin)
+        RETURN_TEXT_INCASE(kAtan)
+        RETURN_TEXT_INCASE(kLerp)
+        RETURN_TEXT_INCASE(kMin)
+        RETURN_TEXT_INCASE(kMax)
+        RETURN_TEXT_INCASE(kFloor)
+        RETURN_TEXT_INCASE(kMod)
+        RETURN_TEXT_INCASE(kAbs)
+        RETURN_TEXT_INCASE(kShuffle)
+        RETURN_TEXT_INCASE(kShuffle2)
+        RETURN_TEXT_INCASE(kDot4)
+        RETURN_TEXT_INCASE(kCross4)
+        RETURN_TEXT_INCASE(kMatMul)
+        RETURN_TEXT_INCASE(kRemap)
+        RETURN_TEXT_INCASE(kSamplerBumpmap)
+    default:
+        return ""; // empty string
+    }
+}
 
 std::uint32_t UberNode::GetArgNumber()
 {

@@ -59,6 +59,7 @@ public:
 
     // input map data type accessor
     InputMap::InputMapType GetDataType() const;
+    std::string GetDataTypeText() const;
 
     // Get InputMap argument
     virtual InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
