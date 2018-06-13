@@ -65,7 +65,7 @@ Baikal::Camera::Ptr CameraObject::GetCamera()
 { 
     if (m_mode == RPR_CAMERA_MODE_PERSPECTIVE)
     {
-        Baikal::PerspectiveCamera::Ptr camera = PerspectiveCamera::Create(m_eye, m_at, m_up);
+        Baikal::PerspectiveCamera::Ptr camera = PerspectiveCamera::Create(m_eye, m_at, -m_up);
         camera->SetSensorSize(m_camera_sensor_size);
         camera->SetDepthRange(m_camera_zcap);
         camera->SetFocalLength(m_camera_focal_length);
@@ -92,8 +92,11 @@ void CameraObject::LookAt(RadeonRays::float3 const& eye,
     RadeonRays::float3 const& up)
 {
     m_eye = eye;
+    m_eye.x = -m_eye.x;
     m_at = at;
+    m_at.x = -at.x;
     m_up = up;
+    m_up.x = -m_up.x;
     UpdateCameraParams();
 }
 
