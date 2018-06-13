@@ -145,18 +145,22 @@ void CameraObject::SetSensorSize(RadeonRays::float2 size)
 
 void CameraObject::SetOrthoWidth(float width) 
 { 
-    //m_camera_sensor_size.x = width;
+    m_camera_sensor_size.x = width;
     UpdateCameraParams(); 
 }
 
 void CameraObject::SetOrthoHeight(float height) 
 { 
-    //m_camera_sensor_size.y = height;
+    m_camera_sensor_size.y = height;
     UpdateCameraParams(); 
 }
 
 void CameraObject::SetAperture(rpr_float fstop) 
 { 
-    m_camera_aperture = 100000.f;//fstop / 1000.f;
+    if (fstop > 1000.f)
+    {
+        fstop = 0.f;
+    }
+    m_camera_aperture = fstop / 1000.f;
     UpdateCameraParams(); 
 }
