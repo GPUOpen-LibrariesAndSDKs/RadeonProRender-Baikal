@@ -36,7 +36,7 @@ void UberTree::BuildTree(InputMap::Ptr input_map)
 
     while (!queue.empty())
     {
-        auto node = queue.back();
+        auto node = queue.front();
 
         for (auto i = 0u; i < node->GetArgNumber(); i++)
         {
@@ -117,12 +117,12 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
         queue.push(child);
         while (!queue.empty())
         {
-            for (auto i = 0u; i < queue.back()->GetArgNumber(); i++)
+            for (auto i = 0u; i < queue.front()->GetArgNumber(); i++)
             {
-                queue.push(queue.back()->m_children[i]);
+                queue.push(queue.front()->m_children[i]);
             }
-            m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), queue.back()));
-            tree.push_back(queue.back());
+            m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), queue.front()));
+            tree.push_back(queue.front());
             queue.pop();
         }
 
@@ -195,10 +195,10 @@ bool UberTreeIterator::IsValid() const
 }
 
 UberNode::Ptr UberTreeIterator::Item() const
-{ return m_queue.back().second; }
+{ return m_queue.front().second; }
 
 int UberTreeIterator::GetLevel() const
-{ return m_queue.back().first; }
+{ return m_queue.front().first; }
 
 void UberTreeIterator::Reset()
 {
@@ -209,8 +209,8 @@ void UberTreeIterator::Reset()
 
 void UberTreeIterator::Next()
 {
-    int level = m_queue.back().first;
-    auto node = m_queue.back().second;
+    int level = m_queue.front().first;
+    auto node = m_queue.front().second;
 
     for (auto i = 0u; i < node->GetArgNumber(); i++)
     {
