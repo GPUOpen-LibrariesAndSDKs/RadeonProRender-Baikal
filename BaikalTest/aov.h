@@ -25,28 +25,7 @@
 #include "SceneGraph/light.h"
 
 class AovTest : public BasicTest
-{   
-    void LoadTestScene() override
-    {
-        m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
-    }
-
-    virtual void SetupCamera() override
-    {
-        m_camera = Baikal::PerspectiveCamera::Create(
-            RadeonRays::float3(0.f, 2.f, -10.f),
-            RadeonRays::float3(0.f, 2.f, 0.f),
-            RadeonRays::float3(0.f, 1.f, 0.f));
-
-        m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
-        m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
-        m_camera->SetFocalLength(0.035f);
-        m_camera->SetFocusDistance(1.f);
-
-        m_scene->SetCamera(m_camera);
-    }
-
-};
+{   };
 
 TEST_F(AovTest, Aov_WorldPosition)
 {
@@ -232,6 +211,19 @@ TEST_F(AovTest, Aov_ObjectId)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kMeshID,
         output_ws.get());
 
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
+    m_camera = Baikal::PerspectiveCamera::Create(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+    m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+    m_camera->SetFocalLength(0.035f);
+    m_camera->SetFocusDistance(1.f);
+
+    m_scene->SetCamera(m_camera);
+
     ClearOutput(output_ws.get());
     ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
 
@@ -256,7 +248,20 @@ TEST_F(AovTest, Aov_GroupId)
 
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kGroupID,
         output_ws.get());
-    
+
+    m_scene = Baikal::SceneIo::LoadScene("sphere+plane+ibl.test", "");
+    m_camera = Baikal::PerspectiveCamera::Create(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+    m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+    m_camera->SetFocalLength(0.035f);
+    m_camera->SetFocusDistance(1.f);
+
+    m_scene->SetCamera(m_camera);
+
     auto SetMeshGroupId = [&](uint32_t sphere_id, uint32_t quad_id)
     {
         for (auto iter = m_scene->CreateShapeIterator();
@@ -466,7 +471,16 @@ TEST_F(AovTest, Aov_Opacity)
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kOpacity,
         output_ws.get());
 
-    m_camera->MoveForward(-8.0f);
+    m_camera = Baikal::PerspectiveCamera::Create(
+        RadeonRays::float3(0.f, 2.f, -15.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+    m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+    m_camera->SetFocalLength(0.035f);
+    m_camera->SetFocusDistance(1.f);
+
     m_scene = Baikal::SceneIo::LoadScene("transparent_planes.test", "");
     m_scene->SetCamera(m_camera);
 

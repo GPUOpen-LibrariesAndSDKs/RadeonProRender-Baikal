@@ -137,9 +137,6 @@ KERNEL void FillAOVsUberV2(
     // Shape id map stores shape ud in every pixel
     // And negative number if there is no any shape in the pixel
     GLOBAL float4* restrict aov_shape_ids,
-    // NOTE: following are fake parameters, handled outside
-    //int visibility_enabled,
-    //GLOBAL float4* restrict aov_visibility,
     GLOBAL InputMapData const* restrict input_map_values
 )
 {
