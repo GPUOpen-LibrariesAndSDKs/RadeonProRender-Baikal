@@ -75,8 +75,6 @@ void ConfigManager::CreateConfigs(
 
     for (std::size_t i = 0; i < platforms.size(); ++i)
     {
-        int device_end = 0;
-
         for (unsigned int d = 0; d < platforms[i].GetDeviceCount(); ++d)
         {
             cl_device_type device_type = platforms[i].GetDevice(d).GetType();
@@ -95,7 +93,9 @@ void ConfigManager::CreateConfigs(
             }
 
             if (!use_cpu && (device_type == CL_DEVICE_TYPE_CPU))
+            {
                 continue;
+            }
 
             Config cfg;
             cfg.caninterop = false;

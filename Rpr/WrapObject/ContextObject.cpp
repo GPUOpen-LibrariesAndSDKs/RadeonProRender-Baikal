@@ -117,7 +117,6 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
     }
     catch (...)
     {
-        // failed to create context with interop
         result = RPR_ERROR_UNSUPPORTED;
     }
 
@@ -295,7 +294,7 @@ FramebufferObject* ContextObject::CreateFrameBuffer(rpr_framebuffer_format const
     //TODO:: implement for several devices
     if (m_cfgs.size() != 1)
     {
-        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
+        throw Exception(RPR_ERROR_UNIMPLEMENTED, "ContextObject: invalid config count.");
     }
     auto& c = m_cfgs[0];
     Baikal::Output* out = c.factory->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height).release();
