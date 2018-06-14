@@ -794,7 +794,8 @@ namespace Baikal
                 }
 
                 ImVec2 explorer_win_size(win_size.x, win_size.y);
-                m_material_explorer->DrawExplorer(explorer_win_size);
+                bool status = m_material_explorer->DrawExplorer(explorer_win_size);
+                update = update ? true : status;
             }
             ImGui::Render();
         }

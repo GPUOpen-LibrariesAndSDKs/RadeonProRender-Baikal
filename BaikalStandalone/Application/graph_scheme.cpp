@@ -31,33 +31,33 @@ using namespace Baikal;
 namespace {
     struct GraphSchemeConcrete : public GraphScheme
     {
-        GraphSchemeConcrete(UberTree::Ptr tree, RadeonRays::int2 root_pos) :
-            GraphScheme(tree, root_pos)
+        GraphSchemeConcrete(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size) :
+            GraphScheme(tree, root_pos, node_size)
         {   }
     };
 }
 
-GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos)
+GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
 {
     if (!tree)
         throw std::logic_error(
             "GraphScheme::GraphScheme(...): 'tree' is nullptr");
 
     m_trees.push_back(tree);
-    RecomputeCoordinates(root_pos);
+    RecomputeCoordinates(root_pos, node_size);
 }
 
-GraphScheme::Ptr GraphScheme::Create(UberTree::Ptr tree, RadeonRays::int2 root_pos)
+GraphScheme::Ptr GraphScheme::Create(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
 {
     return std::make_shared<GraphScheme>(
-        GraphSchemeConcrete(tree, root_pos));
+        GraphSchemeConcrete(tree, root_pos, node_size));
 }
 
-void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos)
+void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
 {
     const int x_offset = 180;
     const int y_offset = 120;
-    const RadeonRays::int2 node_size = RadeonRays::int2(120, 80);
+
     // primary tree
     auto iter = UberTreeIterator::Create(m_trees[0]);
 
@@ -151,6 +151,18 @@ void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
         {
             node.pos.x = pos.x;
             node.pos.y = pos.y;
+        }
+    }
+}
+
+void GraphScheme::UpdateNodeSize(int id, RadeonRays::int2 size)
+{
+    for (auto& node : m_nodes)
+    {
+        if (node.id == id)
+        {
+            node.size.x = size.x;
+            node.size.y = size.y;
         }
     }
 }

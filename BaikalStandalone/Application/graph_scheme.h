@@ -71,10 +71,12 @@ public:
 
     static Ptr Create(
         UberTree::Ptr tree,
-        RadeonRays::int2 root_pos = RadeonRays::int2(0, 0));
+        RadeonRays::int2 root_pos = RadeonRays::int2(0, 0),
+        RadeonRays::int2 node_size = RadeonRays::int2(120, 60));
 
     void RemoveNode(int id);
     void UpdateNodePos(int id, RadeonRays::int2 pos);
+    void UpdateNodeSize(int id, RadeonRays::int2 size);
     void AddTree(UberTree::Ptr tree);
     void MergeTrees(UberTree::Ptr tree_1, UberTree::Ptr tree_2);
 
@@ -85,11 +87,11 @@ public:
     { return m_links; }
 
 protected:
-    GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos);
+    GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size);
 
 private:
     void RemoveLink(int src_id, int dst_id);
-    void RecomputeCoordinates(RadeonRays::int2 root_pos);
+    void RecomputeCoordinates(RadeonRays::int2 root_pos, RadeonRays::int2 node_size);
 
     std::vector<UberTree::Ptr> m_trees;
     std::vector<Node> m_nodes;

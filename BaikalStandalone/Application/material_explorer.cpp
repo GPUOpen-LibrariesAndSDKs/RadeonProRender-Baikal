@@ -21,8 +21,10 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "material_explorer.h"
+#include "image_io.h"
 #include <memory>
 
+using namespace Baikal;
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs)
 { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 
@@ -86,8 +88,10 @@ MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
         m_layers.push_back(find_layer(UberV2Material::kShadingNormalLayer));
 }
 
-void MaterialExplorer::DrawExplorer(ImVec2 win_size)
+bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
 {
+    bool is_changed = false;
+
     const float NODE_SLOT_RADIUS = 4.0f;
     const ImVec2 NODE_WINDOW_PADDING(8.0f, 8.0f);
     const int left_side_width = 150;
@@ -184,15 +188,21 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
             ImGui::SetCursorScreenPos(top_left_corner + NODE_WINDOW_PADDING);
             ImGui::BeginGroup(); // Lock horizontal position
 
+            ImGui::PushItemWidth(.8f * (float)node.size.x);
             switch (node.type)
             {
                 case GraphScheme::NodeType::kFloat:
                 {
                     ImGui::Text("%s", node.name.c_str());
                     float value = node.GetFloat();
-                    ImGui::SliderFloat("##value", &value, 0.0f, 1.0f, "Float %.2f");
-                    if (value != node.GetFloat())
-                        node.SetFloat(value);
+                    if (ImGui::InputFloat("##value", &value))
+                    {
+                        if (value != node.GetFloat())
+                        {
+                            node.SetFloat(value);
+                            is_changed = true;
+                        }
+                    }
                     break;
                 }
                 case GraphScheme::NodeType::kFloat3:
@@ -200,27 +210,42 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
                     ImGui::Text("%s", node.name.c_str());
                     auto value = node.GetFloat3();
                     ImVec4 color(value.x, value.y, value.z, value.w);
-                    ImGui::ColorEdit3("##color", &color.x);
-                    RadeonRays::float4 new_value(color.x, color.y, color.z);
-
-                    if ((value.x != new_value.x) ||
-                        (value.y != new_value.y) ||
-                        (value.z != new_value.z))
+                    if (ImGui::ColorEdit3("##color", &color.x))
                     {
-                        node.SetFloat3(new_value);
+                        RadeonRays::float4 new_value(color.x, color.y, color.z);
+
+                        if ((value.x != new_value.x) ||
+                            (value.y != new_value.y) ||
+                            (value.z != new_value.z))
+                        {
+                            node.SetFloat3(new_value);
+                            is_changed = true;
+                        }
                     }
                     break;
                 }
                 case GraphScheme::NodeType::kTexture:
                 {
                     ImGui::Text("%s", node.name.c_str());
+                    const int bufer_size = 2048;
+                    char text_buffer[2048] = { 0 };
+                    if (ImGui::InputText("##text", text_buffer, bufer_size))
+                    {
+                        auto image_io = ImageIo::CreateImageIo();
+                        auto texture = image_io->LoadImage(text_buffer);
+                        if (texture)
+                        {
+                            node.SetTexture(texture);
+                            is_changed = true;
+                        }
+                    }
                     break;
                 }
                 case GraphScheme::NodeType::kIntermidiate:
                 default:
                     ImGui::Text("%s", node.name.c_str());
             }
-
+            ImGui::PopItemWidth();
             ImGui::EndGroup();
 
             // draw node background rectangle
@@ -303,6 +328,8 @@ void MaterialExplorer::DrawExplorer(ImVec2 win_size)
     ImGui::PopStyleColor();
     ImGui::PopStyleVar(2);
     ImGui::EndGroup();
+
+    return is_changed;
 }
 
 std::vector<MaterialExplorer::LayerDesc> MaterialExplorer::GetUberLayersDesc()
