@@ -96,8 +96,6 @@ namespace Baikal
         };
 
         int m_material_id;
-        UberV2Material::Ptr m_material;
         MaterialExplorer::Ptr m_material_explorer;
-        std::unique_ptr<ImageIo> m_image_io;
     };
 }

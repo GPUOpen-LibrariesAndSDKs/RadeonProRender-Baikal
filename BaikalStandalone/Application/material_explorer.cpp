@@ -195,7 +195,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                 {
                     ImGui::Text("%s", node.name.c_str());
                     float value = node.GetFloat();
-                    if (ImGui::InputFloat("##value", &value))
+                    if (ImGui::InputFloat("##value", &value, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         if (value != node.GetFloat())
                         {
@@ -229,7 +229,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                     ImGui::Text("%s", node.name.c_str());
                     const int bufer_size = 2048;
                     char text_buffer[2048] = { 0 };
-                    if (ImGui::InputText("##text", text_buffer, bufer_size))
+                    if (ImGui::InputText("##text", text_buffer, bufer_size, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         auto image_io = ImageIo::CreateImageIo();
                         auto texture = image_io->LoadImage(text_buffer);

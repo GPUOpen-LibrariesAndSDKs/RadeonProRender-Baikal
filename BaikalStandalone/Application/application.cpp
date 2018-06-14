@@ -423,7 +423,6 @@ namespace Baikal
         : m_window(nullptr)
         , m_num_triangles(0)
         , m_num_instances(0)
-        , m_image_io(ImageIo::CreateImageIo())
     {
         // Command line parsing
         AppCliParser cli;
@@ -759,7 +758,6 @@ namespace Baikal
             {
                 m_current_shape_id = m_shape_id_future.get();
                 auto shape = m_cl->GetShapeById(m_current_shape_id);
-                m_material = nullptr;
 
                 if (shape)
                 {
@@ -767,11 +765,17 @@ namespace Baikal
                     m_material_id = m_current_shape_id;
 
                     // can be nullptr
-                    m_material =
+                    auto material =
                         std::dynamic_pointer_cast<UberV2Material>(
                             shape->GetMaterial());
 
-                    m_material_explorer = MaterialExplorer::Create(m_material);
+                    if (!material)
+                    {
+                        throw std::runtime_error(
+                            "Application::UpdateGui(...): dynamic cast failure");
+                    }
+
+                    m_material_explorer = MaterialExplorer::Create(material);
                     m_object_name = shape->GetName();
                 }
             }
@@ -784,15 +788,8 @@ namespace Baikal
             }
 
             // draw material
-            if (m_material)
+            if (m_material_explorer)
             {
-                std::uint32_t layers = m_material->GetLayers();
-
-                if (layers & UberV2Material::kEmissionLayer != 0)
-                {
-                    auto emission_value = m_material->GetInputValue("uberv2.emission.color");
-                }
-
                 ImVec2 explorer_win_size(win_size.x, win_size.y);
                 bool status = m_material_explorer->DrawExplorer(explorer_win_size);
                 update = update ? true : status;
