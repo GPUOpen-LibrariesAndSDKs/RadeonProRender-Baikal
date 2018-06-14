@@ -23,6 +23,7 @@ THE SOFTWARE.
 
 #include "CLW.h"
 #include "RenderFactory/render_factory.h"
+#include <list>
 
 #ifndef APP_BENCHMARK
 
@@ -55,7 +56,7 @@ void ConfigManager::CreateConfigs(
 
     configs.clear();
 
-    std::list<int> req_gpu_indices;
+    std::list<rpr_uint> req_gpu_indices;
 #define CHECK_AND_PUSH_GPU_INDEX(i) if ((flags & RPR_CREATION_FLAGS_ENABLE_GPU##i) == RPR_CREATION_FLAGS_ENABLE_GPU##i) req_gpu_indices.push_back(i);
     CHECK_AND_PUSH_GPU_INDEX(0)
     CHECK_AND_PUSH_GPU_INDEX(1)
@@ -71,7 +72,7 @@ void ConfigManager::CreateConfigs(
     bool interop = (flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP) == RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
     bool hasprimary = false;
 
-    std::size_t gpu_counter = 0;
+    rpr_uint gpu_counter = 0;
 
     for (std::size_t i = 0; i < platforms.size(); ++i)
     {
