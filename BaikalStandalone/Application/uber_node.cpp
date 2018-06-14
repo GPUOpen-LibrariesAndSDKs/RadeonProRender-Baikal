@@ -123,6 +123,9 @@ int UberNode::m_next_id = 0;
                 SET_ARG_##sufix(param, InputMap_TwoArg<InputMap::InputMapType::kLerp>)\
             case InputMap::InputMapType::kShuffle2:\
                 SET_ARG_##sufix(param, InputMap_TwoArg<InputMap::InputMapType::kShuffle2>);\
+            default:\
+                throw std::runtime_error(\
+                    "SET_ARG_HANDLER macros: unxupported InputMapType for this operation");\
         }\
 
 #define GET_ARG_HANDLER_A(input_type) GET_ARG_HANDLER(input_type, A)
@@ -205,6 +208,9 @@ void UberNode_Arg::SetArg(InputMap::Ptr input_map, std::uint32_t arg_number)
             SET_ARG(input_map, InputMap_OneArg<InputMap::InputMapType::kShuffle>);
         case InputMap::InputMapType::kMatMul:
             SET_ARG(input_map, InputMap_OneArg<InputMap::InputMapType::kMatMul>);
+        default:
+            throw std::runtime_error(
+                "UberNode_Arg::SetArg(...): unxupported InputMapType for this operation");
     }
 }
 
