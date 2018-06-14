@@ -41,6 +41,7 @@ THE SOFTWARE.
 #include "ImGUI/imgui.h"
 #include "ImGUI/imgui_impl_glfw_gl3.h"
 
+#include <OpenImageIO/imageio.h>
 #include <memory>
 #include <chrono>
 #include <cassert>
