@@ -97,12 +97,9 @@ namespace Baikal
         }
 
         // Sets layers that should be enabled in material
-        void SetLayers(std::uint32_t layers)
-        {
-            layers_ = layers;
-        }
-        // Returns enabled material layers
+        void SetLayers(std::uint32_t layers);
 
+        // Returns enabled material layers
         std::uint32_t GetLayers() const
         {
             return layers_;
