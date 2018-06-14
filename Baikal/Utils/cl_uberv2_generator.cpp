@@ -446,7 +446,8 @@ void CLUberV2Generator::MaterialGenerateGetBxDFType(UberV2Material::Ptr material
     if ((layers & UberV2Material::Layers::kDiffuseLayer) == UberV2Material::Layers::kDiffuseLayer)
     {
         sources->m_get_bxdf_type +=
-            "\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleDiffuse);\n";
+            "\tBxdf_UberV2_SetSampledComponent(dg, kBxdfUberV2SampleDiffuse);\n"
+            "\tbxdf_flags |= kBxdfFlagsBrdf;\n";
     }
     sources->m_get_bxdf_type +=
         "\tBxdf_SetFlags(dg, bxdf_flags);\n"
