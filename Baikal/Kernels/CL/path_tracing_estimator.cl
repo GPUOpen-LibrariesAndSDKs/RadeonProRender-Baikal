@@ -104,7 +104,7 @@ KERNEL void ShadeBackgroundEnvMap(
 
             if (tex != -1)
             {
-                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                v.xyz = light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex), light.ibl_mirror_x);
             }
         }
 
@@ -314,7 +314,7 @@ KERNEL void ShadeMiss(
             int tex = EnvironmentLight_GetTexture(&light, bxdf_flags);
             if (tex != -1)
             {
-                v.xyz = weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex)) * t;
+                v.xyz = weight * light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex), light.ibl_mirror_x) * t;
                 v.xyz = REASONABLE_RADIANCE(v.xyz);
             }
 

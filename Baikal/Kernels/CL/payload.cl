@@ -175,7 +175,7 @@ typedef struct
     int type;
     float multiplier;
     int tex_background;
-    int padding2;
+    bool ibl_mirror_x;
 } Light;
 
 typedef enum

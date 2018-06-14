@@ -67,8 +67,12 @@ LightObject::LightObject(Type type)
         m_light = Baikal::DirectionalLight::Create();
         break;
     case Type::kEnvironmentLight:
+    {
         m_light = Baikal::ImageBasedLight::Create();
+        auto ibl = std::dynamic_pointer_cast<Baikal::ImageBasedLight>(m_light);
+        ibl->SetMirrorX(true);
         break; 
+    }
     default:
         throw Exception(RPR_ERROR_INVALID_PARAMETER, "LightObject: unexpected light type");
     }

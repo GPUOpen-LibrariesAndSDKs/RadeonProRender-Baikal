@@ -204,6 +204,8 @@ namespace Baikal
         
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
 
+        void SetMirrorX(bool mirror_x);
+        float GetMirrorX() const;
     protected:
         ImageBasedLight();
 
@@ -216,6 +218,7 @@ namespace Baikal
         Texture::Ptr m_background_texture;
         // Emissive multiplier
         float m_multiplier;
+        bool mirror_x_;
     };
     
     // Area light

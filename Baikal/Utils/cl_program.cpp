@@ -33,7 +33,7 @@ THE SOFTWARE.
 #include "cl_program_manager.h"
 #include "version.h"
 
-#define DUMP_PROGRAM_SOURCE 1
+//#define DUMP_PROGRAM_SOURCE 1
 
 using namespace Baikal;
 
