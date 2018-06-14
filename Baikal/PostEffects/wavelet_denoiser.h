@@ -112,10 +112,10 @@ namespace Baikal
 #else
         : ClwPostEffect(program_manager, context, "../Baikal/Kernels/CL/wavelet_denoise.cl")
 #endif
+        , m_current_buffer_index(0) 
         , m_max_wavelet_passes(5)
         , m_buffers_width(0)
         , m_buffers_height(0)
-        , m_current_buffer_index(0)
         , m_buffers_initialized(false)
     {
         // Add necessary params

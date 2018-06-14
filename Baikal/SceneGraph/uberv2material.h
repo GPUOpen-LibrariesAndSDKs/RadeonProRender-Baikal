@@ -102,10 +102,13 @@ namespace Baikal
             layers_ = layers;
         }
         // Returns enabled material layers
+
         std::uint32_t GetLayers() const
         {
             return layers_;
         }
+
+        bool IsActive(const Input &input) const override;
 
     protected:
         UberV2Material();
@@ -113,6 +116,7 @@ namespace Baikal
         bool is_double_sided_;
         bool is_multiscatter_;
         std::uint32_t layers_;
+        std::set<std::string> m_active_inputs;
 
     };
 

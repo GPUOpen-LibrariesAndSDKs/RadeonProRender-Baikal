@@ -11,11 +11,11 @@ namespace Baikal
         Texture::Ptr LoadImage(std::string const& filename) const override;
         void SaveImage(std::string const& filename, Texture::Ptr texture) const override;
     };
-    
+
     static Texture::Format GetTextureFormat(OIIO_NAMESPACE::ImageSpec const& spec)
     {
         OIIO_NAMESPACE_USING
-        
+
         if (spec.format.basetype == TypeDesc::UINT8)
             return Texture::Format::kRgba8;
         else if (spec.format.basetype == TypeDesc::HALF)
@@ -23,11 +23,11 @@ namespace Baikal
         else
             return Texture::Format::kRgba32;
     }
-    
+
     static OIIO_NAMESPACE::TypeDesc GetTextureFormat(Texture::Format fmt)
     {
         OIIO_NAMESPACE_USING
-        
+
         if (fmt == Texture::Format::kRgba8)
             return  TypeDesc::UINT8;
         else if (fmt == Texture::Format::kRgba16)
@@ -35,28 +35,29 @@ namespace Baikal
         else
             return TypeDesc::FLOAT;
     }
-    
+
     Texture::Ptr Oiio::LoadImage(const std::string &filename) const
     {
         OIIO_NAMESPACE_USING
-        
+
         std::unique_ptr<ImageInput> input{ImageInput::open(filename)};
-        
+
         if (!input)
         {
             throw std::runtime_error("Can't load " + filename + " image");
         }
-        
+
         ImageSpec const& spec = input->spec();
-        
+
         auto fmt = GetTextureFormat(spec);
         char* texturedata = nullptr;
 
         if (fmt == Texture::Format::kRgba8)
         {
             auto size = spec.width * spec.height * spec.depth * 4;
-            
+
             texturedata = new char[size];
+            memset(texturedata, 0, size);
 
             // Read data to storage
             input->read_image(TypeDesc::UINT8, texturedata, sizeof(char) * 4);
@@ -64,7 +65,7 @@ namespace Baikal
             if (spec.nchannels == 1)
             {
                 // set B, G and A components to 
-                for (auto i = 0u; i < size; i += 4)
+                for (auto i = 0; i < size; i += 4)
                 {
                     texturedata[i + 1] = texturedata[i];
                     texturedata[i + 2] = texturedata[i];
@@ -79,13 +80,14 @@ namespace Baikal
         else if (fmt == Texture::Format::kRgba16)
         {
             auto size = spec.width * spec.height * spec.depth * sizeof(float) * 2;
-            
+
             // Resize storage
             texturedata = new char[size];
-            
+            memset(texturedata, 0, size);
+
             // Read data to storage
             input->read_image(TypeDesc::HALF, texturedata, sizeof(float) * 2);
-            
+
             // Close handle
             input->close();
         }
@@ -95,6 +97,7 @@ namespace Baikal
 
             // Resize storage
             texturedata = new char[size];
+            memset(texturedata, 0, size);
 
             // Read data to storage
             input->read_image(TypeDesc::FLOAT, texturedata, sizeof(RadeonRays::float3));
@@ -112,7 +115,7 @@ namespace Baikal
         OIIO_NAMESPACE_USING;
 
         std::unique_ptr<ImageOutput> out{ImageOutput::create(filename)};
-        
+
         if (!out)
         {
             throw std::runtime_error("Can't create image file on disk");

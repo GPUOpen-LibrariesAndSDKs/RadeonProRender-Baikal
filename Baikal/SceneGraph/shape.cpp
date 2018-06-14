@@ -209,7 +209,7 @@ namespace Baikal
         if (!m_aabb_cached)
         {
             m_aabb = RadeonRays::bbox();
-            for (auto i = 0; i < m_indices.size(); ++i)
+            for (std::size_t i = 0; i < m_indices.size(); ++i)
             {
                 m_aabb.grow(m_vertices[m_indices[i]]);
             }

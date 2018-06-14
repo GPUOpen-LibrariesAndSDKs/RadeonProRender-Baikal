@@ -83,9 +83,9 @@ namespace Baikal
         // Update texture data only.
         void UpdateTextures(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, ClwScene& out) const override;
         // Update input maps only
-        void UpdateInputMaps(Scene1 const& scene, Collector& input_map_collector, Collector& input_map_leafs_collector, ClwScene& out) const;
+        void UpdateInputMaps(Scene1 const& scene, Collector& input_map_collector, Collector& input_map_leafs_collector, ClwScene& out) const override;
         // Update input map leafs only
-        void UpdateLeafsData(Scene1 const& scene, Collector& input_map_leafs_collector, Collector& tex_collector, ClwScene& out) const;
+        void UpdateLeafsData(Scene1 const& scene, Collector& input_map_leafs_collector, Collector& tex_collector, ClwScene& out) const override;
         // Get default material
         Material::Ptr GetDefaultMaterial() const override;
         // If m_current_scene changes

@@ -41,9 +41,9 @@ namespace
         {
             std::cout << "Warning: missing mesh data, fill it with NULL.\n";
             int count = 0;
-            for (int i = 0; i < in_num_faces; ++i)
+            for (std::size_t i = 0; i < in_num_faces; ++i)
             {
-                count +=in_num_face_vertices[i];
+                count += in_num_face_vertices[i];
             }
             result.resize(count * size);
             std::fill(result.begin(), result.end(), 0.f);
@@ -52,7 +52,7 @@ namespace
         }
 
         int indent = 0;
-        for (int i = 0; i < in_num_faces; ++i)
+        for (std::size_t i = 0; i < in_num_faces; ++i)
         {
             int face = in_num_face_vertices[i];
             for (int f = indent; f < face + indent; ++f)
@@ -195,7 +195,7 @@ void ShapeObject::GetVertexData(float* out) const
     //need to copy data, because RadeonRays::float3 contains 4 float,
     //but we need only 3
     const RadeonRays::float3 * data = mesh->GetVertices();
-    for (int i = 0; i < mesh->GetNumVertices(); ++i)
+    for (std::size_t i = 0; i < mesh->GetNumVertices(); ++i)
     {
         out[3 * i] = data[i].x;
         out[3 * i + 1] = data[i].y;
@@ -225,7 +225,7 @@ void ShapeObject::GetNormalData(float* out) const
     //need to copy data, because RadeonRays::float3 contains 4 float,
     //but we need only 3
     const RadeonRays::float3 * data = mesh->GetNormals();
-    for (int i = 0; i < mesh->GetNumNormals(); ++i)
+    for (std::size_t i = 0; i < mesh->GetNumNormals(); ++i)
     {
         out[3 * i] = data[i].x;
         out[3 * i + 1] = data[i].y;

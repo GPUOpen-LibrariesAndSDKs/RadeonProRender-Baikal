@@ -41,9 +41,9 @@ namespace Baikal
     
     PerspectiveCamera::PerspectiveCamera(float3 const& eye, float3 const& at, float3 const& up)
     : Camera(eye, at, up)
-    , m_aperture(0.f)
-    , m_focus_distance(0.f)
     , m_focal_length(0.f)
+    , m_focus_distance(0.f)
+    , m_aperture(0.f)
     {
     }
 

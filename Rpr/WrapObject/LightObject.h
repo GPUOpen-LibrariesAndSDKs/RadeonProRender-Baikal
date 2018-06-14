@@ -64,8 +64,8 @@ public:
     void SetEnvMultiplier(rpr_float mult);
     rpr_float GetEnvMultiplier();
 private:
-    Baikal::Light::Ptr m_light;
     Type m_type;
+    Baikal::Light::Ptr m_light;
     //only for GetEnvTexture() method
     MaterialObject* m_env_tex;
 };

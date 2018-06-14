@@ -15,12 +15,12 @@ namespace Baikal
         {
         }
 
-        void GetData(RadeonRays::float3* data) const
+        void GetData(RadeonRays::float3* data) const override
         {
             m_context.ReadBuffer(0, m_data, data, m_data.GetElementCount()).Wait();
         }
 
-        void GetData(RadeonRays::float3* data, /* offset in elems */ size_t offset, /* read elems */size_t elems_count) const
+        void GetData(RadeonRays::float3* data, /* offset in elems */ size_t offset, /* read elems */size_t elems_count) const override
         {
             m_context.ReadBuffer(
                 0,
@@ -38,7 +38,7 @@ namespace Baikal
         CLWBuffer<RadeonRays::float3> data() const { return m_data; }
 
     private:
-        CLWBuffer<RadeonRays::float3> m_data;
         CLWContext m_context;
+        CLWBuffer<RadeonRays::float3> m_data;
     };
 }

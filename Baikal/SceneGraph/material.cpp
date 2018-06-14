@@ -96,8 +96,10 @@ namespace Baikal
 
         for (auto &input : m_inputs)
         {
-            if (input.second.value.type == InputType::kInputMap)
+            if (IsActive(input.second) && (input.second.value.type == InputType::kInputMap))
+            {
                 input_maps.insert(input.second.value.input_map_value);
+            }
         }
 
         return std::make_unique<ContainerIterator<std::set<Baikal::InputMap::Ptr>>>(std::move(input_maps));
@@ -110,7 +112,7 @@ namespace Baikal
 
         for (auto &input : m_inputs)
         {
-            if (input.second.value.type == InputType::kInputMap)
+            if ((input.second.value.type == InputType::kInputMap) && IsActive(input.second))
             {
                 if (!input.second.value.input_map_value->IsLeaf())
                 {
@@ -218,14 +220,14 @@ namespace Baikal
         return m_inputs.size();
     }
 
-    Material::Input Material::GetInput(std::uint32_t idx) const
+    Material::Input Material::GetInput(std::size_t idx) const
     {
         if (idx >= GetNumInputs())
             throw std::logic_error(
                 "Material::GitInputByIndex(...): idx can not be bigger than number of inputs");
 
         auto iter = m_inputs.begin();
-        for (std::uint32_t i = 0; i < idx; i++)
+        for (std::size_t i = 0; i < idx; i++)
             ++iter;
 
         return iter->second;

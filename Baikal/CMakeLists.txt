@@ -49,6 +49,8 @@ set(UTILS_SOURCES
     Utils/tiny_obj_loader.h
     Utils/toFloat.h
     Utils/version.h
+    Utils/mkpath.cpp
+    Utils/mkpath.h
     Utils/cl_inputmap_generator.cpp
     Utils/cl_inputmap_generator.h
     Utils/cl_program.cpp
@@ -158,5 +160,9 @@ endif (BAIKAL_ENABLE_RAYMASK)
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
 target_link_libraries(Baikal PUBLIC RadeonRays)
-
+if (WIN32)
+    target_compile_options(Baikal PUBLIC /WX)
+elseif (UNIX)
+    target_compile_options(Baikal PUBLIC -Wall -Werror)
+endif (WIN32)
     

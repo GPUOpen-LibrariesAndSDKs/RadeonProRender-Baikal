@@ -32,6 +32,7 @@ THE SOFTWARE.
 
 #include "cl_program_manager.h"
 #include "version.h"
+#include "Utils/mkpath.h"
 
 //#define DUMP_PROGRAM_SOURCE 1
 
@@ -91,6 +92,8 @@ inline bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& dat
 
 inline void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data)
 {
+    mkfilepath(name);
+
     std::ofstream out(name, std::ios::out | std::ios::binary);
 
     if (out)
@@ -184,16 +187,16 @@ CLWProgram CLProgram::Compile(const std::string &opts)
          * Code below usable for cache debugging
          */
 #ifdef DUMP_PROGRAM_SOURCE
-        int e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        std::ofstream file(std::to_string(e));
+        auto e = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        std::ofstream file(m_program_name + std::to_string(e) + ".cl");
         file << m_compiled_source;
         file.close();
 #endif
     }
     catch (CLWException exception)
     {
-        std::cerr<<"Compilation failed!"<<std::endl;
-        std::cerr<<"Dumping source to file:"<<m_program_name<<".cl.failed"<<std::endl;
+        std::cerr << "Compilation failed!" << std::endl;
+        std::cerr << "Dumping source to file:" << m_program_name << ".cl.failed" << std::endl;
         std::string fname = m_program_name + ".cl.failed";
         std::ofstream file(fname);
         file << m_compiled_source;
@@ -202,8 +205,8 @@ CLWProgram CLProgram::Compile(const std::string &opts)
     }
 
     end = std::chrono::high_resolution_clock::now();
-    int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-    std::cerr<<"Program compilation time: "<<elapsed_ms<<" ms"<<std::endl;
+    int elapsed_ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cerr << "Program compilation time: " << elapsed_ms << " ms" << std::endl;
 
     m_is_dirty = false;
     return compiled_program;

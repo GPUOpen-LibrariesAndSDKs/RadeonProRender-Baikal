@@ -239,22 +239,13 @@ rpr_int rprContextSetParameter1u(rpr_context in_context, rpr_char const * name, 
         return RPR_ERROR_INVALID_CONTEXT;
     }
 
-    //TODO: handle context parameters
-    return RPR_SUCCESS;
-
-    if (!strcmp(name, "rendermode"))
+    try
     {
-        switch (x)
-        {
-        case RPR_RENDER_MODE_GLOBAL_ILLUMINATION:
-            break;
-        default:
-            UNIMLEMENTED_FUNCTION
-        }
+        context->SetParameter(name, x);
     }
-    else
+    catch (Exception& e)
     {
-        UNIMLEMENTED_FUNCTION
+        return e.m_error;
     }
 
     return RPR_SUCCESS;
@@ -2087,7 +2078,7 @@ rpr_int rprFrameBufferGetInfo(rpr_framebuffer in_frame_buffer, rpr_framebuffer_i
     {
         return RPR_ERROR_INVALID_PARAMETER;
     }
-    int buff_size = sizeof(RadeonRays::float3) * buff->Width() * buff->Height();
+    std::size_t buff_size = sizeof(RadeonRays::float3) * buff->Width() * buff->Height();
     switch (in_info)
     {
     case RPR_FRAMEBUFFER_DATA:

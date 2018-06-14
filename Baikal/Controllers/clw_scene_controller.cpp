@@ -52,9 +52,9 @@ namespace Baikal
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
-    : m_default_material(UberV2Material::Create())
-    , m_context(context)
+    : m_context(context)
     , m_api(api)
+    , m_default_material(UberV2Material::Create())
     , m_program_manager(program_manager)
     {
         auto acc_type = "fatbvh";
@@ -776,7 +776,6 @@ namespace Baikal
         }
 
         ClwScene::Volume* volumes = nullptr;
-        std::size_t num_materials_written = 0;
 
         // Map GPU materials buffer
         m_context.MapBuffer(0, out.volumes, CL_MAP_WRITE, &volumes).Wait();
@@ -888,24 +887,24 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.texturedata, data);
     }
 
+#ifndef NDEBUG
+    // We're not using this function on release
     // Convert Material:: types to ClwScene:: types
     static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
         // Distinguish between single bxdf materials and compound ones
-        if (auto bxdf = dynamic_cast<UberV2Material const*>(&material))
+        if (dynamic_cast<UberV2Material const*>(&material))
         {
             return ClwScene::Bxdf::kUberV2;
         }
 
         return ClwScene::Bxdf::kZero;
     }
+#endif
 
     void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<std::int32_t> &material_data) const
     {
-        // Convert material type and sidedness
-        auto type = GetMaterialType(material);
-        assert(type == ClwScene::Bxdf::kUberV2);
-
+        assert(GetMaterialType(material) == ClwScene::Bxdf::kUberV2);
         const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
 
         std::uint32_t layers = uber_material.GetLayers();
@@ -913,7 +912,7 @@ namespace Baikal
         m_materialid_to_offset[material.GetId()] = static_cast<int>(material_data.size());
 
         // Pack material parameters
-        std::int32_t params;
+        std::int32_t params = 0;
         params |= ((uber_material.IsLinkRefractionIOR()) ? 1 : 0) << 0;
         params |= ((uber_material.IsThin()) ? 1 : 0) << 1;
         params |= ((uber_material.isDoubleSided()) ? 1 : 0) << 2;

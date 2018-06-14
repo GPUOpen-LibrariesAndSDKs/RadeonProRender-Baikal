@@ -42,8 +42,8 @@ public:
         m_output = out;
     }
 
-    int Width();
-    int Height();
+    std::size_t Width();
+    std::size_t Height();
     void GetData(void* out_data);
 
     void Clear();
@@ -54,8 +54,8 @@ public:
     Baikal::Output* GetOutput() { return m_output; }
 private:
     Baikal::Output* m_output;
-    int m_width;
-    int m_height;
+    std::size_t m_width;
+    std::size_t m_height;
     CLWImage2D m_cl_interop_image;
     CLWContext m_context;
     CLWKernel m_copy_cernel;
