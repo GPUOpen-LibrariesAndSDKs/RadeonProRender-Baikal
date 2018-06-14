@@ -597,38 +597,70 @@ std::string UberNode::GetDataTypeText() const
 {
     switch (m_input_map->m_type)
     {
-        RETURN_TEXT_INCASE(kConstantFloat3)
-        RETURN_TEXT_INCASE(kConstantFloat)
-        RETURN_TEXT_INCASE(kSampler)
-        RETURN_TEXT_INCASE(kAdd)
-        RETURN_TEXT_INCASE(kSub)
-        RETURN_TEXT_INCASE(kMul)
-        RETURN_TEXT_INCASE(kDiv)
-        RETURN_TEXT_INCASE(kSin)
-        RETURN_TEXT_INCASE(kCos)
-        RETURN_TEXT_INCASE(kTan)
-        RETURN_TEXT_INCASE(kSelect)
-        RETURN_TEXT_INCASE(kDot3)
-        RETURN_TEXT_INCASE(kCross3)
-        RETURN_TEXT_INCASE(kLength3)
-        RETURN_TEXT_INCASE(kNormalize3)
-        RETURN_TEXT_INCASE(kPow)
-        RETURN_TEXT_INCASE(kAcos)
-        RETURN_TEXT_INCASE(kAsin)
-        RETURN_TEXT_INCASE(kAtan)
-        RETURN_TEXT_INCASE(kLerp)
-        RETURN_TEXT_INCASE(kMin)
-        RETURN_TEXT_INCASE(kMax)
-        RETURN_TEXT_INCASE(kFloor)
-        RETURN_TEXT_INCASE(kMod)
-        RETURN_TEXT_INCASE(kAbs)
-        RETURN_TEXT_INCASE(kShuffle)
-        RETURN_TEXT_INCASE(kShuffle2)
-        RETURN_TEXT_INCASE(kDot4)
-        RETURN_TEXT_INCASE(kCross4)
-        RETURN_TEXT_INCASE(kMatMul)
-        RETURN_TEXT_INCASE(kRemap)
-        RETURN_TEXT_INCASE(kSamplerBumpmap)
+    case InputMap::InputMapType::kConstantFloat3:
+        return "kConstantFloat3";
+    case InputMap::InputMapType::kConstantFloat:
+        return "kConstantFloat";
+    case InputMap::InputMapType::kSampler:
+        return "kSampler";
+    case InputMap::InputMapType::kAdd:
+        return "kAdd";
+    case InputMap::InputMapType::kSub:
+        return "kSub";
+    case InputMap::InputMapType::kMul:
+        return "kMul";
+    case InputMap::InputMapType::kDiv:
+        return "kDiv";
+    case InputMap::InputMapType::kSin:
+        return "kSin";
+    case InputMap::InputMapType::kCos:
+        return "kCos";
+    case InputMap::InputMapType::kTan:
+        return "kTan";
+    case InputMap::InputMapType::kSelect:
+        return "kSelect";
+    case InputMap::InputMapType::kDot3:
+        return "kDot3";
+    case InputMap::InputMapType::kCross3:
+        return "kCross3";
+    case InputMap::InputMapType::kLength3:
+        return "kLength3";
+    case InputMap::InputMapType::kNormalize3:
+        return "kNormalize3";
+    case InputMap::InputMapType::kPow:
+        return "kPow";
+    case InputMap::InputMapType::kAcos:
+        return "kAcos";
+    case InputMap::InputMapType::kAsin:
+        return "kAsin";
+    case InputMap::InputMapType::kAtan:
+        return "kAtan";
+    case InputMap::InputMapType::kLerp:
+        return "kLerp";
+    case InputMap::InputMapType::kMin:
+        return "kMin";
+    case InputMap::InputMapType::kMax:
+        return "kMax";
+    case InputMap::InputMapType::kFloor:
+        return "kFloor";
+    case InputMap::InputMapType::kMod:
+        return "kMod";
+    case InputMap::InputMapType::kAbs:
+        return "kAbs";
+    case InputMap::InputMapType::kShuffle:
+        return "kShuffle";
+    case InputMap::InputMapType::kShuffle2:
+        return "kShuffle2";
+    case InputMap::InputMapType::kDot4:
+        return "kDot4";
+    case InputMap::InputMapType::kCross4:
+        return "kCross4";
+    case InputMap::InputMapType::kSamplerBumpmap:
+        return "kSamplerBumpmap";
+    case InputMap::InputMapType::kMatMul:
+        return "kMatMul";
+    case InputMap::InputMapType::kRemap:
+        return "kRemap";
     default:
         return ""; // empty string
     }
@@ -743,24 +775,26 @@ UberNode::Ptr UberNode::Create(InputMap::Ptr input_map, Ptr parent)
             return std::make_shared<UberNode_LerpConcrete>(input_map, parent);
         case InputMap::InputMapType::kShuffle2:
             return std::make_shared<UberNode_Shuffle2Concrete>(input_map, parent);
-    }
-    // three args input maps
-    if (std::dynamic_pointer_cast<InputMap_Remap>(input_map) != nullptr)
-    {
-        return std::make_shared<UberNode_ThreeArgsConcrete>(input_map, parent);
-    }
-    // leaf input maps
-    if (std::dynamic_pointer_cast<InputMap_ConstantFloat>(input_map) != nullptr)
-    {
-        return std::make_shared<UberNode_FloatConcrete>(input_map, parent);
-    }
-    if (std::dynamic_pointer_cast<InputMap_ConstantFloat3>(input_map) != nullptr)
-    {
-        return std::make_shared<UberNode_Float3Concrete>(input_map, parent);
-    }
-    if (std::dynamic_pointer_cast<InputMap_Sampler>(input_map) != nullptr)
-    {
-        return std::make_shared<UberNode_SamplerConcrete>(input_map, parent);
+        default:
+        {
+            if (std::dynamic_pointer_cast<InputMap_Remap>(input_map) != nullptr)
+            {
+                return std::make_shared<UberNode_ThreeArgsConcrete>(input_map, parent);
+            }
+            // leaf input maps
+            if (std::dynamic_pointer_cast<InputMap_ConstantFloat>(input_map) != nullptr)
+            {
+                return std::make_shared<UberNode_FloatConcrete>(input_map, parent);
+            }
+            if (std::dynamic_pointer_cast<InputMap_ConstantFloat3>(input_map) != nullptr)
+            {
+                return std::make_shared<UberNode_Float3Concrete>(input_map, parent);
+            }
+            if (std::dynamic_pointer_cast<InputMap_Sampler>(input_map) != nullptr)
+            {
+                return std::make_shared<UberNode_SamplerConcrete>(input_map, parent);
+            }
+        }
     }
 
     return nullptr;
