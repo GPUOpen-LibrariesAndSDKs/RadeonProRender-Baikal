@@ -56,17 +56,17 @@ void ConfigManager::CreateConfigs(
 
     configs.clear();
 
-    std::list<rpr_uint> req_gpu_indices;
-#define CHECK_AND_PUSH_GPU_INDEX(i) if ((flags & RPR_CREATION_FLAGS_ENABLE_GPU##i) == RPR_CREATION_FLAGS_ENABLE_GPU##i) req_gpu_indices.push_back(i);
-    CHECK_AND_PUSH_GPU_INDEX(0)
-    CHECK_AND_PUSH_GPU_INDEX(1)
-    CHECK_AND_PUSH_GPU_INDEX(2)
-    CHECK_AND_PUSH_GPU_INDEX(3)
-    CHECK_AND_PUSH_GPU_INDEX(4)
-    CHECK_AND_PUSH_GPU_INDEX(5)
-    CHECK_AND_PUSH_GPU_INDEX(6)
-    CHECK_AND_PUSH_GPU_INDEX(7)
-#undef CHECK_AND_PUSH_GPU_INDEX
+    static const std::vector<rpr_uint> kGpuFlags =
+    {
+        RPR_CREATION_FLAGS_ENABLE_GPU0,
+        RPR_CREATION_FLAGS_ENABLE_GPU1,
+        RPR_CREATION_FLAGS_ENABLE_GPU2,
+        RPR_CREATION_FLAGS_ENABLE_GPU3,
+        RPR_CREATION_FLAGS_ENABLE_GPU4,
+        RPR_CREATION_FLAGS_ENABLE_GPU5,
+        RPR_CREATION_FLAGS_ENABLE_GPU6,
+        RPR_CREATION_FLAGS_ENABLE_GPU7
+    };
 
     bool use_cpu = (flags & RPR_CREATION_FLAGS_ENABLE_CPU) == RPR_CREATION_FLAGS_ENABLE_CPU;
     bool interop = (flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP) == RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
@@ -82,12 +82,9 @@ void ConfigManager::CreateConfigs(
 
             if (device_type == CL_DEVICE_TYPE_GPU)
             {
-                if (!req_gpu_indices.empty() && (gpu_counter++) == req_gpu_indices.front())
-                {
-                    // Remove this index
-                    req_gpu_indices.pop_front();
-                }
-                else
+                bool comp = (kGpuFlags[gpu_counter] & flags) == kGpuFlags[gpu_counter];
+                ++gpu_counter;
+                if (!comp)
                 {
                     continue;
                 }

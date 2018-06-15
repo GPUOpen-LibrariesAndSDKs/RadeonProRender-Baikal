@@ -90,21 +90,32 @@ public:
             return RPR_CREATION_FLAGS_ENABLE_GPU0;
         }
 
-#define CHECK_AND_ADD_GPU_FLAG(i) if (strcmp(device_index_option, "gpu"#i) == 0) { return RPR_CREATION_FLAGS_ENABLE_GPU##i; }
-        CHECK_AND_ADD_GPU_FLAG(0)
-        CHECK_AND_ADD_GPU_FLAG(1)
-        CHECK_AND_ADD_GPU_FLAG(2)
-        CHECK_AND_ADD_GPU_FLAG(3)
-        CHECK_AND_ADD_GPU_FLAG(4)
-        CHECK_AND_ADD_GPU_FLAG(5)
-        CHECK_AND_ADD_GPU_FLAG(6)
-        CHECK_AND_ADD_GPU_FLAG(7)
-#undef CHECK_AND_ADD_GPU_FLAG
+        static const std::vector<rpr_uint> kGpuFlags =
+        {
+            RPR_CREATION_FLAGS_ENABLE_GPU0,
+            RPR_CREATION_FLAGS_ENABLE_GPU1,
+            RPR_CREATION_FLAGS_ENABLE_GPU2,
+            RPR_CREATION_FLAGS_ENABLE_GPU3,
+            RPR_CREATION_FLAGS_ENABLE_GPU4,
+            RPR_CREATION_FLAGS_ENABLE_GPU5,
+            RPR_CREATION_FLAGS_ENABLE_GPU6,
+            RPR_CREATION_FLAGS_ENABLE_GPU7
+        };
+
+        for (std::size_t i = 0; i < kGpuFlags.size(); ++i)
+        {
+            if (std::string(device_index_option + 3) == std::to_string(i))
+            {
+                return kGpuFlags[i];
+            }
+        }
+
         if (strcmp(device_index_option, "cpu") == 0)
         {
             return RPR_CREATION_FLAGS_ENABLE_CPU;
         }
 
+        // Use gpu0 by default
         return RPR_CREATION_FLAGS_ENABLE_GPU0;
     }
 
