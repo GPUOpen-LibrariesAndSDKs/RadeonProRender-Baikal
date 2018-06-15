@@ -41,6 +41,8 @@ THE SOFTWARE.
 #include "ImGUI/imgui.h"
 #include "ImGUI/imgui_impl_glfw_gl3.h"
 
+#include "XML/tinyxml2.h"
+
 #include <OpenImageIO/imageio.h>
 #include <memory>
 #include <chrono>
@@ -75,6 +77,119 @@ THE SOFTWARE.
 
 using namespace RadeonRays;
 
+namespace
+{
+    void AppendCamera(Baikal::PerspectiveCamera const* cam, const char* xml)
+    {
+        //camera values
+        RadeonRays::float3 cam_pos = cam->GetPosition();
+        RadeonRays::float3 cam_at = cam_pos + cam->GetForwardVector();
+        float aperture = cam->GetAperture();
+        float focus_dist = cam->GetFocusDistance();
+        float focal_length = cam->GetFocalLength();
+
+        tinyxml2::XMLDocument doc;
+
+        doc.LoadFile(xml);
+        auto root = doc.FirstChildElement("cam_list");
+        if (!root)
+        {
+            root = doc.NewElement("cam_list");
+            doc.InsertFirstChild(root);
+        }
+
+        auto new_cam = doc.NewElement("camera");
+        //position
+        new_cam->SetAttribute("cpx", cam_pos.x);
+        new_cam->SetAttribute("cpy", cam_pos.y);
+        new_cam->SetAttribute("cpz", cam_pos.z);
+
+        //target
+        new_cam->SetAttribute("tpx", cam_at.x);
+        new_cam->SetAttribute("tpy", cam_at.y);
+        new_cam->SetAttribute("tpz", cam_at.z);
+
+        //other values
+        new_cam->SetAttribute("aperture", aperture);
+        new_cam->SetAttribute("focus_dist", focus_dist);
+        new_cam->SetAttribute("focal_length", focal_length);
+
+        root->InsertEndChild(new_cam);
+        doc.SaveFile(xml);
+    }
+
+    void AppendLight(Baikal::Light::Ptr l, const char* xml)
+    {
+        //get light type
+        Baikal::ImageBasedLight* ibl = dynamic_cast<Baikal::ImageBasedLight*>(l.get());
+        Baikal::PointLight* pointl = dynamic_cast<Baikal::PointLight*>(l.get());
+        Baikal::DirectionalLight* directl = dynamic_cast<Baikal::DirectionalLight*>(l.get());
+        Baikal::SpotLight* spotl = dynamic_cast<Baikal::SpotLight*>(l.get());
+        Baikal::AreaLight* areal = dynamic_cast<Baikal::AreaLight*>(l.get());
+
+        tinyxml2::XMLDocument doc;
+
+        doc.LoadFile(xml);
+        auto root = doc.FirstChildElement("light_list");
+        if (!root)
+        {
+            root = doc.NewElement("light_list");
+            doc.InsertFirstChild(root);
+        }
+
+        if (areal)
+        {
+            //area lights are created when materials load, so ignore it;
+            return;
+        }
+
+        tinyxml2::XMLElement* light_elem = nullptr;
+        if (ibl)
+        {
+            light_elem = doc.NewElement("light");
+            light_elem->SetAttribute("type", "ibl");
+            light_elem->SetAttribute("tex", ibl->GetTexture()->GetName().c_str());
+            light_elem->SetAttribute("mul", ibl->GetMultiplier());
+        }
+        else if (spotl)
+        {
+            light_elem = doc.NewElement("light");
+            light_elem->SetAttribute("type", "spot");
+            light_elem->SetAttribute("csx", spotl->GetConeShape().x);
+            light_elem->SetAttribute("csy", spotl->GetConeShape().y);
+        }
+        else if (pointl)
+        {
+            light_elem = doc.NewElement("light");
+            light_elem->SetAttribute("type", "point");
+        }
+        else if (directl)
+        {
+            light_elem = doc.NewElement("light");
+            light_elem->SetAttribute("type", "direct");
+        }
+
+        float3 p = l->GetPosition();
+        float3 d = l->GetDirection();
+        float3 r = l->GetEmittedRadiance();
+
+        light_elem->SetAttribute("posx", p.x);
+        light_elem->SetAttribute("posy", p.y);
+        light_elem->SetAttribute("posz", p.z);
+
+        light_elem->SetAttribute("dirx", d.x);
+        light_elem->SetAttribute("diry", d.y);
+        light_elem->SetAttribute("dirz", d.z);
+
+        light_elem->SetAttribute("radx", r.x);
+        light_elem->SetAttribute("rady", r.y);
+        light_elem->SetAttribute("radz", r.z);
+
+        root->InsertEndChild(light_elem);
+        doc.SaveFile(xml);
+    }
+}
+
 namespace Baikal
 {
     static bool     g_is_left_pressed = false;
@@ -87,9 +202,15 @@ namespace Baikal
     static bool     g_is_double_click = false;
     static bool     g_is_f10_pressed = false;
     static bool     g_is_middle_pressed = false; // middle mouse button
+    static bool     g_is_c_pressed = false;
+    static bool     g_is_l_pressed = false;
     static float2   g_mouse_pos = float2(0, 0);
     static float2   g_mouse_delta = float2(0, 0);
     static float2   g_scroll_delta = float2(0, 0);
+
+    const std::string kCameraLogFile("camera.xml");
+    //ls - light set
+    const std::string kLightLogFile("light.xml");
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -252,6 +373,11 @@ namespace Baikal
         case GLFW_KEY_F10:
             g_is_f10_pressed = action == GLFW_PRESS;
             break;
+        case GLFW_KEY_C:
+            g_is_c_pressed = action == GLFW_RELEASE ? true : false;
+            break;
+        case GLFW_KEY_L:
+            g_is_l_pressed = action == GLFW_RELEASE ? true : false;
         default:
             break;
         }
@@ -344,7 +470,29 @@ namespace Baikal
                 g_is_f10_pressed = false; //one time execution
                 SaveToFile(time);
             }
+#ifdef GENERATE_DATASET
+            //log camera props
+            if (g_is_c_pressed)
+            {
+                PerspectiveCamera* pcam = dynamic_cast<PerspectiveCamera*>(camera.get());
+                AppendCamera(pcam, kCameraLogFile.c_str());
 
+                g_is_c_pressed = false;
+            }
+            //log scene lights
+            if (g_is_l_pressed)
+            {
+                auto scene = m_cl->GetScene();
+                auto it = scene->CreateLightIterator();
+                for (; it->IsValid(); it->Next())
+                {
+                    Light::Ptr l = it->ItemAs<Light>();
+                    AppendLight(l, kLightLogFile.c_str());
+                }
+
+                g_is_l_pressed = false;
+            }
+#endif
             if (g_is_middle_pressed)
             {
                 float distance = (float)dt.count() * kMovementSpeed / 2.f;
