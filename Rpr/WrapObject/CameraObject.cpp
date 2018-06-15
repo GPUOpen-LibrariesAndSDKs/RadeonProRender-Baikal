@@ -92,11 +92,8 @@ void CameraObject::LookAt(RadeonRays::float3 const& eye,
     RadeonRays::float3 const& up)
 {
     m_eye = eye;
-    m_eye.x = -m_eye.x;
     m_at = at;
-    m_at.x = -at.x;
     m_up = up;
-    m_up.x = -m_up.x;
     UpdateCameraParams();
 }
 
