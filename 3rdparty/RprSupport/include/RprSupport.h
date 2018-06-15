@@ -15,12 +15,11 @@
 #ifndef __RPRSUPPORT_H
 #define __RPRSUPPORT_H
 
+#include "RadeonProRender.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-#include "RadeonProRender.h"
 
 #define RPRX_SUPPORT_API_VERSION 0x0000002 
 #define RPRX_FLAGS_ENABLE_LOGGING 0x1 
