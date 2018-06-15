@@ -243,8 +243,6 @@ bool UberNode::IsValid() const
 
 void UberNode::SetChild(std::uint32_t arg_number, Ptr child)
 {
-    auto size = m_children.size();
-
     if ((size_t)arg_number < m_children.size())
     {
         m_children[arg_number] = child;

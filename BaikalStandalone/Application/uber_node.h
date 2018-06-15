@@ -81,8 +81,8 @@ protected:
 
     // fields
     std::vector<Ptr> m_children;
-    Ptr m_parent;
     InputMap::Ptr m_input_map;
+    Ptr m_parent;
 
 private:
     int m_id;
