@@ -3,40 +3,39 @@ import sys
 import os
 import re
 
-def search_inc(file, file_includes_map):
-    result = []
-    for i in [incs for f, incs in file_includes_map if f == file][0]:
-        new_incs = search_inc(i, file_includes_map)
-        result += new_incs
-        result += [i]
-
+def header_list_recursive(file, files_to_headers_map):
+    header_list = []
+    for i in [incs for f, incs in files_to_headers_map if f == file][0]:
+        header_list += header_list_recursive(i, files_to_headers_map)
+        header_list += [i]
     # remove duplicates and save order
-    return sorted(set(result), key=lambda x: result.index(x))
+    return sorted(set(header_list), key=lambda x: header_list.index(x))
 
 # generate variable name based on file and its type
 def filevarname(file, typest):
-    return 'g_'+ file.replace(ext, "") + "_" + typest
+    return 'g_'+ file.replace(ext, '') + '_' + typest
 
-def printfile(filename, dir):
-
-    fh = open(dir + "/" + filename)
+def print_file(filename, dir):
+    fh = open(dir + '/' + filename)
     # include only new files
-    inc = []
+    header_list = []
     for line in fh.readlines():
         a = line.strip('\r\n')
-        inl = re.search("#include\s*<.*/(.+)>", a)
-        if inl and inl not in inc:
-            inc.append(inl.group(1))
-            print("\"#include <" + inl.group(1) + "> \\n\"\\")
+        match = re.search('#include\s*<.*/(.+)>', a)
+        if match:
+            header_name = match.group(1)
+            if header_name not in header_list:
+                header_list.append(header_name)
+                print('\"#include <' + header_name + '> \\n\"\\')
         else:
-        	print( '"' + a.replace("\\","\\\\").replace("\"", "\\\"") + ' \\n"\\' )
-    return inc
+            print('"' + a.replace('\\','\\\\').replace('"', '\\"') + ' \\n"\\')
+    return header_list
 
 def stringify(filename, dir, typest):
-    print( 'static const char ' + filevarname(filename, typest) +'[] = \\' )
-    inc = printfile(filename, dir)
-    print(";\n")
-    return inc
+    print('static const char ' + filevarname(filename, typest) +'[] = \\')
+    header_list = print_file(filename, dir)
+    print(';\n')
+    return header_list
 
 argvs = sys.argv
 
@@ -45,31 +44,26 @@ if len(argvs) == 4:
     ext = argvs[2]
     typest = argvs[3]
 else:
-	sys.error("Wrong argument count!")
+	sys.error('Wrong argument count!')
 
 files = os.listdir(dir)
 
-print("/* This is an auto-generated file. Do not edit manually! */\n")
-
-print("#pragma once\n")
-print("#include <map>\n")
+print('/* This is an auto-generated file. Do not edit manually! */\n')
+print('#pragma once\n')
+print('#include <map>\n')
 
 # this will contain tuple(filename, include files)
-file_includes_map = []
+files_to_headers_map = []
 for file in files:
     if file.find(ext) == -1:
         continue
+    header_list = stringify(file, dir, typest)
+    files_to_headers_map.append((file, header_list))
 
-    inc = stringify(file, dir, typest)
-    file_includes_map.append((file, inc))
-
-for file, includes in file_includes_map:
-    if not includes:
+for file, headers in files_to_headers_map:
+    if not headers:
         continue
-
-    print("static const std::map<char const*, char const*> " + filevarname(file, typest) + '_inc = {')
-
-    for i in search_inc(file, file_includes_map):
-        print ("    {\"" + i + "\", " +filevarname(i, typest) + "},")
-
-    print("};\n")
+    print('static const std::map<char const*, char const*> ' + filevarname(file, typest) + '_headers =\n{')
+    for i in header_list_recursive(file, files_to_headers_map):
+        print('    {"' + i + '", ' + filevarname(i, typest) + '},')
+    print('};\n')

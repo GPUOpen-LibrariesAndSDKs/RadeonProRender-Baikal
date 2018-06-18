@@ -61,7 +61,7 @@ namespace Baikal
 
     inline BilateralDenoiser::BilateralDenoiser(CLWContext context, const CLProgramManager *program_manager)
 #ifdef BAIKAL_EMBED_KERNELS
-        : ClwPostEffect(context, program_manager, "denoise", g_denoise_opencl, g_denoise_opencl_inc)
+        : ClwPostEffect(context, program_manager, "denoise", g_denoise_opencl, g_denoise_opencl_headers)
 #else
         : ClwPostEffect(context, program_manager, "../Baikal/Kernels/CL/denoise.cl")
 #endif
