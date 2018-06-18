@@ -3,10 +3,10 @@ import sys
 import os
 import re
 
-def header_list_recursive(file, files_to_headers_map):
+def make_header_list_recursive(file, files_to_headers_map):
     header_list = []
     for i in [incs for f, incs in files_to_headers_map if f == file][0]:
-        header_list += header_list_recursive(i, files_to_headers_map)
+        header_list += make_header_list_recursive(i, files_to_headers_map)
         header_list += [i]
     # remove duplicates and save order
     return sorted(set(header_list), key=lambda x: header_list.index(x))
@@ -64,6 +64,6 @@ for file, headers in files_to_headers_map:
     if not headers:
         continue
     print('static const std::map<char const*, char const*> ' + filevarname(file, typest) + '_headers =\n{')
-    for i in header_list_recursive(file, files_to_headers_map):
+    for i in make_header_list_recursive(file, files_to_headers_map):
         print('    {"' + i + '", ' + filevarname(i, typest) + '},')
     print('};\n')

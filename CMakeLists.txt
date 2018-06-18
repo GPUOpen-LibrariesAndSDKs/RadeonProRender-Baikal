@@ -9,8 +9,6 @@ option(BAIKAL_ENABLE_TESTS "Enable tests" ON)
 option(BAIKAL_ENABLE_STANDALONE "Enable standalone application build" ON)
 option(BAIKAL_ENABLE_IO "Enable IO library build" ON)
 option(BAIKAL_ENABLE_FBX "Enable FBX import in BaikalIO. Requires BaikalIO to be turned ON" OFF)
-
-#Disabled for now.
 option(BAIKAL_EMBED_KERNELS "Embed CL kernels into binary module" OFF)
 
 #Sanity checks
