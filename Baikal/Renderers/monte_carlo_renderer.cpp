@@ -34,7 +34,7 @@
 #include "math/int2.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
-#include "./Kernels/CL/cache/kernels.h"
+#include "embed_kernels.h"
 #endif
 
 #include "Utils/cl_program_manager.h"

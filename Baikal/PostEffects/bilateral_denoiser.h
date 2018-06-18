@@ -23,7 +23,7 @@ THE SOFTWARE.
 #include "clw_post_effect.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
-#include "./Kernels/CL/cache/kernels.h"
+#include "embed_kernels.h"
 #endif
 
 namespace Baikal

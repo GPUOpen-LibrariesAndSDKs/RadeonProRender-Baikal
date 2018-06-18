@@ -157,16 +157,18 @@ if (BAIKAL_ENABLE_RAYMASK)
 endif (BAIKAL_ENABLE_RAYMASK)
 
 if (BAIKAL_EMBED_KERNELS)
-    set(KERNEL_HEADER "${Baikal_SOURCE_DIR}/Baikal/Kernels/CL/cache/kernels.h")
+    set(KERNEL_HEADER "${Baikal_BINARY_DIR}/Baikal/embed_kernels.h")
     set(STRINGIFY_SCRIPT "${CMAKE_SOURCE_DIR}/Tools/scripts/baikal_stringify.py")
     target_compile_definitions(Baikal PRIVATE BAIKAL_EMBED_KERNELS)
     add_custom_command(
         OUTPUT ${KERNEL_HEADER}
         COMMAND ${PYTHON_EXECUTABLE} ${STRINGIFY_SCRIPT} ${Baikal_SOURCE_DIR}/Baikal/Kernels/CL/ .cl opencl > ${KERNEL_HEADER}
+        DEPENDS ${KERNELS_SOURCES}
         COMMENT "Generating Baikal kernel cache"
         VERBATIM)
     add_custom_target(BaikalKernelCache DEPENDS ${KERNEL_HEADER})
     add_dependencies(Baikal BaikalKernelCache)
+    target_include_directories(Baikal PRIVATE ${Baikal_BINARY_DIR}/Baikal)
 endif (BAIKAL_EMBED_KERNELS)
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
