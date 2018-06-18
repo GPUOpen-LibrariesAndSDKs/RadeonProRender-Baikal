@@ -62,9 +62,10 @@ public:
         // fields
         std::uint32_t id;
         NodeType type;
-        std::string name;
         RadeonRays::int2 pos; // position of the top left corner
         RadeonRays::int2 size;
+        std::string name;
+
     private:
         UberNode::Ptr node;
     };
