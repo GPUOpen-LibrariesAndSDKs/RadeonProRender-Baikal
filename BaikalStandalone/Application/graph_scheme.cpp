@@ -86,7 +86,7 @@ void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos, RadeonRays::in
     }
 }
 
-void GraphScheme::RemoveLink(int src_id, int dst_id)
+void GraphScheme::RemoveLink(std::uint32_t src_id, std::uint32_t dst_id)
 {
     for (auto link = m_links.begin(); link != m_links.end(); ++link)
     {
@@ -109,7 +109,7 @@ void GraphScheme::MergeTrees(UberTree::Ptr tree_1, UberTree::Ptr tree_2)
     throw std::runtime_error("Not implemented");
 }
 
-void GraphScheme::RemoveNode(int id)
+void GraphScheme::RemoveNode(std::uint32_t id)
 {
     UberTree::Ptr tree = nullptr;
     UberNode::Ptr node = nullptr;
@@ -143,7 +143,7 @@ void GraphScheme::RemoveNode(int id)
     m_trees.insert(m_trees.end(), trees_vector.begin(), trees_vector.end());
 }
 
-void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
+void GraphScheme::UpdateNodePos(std::uint32_t id, RadeonRays::int2 pos)
 {
     for (auto& node : m_nodes)
     {
@@ -155,7 +155,7 @@ void GraphScheme::UpdateNodePos(int id, RadeonRays::int2 pos)
     }
 }
 
-void GraphScheme::UpdateNodeSize(int id, RadeonRays::int2 size)
+void GraphScheme::UpdateNodeSize(std::uint32_t id, RadeonRays::int2 size)
 {
     for (auto& node : m_nodes)
     {

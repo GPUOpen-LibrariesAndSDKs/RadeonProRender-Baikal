@@ -29,7 +29,7 @@ using namespace Baikal;
 // UberNode_OneArg implementation
 ////////////////////////////////////////
 
-int UberNode::m_next_id = 0;
+std::uint32_t UberNode::m_next_id = 0;
 
 #define GET_ONE_ARG(type, sufix)\
     {\

@@ -50,7 +50,7 @@ public:
 
     bool IsValid() const;
 
-    UberNode::Ptr Find(int id);
+    UberNode::Ptr Find(std::uint32_t id);
 
     // returns vector of the new trees (primary tree not included)
     std::vector<UberTree::Ptr> ExcludeNode(std::uint32_t id);

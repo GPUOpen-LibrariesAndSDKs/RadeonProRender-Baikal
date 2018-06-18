@@ -142,7 +142,7 @@ bool UberTree::IsValid() const
     return true;
 }
 
-UberNode::Ptr UberTree::Find(int id)
+UberNode::Ptr UberTree::Find(std::uint32_t id)
 {
     for (auto node : m_nodes)
     {

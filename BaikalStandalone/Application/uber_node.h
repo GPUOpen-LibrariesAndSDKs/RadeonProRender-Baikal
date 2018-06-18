@@ -68,7 +68,7 @@ public:
 
     std::uint32_t GetArgNumber();
 
-    int GetId() const
+    std::uint32_t GetId() const
     { return m_id; }
 
     int GetParentId() const;
@@ -85,8 +85,8 @@ protected:
     Ptr m_parent;
 
 private:
-    int m_id;
-    static int m_next_id;
+    std::uint32_t m_id;
+    static std::uint32_t m_next_id;
 };
 
 // UberNode_OneArg common class
