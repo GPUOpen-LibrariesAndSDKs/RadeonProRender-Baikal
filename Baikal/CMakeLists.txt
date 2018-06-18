@@ -166,6 +166,7 @@ if (BAIKAL_EMBED_KERNELS)
         COMMENT "Generating Baikal kernel cache"
         VERBATIM)
     add_custom_target(BaikalKernelCache DEPENDS ${KERNEL_HEADER})
+    add_dependencies(Baikal BaikalKernelCache)
 endif (BAIKAL_EMBED_KERNELS)
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
