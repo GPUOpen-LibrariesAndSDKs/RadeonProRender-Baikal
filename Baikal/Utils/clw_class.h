@@ -17,11 +17,21 @@ namespace Baikal
     class ClwClass
     {
     public:
+#ifdef BAIKAL_EMBED_KERNELS
+        //create from source
+        ClwClass(CLWContext context,
+            const CLProgramManager *program_manager,
+            std::string const& name,
+            std::string const& source,
+            std::map<char const*, char const*> const& headers,
+            std::string const& opts = "");
+#else
         //create from file
         ClwClass(CLWContext context,
             const CLProgramManager *program_manager,
             std::string const& cl_file,
             std::string const& opts = "");
+#endif
 
         virtual ~ClwClass() = default;
 
@@ -44,6 +54,28 @@ namespace Baikal
         std::string m_default_opts;
     };
 
+#ifdef BAIKAL_EMBED_KERNELS
+    inline ClwClass::ClwClass(
+        CLWContext context,
+        const CLProgramManager *program_manager,
+        std::string const& name,
+        std::string const& source,
+        std::map<char const*, char const*> const& headers,
+        std::string const& opts)
+        : m_context(context)
+        , m_program_manager(program_manager)
+    {
+        auto options = opts;
+        AddCommonOptions(options);
+
+        m_program_id = m_program_manager->CreateProgramFromSource(context, name, source);
+        std::for_each(headers.cbegin(), headers.cend(),
+                      [this](std::pair<char const*, char const*> const& it)
+                      {
+                          m_program_manager->AddHeader(it.first, it.second);
+                      });
+    }
+#else
     inline ClwClass::ClwClass(
         CLWContext context,
         const CLProgramManager *program_manager,
@@ -55,8 +87,9 @@ namespace Baikal
         auto options = opts;
         AddCommonOptions(options);
 
-        m_program_id = m_program_manager->CreateProgram(context, cl_file);
+        m_program_id = m_program_manager->CreateProgramFromFile(context, cl_file);
     }
+#endif
 
     inline CLWKernel ClwClass::GetKernel(std::string const& name, std::string const& opts)
     {

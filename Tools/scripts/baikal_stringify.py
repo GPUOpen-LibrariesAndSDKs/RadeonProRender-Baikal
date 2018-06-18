@@ -26,16 +26,16 @@ def printfile(filename, dir):
         a = line.strip('\r\n')
         inl = re.search("#include\s*<.*/(.+)>", a)
         if inl and inl not in inc:
-            # printfile( inl.group(1), dir)
             inc.append(inl.group(1))
+            print("\"#include <" + inl.group(1) + "> \\n\"\\")
         else:
-            print( '"' + a.replace("\\","\\\\").replace("\"", "\\\"") + ' \\n"\\' )
+        	print( '"' + a.replace("\\","\\\\").replace("\"", "\\\"") + ' \\n"\\' )
     return inc
 
 def stringify(filename, dir, typest):
-    print( 'static const char ' + filevarname(filename, typest) +'[]= \\' )
+    print( 'static const char ' + filevarname(filename, typest) +'[] = \\' )
     inc = printfile(filename, dir)
-    print( ';' )
+    print(";\n")
     return inc
 
 argvs = sys.argv
@@ -44,10 +44,15 @@ if len(argvs) == 4:
     dir = argvs[1]
     ext = argvs[2]
     typest = argvs[3]
+else:
+	sys.error("Wrong argument count!")
 
 files = os.listdir(dir)
 
-print("/* This is an auto-generated file. Do not edit manually*/\n")
+print("/* This is an auto-generated file. Do not edit manually! */\n")
+
+print("#pragma once\n")
+print("#include <map>\n")
 
 # this will contain tuple(filename, include files)
 file_includes_map = []
@@ -62,9 +67,9 @@ for file, includes in file_includes_map:
     if not includes:
         continue
 
-    print( 'static const char* ' + filevarname(file, typest) + '_inc[]= {')
+    print("static const std::map<char const*, char const*> " + filevarname(file, typest) + '_inc = {')
 
     for i in search_inc(file, file_includes_map):
-        print ('    ' + filevarname(i, typest) + ',')
+        print ("    {\"" + i + "\", " +filevarname(i, typest) + "},")
 
-    print("};")
+    print("};\n")
