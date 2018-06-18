@@ -77,8 +77,31 @@ THE SOFTWARE.
 
 using namespace RadeonRays;
 
-namespace
+namespace Baikal
 {
+    static bool     g_is_left_pressed = false;
+    static bool     g_is_right_pressed = false;
+    static bool     g_is_fwd_pressed = false;
+    static bool     g_is_back_pressed = false;
+    static bool     g_is_climb_pressed = false;
+    static bool     g_is_descent_pressed = false;
+    static bool     g_is_mouse_tracking = false;
+    static bool     g_is_double_click = false;
+    static bool     g_is_f10_pressed = false;
+    static bool     g_is_middle_pressed = false; // middle mouse button
+    static bool     g_is_c_pressed = false;
+    static bool     g_is_l_pressed = false;
+    static float2   g_mouse_pos = float2(0, 0);
+    static float2   g_mouse_delta = float2(0, 0);
+    static float2   g_scroll_delta = float2(0, 0);
+
+    const std::string kCameraLogFile("camera.xml");
+    //ls - light set
+    const std::string kLightLogFile("light.xml");
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // helper functions (AppendCamera, AppendLight) to log camera position and light settings
     void AppendCamera(Baikal::PerspectiveCamera const* cam, const char* xml)
     {
         //camera values
@@ -188,32 +211,6 @@ namespace
         root->InsertEndChild(light_elem);
         doc.SaveFile(xml);
     }
-}
-
-namespace Baikal
-{
-    static bool     g_is_left_pressed = false;
-    static bool     g_is_right_pressed = false;
-    static bool     g_is_fwd_pressed = false;
-    static bool     g_is_back_pressed = false;
-    static bool     g_is_climb_pressed = false;
-    static bool     g_is_descent_pressed = false;
-    static bool     g_is_mouse_tracking = false;
-    static bool     g_is_double_click = false;
-    static bool     g_is_f10_pressed = false;
-    static bool     g_is_middle_pressed = false; // middle mouse button
-    static bool     g_is_c_pressed = false;
-    static bool     g_is_l_pressed = false;
-    static float2   g_mouse_pos = float2(0, 0);
-    static float2   g_mouse_delta = float2(0, 0);
-    static float2   g_scroll_delta = float2(0, 0);
-
-    const std::string kCameraLogFile("camera.xml");
-    //ls - light set
-    const std::string kLightLogFile("light.xml");
-
-    auto start = std::chrono::high_resolution_clock::now();
-
 
     bool Application::InputSettings::HasMultiplier() const
     { return m_multiplier.first; }
