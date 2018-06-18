@@ -63,7 +63,7 @@ MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
                 layers_desc.begin(), layers_desc.end(),
                 [layers](LayerDesc desc)
                 {
-                    if (static_cast<std::uint32_t>(desc.first) == layers)
+                    if (desc.first == layers)
                         return true;
                     return false;
                 }));
@@ -92,7 +92,6 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
 {
     bool is_changed = false;
 
-    const float NODE_SLOT_RADIUS = 4.0f;
     const ImVec2 NODE_WINDOW_PADDING(8.0f, 8.0f);
     const int left_side_width = 150;
 

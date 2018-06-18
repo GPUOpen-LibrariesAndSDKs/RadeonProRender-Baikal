@@ -117,9 +117,9 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
         queue.push(child);
         while (!queue.empty())
         {
-            for (auto i = 0u; i < queue.front()->GetArgNumber(); i++)
+            for (auto j = 0u; j < queue.front()->GetArgNumber(); j++)
             {
-                queue.push(queue.front()->m_children[i]);
+                queue.push(queue.front()->m_children[j]);
             }
             m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), queue.front()));
             tree.push_back(queue.front());
