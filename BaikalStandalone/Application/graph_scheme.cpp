@@ -31,17 +31,18 @@ using namespace Baikal;
 namespace {
     struct GraphSchemeConcrete : public GraphScheme
     {
-        GraphSchemeConcrete(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size) :
-            GraphScheme(tree, root_pos, node_size)
-        {   }
+        GraphSchemeConcrete(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
+        : GraphScheme(tree, root_pos, node_size)
+        { }
     };
 }
 
 GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
 {
     if (!tree)
-        throw std::logic_error(
-            "GraphScheme::GraphScheme(...): 'tree' is nullptr");
+    {
+        throw std::logic_error("GraphScheme::GraphScheme(...): 'tree' is nullptr");
+    }
 
     m_trees.push_back(tree);
     RecomputeCoordinates(root_pos, node_size);
@@ -49,8 +50,8 @@ GraphScheme::GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRa
 
 GraphScheme::Ptr GraphScheme::Create(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
 {
-    return std::make_shared<GraphScheme>(
-        GraphSchemeConcrete(tree, root_pos, node_size));
+    return std::make_shared<GraphScheme>(GraphSchemeConcrete(
+                                         tree, root_pos, node_size));
 }
 
 void GraphScheme::RecomputeCoordinates(RadeonRays::int2 root_pos, RadeonRays::int2 node_size)
@@ -134,11 +135,15 @@ void GraphScheme::RemoveNode(std::uint32_t id)
 
     std::remove_if(m_links.begin(), m_links.end(),
         [id](const Link &link)
-        { return link.src_id == id; });
+        {
+            return link.src_id == id;
+        });
 
     std::remove_if(m_nodes.begin(), m_nodes.end(),
         [id](const Node &node)
-        { return node.id == id; });
+        {
+            return node.id == id;
+        });
 
     m_trees.insert(m_trees.end(), trees_vector.begin(), trees_vector.end());
 }
@@ -174,10 +179,10 @@ void GraphScheme::UpdateNodeSize(std::uint32_t id, RadeonRays::int2 size)
 GraphScheme::Node::Node(
     UberNode::Ptr node_,
     RadeonRays::int2 pos_,
-    RadeonRays::int2 size_) :
+    RadeonRays::int2 size_)
     // initialize list
-    id(node_->GetId()), pos(pos_), size(size_),
-    name (node_->GetDataTypeText()), node(node_)
+    : id(node_->GetId()), pos(pos_), size(size_),
+      name (node_->GetDataTypeText()), node(node_)
 {
     switch (node->GetDataType())
     {
@@ -206,9 +211,9 @@ float GraphScheme::Node::GetFloat() const
 
     if (!float_node)
     {
-        throw std::runtime_error(
-            "Node::GetFloat(...): dynamic_pointer_cast failure");
+        throw std::runtime_error("Node::GetFloat(...): dynamic_pointer_cast failure");
     }
+
     return float_node->GetValue();
 }
 
@@ -226,14 +231,17 @@ void GraphScheme::Node::SetFloat(float value)
         throw std::runtime_error(
             "Node::SetFloat(...): dynamic_pointer_cast failure");
     }
+
     float_node->SetValue(value);
 }
 
 RadeonRays::float3 GraphScheme::Node::GetFloat3() const
 {
     if (node->GetDataType() != InputMap::InputMapType::kConstantFloat3)
+    {
         return RadeonRays::float3(0);
-    
+    }
+
     auto float_node = std::dynamic_pointer_cast<UberNode_Float3>(node);
 
     if (!float_node)
@@ -241,6 +249,7 @@ RadeonRays::float3 GraphScheme::Node::GetFloat3() const
         throw std::runtime_error(
             "Node::GetFloat3(...): dynamic_pointer_cast failure");
     }
+
     return float_node->GetValue();
 }
 
@@ -274,5 +283,6 @@ void GraphScheme::Node::SetTexture(Texture::Ptr texture)
     {
         throw std::runtime_error("Node::SetTexture(...): dynamic_pointer_cast failure");
     }
+
     texture_node->SetValue(texture);
 }

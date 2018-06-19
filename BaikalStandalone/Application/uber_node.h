@@ -64,12 +64,11 @@ public:
     // Get InputMap argument
     virtual InputMap::Ptr GetArg(std::uint32_t arg_number = 0);
     // Set InputMap argument
-    virtual void SetArg(InputMap::Ptr arg, std::uint32_t arg_number = 0);
+    virtual void SetArg(InputMap::Ptr, std::uint32_t);
 
     std::uint32_t GetArgNumber();
 
-    std::uint32_t GetId() const
-    { return m_id; }
+    std::uint32_t GetId() const { return m_id; }
 
     int GetParentId() const;
 

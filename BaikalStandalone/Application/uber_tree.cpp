@@ -44,6 +44,7 @@ void UberTree::BuildTree(InputMap::Ptr input_map)
             node->SetChild(i, child);
             queue.push(child);
         }
+
         m_nodes.push_back(node);
         queue.pop();
     }
@@ -74,10 +75,9 @@ bool UberTree::AddTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr
 
     auto child = tree->m_nodes.begin();
 
-    m_nodes.insert(
-        m_nodes.end(),
-        tree->m_nodes.begin(),
-        tree->m_nodes.end());
+    m_nodes.insert(m_nodes.end(),
+                   tree->m_nodes.begin(),
+                   tree->m_nodes.end());
 
     parent->SetChild(arg_number, *child);
     (*child)->m_parent = parent;
@@ -99,7 +99,8 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
 
     if (!removed_node)
     {
-        throw std::logic_error("UberTree::ExcludeNode(...): attempt to exclude nonexistent node");
+        throw std::logic_error("UberTree::ExcludeNode(...):"
+                               "attempt to exclude nonexistent node");
     }
 
     auto parent = removed_node->m_parent;
@@ -109,6 +110,7 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
         for (auto i = 0u; i < parent->GetArgNumber(); i++)
         {
             auto child = parent->m_children[i];
+
             if (child->GetId() == id)
             {
                 parent->m_children[i] = nullptr;
@@ -125,12 +127,14 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
 
         std::queue<UberNode::Ptr> queue;
         queue.push(child);
+
         while (!queue.empty())
         {
             for (auto j = 0u; j < queue.front()->GetArgNumber(); j++)
             {
                 queue.push(queue.front()->m_children[j]);
             }
+
             m_nodes.erase(std::find(m_nodes.begin(), m_nodes.end(), queue.front()));
             tree.push_back(queue.front());
             queue.pop();
@@ -163,21 +167,23 @@ UberNode::Ptr UberTree::Find(std::uint32_t id)
             return node;
         }
     }
+
     return nullptr;
 }
 
-UberTree::UberTree(std::vector<UberNode::Ptr> nodes) :
-    m_nodes(nodes)
-{   }
+UberTree::UberTree(std::vector<UberNode::Ptr> nodes)
+    : m_nodes(nodes) {}
 
 UberTree::UberTree(InputMap::Ptr input_map)
-{ BuildTree(input_map); }
+{
+    BuildTree(input_map);
+}
 
 namespace {
     struct UberTreeConcrete: public UberTree
     {
-        UberTreeConcrete(InputMap::Ptr node) :
-            UberTree(node)
+        UberTreeConcrete(InputMap::Ptr node)
+            : UberTree(node)
         {   }
     };
 }
@@ -195,8 +201,7 @@ UberTreeIterator::UberTreeIterator(UberTree::Ptr tree) : m_tree(tree)
 {
     if (m_tree && (m_tree->m_nodes.size() > 0))
     {
-        m_queue.push(
-            std::pair<int, UberNode::Ptr>(0, m_tree->m_nodes[0]));
+        m_queue.push(std::pair<int, UberNode::Ptr>(0, m_tree->m_nodes[0]));
     }
 }
 
@@ -211,16 +216,22 @@ bool UberTreeIterator::IsValid() const
 }
 
 UberNode::Ptr UberTreeIterator::Item() const
-{ return m_queue.front().second; }
+{
+    return m_queue.front().second;
+}
 
 int UberTreeIterator::GetLevel() const
-{ return m_queue.front().first; }
+{
+    return m_queue.front().first;
+}
 
 void UberTreeIterator::Reset()
 {
     // clear queue
     while (!m_queue.empty())
+    {
         m_queue.pop();
+    }
 }
 
 void UberTreeIterator::Next()
@@ -234,15 +245,15 @@ void UberTreeIterator::Next()
             std::pair<int, UberNode::Ptr>
                 (level + 1, node->GetChildren(i)));
     }
+
     m_queue.pop();
 }
 
 namespace {
     struct UberTreeIteratorConcrete : public UberTreeIterator
     {
-        UberTreeIteratorConcrete(UberTree::Ptr tree) :
-            UberTreeIterator(tree)
-        {   }
+        UberTreeIteratorConcrete(UberTree::Ptr tree)
+            : UberTreeIterator(tree) {}
     };
 }
 

@@ -26,7 +26,9 @@ THE SOFTWARE.
 
 using namespace Baikal;
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs)
-{ return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
+{
+    return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y);
+}
 
 ////////////////////////////////////////////////////////
 //// MaterialExplorer implementation
@@ -36,8 +38,8 @@ namespace
 {
     struct MaterialExplorerConcrete : public MaterialExplorer
     {
-        MaterialExplorerConcrete(UberV2Material::Ptr material) :
-            MaterialExplorer(material)
+        MaterialExplorerConcrete(UberV2Material::Ptr material)
+        : MaterialExplorer(material)
         {   }
     };
 }
@@ -47,8 +49,7 @@ MaterialExplorer::Ptr MaterialExplorer::Create(UberV2Material::Ptr material)
     return std::make_shared<MaterialExplorer>(MaterialExplorerConcrete(material));
 }
 
-MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
-    m_material(material)
+MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material): m_material(material)
 {
     auto layers = m_material->GetLayers();
     auto layers_desc = GetUberLayersDesc();
@@ -73,30 +74,37 @@ MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
     {
         m_layers.push_back(find_layer(UberV2Material::kEmissionLayer));
     }
+
     if (layers & UberV2Material::kTransparencyLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kTransparencyLayer));
     }
+
     if (layers & UberV2Material::kCoatingLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kCoatingLayer));
     }
+
     if (layers & UberV2Material::kReflectionLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kReflectionLayer));
     }
+
     if (layers & UberV2Material::kDiffuseLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kDiffuseLayer));
     }
+
     if (layers & UberV2Material::kRefractionLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kRefractionLayer));
     }
+
     if (layers & UberV2Material::kSSSLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kSSSLayer));
     }
+
     if (layers & UberV2Material::kShadingNormalLayer)
     {
         m_layers.push_back(find_layer(UberV2Material::kShadingNormalLayer));
@@ -124,9 +132,9 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
 
     int selected_id = 0;
     std::string input_name;
-    for (const auto& layer : m_layers)
+    for (const auto& layer: m_layers)
     {
-        for (const auto& input : layer.second)
+        for (const auto& input: layer.second)
         {
             if (ImGui::Selectable(input.c_str(), selected_id == input_selected))
             {
@@ -174,10 +182,16 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
         float GRID_SZ = 64.0f;
         ImVec2 win_pos = ImGui::GetCursorScreenPos();
         ImVec2 canvas_sz = ImGui::GetWindowSize();
+
         for (float x = fmodf(scrolling.x, GRID_SZ); x < canvas_sz.x; x += GRID_SZ)
+        {
             draw_list->AddLine(ImVec2(x, 0.0f) + win_pos, ImVec2(x, canvas_sz.y) + win_pos, GRID_COLOR);
+        }
+
         for (float y = fmodf(scrolling.y, GRID_SZ); y < canvas_sz.y; y += GRID_SZ)
+        {
             draw_list->AddLine(ImVec2(0.0f, y) + win_pos, ImVec2(canvas_sz.x, y) + win_pos, GRID_COLOR);
+        }
     }
 
 
@@ -190,12 +204,11 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
 
         auto nodes = m_graph->GetNodes();
 
-        for (auto& node : nodes)
+        for (auto& node: nodes)
         {
             auto top_left_corner = ImVec2((float)node.pos.x, (float)node.pos.y) + offset;
-            ImVec2 bottom_right_corner(
-                (float)(top_left_corner.x + node.size.x),
-                (float)(top_left_corner.y + node.size.y));
+            ImVec2 bottom_right_corner((float)(top_left_corner.x + node.size.x),
+                                       (float)(top_left_corner.y + node.size.y));
 
             // display node content first
             draw_list->ChannelsSetCurrent(1); // Foreground
@@ -209,6 +222,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                 {
                     ImGui::Text("%s", node.name.c_str());
                     float value = node.GetFloat();
+
                     if (ImGui::InputFloat("##value", &value, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         if (value != node.GetFloat())
@@ -217,6 +231,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                             is_changed = true;
                         }
                     }
+
                     break;
                 }
                 case GraphScheme::NodeType::kFloat3:
@@ -224,6 +239,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                     ImGui::Text("%s", node.name.c_str());
                     auto value = node.GetFloat3();
                     ImVec4 color(value.x, value.y, value.z, value.w);
+
                     if (ImGui::ColorEdit3("##color", &color.x))
                     {
                         RadeonRays::float4 new_value(color.x, color.y, color.z);
@@ -236,6 +252,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                             is_changed = true;
                         }
                     }
+
                     break;
                 }
                 case GraphScheme::NodeType::kTexture:
@@ -243,6 +260,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                     ImGui::Text("%s", node.name.c_str());
                     const int bufer_size = 2048;
                     char text_buffer[2048] = { 0 };
+
                     if (ImGui::InputText("##text", text_buffer, bufer_size, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         auto image_io = ImageIo::CreateImageIo();
@@ -253,6 +271,7 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
                             is_changed = true;
                         }
                     }
+
                     break;
                 }
                 case GraphScheme::NodeType::kIntermidiate:
@@ -266,20 +285,26 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
             draw_list->ChannelsSetCurrent(0); // Background
 
             ImGui::SetCursorScreenPos(top_left_corner);
-            ImGui::InvisibleButton(
-                std::to_string((int)node.id).c_str(),
-                ImVec2((float)node.size.x, (float)node.size.y));
+            ImGui::InvisibleButton(std::to_string((int)node.id).c_str(),
+                                   ImVec2((float)node.size.x, (float)node.size.y));
 
             bool node_hovered_in_scene = false;
+
             if (ImGui::IsItemHovered())
             {
                 node_hovered_in_scene = true;
             }
 
-            ImU32 node_bg_color = node_hovered_in_scene ? IM_COL32(75, 75, 75, 255) : IM_COL32(60, 60, 60, 255);
+            ImU32 node_bg_color = node_hovered_in_scene ? IM_COL32(75, 75, 75, 255)
+                                                        : IM_COL32(60, 60, 60, 255);
 
-            draw_list->AddRectFilled(top_left_corner, bottom_right_corner, node_bg_color, 4.0f);
-            draw_list->AddRect(top_left_corner, bottom_right_corner, IM_COL32(100, 100, 100, 255), 4.0f);
+            draw_list->AddRectFilled(top_left_corner,
+                                     bottom_right_corner,
+                                     node_bg_color, 4.0f);
+
+            draw_list->AddRect(top_left_corner,
+                               bottom_right_corner,
+                               IM_COL32(100, 100, 100, 255), 4.0f);
 
             // enable node drag
             bool node_moving_active = ImGui::IsItemActive();
@@ -287,23 +312,28 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
             if (node_moving_active && ImGui::IsMouseDragging(0))
             {
                 auto delta = ImGui::GetIO().MouseDelta;
-                auto new_pos = RadeonRays::int2(
-                    node.pos.x + (int)delta.x,
-                    node.pos.y + (int)delta.y);
+
+                auto new_pos = RadeonRays::int2(node.pos.x + (int)delta.x,
+                                                node.pos.y + (int)delta.y);
+
                 m_graph->UpdateNodePos(node.id, new_pos);
             }
         }
 
         // draw links
-        for (const auto link : m_graph->GetLinks())
+        for (const auto link: m_graph->GetLinks())
         {
             auto src_node_iter = std::find_if(nodes.begin(), nodes.end(),
-                [link](const GraphScheme::Node& node)
-                { return node.id == link.src_id; });
+                                              [link](const GraphScheme::Node& node)
+                                              {
+                                                  return node.id == link.src_id;
+                                              });
 
             auto dst_node_iter = std::find_if(nodes.begin(), nodes.end(),
-                [link](const GraphScheme::Node& node)
-                { return node.id == link.dst_id; });
+                                              [link](const GraphScheme::Node& node)
+                                              {
+                                                  return node.id == link.dst_id;
+                                              });
 
             if (src_node_iter == nodes.end() ||
                 dst_node_iter == nodes.end())
@@ -313,29 +343,28 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
             }
 
             ImVec2 src_p = offset;
-            src_p = src_p + ImVec2(
-                (float)(src_node_iter->pos.x + src_node_iter->size.x),
-                (float)(src_node_iter->pos.y + src_node_iter->size.y / 2));
+            src_p = src_p + ImVec2((float)(src_node_iter->pos.x + src_node_iter->size.x),
+                                   (float)(src_node_iter->pos.y + src_node_iter->size.y / 2));
 
             ImVec2 dst_p = offset;
-            dst_p = dst_p + ImVec2(
-                (float)(dst_node_iter->pos.x),
-                (float)(dst_node_iter->pos.y + dst_node_iter->size.y / 2));
+            dst_p = dst_p + ImVec2((float)(dst_node_iter->pos.x),
+                                   (float)(dst_node_iter->pos.y + dst_node_iter->size.y / 2));
 
             // draw link
-            draw_list->AddBezierCurve(
-                src_p,
-                src_p + ImVec2(+50, 0),
-                dst_p + ImVec2(-50, 0),
-                dst_p,
-                IM_COL32(200, 200, 100, 255), 3.0f);
+            draw_list->AddBezierCurve(src_p,
+                                      src_p + ImVec2(+50, 0),
+                                      dst_p + ImVec2(-50, 0),
+                                      dst_p,
+                                      IM_COL32(200, 200, 100, 255), 3.0f);
         }
 
         draw_list->ChannelsMerge();
     }
 
     // Scrolling
-    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
+    if (ImGui::IsWindowHovered() &&
+       !ImGui::IsAnyItemActive() &&
+        ImGui::IsMouseDragging(2, 0.0f))
     {
         scrolling = scrolling + ImGui::GetIO().MouseDelta;
     }
@@ -410,6 +439,6 @@ std::vector<MaterialExplorer::LayerDesc> MaterialExplorer::GetUberLayersDesc()
 // MaterialExplorer::NodeLink implementation
 ////////////////////////////////////////////////////////
 
-MaterialExplorer::NodeLink::NodeLink(int input_id_, int input_slot_, int output_id_, int output_slot_) :
-    input_id(input_id_), input_slot(input_slot_), output_id(output_id_), output_slot(output_slot_)
+MaterialExplorer::NodeLink::NodeLink(int input_id_, int input_slot_, int output_id_, int output_slot_)
+                            : input_id(input_id_), input_slot(input_slot_), output_id(output_id_), output_slot(output_slot_)
 {   }

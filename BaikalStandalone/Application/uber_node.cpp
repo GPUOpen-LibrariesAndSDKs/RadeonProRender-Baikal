@@ -126,8 +126,8 @@ std::uint32_t UberNode::m_next_id = 0;
             case InputMap::InputMapType::kShuffle2:\
                 SET_ARG_##sufix(param, InputMap_TwoArg<InputMap::InputMapType::kShuffle2>);\
             default:\
-                throw std::runtime_error(\
-                    "SET_ARG_HANDLER macros: unxupported InputMapType for this operation");\
+                throw std::runtime_error("SET_ARG_HANDLER macros:"\
+                                         "unxupported InputMapType for this operation");\
         }\
 
 #define GET_ARG_HANDLER_A(input_type) GET_ARG_HANDLER(input_type, A)
@@ -181,12 +181,14 @@ void UberNode_Arg::SetArg(InputMap::Ptr input_map, std::uint32_t arg_number)
 {
     if (arg_number != 0)
     {
-        throw std::logic_error(
-            "UberNode_Arg::SetArg(...): attempt to set arg_number distinguish");
+        throw std::logic_error("UberNode_Arg::SetArg(...):"
+                               "attempt to set arg_number distinguish");
     }
 
     if (!input_map)
-    { return; }
+    {
+        return;
+    }
 
     switch (input_map->m_type)
     {
@@ -217,8 +219,8 @@ void UberNode_Arg::SetArg(InputMap::Ptr input_map, std::uint32_t arg_number)
         case InputMap::InputMapType::kMatMul:
             SET_ARG(input_map, InputMap_OneArg<InputMap::InputMapType::kMatMul>);
         default:
-            throw std::runtime_error(
-                "UberNode_Arg::SetArg(...): unxupported InputMapType for this operation");
+            throw std::runtime_error("UberNode_Arg::SetArg(...):"
+                                     "unxupported InputMapType for this operation");
     }
 }
 
@@ -266,11 +268,13 @@ void UberNode::SetChild(std::uint32_t arg_number, Ptr child)
 InputMap_Select::Selection UberNode_Select::GetSelection()
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Select>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Select::GetSelection(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Select::GetSelection(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetSelection();
 }
 
@@ -278,11 +282,13 @@ InputMap_Select::Selection UberNode_Select::GetSelection()
 void UberNode_Select::SetSelection(Baikal::InputMap_Select::Selection selection)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Select>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Select::SetSelection(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Select::SetSelection(...):"
+                                 "invalid dynamic_cast");
     }
+
     input_map->SetSelection(selection);
 }
 
@@ -293,22 +299,26 @@ void UberNode_Select::SetSelection(Baikal::InputMap_Select::Selection selection)
 std::array<uint32_t, 4> UberNode_Shuffle::GetMask() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Shuffle::GetMask(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetMask();
 }
 
 void UberNode_Shuffle::SetMask(const std::array<uint32_t, 4>& mask)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Shuffle::GetMask(...):"
+                                 "invalid dynamic_cast");
     }
+
     input_map->SetMask(mask);
 }
 
@@ -319,11 +329,13 @@ void UberNode_Shuffle::SetMask(const std::array<uint32_t, 4>& mask)
 RadeonRays::matrix UberNode_Matmul::GetMatrix() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_MatMul>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Matmul::GetMatrix(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Matmul::GetMatrix(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetMatrix();
 }
 
@@ -346,8 +358,8 @@ InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
     {
-        throw std::logic_error(
-            "UberNode_TwoArgs::GetArg(...): 'arg_number' can not be bigger than 1");
+        throw std::logic_error("UberNode_TwoArgs::GetArg(...):"
+                               "'arg_number' can not be bigger than 1");
     }
 
     if (arg_number == 0)
@@ -364,8 +376,8 @@ void UberNode_TwoArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
     {
-        throw std::logic_error(
-            "UberNode_TwoArgs::SetArg(...): 'arg_number' can not be bigger than 1");
+        throw std::logic_error("UberNode_TwoArgs::SetArg(...):"
+                               "'arg_number' can not be bigger than 1");
     }
 
     if (!arg)
@@ -391,11 +403,13 @@ void UberNode_TwoArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 Baikal::InputMap::Ptr UberNode_Lerp::GetControl()
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Lerp>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Lerp::GetControl(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetControl();
 }
 
@@ -403,11 +417,13 @@ Baikal::InputMap::Ptr UberNode_Lerp::GetControl()
 void UberNode_Lerp::SetControl(Baikal::InputMap::Ptr control)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Lerp>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Lerp::GetControl(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->SetControl(control);
 }
 
@@ -419,11 +435,13 @@ void UberNode_Lerp::SetControl(Baikal::InputMap::Ptr control)
 std::array<uint32_t, 4> UberNode_Shuffle2::GetMask() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle2>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Shuffle2::GetMask(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetMask();
 }
 
@@ -431,11 +449,13 @@ std::array<uint32_t, 4> UberNode_Shuffle2::GetMask() const
 void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle2>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Shuffle2::GetMask(...):"
+                                 "invalid dynamic_cast");
     }
+
     input_map->SetMask(mask);
 }
 
@@ -446,22 +466,26 @@ void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
 float UberNode_Float::GetValue() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Float::GetValue(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Float::GetValue(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetValue();
 }
 
 void UberNode_Float::SetValue(float value)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Float::SetValue(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Float::SetValue(...):"
+                                 "invalid dynamic_cast");
     }
+
     input_map->SetValue(value);
 }
 
@@ -472,22 +496,26 @@ void UberNode_Float::SetValue(float value)
 RadeonRays::float3 UberNode_Float3::GetValue() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat3>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Float3::GetValue(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Float3::GetValue(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetValue();
 }
 
 void UberNode_Float3::SetValue(RadeonRays::float3 value)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat3>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Float3::SetValue(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Float3::SetValue(...):"
+                                 "invalid dynamic_cast");
     }
+
     input_map->SetValue(value);
 }
 
@@ -498,22 +526,26 @@ void UberNode_Float3::SetValue(RadeonRays::float3 value)
 Texture::Ptr UberNode_Sampler::GetValue() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Sampler>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Sampler::GetValue(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Sampler::GetValue(...):"
+                                 "invalid dynamic_cast");
     }
+
     return input_map->GetTexture();
 }
 
 void UberNode_Sampler::SetValue(Texture::Ptr value)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Sampler>(m_input_map);
+
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_Sampler::SetValue(...): invalid dynamic_cast");
+        throw std::runtime_error("UberNode_Sampler::SetValue(...):"
+                                 "invalid dynamic_cast");
     }
+
     input_map->SetTexture(value);
 }
 
@@ -525,16 +557,16 @@ InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
     {
-        throw std::logic_error(
-            "UberNode_ThreeArgs::GetArg(...): 'arg_number can not be bigger than two");
+        throw std::logic_error("UberNode_ThreeArgs::GetArg(...):"
+                               "'arg_number can not be bigger than two");
     }
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
 
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_ThreeArgs::GetArg_(...): Dynamic_cast failure");
+        throw std::runtime_error("UberNode_ThreeArgs::GetArg_(...):"
+                                 "Dynamic_cast failure");
     }
 
     if (arg_number == 0)
@@ -556,16 +588,16 @@ void UberNode_ThreeArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
     {
-        throw std::logic_error(
-            "UberNode_ThreeArgs::SetArg(...): 'arg_number can not be bigger than two");
+        throw std::logic_error("UberNode_ThreeArgs::SetArg(...):"
+                               "'arg_number can not be bigger than two");
     }
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(arg);
 
     if (!input_map)
     {
-        throw std::runtime_error(
-            "UberNode_ThreeArgs::SetArg(...): dynamic_cast failure");
+        throw std::runtime_error("UberNode_ThreeArgs::SetArg(...):"
+                                 "dynamic_cast failure");
     }
 
     if (arg_number == 0)
@@ -586,69 +618,68 @@ void UberNode_ThreeArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 namespace {
     struct UberNode_ArgConcrete : public UberNode_Arg
     {
-        UberNode_ArgConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Arg(input_map, parent)
-        {  }
+        UberNode_ArgConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Arg(input_map, parent) {}
     };
+
     struct UberNode_SelectConcrete : public UberNode_Select
     {
-        UberNode_SelectConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Select(input_map, parent)
-        {  }
+        UberNode_SelectConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Select(input_map, parent) {}
     };
+
     struct UberNode_ShuffleConcrete : public UberNode_Shuffle
     {
-        UberNode_ShuffleConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Shuffle(input_map, parent)
-        {  }
+        UberNode_ShuffleConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Shuffle(input_map, parent) {}
     };
+
     struct UberNode_MatmulConcrete : public UberNode_Matmul
     {
-        UberNode_MatmulConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Matmul(input_map, parent)
-        {  }
+        UberNode_MatmulConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Matmul(input_map, parent) {}
     };
+
     struct UberNode_TwoArgsConcrete : public UberNode_TwoArgs
     {
-        UberNode_TwoArgsConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_TwoArgs(input_map, parent)
-        {  }
+        UberNode_TwoArgsConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_TwoArgs(input_map, parent) {}
     };
+
     struct UberNode_LerpConcrete : public UberNode_Lerp
     {
-        UberNode_LerpConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Lerp(input_map, parent)
-        {  }
+        UberNode_LerpConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Lerp(input_map, parent) {}
     };
+
     struct UberNode_Shuffle2Concrete : public UberNode_Shuffle2
     {
-        UberNode_Shuffle2Concrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Shuffle2(input_map, parent)
-        {  }
+        UberNode_Shuffle2Concrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Shuffle2(input_map, parent) {}
     };
+
     struct UberNode_ThreeArgsConcrete : public UberNode_ThreeArgs
     {
-        UberNode_ThreeArgsConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_ThreeArgs(input_map, parent)
-        {  }
+        UberNode_ThreeArgsConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_ThreeArgs(input_map, parent) {}
     };
+
     struct UberNode_FloatConcrete : public UberNode_Float
     {
-        UberNode_FloatConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Float(input_map, parent)
-        {  }
+        UberNode_FloatConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Float(input_map, parent) {}
     };
+
     struct UberNode_Float3Concrete : public UberNode_Float3
     {
-        UberNode_Float3Concrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Float3(input_map, parent)
-        {  }
+        UberNode_Float3Concrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Float3(input_map, parent) {}
     };
+
     struct UberNode_SamplerConcrete : public UberNode_Sampler
     {
-        UberNode_SamplerConcrete(InputMap::Ptr input_map, Ptr parent) :
-            UberNode_Sampler(input_map, parent)
-        {  }
+        UberNode_SamplerConcrete(InputMap::Ptr input_map, Ptr parent)
+        : UberNode_Sampler(input_map, parent) {}
     };
 }
 
@@ -657,21 +688,18 @@ namespace {
 ////////////////////////////////////
 
 InputMap::Ptr UberNode::GetArg(std::uint32_t arg_number)
-{ return nullptr; }
-
-void UberNode::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
-    // unused variables
-    (void)arg;
-    (void)arg_number;
+    return nullptr;
 }
+
+void UberNode::SetArg(InputMap::Ptr, std::uint32_t) { }
 
 UberNode::Ptr UberNode::GetChildren(std::uint32_t arg_number) const
 {
     if ((size_t)arg_number > m_children.size())
     {
-        throw std::logic_error(
-            "UberNode::GetChildren(...): attempt to get nonexistent 'arg_number'");
+        throw std::logic_error("UberNode::GetChildren(...):"
+                                "attempt to get nonexistent 'arg_number'");
     }
 
     return m_children[arg_number];
@@ -679,13 +707,9 @@ UberNode::Ptr UberNode::GetChildren(std::uint32_t arg_number) const
 
 // input map data type accessor
 InputMap::InputMapType UberNode::GetDataType() const
-{ return m_input_map->m_type; }
-
-#define RETURN_TEXT_INCASE(type)\
-    case InputMap::InputMapType::##type:\
-    {\
-        return #type;\
-    }\
+{
+    return m_input_map->m_type;
+}
 
 std::string UberNode::GetDataTypeText() const
 {
@@ -783,53 +807,58 @@ int UberNode::GetParentId() const
     {
         return m_parent->GetId();
     }
+
     return -1;
 }
 
-UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
+UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent)
+    :m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
 {  }
 
-UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode(input_map, parent)
-{ m_children.push_back(nullptr); }
-UberNode_Select::UberNode_Select(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode_Arg(input_map, parent)
-{   }
-UberNode_Shuffle::UberNode_Shuffle(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode_Arg(input_map, parent)
-{   }
-UberNode_Matmul::UberNode_Matmul(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode_Arg(input_map, parent)
-{   }
-UberNode_TwoArgs::UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode(input_map, parent)
+UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent)
+              : UberNode(input_map, parent)
+{
+    m_children.push_back(nullptr);
+}
+
+UberNode_Select::UberNode_Select(InputMap::Ptr input_map, UberNode::Ptr parent)
+                 : UberNode_Arg(input_map, parent) {}
+
+UberNode_Shuffle::UberNode_Shuffle(InputMap::Ptr input_map, UberNode::Ptr parent)
+                  : UberNode_Arg(input_map, parent) {}
+
+UberNode_Matmul::UberNode_Matmul(InputMap::Ptr input_map, UberNode::Ptr parent)
+                 : UberNode_Arg(input_map, parent) {}
+
+UberNode_TwoArgs::UberNode_TwoArgs(InputMap::Ptr input_map, UberNode::Ptr parent)
+                  : UberNode(input_map, parent)
 {
     m_children.push_back(nullptr);
     m_children.push_back(nullptr);
 }
-UberNode_Lerp::UberNode_Lerp(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode_TwoArgs(input_map, parent)
-{   }
-UberNode_Shuffle2::UberNode_Shuffle2(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode_TwoArgs(input_map, parent)
-{   }
-UberNode_ThreeArgs::UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode(input_map, parent)
+
+UberNode_Lerp::UberNode_Lerp(InputMap::Ptr input_map, UberNode::Ptr parent)
+    : UberNode_TwoArgs(input_map, parent) {}
+
+UberNode_Shuffle2::UberNode_Shuffle2(InputMap::Ptr input_map, UberNode::Ptr parent)
+    : UberNode_TwoArgs(input_map, parent) {}
+
+UberNode_ThreeArgs::UberNode_ThreeArgs(InputMap::Ptr input_map, UberNode::Ptr parent)
+    : UberNode(input_map, parent)
 {
     m_children.push_back(nullptr);
     m_children.push_back(nullptr);
     m_children.push_back(nullptr);
 }
-UberNode_Float::UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode(input_map, parent)
-{   }
-UberNode_Float3::UberNode_Float3(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode(input_map, parent)
-{   }
-UberNode_Sampler::UberNode_Sampler(InputMap::Ptr input_map, UberNode::Ptr parent) :
-    UberNode(input_map, parent)
-{   }
+
+UberNode_Float::UberNode_Float(InputMap::Ptr input_map, UberNode::Ptr parent)
+    : UberNode(input_map, parent) {}
+
+UberNode_Float3::UberNode_Float3(InputMap::Ptr input_map, UberNode::Ptr parent)
+    : UberNode(input_map, parent) {}
+
+UberNode_Sampler::UberNode_Sampler(InputMap::Ptr input_map, UberNode::Ptr parent)
+    : UberNode(input_map, parent) {}
 
 UberNode::Ptr UberNode::Create(InputMap::Ptr input_map, Ptr parent)
 {
@@ -877,15 +906,18 @@ UberNode::Ptr UberNode::Create(InputMap::Ptr input_map, Ptr parent)
             {
                 return std::make_shared<UberNode_ThreeArgsConcrete>(input_map, parent);
             }
+
             // leaf input maps
             if (std::dynamic_pointer_cast<InputMap_ConstantFloat>(input_map) != nullptr)
             {
                 return std::make_shared<UberNode_FloatConcrete>(input_map, parent);
             }
+
             if (std::dynamic_pointer_cast<InputMap_ConstantFloat3>(input_map) != nullptr)
             {
                 return std::make_shared<UberNode_Float3Concrete>(input_map, parent);
             }
+
             if (std::dynamic_pointer_cast<InputMap_Sampler>(input_map) != nullptr)
             {
                 return std::make_shared<UberNode_SamplerConcrete>(input_map, parent);

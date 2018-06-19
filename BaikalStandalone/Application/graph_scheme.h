@@ -32,9 +32,9 @@ public:
         std::uint32_t src_id;
         std::uint32_t dst_id;
 
-        Link(std::uint32_t src_id_, std::uint32_t dst_id_) :
-            src_id(src_id_), dst_id(dst_id_)
-        {   }
+        Link(std::uint32_t src_id_, std::uint32_t dst_id_)
+        : src_id(src_id_), dst_id(dst_id_)
+        { }
     };
 
     enum class NodeType
@@ -48,10 +48,9 @@ public:
     class Node
     {
     public:
-        Node(
-            UberNode::Ptr node,
-            RadeonRays::int2 pos,
-            RadeonRays::int2 size);
+        Node(UberNode::Ptr node,
+             RadeonRays::int2 pos,
+             RadeonRays::int2 size);
 
         float GetFloat() const;
         void SetFloat(float value);
@@ -70,10 +69,9 @@ public:
         UberNode::Ptr node;
     };
 
-    static Ptr Create(
-        UberTree::Ptr tree,
-        RadeonRays::int2 root_pos = RadeonRays::int2(0, 0),
-        RadeonRays::int2 node_size = RadeonRays::int2(120, 60));
+    static Ptr Create(UberTree::Ptr tree,
+                      RadeonRays::int2 root_pos = RadeonRays::int2(0, 0),
+                      RadeonRays::int2 node_size = RadeonRays::int2(120, 60));
 
     void RemoveNode(std::uint32_t id);
     void UpdateNodePos(std::uint32_t id, RadeonRays::int2 pos);
@@ -88,11 +86,14 @@ public:
     { return m_links; }
 
 protected:
-    GraphScheme(UberTree::Ptr tree, RadeonRays::int2 root_pos, RadeonRays::int2 node_size);
+    GraphScheme(UberTree::Ptr tree,
+                RadeonRays::int2 root_pos,
+                RadeonRays::int2 node_size);
 
 private:
     void RemoveLink(std::uint32_t src_id, std::uint32_t dst_id);
-    void RecomputeCoordinates(RadeonRays::int2 root_pos, RadeonRays::int2 node_size);
+    void RecomputeCoordinates(RadeonRays::int2 root_pos,
+                              RadeonRays::int2 node_size);
 
     std::vector<UberTree::Ptr> m_trees;
     std::vector<Node> m_nodes;
