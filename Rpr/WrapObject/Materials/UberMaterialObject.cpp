@@ -13,6 +13,7 @@ UberMaterialObject::UberMaterialObject() :
     MaterialObject(kUberV2)
 {
     m_mat = UberV2Material::Create();
+    m_mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
 }
 
 void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonRays::float4 & val)
@@ -27,8 +28,8 @@ void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonR
     }
     else
     {
-        auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
-        m_mat->SetInputValue(input_name, inputMap);
+        auto input_map = Baikal::InputMap_ConstantFloat3::Create(val);
+        m_mat->SetInputValue(input_name, input_map);
     }
 }
 

@@ -23,6 +23,7 @@ THE SOFTWARE.
 
 #include "CLW.h"
 #include "RenderFactory/render_factory.h"
+#include <list>
 
 #ifndef APP_BENCHMARK
 
@@ -40,12 +41,9 @@ THE SOFTWARE.
 #endif
 
 void ConfigManager::CreateConfigs(
-    Mode mode,
-    bool interop,
+    rpr_creation_flags flags,
     std::vector<Config>& configs,
-    int initial_num_bounces,
-    int req_platform_index,
-    int req_device_index)
+    int initial_num_bounces)
 {
     std::vector<CLWPlatform> platforms;
 
@@ -58,38 +56,43 @@ void ConfigManager::CreateConfigs(
 
     configs.clear();
 
-    if (req_platform_index >= (int)platforms.size())
-        throw std::runtime_error("There is no such platform index");
-    else if ((req_platform_index > 0) &&
-        (req_device_index >= (int)platforms[req_platform_index].GetDeviceCount()))
-        throw std::runtime_error("There is no such device index");
+    static const std::vector<rpr_uint> kGpuFlags =
+    {
+        RPR_CREATION_FLAGS_ENABLE_GPU0,
+        RPR_CREATION_FLAGS_ENABLE_GPU1,
+        RPR_CREATION_FLAGS_ENABLE_GPU2,
+        RPR_CREATION_FLAGS_ENABLE_GPU3,
+        RPR_CREATION_FLAGS_ENABLE_GPU4,
+        RPR_CREATION_FLAGS_ENABLE_GPU5,
+        RPR_CREATION_FLAGS_ENABLE_GPU6,
+        RPR_CREATION_FLAGS_ENABLE_GPU7
+    };
 
+    bool use_cpu = (flags & RPR_CREATION_FLAGS_ENABLE_CPU) == RPR_CREATION_FLAGS_ENABLE_CPU;
+    bool interop = (flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP) == RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
     bool hasprimary = false;
 
-    int i = (req_platform_index >= 0) ? (req_platform_index) : 0;
-    int d = (req_device_index >= 0) ? (req_device_index) : 0;
+    rpr_uint gpu_counter = 0;
 
-    int platforms_end = (req_platform_index >= 0) ?
-        (req_platform_index + 1) : ((int)platforms.size());
-
-    for (; i < platforms_end; ++i)
+    for (std::size_t i = 0; i < platforms.size(); ++i)
     {
-        int device_end = 0;
-
-        if (req_platform_index < 0 || req_device_index < 0)
-            device_end = (int)platforms[i].GetDeviceCount();
-        else
-            device_end = req_device_index + 1;
-
-        for (; d < device_end; ++d)
+        for (unsigned int d = 0; d < platforms[i].GetDeviceCount(); ++d)
         {
-            if (req_platform_index < 0)
-            {
-                if ((mode == kUseGpus || mode == kUseSingleGpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_GPU)
-                    continue;
+            cl_device_type device_type = platforms[i].GetDevice(d).GetType();
 
-                if ((mode == kUseCpus || mode == kUseSingleCpu) && platforms[i].GetDevice(d).GetType() != CL_DEVICE_TYPE_CPU)
+            if (device_type == CL_DEVICE_TYPE_GPU)
+            {
+                bool comp = (kGpuFlags[gpu_counter] & flags) == kGpuFlags[gpu_counter];
+                ++gpu_counter;
+                if (!comp)
+                {
                     continue;
+                }
+            }
+
+            if (!use_cpu && (device_type == CL_DEVICE_TYPE_CPU))
+            {
+                continue;
             }
 
             Config cfg;
@@ -140,13 +143,7 @@ void ConfigManager::CreateConfigs(
             }
 
             configs.push_back(std::move(cfg));
-
-            if (mode == kUseSingleGpu || mode == kUseSingleCpu)
-                break;
         }
-
-        if (configs.size() == 1 && (mode == kUseSingleGpu || mode == kUseSingleCpu))
-            break;
     }
 
     if (configs.size() == 0)

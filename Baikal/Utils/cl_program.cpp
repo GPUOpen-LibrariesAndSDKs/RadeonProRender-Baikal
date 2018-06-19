@@ -32,6 +32,7 @@ THE SOFTWARE.
 
 #include "cl_program_manager.h"
 #include "version.h"
+#include "Utils/mkpath.h"
 
 //#define DUMP_PROGRAM_SOURCE 1
 
@@ -91,6 +92,8 @@ inline bool LoadBinaries(std::string const& name, std::vector<std::uint8_t>& dat
 
 inline void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& data)
 {
+    mkfilepath(name);
+
     std::ofstream out(name, std::ios::out | std::ios::binary);
 
     if (out)

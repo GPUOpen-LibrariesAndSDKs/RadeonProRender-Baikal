@@ -191,21 +191,4 @@ namespace Baikal
     protected:
         VolumeMaterial();
     };
-
-/*    class MaterialAccessor
-    {
-    public:
-        MaterialAccessor(Material::Ptr material);
-
-        std::vector<std::string> GetTypeInfo() const;
-        void SetType(std::uint32_t type);
-        int GetType() const;
-
-        ~MaterialAccessor() = default;
-
-        MaterialAccessor(const MaterialAccessor&) = delete;
-        MaterialAccessor& operator = (const MaterialAccessor&) = delete;
-    private:
-        Material::Ptr m_material;
-    };*/
 }

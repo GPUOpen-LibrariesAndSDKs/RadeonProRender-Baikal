@@ -1,4 +1,4 @@
-/*****************************************************************************\
+ /*****************************************************************************\
 *
 *  Module Name    FireRender.h
 *  Project        FireRender Engine
@@ -15,9 +15,13 @@
 *  @author Takahiro Harada (takahiro.harada@amd.com)
 *  @bug No known bugs.
 *
+
+
 \*****************************************************************************/
+  
 #ifndef __RADEONPRORENDER_H
 #define __RADEONPRORENDER_H
+
 
 #include <cstddef>
 
@@ -28,16 +32,18 @@
         #define RPR_API_ENTRY __declspec(dllimport)
     #endif
 #else
-        #define RPR_API_ENTRY __attribute__((visibility ("default")))
+    #define RPR_API_ENTRY __attribute__((visibility ("default")))
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define RPR_API_VERSION 0x010028300 
 
-/* rpr_status */
+#define RPR_API_VERSION 0x010029700 
+
+/*rpr_status*/
 #define RPR_SUCCESS 0 
 #define RPR_ERROR_COMPUTE_API_NOT_SUPPORTED -1 
 #define RPR_ERROR_OUT_OF_SYSTEM_MEMORY -2 
@@ -62,8 +68,11 @@ extern "C" {
 #define RPR_ERROR_INVALID_PARAMETER_TYPE -22 
 #define RPR_ERROR_UNSUPPORTED -23 
 #define RPR_ERROR_OPENCL_OUT_OF_HOST_MEMORY -24 
-
-/* rpr_parameter_type */
+#define RPR_ERROR_OPENGL -25 
+#define RPR_ERROR_OPENCL -26 
+#define RPR_ERROR_NULLPTR -27 
+#define RPR_ERROR_NODETYPE -28 
+/*rpr_parameter_type*/
 #define RPR_PARAMETER_TYPE_FLOAT 0x1 
 #define RPR_PARAMETER_TYPE_FLOAT2 0x2 
 #define RPR_PARAMETER_TYPE_FLOAT3 0x3 
@@ -72,15 +81,7 @@ extern "C" {
 #define RPR_PARAMETER_TYPE_STRING 0x6 
 #define RPR_PARAMETER_TYPE_SHADER 0x7 
 #define RPR_PARAMETER_TYPE_UINT 0x8 
-
-/* rpr_context_type */
-#define RPR_CONTEXT_OPENCL (1 << 0) 
-#define RPR_CONTEXT_DIRECTCOMPUTE (1 << 1) 
-#define RPR_CONTEXT_REFERENCE (1 << 2) 
-#define RPR_CONTEXT_OPENGL (1 << 3) 
-#define RPR_CONTEXT_METAL (1 << 4) 
-
-/* rpr_creation_flags */
+/*rpr_creation_flags*/
 #define RPR_CREATION_FLAGS_ENABLE_GPU0 (1 << 0) 
 #define RPR_CREATION_FLAGS_ENABLE_GPU1 (1 << 1) 
 #define RPR_CREATION_FLAGS_ENABLE_GPU2 (1 << 2) 
@@ -92,20 +93,18 @@ extern "C" {
 #define RPR_CREATION_FLAGS_ENABLE_GPU6 (1 << 8) 
 #define RPR_CREATION_FLAGS_ENABLE_GPU7 (1 << 9) 
 #define RPR_CREATION_FLAGS_ENABLE_METAL (1 << 10) 
-
-/* rpr_aa_filter */
+/*rpr_aa_filter*/
+#define RPR_FILTER_NONE 0x0 
 #define RPR_FILTER_BOX 0x1 
 #define RPR_FILTER_TRIANGLE 0x2 
 #define RPR_FILTER_GAUSSIAN 0x3 
 #define RPR_FILTER_MITCHELL 0x4 
 #define RPR_FILTER_LANCZOS 0x5 
 #define RPR_FILTER_BLACKMANHARRIS 0x6 
-
-/* rpr_shape_type */
+/*rpr_shape_type*/
 #define RPR_SHAPE_TYPE_MESH 0x1 
 #define RPR_SHAPE_TYPE_INSTANCE 0x2 
-
-/* rpr_light_type */
+/*rpr_light_type*/
 #define RPR_LIGHT_TYPE_POINT 0x1 
 #define RPR_LIGHT_TYPE_DIRECTIONAL 0x2 
 #define RPR_LIGHT_TYPE_SPOT 0x3 
@@ -118,8 +117,10 @@ extern "C" {
 
 /* rpr_context_properties */
 #define RPR_CONTEXT_CREATEPROP_CPU_THREAD_LIMIT 0x600 
+#define RPR_CONTEXT_CREATEPROP_COMPILE_CALLBACK 0x601 
+#define RPR_CONTEXT_CREATEPROP_COMPILE_USER_DATA 0x602 
 
-/* rpr_context_info */
+/*rpr_context_info*/
 #define RPR_CONTEXT_CREATION_FLAGS 0x102 
 #define RPR_CONTEXT_CACHE_PATH 0x103 
 #define RPR_CONTEXT_RENDER_STATUS 0x104 
@@ -130,6 +131,7 @@ extern "C" {
 #define RPR_CONTEXT_SCENE 0x109 
 #define RPR_CONTEXT_AA_CELL_SIZE 0x10A 
 #define RPR_CONTEXT_AA_SAMPLES 0x10B 
+#define RPR_CONTEXT_ITERATIONS 0x10B 
 #define RPR_CONTEXT_IMAGE_FILTER_TYPE 0x10C 
 #define RPR_CONTEXT_IMAGE_FILTER_BOX_RADIUS 0x10D 
 #define RPR_CONTEXT_IMAGE_FILTER_GAUSSIAN_RADIUS 0x10E 
@@ -177,12 +179,18 @@ extern "C" {
 #define RPR_CONTEXT_MAX_DEPTH_DIFFUSE 0x138 
 #define RPR_CONTEXT_MAX_DEPTH_GLOSSY 0x139 
 #define RPR_CONTEXT_OOC_CACHE_PATH 0x13a 
-#define RPR_CONTEXT_RANDOM_SEED 0x13b
+#define RPR_CONTEXT_MAX_DEPTH_REFRACTION 0x13B 
+#define RPR_CONTEXT_MAX_DEPTH_GLOSSY_REFRACTION 0x13C 
+#define RPR_CONTEXT_RENDER_LAYER_MASK 0x13D 
+#define RPR_CONTEXT_SINGLE_LEVEL_BVH_ENABLED 0x13E 
+#define RPR_CONTEXT_TRANSPARENT_BACKGROUND 0x13F 
+#define RPR_CONTEXT_MAX_DEPTH_SHADOW 0x140 
+#define RPR_CONTEXT_RANDOM_SEED 0x141
 
 /* last of the RPR_CONTEXT_* */
-#define RPR_CONTEXT_MAX 0x13b 
+#define RPR_CONTEXT_MAX 0x141 
 
-/* rpr_camera_info */
+/*rpr_camera_info*/
 #define RPR_CAMERA_TRANSFORM 0x201 
 #define RPR_CAMERA_FSTOP 0x202 
 #define RPR_CAMERA_APERTURE_BLADES 0x203 
@@ -203,27 +211,21 @@ extern "C" {
 #define RPR_CAMERA_TILT_CORRECTION 0x212 
 #define RPR_CAMERA_NEAR_PLANE 0x213 
 #define RPR_CAMERA_FAR_PLANE 0x214 
-
-/* rpr_image_info */
+#define RPR_CAMERA_LINEAR_MOTION 0x215 
+#define RPR_CAMERA_ANGULAR_MOTION 0x216 
+/*rpr_image_info*/
 #define RPR_IMAGE_FORMAT 0x301 
 #define RPR_IMAGE_DESC 0x302 
 #define RPR_IMAGE_DATA 0x303 
 #define RPR_IMAGE_DATA_SIZEBYTE 0x304 
 #define RPR_IMAGE_WRAP 0x305 
-
-/* rpr_buffer_info */
+#define RPR_IMAGE_FILTER 0x306 
+#define RPR_IMAGE_GAMMA 0x307 
+#define RPR_IMAGE_MIPMAP_ENABLED 0x308 
+/*rpr_buffer_info*/
 #define RPR_BUFFER_DESC 0x350 
 #define RPR_BUFFER_DATA 0x351 
-
-/* rpr_image_option */
-#define RPR_IMAGE_FILTER_NEAREST (1 << 0) 
-#define RPR_IMAGE_FILTER_LINEAR (1 << 1) 
-#define RPR_IMAGE_WRAP_REPEAT (1 << 2) 
-#define RPR_IMAGE_WRAP_MIRRORED_REPEAT (1 << 3) 
-#define RPR_IMAGE_WRAP_CLAMP_TO_EDGE (1 << 4) 
-#define RPR_IMAGE_WRAP_CLAMP_TO_BORDER (1 << 5) 
-
-/* rpr_shape_info */
+/*rpr_shape_info*/
 #define RPR_SHAPE_TYPE 0x401 
 #define RPR_SHAPE_VIDMEM_USAGE 0x402 
 #define RPR_SHAPE_TRANSFORM 0x403 
@@ -245,8 +247,8 @@ extern "C" {
 #define RPR_SHAPE_MATERIALS_PER_FACE 0x415 
 #define RPR_SHAPE_SCALE_MOTION 0x416 
 #define RPR_SHAPE_HETERO_VOLUME 0x417 
-
-/* rpr_mesh_info */
+#define RPR_SHAPE_LAYER_MASK 0x418 
+/*rpr_mesh_info*/
 #define RPR_MESH_POLYGON_COUNT 0x501 
 #define RPR_MESH_VERTEX_COUNT 0x502 
 #define RPR_MESH_NORMAL_COUNT 0x503 
@@ -270,8 +272,7 @@ extern "C" {
 #define RPR_MESH_UV2_STRIDE 0x516 
 #define RPR_MESH_UV2_INDEX_STRIDE 0x517 
 #define RPR_MESH_UV_DIM 0x518 
-
-/* rpr_scene_info */
+/*rpr_scene_info*/
 #define RPR_SCENE_SHAPE_COUNT 0x701 
 #define RPR_SCENE_LIGHT_COUNT 0x702 
 #define RPR_SCENE_SHAPE_LIST 0x704 
@@ -285,58 +286,58 @@ extern "C" {
 #define RPR_SCENE_AABB 0x70D 
 #define RPR_SCENE_HETEROVOLUME_LIST 0x70E 
 #define RPR_SCENE_HETEROVOLUME_COUNT 0x70F 
-
-/* rpr_light_info */
+/*rpr_lut_info*/
+#define RPR_LUT_FILENAME 0x850 
+#define RPR_LUT_DATA 0x851 
+/*rpr_light_info*/
 #define RPR_LIGHT_TYPE 0x801 
 #define RPR_LIGHT_TRANSFORM 0x803 
 
-/* rpr_light_info - point light */
+    
 #define RPR_POINT_LIGHT_RADIANT_POWER 0x804 
 
-/* rpr_light_info - directional light */
+    
 #define RPR_DIRECTIONAL_LIGHT_RADIANT_POWER 0x808 
 #define RPR_DIRECTIONAL_LIGHT_SHADOW_SOFTNESS 0x809 
 
-/* rpr_light_info - spot light */
+    
 #define RPR_SPOT_LIGHT_RADIANT_POWER 0x80B 
 #define RPR_SPOT_LIGHT_CONE_SHAPE 0x80C 
 
-/* rpr_light_info - environment light */
+    
 #define RPR_ENVIRONMENT_LIGHT_IMAGE 0x80F 
 #define RPR_ENVIRONMENT_LIGHT_INTENSITY_SCALE 0x810 
 #define RPR_ENVIRONMENT_LIGHT_PORTAL_LIST 0x818 
 #define RPR_ENVIRONMENT_LIGHT_PORTAL_COUNT 0x819 
 
-/* rpr_light_info - sky light */
+    
 #define RPR_SKY_LIGHT_TURBIDITY 0x812 
 #define RPR_SKY_LIGHT_ALBEDO 0x813 
 #define RPR_SKY_LIGHT_SCALE 0x814 
+#define RPR_SKY_LIGHT_DIRECTION 0x815 
 #define RPR_SKY_LIGHT_PORTAL_LIST 0x820 
 #define RPR_SKY_LIGHT_PORTAL_COUNT 0x821 
 
-/* rpr_light_info - IES light */
+    
 #define RPR_IES_LIGHT_RADIANT_POWER 0x816 
 #define RPR_IES_LIGHT_IMAGE_DESC 0x817 
-
-/* rpr_parameter_info */
+/*rpr_parameter_info*/
 #define RPR_PARAMETER_NAME 0x1201 
 #define RPR_PARAMETER_NAME_STRING 0x1202 
 #define RPR_PARAMETER_TYPE 0x1203 
 #define RPR_PARAMETER_DESCRIPTION 0x1204 
 #define RPR_PARAMETER_VALUE 0x1205 
-
-/* rpr_framebuffer_info */
+/*rpr_framebuffer_info*/
 #define RPR_FRAMEBUFFER_FORMAT 0x1301 
 #define RPR_FRAMEBUFFER_DESC 0x1302 
 #define RPR_FRAMEBUFFER_DATA 0x1303 
 #define RPR_FRAMEBUFFER_GL_TARGET 0x1304 
 #define RPR_FRAMEBUFFER_GL_MIPLEVEL 0x1305 
 #define RPR_FRAMEBUFFER_GL_TEXTURE 0x1306 
-
-/* rpr_mesh_polygon_info */
+/*rpr_mesh_polygon_info*/
 #define RPR_MESH_POLYGON_VERTEX_COUNT 0x1401 
 
-/* rpr_mesh_polygon_vertex_info */
+    
 #define RPR_MESH_POLYGON_VERTEX_POSITION 0x1501 
 #define RPR_MESH_POLYGON_VERTEX_NORMAL 0x1502 
 #define RPR_MESH_POLYGON_VERTEX_TEXCOORD 0x1503 
@@ -344,17 +345,14 @@ extern "C" {
 /* rpr_instance_info */
 #define RPR_INSTANCE_PARENT_SHAPE 0x1601 
 
-/* rpr_image_format */
-/* rpr_component_type */
+/*rpr_component_type*/
 #define RPR_COMPONENT_TYPE_UINT8 0x1 
 #define RPR_COMPONENT_TYPE_FLOAT16 0x2 
 #define RPR_COMPONENT_TYPE_FLOAT32 0x3 
-
-/* rpr_buffer_element_type */
+/*rpr_buffer_element_type*/
 #define RPR_BUFFER_ELEMENT_TYPE_INT32 0x1 
 #define RPR_BUFFER_ELEMENT_TYPE_FLOAT32 0x2 
-
-/* rpr_render_mode */
+/*rpr_render_mode*/
 #define RPR_RENDER_MODE_GLOBAL_ILLUMINATION 0x1 
 #define RPR_RENDER_MODE_DIRECT_ILLUMINATION 0x2 
 #define RPR_RENDER_MODE_DIRECT_ILLUMINATION_NO_SHADOW 0x3 
@@ -365,8 +363,7 @@ extern "C" {
 #define RPR_RENDER_MODE_TEXCOORD 0x8 
 #define RPR_RENDER_MODE_AMBIENT_OCCLUSION 0x9 
 #define RPR_RENDER_MODE_DIFFUSE 0x0a 
-
-/* rpr_camera_mode */
+/*rpr_camera_mode*/
 #define RPR_CAMERA_MODE_PERSPECTIVE 0x1 
 #define RPR_CAMERA_MODE_ORTHOGRAPHIC 0x2 
 #define RPR_CAMERA_MODE_LATITUDE_LONGITUDE_360 0x3 
@@ -374,8 +371,7 @@ extern "C" {
 #define RPR_CAMERA_MODE_CUBEMAP 0x5 
 #define RPR_CAMERA_MODE_CUBEMAP_STEREO 0x6 
 #define RPR_CAMERA_MODE_FISHEYE 0x7 
-
-/* rpr_tonemapping_operator */
+/*rpr_tonemapping_operator*/
 #define RPR_TONEMAPPING_OPERATOR_NONE 0x0 
 #define RPR_TONEMAPPING_OPERATOR_LINEAR 0x1 
 #define RPR_TONEMAPPING_OPERATOR_PHOTOLINEAR 0x2 
@@ -383,25 +379,21 @@ extern "C" {
 #define RPR_TONEMAPPING_OPERATOR_MAXWHITE 0x4 
 #define RPR_TONEMAPPING_OPERATOR_REINHARD02 0x5 
 #define RPR_TONEMAPPING_OPERATOR_EXPONENTIAL 0x6 
-
-/* rpr_volume_type */
+/*rpr_volume_type*/
 #define RPR_VOLUME_TYPE_NONE 0xFFFF 
 #define RPR_VOLUME_TYPE_HOMOGENEOUS 0x0 
 #define RPR_VOLUME_TYPE_HETEROGENEOUS 0x1 
-
-/* rpr_material_node_info*/
+/*rpr_material_node_info*/
 #define RPR_MATERIAL_NODE_TYPE 0x1101 
 #define RPR_MATERIAL_NODE_SYSTEM 0x1102 
 #define RPR_MATERIAL_NODE_INPUT_COUNT 0x1103 
-
-/* rpr_material_node_input_info */
+/*rpr_material_node_input_info*/
 #define RPR_MATERIAL_NODE_INPUT_NAME 0x1103 
 #define RPR_MATERIAL_NODE_INPUT_NAME_STRING 0x1104 
 #define RPR_MATERIAL_NODE_INPUT_DESCRIPTION 0x1105 
 #define RPR_MATERIAL_NODE_INPUT_VALUE 0x1106 
 #define RPR_MATERIAL_NODE_INPUT_TYPE 0x1107 
-
-/* rpr_material_node_type */
+/*rpr_material_node_type*/
 #define RPR_MATERIAL_NODE_DIFFUSE 0x1 
 #define RPR_MATERIAL_NODE_MICROFACET 0x2 
 #define RPR_MATERIAL_NODE_REFLECTION 0x3 
@@ -437,9 +429,9 @@ extern "C" {
 #define RPR_MATERIAL_NODE_MICROFACET_BECKMANN 0x22 
 #define RPR_MATERIAL_NODE_PHONG 0x23 
 #define RPR_MATERIAL_NODE_BUFFER_SAMPLER 0x24 
-#define RPR_MATERIAL_NODE_UBERV2 0x25
-
-/* rpr_material_node_input */
+#define RPR_MATERIAL_NODE_UV_TRIPLANAR 0x25 
+#define RPR_MATERIAL_NODE_UBERV2 0x26
+/*rpr_material_node_input*/
 #define RPR_MATERIAL_INPUT_COLOR 0x0 
 #define RPR_MATERIAL_INPUT_COLOR0 0x1 
 #define RPR_MATERIAL_INPUT_COLOR1 0x2 
@@ -472,9 +464,9 @@ extern "C" {
 #define RPR_MATERIAL_INPUT_ZAXIS 0x1d 
 #define RPR_MATERIAL_INPUT_XAXIS 0x1e 
 #define RPR_MATERIAL_INPUT_THRESHOLD 0x1f 
-#define RPR_MATERIAL_INPUT_MAX 0x20 
-
-  
+#define RPR_MATERIAL_INPUT_OFFSET 0x20 
+#define RPR_MATERIAL_INPUT_MAX 0x21 
+/*rpr_material_node_input*/
 #define RPR_MATERIAL_STANDARD_INPUT_DIFFUSE_COLOR 0x112 
 #define RPR_MATERIAL_STANDARD_INPUT_DIFFUSE_NORMAL 0x113 
 #define RPR_MATERIAL_STANDARD_INPUT_GLOSSY_COLOR 0x114 
@@ -551,7 +543,7 @@ extern "C" {
 #define RPR_UBER_MATERIAL_LAYER_SSS 0x40
 #define RPR_UBER_MATERIAL_LAYER_SHADING_NORMAL 0x80
 
-/* rpr_material_node_arithmetic_operation */
+/*rpr_material_node_arithmetic_operation*/
 #define RPR_MATERIAL_NODE_OP_ADD 0x00 
 #define RPR_MATERIAL_NODE_OP_SUB 0x01 
 #define RPR_MATERIAL_NODE_OP_MUL 0x02 
@@ -584,23 +576,20 @@ extern "C" {
 #define RPR_MATERIAL_NODE_OP_MAT_MUL 0x1d 
 #define RPR_MATERIAL_NODE_OP_SELECT_W 0x1e 
 #define RPR_MATERIAL_NODE_OP_DOT4 0x1f 
-
-/* rpr_material_node_lookup_value */
+/*rpr_material_node_lookup_value*/
 #define RPR_MATERIAL_NODE_LOOKUP_UV 0x0 
 #define RPR_MATERIAL_NODE_LOOKUP_N 0x1 
 #define RPR_MATERIAL_NODE_LOOKUP_P 0x2 
 #define RPR_MATERIAL_NODE_LOOKUP_INVEC 0x3 
 #define RPR_MATERIAL_NODE_LOOKUP_OUTVEC 0x4 
 #define RPR_MATERIAL_NODE_LOOKUP_UV1 0x5 
-
-/* rpr_post_effect_info */
+/*rpr_post_effect_info*/
 #define RPR_POST_EFFECT_TYPE 0x0 
 #define RPR_POST_EFFECT_WHITE_BALANCE_COLOR_SPACE 0x4 
 #define RPR_POST_EFFECT_WHITE_BALANCE_COLOR_TEMPERATURE 0x5 
 #define RPR_POST_EFFECT_SIMPLE_TONEMAP_EXPOSURE 0x6 
 #define RPR_POST_EFFECT_SIMPLE_TONEMAP_CONTRAST 0x7 
 #define RPR_POST_EFFECT_SIMPLE_TONEMAP_ENABLE_TONEMAP 0x8 
-
 /*rpr_aov*/
 #define RPR_AOV_COLOR 0x0 
 #define RPR_AOV_OPACITY 0x1 
@@ -618,45 +607,49 @@ extern "C" {
 #define RPR_AOV_VELOCITY 0x0d 
 #define RPR_AOV_DIRECT_ILLUMINATION 0x0e 
 #define RPR_AOV_INDIRECT_ILLUMINATION 0x0f 
-#define RPR_AOV_MAX 0x10 
-
+#define RPR_AOV_AO 0x10 
+#define RPR_AOV_DIRECT_DIFFUSE 0x11 
+#define RPR_AOV_DIRECT_REFLECT 0x12 
+#define RPR_AOV_INDIRECT_DIFFUSE 0x13 
+#define RPR_AOV_INDIRECT_REFLECT 0x14 
+#define RPR_AOV_REFRACT 0x15 
+#define RPR_AOV_VOLUME 0x16 
+#define RPR_AOV_MAX 0x17 
 /*rpr_post_effect_type*/
 #define RPR_POST_EFFECT_TONE_MAP 0x0 
 #define RPR_POST_EFFECT_WHITE_BALANCE 0x1 
 #define RPR_POST_EFFECT_SIMPLE_TONEMAP 0x2 
 #define RPR_POST_EFFECT_NORMALIZATION 0x3 
 #define RPR_POST_EFFECT_GAMMA_CORRECTION 0x4 
-
 /*rpr_color_space*/
 #define RPR_COLOR_SPACE_SRGB 0x1 
 #define RPR_COLOR_SPACE_ADOBE_RGB 0x2 
 #define RPR_COLOR_SPACE_REC2020 0x3 
 #define RPR_COLOR_SPACE_DCIP3 0x4 
+/*rpr_material_node_input_type*/
 
-/* rpr_material_node_type */
+    
 #define RPR_MATERIAL_NODE_INPUT_TYPE_FLOAT4 0x1 
 #define RPR_MATERIAL_NODE_INPUT_TYPE_UINT 0x2 
 #define RPR_MATERIAL_NODE_INPUT_TYPE_NODE 0x3 
 #define RPR_MATERIAL_NODE_INPUT_TYPE_IMAGE 0x4 
 #define RPR_MATERIAL_NODE_INPUT_TYPE_BUFFER 0x5 
-
-/* rpr_subdiv_boundary_interfop_type */
+/*rpr_subdiv_boundary_interfop_type*/
 #define RPR_SUBDIV_BOUNDARY_INTERFOP_TYPE_EDGE_AND_CORNER 0x1 
 #define RPR_SUBDIV_BOUNDARY_INTERFOP_TYPE_EDGE_ONLY 0x2 
-
-/* rpr_image_wrap_type */
+/*rpr_image_wrap_type*/
 #define RPR_IMAGE_WRAP_TYPE_REPEAT 0x1 
 #define RPR_IMAGE_WRAP_TYPE_MIRRORED_REPEAT 0x2 
 #define RPR_IMAGE_WRAP_TYPE_CLAMP_TO_EDGE 0x3 
 #define RPR_IMAGE_WRAP_TYPE_CLAMP_TO_BORDER 0x4 
 #define RPR_IMAGE_WRAP_TYPE_CLAMP_ZERO 0x5 
 #define RPR_IMAGE_WRAP_TYPE_CLAMP_ONE 0x6 
+/*rpr_image_filter_type*/
+#define RPR_IMAGE_FILTER_TYPE_NEAREST 0x1 
+#define RPR_IMAGE_FILTER_TYPE_LINEAR 0x2 
 
 /* Constants */
-#define RPR_MAX_AA_SAMPLES 32 
-#define RPR_MAX_AA_GRID_SIZE 16 
-
-/* rpr_composite_info */
+/*rpr_composite_info*/
 #define RPR_COMPOSITE_TYPE 0x1  
 #define RPR_COMPOSITE_FRAMEBUFFER_INPUT_FB 0x2  
 #define RPR_COMPOSITE_NORMALIZE_INPUT_COLOR 0x3  
@@ -669,7 +662,8 @@ extern "C" {
 #define RPR_COMPOSITE_ARITHMETIC_INPUT_COLOR1 0x0a  
 #define RPR_COMPOSITE_ARITHMETIC_INPUT_OP 0x0b  
 #define RPR_COMPOSITE_GAMMA_CORRECTION_INPUT_COLOR 0x0c  
-
+#define RPR_COMPOSITE_LUT_INPUT_LUT 0x0d  
+#define RPR_COMPOSITE_LUT_INPUT_COLOR 0x0e  
 /*rpr_composite_type*/
 #define RPR_COMPOSITE_ARITHMETIC 0x1  
 #define RPR_COMPOSITE_LERP_VALUE 0x2  
@@ -684,8 +678,10 @@ extern "C" {
 #define RPR_COMPOSITE_TONEMAP_LINEAR 0xb  
 #define RPR_COMPOSITE_FRAMEBUFFER 0xc  
 #define RPR_COMPOSITE_CONSTANT 0xd  
+#define RPR_COMPOSITE_LUT 0xe  
 
-/* hetero volume parameters */
+/*rpr_hetero_volume_parameter*/
+/*rpr_hetero_volume_parameter*/
 #define RPR_HETEROVOLUME_SIZE_X 0x730 
 #define RPR_HETEROVOLUME_SIZE_Y 0x731 
 #define RPR_HETEROVOLUME_SIZE_Z 0x732 
@@ -695,12 +691,17 @@ extern "C" {
 #define RPR_HETEROVOLUME_INDICES 0x736 
 #define RPR_HETEROVOLUME_INDICES_NUMBER 0x737 
 #define RPR_HETEROVOLUME_INDICES_TOPOLOGY 0x738 
-
-/* rpr_hetero_volume_indices_topology */
+#define RPR_HETEROVOLUME_EMISSION 0x739 
+#define RPR_HETEROVOLUME_ALBEDO 0x73a 
+#define RPR_HETEROVOLUME_FILTER 0x73b 
+/*rpr_hetero_volume_indices_topology*/
 #define RPR_HETEROVOLUME_INDICES_TOPOLOGY_I_U64 0x750 
 #define RPR_HETEROVOLUME_INDICES_TOPOLOGY_XYZ_U32 0x751 
 #define RPR_HETEROVOLUME_INDICES_TOPOLOGY_I_S64 0x752 
 #define RPR_HETEROVOLUME_INDICES_TOPOLOGY_XYZ_S32 0x753 
+/*rpr_hetero_volume_filter*/
+#define RPR_HETEROVOLUME_FILTER_NEAREST 0x760 
+#define RPR_HETEROVOLUME_FILTER_LINEAR 0x761 
 
 /* rpr_bool */
 #define RPR_FALSE 0 
@@ -721,6 +722,7 @@ typedef double rpr_double;
 typedef long long int rpr_longlong;
 typedef int rpr_bool;
 typedef rpr_uint rpr_bitfield;
+typedef rpr_int rpr_status;
 typedef void * rpr_context;
 typedef void * rpr_camera;
 typedef void * rpr_shape;
@@ -735,6 +737,7 @@ typedef void * rpr_material_node;
 typedef void * rpr_post_effect;
 typedef void * rpr_context_properties;
 typedef void * rpr_composite;
+typedef void * rpr_lut;
 typedef rpr_uint rpr_light_type;
 typedef rpr_uint rpr_image_option;
 typedef rpr_uint rpr_shape_type;
@@ -750,6 +753,7 @@ typedef rpr_uint rpr_mesh_info;
 typedef rpr_uint rpr_mesh_polygon_info;
 typedef rpr_uint rpr_mesh_polygon_vertex_info;
 typedef rpr_uint rpr_light_info;
+typedef rpr_uint rpr_lut_info;
 typedef rpr_uint rpr_scene_info;
 typedef rpr_uint rpr_parameter_info;
 typedef rpr_uint rpr_framebuffer_info;
@@ -765,6 +769,7 @@ typedef rpr_uint rpr_volume_type;
 typedef rpr_uint rpr_material_system_type;
 typedef rpr_uint rpr_material_node_type;
 typedef rpr_uint rpr_material_node_input;
+typedef rpr_uint rpr_material_node_input_type;
 typedef rpr_uint rpr_material_node_info;
 typedef rpr_uint rpr_material_node_input_info;
 typedef rpr_uint rpr_aov;
@@ -777,8 +782,11 @@ typedef rpr_uint rpr_environment_override;
 typedef rpr_uint rpr_subdiv_boundary_interfop_type;
 typedef rpr_uint rpr_material_node_lookup_value;
 typedef rpr_uint rpr_image_wrap_type;
+typedef rpr_uint rpr_image_filter_type;
 typedef rpr_uint rpr_material_node_arithmetic_operation;
+typedef rpr_uint rpr_hetero_volume_parameter;
 typedef rpr_uint rpr_hetero_volume_indices_topology;
+typedef rpr_uint rpr_hetero_volume_filter;
 
 struct _rpr_image_desc
 {
@@ -838,125 +846,161 @@ typedef _rpr_ies_image_desc rpr_ies_image_desc;
 typedef rpr_image_format rpr_framebuffer_format;
 
 /* API functions */
-/** @brief Register rendering plugin
-*
-*  <Description>
-*
-*  @param path     Path of plugin to load
-*  @return         unique identifier of plugin, -1 otherwise
-*/
+
+    /** @brief Register rendering plugin
+    *
+    *  <Description>
+    *
+    *  @param path     Path of plugin to load
+    *  @return         unique identifier of plugin, -1 otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprRegisterPlugin(rpr_char const * path);
 
-/** @brief Create rendering context
-  *
-  *  Rendering context is a root concept encapsulating the render states and responsible
-  *  for execution control. All the entities in FireRender are created for a particular rendering context.
-  *  Entities created for some context can't be used with other contexts. Possible error codes for this call are:
-  *
-  *     RPR_ERROR_COMPUTE_API_NOT_SUPPORTED
-  *     RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-  *     RPR_ERROR_OUT_OF_VIDEO_MEMORY
-  *     RPR_ERROR_INVALID_API_VERSION
-  *     RPR_ERROR_INVALID_PARAMETER
-  *
-  *  @param api_version     Api version constant
-  *	 @param context_type    Determines compute API to use, OPENCL only is supported for now
-  *  @param creation_flags  Determines multi-gpu or cpu-gpu configuration
-  *  @param props           Context creation properties. Specifies a list of context property names and their corresponding values. 
-  *                         Each property name is immediately followed by the corresponding desired value. 
-  *                         The list is terminated with 0.  
-  *  @param cache_path      Full path to kernel cache created by FireRender, NULL means to use current folder
-  *  @param cpu_thread_limit	Limit for the number of threads used for CPU rendering
-  *  @param out_context		Pointer to context object
-  *  @return                RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Create rendering context
+    *
+    *  Rendering context is a root concept encapsulating the render states and responsible
+    *  for execution control. All the entities in FireRender are created for a particular rendering context.
+    *  Entities created for some context can't be used with other contexts. Possible error codes for this call are:
+    *
+    *     RPR_ERROR_COMPUTE_API_NOT_SUPPORTED
+    *     RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *     RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *     RPR_ERROR_INVALID_API_VERSION
+    *     RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param api_version     Api version constant
+    *	 @param context_type    Determines compute API to use, OPENCL only is supported for now
+    *  @param creation_flags  Determines multi-gpu or cpu-gpu configuration
+    *  @param props           Context creation properties. Specifies a list of context property names and their corresponding values.
+    *                         Each property name is immediately followed by the corresponding desired value.
+    *                         The list is terminated with 0.
+    *  @param cache_path      Full path to kernel cache created by FireRender, NULL means to use current folder
+    *  @param cpu_thread_limit	Limit for the number of threads used for CPU rendering
+    *  @param out_context		Pointer to context object
+    *  @return                RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCreateContext(rpr_int api_version, rpr_int * pluginIDs, size_t pluginCount, rpr_creation_flags creation_flags, rpr_context_properties const * props, rpr_char const * cache_path, rpr_context * out_context);
 
-/** @breif Set active context plugin
-*
-*/
+
+    /** @breif Set active context plugin
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextSetActivePlugin(rpr_context context, rpr_int pluginID);
 
-/** @brief Query information about a context
- *
- *  The workflow is usually two-step: query with the data == NULL and size = 0 to get the required buffer size in size_ret,
- *  then query with size_ret == NULL to fill the buffer with the data.
- *   Possible error codes:
- *     RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  context         The context to query
- *  @param  context_info    The type of info to query
- *  @param  size            The size of the buffer pointed by data
- *  @param  data            The buffer to store queried info
- *  @param  size_ret        Returns the size in bytes of the data being queried
- *  @return                 RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a context
+    *
+    *  The workflow is usually two-step: query with the data == NULL and size = 0 to get the required buffer size in size_ret,
+    *  then query with size_ret == NULL to fill the buffer with the data.
+    *   Possible error codes:
+    *     RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  context         The context to query
+    *  @param  context_info    The type of info to query
+    *  @param  size            The size of the buffer pointed by data
+    *  @param  data            The buffer to store queried info
+    *  @param  size_ret        Returns the size in bytes of the data being queried
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextGetInfo(rpr_context context, rpr_context_info context_info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Query information about a context parameter
-*
-*  The workflow is usually two-step: query with the data == NULL and size = 0 to get the required buffer size in size_ret,
-*  then query with size_ret == NULL to fill the buffer with the data
-*   Possible error codes:
-*     RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  context         The context to query
-*  @param  param_idx	   The index of the parameter
-*  @param  parameter_info  The type of info to query
-*  @param  size            The size of the buffer pointed by data
-*  @param  data            The buffer to store queried info
-*  @param  size_ret        Returns the size in bytes of the data being queried
-*  @return                 RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Query information about a context parameter
+    *
+    *  The workflow is usually two-step: query with the data == NULL and size = 0 to get the required buffer size in size_ret,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *     RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  context         The context to query
+    *  @param  param_idx	   The index of the parameter
+    *  @param  parameter_info  The type of info to query
+    *  @param  size            The size of the buffer pointed by data
+    *  @param  data            The buffer to store queried info
+    *  @param  size_ret        Returns the size in bytes of the data being queried
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextGetParameterInfo(rpr_context context, int param_idx, rpr_parameter_info parameter_info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Query the AOV
- *
- *  @param  context     The context to get a frame buffer from
- *  @param  out_fb		Pointer to framebuffer object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query the AOV
+    *
+    *  @param  context     The context to get a frame buffer from
+    *  @param  out_fb		Pointer to framebuffer object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextGetAOV(rpr_context context, rpr_aov aov, rpr_framebuffer * out_fb);
 
-/** @brief Set AOV
- *
- *  @param  context         The context to set AOV
- *  @param  aov				AOV
- *  @param  frame_buffer    Frame buffer object to set
- *  @return                 RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set AOV
+    *
+    *  @param  context         The context to set AOV
+    *  @param  aov				AOV
+    *  @param  frame_buffer    Frame buffer object to set
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextSetAOV(rpr_context context, rpr_aov aov, rpr_framebuffer frame_buffer);
 
-/** @brief Set the scene
- *
- *  The scene is a collection of objects and lights
- *  along with all the data required to shade those. The scene is
- *  used by the context to render the image.
- *
- *  @param  context     The context to set the scene
- *  @param  scene       The scene to set
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set AOV Index Lookup Color
+    *          change the color of  AOV rendering IDs,  like : RPR_AOV_MATERIAL_IDX , RPR_AOV_OBJECT_ID, RPR_AOV_OBJECT_GROUP_ID.
+    *          for example, you can render all the  shapes with ObjectGroupID=4  in the Red color inside the RPR_AOV_OBJECT_GROUP_ID AOV
+    *
+    *  @param  context         The context to set AOV index lookup
+    *  @param  key				id
+    *  @param  colorR			red channel
+    *  @param  colorG			green channel
+    *  @param  colorB			blue channel
+    *  @param  colorA			alpha channel
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprContextSetAOVindexLookup(rpr_context context, rpr_int key, rpr_float colorR, rpr_float colorG, rpr_float colorB, rpr_float colorA);
+
+
+    /** @brief Set the scene
+    *
+    *  The scene is a collection of objects and lights
+    *  along with all the data required to shade those. The scene is
+    *  used by the context to render the image.
+    *
+    *  @param  context     The context to set the scene
+    *  @param  scene       The scene to set
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextSetScene(rpr_context context, rpr_scene scene);
 
-/** @brief Get the current scene
- *
- *  The scene is a collection of objects and lights
- *  along with all the data required to shade those. The scene is
- *  used by the context ro render the image.
- *
- *  @param  context     The context to get the scene from
- *  @param  out_scene   Pointer to scene object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Get the current scene
+    *
+    *  The scene is a collection of objects and lights
+    *  along with all the data required to shade those. The scene is
+    *  used by the context ro render the image.
+    *
+    *  @param  context     The context to get the scene from
+    *  @param  out_scene   Pointer to scene object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextGetScene(rpr_context arg0, rpr_scene * out_scene);
 
-/** @brief Set context parameter
- *
- *  Parameters are used to control rendering modes, global sampling and AA settings, etc
- *
- *  @param  context                        The context to set the value to
- *  @param  name						   Param name, can be:
+
+    /** @brief Set context parameter
+    *
+    *  Parameters are used to control rendering modes, global sampling and AA settings, etc
+    *
+    *  @param  context                        The context to set the value to
+    *  @param  name						   Param name, can be:
+
 
     *  aacellsize                          ft_float
     *  aasamples                           ft_float
@@ -969,7 +1013,7 @@ extern RPR_API_ENTRY rpr_int rprContextGetScene(rpr_context arg0, rpr_scene * ou
     *  imagefilter.lanczos.radius          ft_float
     *  imagefilter.blackmanharris.radius   ft_float
 
-	*  tonemapping.type                    rpr_tonemapping_operator
+    *  tonemapping.type                    rpr_tonemapping_operator
     *  tonemapping.linear.scale            ft_float
     *  tonemapping.photolinear.sensitivity ft_float
     *  tonemapping.photolinear.exposure    ft_float
@@ -978,530 +1022,671 @@ extern RPR_API_ENTRY rpr_int rprContextGetScene(rpr_context arg0, rpr_scene * ou
     *  tonemapping.reinhard02.postscale    ft_float
     *  tonemapping.reinhard02.burn         ft_float
 
- * @param x,y,z,w						   Parameter value
 
- * @return             RPR_SUCCESS in case of success, error code otherwise
- */
+    * @param x,y,z,w						   Parameter value
+
+    * @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextSetParameter1u(rpr_context context, rpr_char const * name, rpr_uint x);
 extern RPR_API_ENTRY rpr_int rprContextSetParameter1f(rpr_context context, rpr_char const * name, rpr_float x);
 extern RPR_API_ENTRY rpr_int rprContextSetParameter3f(rpr_context context, rpr_char const * name, rpr_float x, rpr_float y, rpr_float z);
 extern RPR_API_ENTRY rpr_int rprContextSetParameter4f(rpr_context context, rpr_char const * name, rpr_float x, rpr_float y, rpr_float z, rpr_float w);
 extern RPR_API_ENTRY rpr_int rprContextSetParameterString(rpr_context context, rpr_char const * name, rpr_char const * value);
 
-/** @brief Perform evaluation and accumulation of a single sample (or number of AA samples if AA is enabled)
- *
- *  The call is blocking and the image is ready when returned. The context accumulates the samples in order
- *  to progressively refine the image and enable interactive response. So each new call to Render refines the
- *  resultin image with 1 (or num aa samples) color samples. Call rprFramebufferClear if you want to start rendering new image
- *  instead of refining the previous one.
- *
- *  Possible error codes:
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_INTERNAL_ERROR
- *      RPR_ERROR_MATERIAL_STACK_OVERFLOW
- *
- *  if you have the RPR_ERROR_MATERIAL_STACK_OVERFLOW error, you have created a shader graph with too many nodes.
- *  you can check the nodes limit with rprContextGetInfo(,RPR_CONTEXT_MATERIAL_STACK_SIZE,)
- *
- *  @param  context     The context object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Perform evaluation and accumulation of a single sample (or number of AA samples if AA is enabled)
+    *
+    *  The call is blocking and the image is ready when returned. The context accumulates the samples in order
+    *  to progressively refine the image and enable interactive response. So each new call to Render refines the
+    *  resultin image with 1 (or num aa samples) color samples. Call rprFramebufferClear if you want to start rendering new image
+    *  instead of refining the previous one.
+    *
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_INTERNAL_ERROR
+    *      RPR_ERROR_MATERIAL_STACK_OVERFLOW
+    *
+    *  if you have the RPR_ERROR_MATERIAL_STACK_OVERFLOW error, you have created a shader graph with too many nodes.
+    *  you can check the nodes limit with rprContextGetInfo(,RPR_CONTEXT_MATERIAL_STACK_SIZE,)
+    *
+    *  @param  context     The context object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextRender(rpr_context context);
 
-/** @brief Perform evaluation and accumulation of a single sample (or number of AA samples if AA is enabled) on the part of the image
- *
- *  The call is blocking and the image is ready when returned. The context accumulates the samples in order
- *  to progressively refine the image and enable interactive response. So each new call to Render refines the
- *  resultin image with 1 (or num aa samples) color samples. Call rprFramebufferClear if you want to start rendering new image
- *  instead of refining the previous one. Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_INTERNAL_ERROR
- *
- *  @param  context     The context to use for the rendering
- *  @param  xmin        X coordinate of the top left corner of a tile
- *  @param  xmax        X coordinate of the bottom right corner of a tile
- *  @param  ymin        Y coordinate of the top left corner of a tile
- *  @param  ymax        Y coordinate of the bottom right corner of a tile
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Perform evaluation and accumulation of a single sample (or number of AA samples if AA is enabled) on the part of the image
+    *
+    *  The call is blocking and the image is ready when returned. The context accumulates the samples in order
+    *  to progressively refine the image and enable interactive response. So each new call to Render refines the
+    *  resultin image with 1 (or num aa samples) color samples. Call rprFramebufferClear if you want to start rendering new image
+    *  instead of refining the previous one. Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_INTERNAL_ERROR
+    *
+    *  @param  context     The context to use for the rendering
+    *  @param  xmin        X coordinate of the top left corner of a tile
+    *  @param  xmax        X coordinate of the bottom right corner of a tile
+    *  @param  ymin        Y coordinate of the top left corner of a tile
+    *  @param  ymax        Y coordinate of the bottom right corner of a tile
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextRenderTile(rpr_context context, rpr_uint xmin, rpr_uint xmax, rpr_uint ymin, rpr_uint ymax);
 
-/** @brief Clear all video memory used by the context
- *
- *  This function should be called after all context objects have been destroyed.
- *  It guarantees that all context memory is freed and returns the context into its initial state.
- *  Will be removed later. Possible error codes are:
- *
- *      RPR_ERROR_INTERNAL_ERROR
- *
- *  @param  context     The context to wipe out
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Clear all video memory used by the context
+    *
+    *  This function should be called after all context objects have been destroyed.
+    *  It guarantees that all context memory is freed and returns the context into its initial state.
+    *  Will be removed later. Possible error codes are:
+    *
+    *      RPR_ERROR_INTERNAL_ERROR
+    *
+    *  @param  context     The context to wipe out
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextClearMemory(rpr_context context);
 
-/** @brief Create an image from memory data
- *
- *  Images are used as HDRI maps or inputs for various shading system nodes.
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  context     The context to create image
- *  @param  format      Image format
- *  @param  image_desc  Image layout description
- *  @param  data        Image data in system memory, can be NULL in which case the memory is allocated
- *  @param  out_image   Pointer to image object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create an image from memory data
+    *
+    *  Images are used as HDRI maps or inputs for various shading system nodes.
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  context     The context to create image
+    *  @param  format      Image format
+    *  @param  image_desc  Image layout description
+    *  @param  data        Image data in system memory, can be NULL in which case the memory is allocated
+    *  @param  out_image   Pointer to image object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateImage(rpr_context context, rpr_image_format const format, rpr_image_desc const * image_desc, void const * data, rpr_image * out_image);
 
-/** @brief Create a buffer from memory data
- *
- *  Buffers are used as arbitrary input for other nodes
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  context     The context to create image
- *  @param  buffer_desc Buffer layout description
- *  @param  data        Image data in system memory, can be NULL in which case the memory is allocated
- *  @param  out_buffer  Pointer to buffer object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create a buffer from memory data
+    *
+    *  Buffers are used as arbitrary input for other nodes
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  context     The context to create image
+    *  @param  buffer_desc Buffer layout description
+    *  @param  data        Image data in system memory, can be NULL in which case the memory is allocated
+    *  @param  out_buffer  Pointer to buffer object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateBuffer(rpr_context context, rpr_buffer_desc const * buffer_desc, void const * data, rpr_buffer * out_buffer);
 
-/** @brief Create an image from file
- *
- *   Images are used as HDRI maps or inputs for various shading system nodes.
- *
- *  The following image formats are supported:
- *      PNG, JPG, TGA, BMP, TIFF, TX(0-mip), HDR, EXR
- *
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
- *      RPR_ERROR_INVALID_PARAMETER
- *      RPR_ERROR_IO_ERROR
- *
- *  @param  context     The context to create image
- *  @param  path        NULL terminated path to an image file (can be relative)
- *  @param  out_image   Pointer to image object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create an image from file
+    *
+    *   Images are used as HDRI maps or inputs for various shading system nodes.
+    *
+    *  The following image formats are supported:
+    *      PNG, JPG, TGA, BMP, TIFF, TX(0-mip), HDR, EXR
+    *
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
+    *      RPR_ERROR_INVALID_PARAMETER
+    *      RPR_ERROR_IO_ERROR
+    *
+    *  @param  context     The context to create image
+    *  @param  path        NULL terminated path to an image file (can be relative)
+    *  @param  out_image   Pointer to image object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateImageFromFile(rpr_context context, rpr_char const * path, rpr_image * out_image);
 
-/** @brief Create a scene
- *
- *  Scene serves as a container for lights and objects.
- *
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *
- *  @param  out_scene   Pointer to scene object
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create a scene
+    *
+    *  Scene serves as a container for lights and objects.
+    *
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  out_scene   Pointer to scene object
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateScene(rpr_context context, rpr_scene * out_scene);
 
-/** @brief Create an instance of an object
- *
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  context  The context to create an instance for
- *  @param  shape    Parent shape for an instance
- *  @param  out_instance   Pointer to instance object
- *  @return RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create an instance of an object
+    *
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  context  The context to create an instance for
+    *  @param  shape    Parent shape for an instance
+    *  @param  out_instance   Pointer to instance object
+    *  @return RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateInstance(rpr_context context, rpr_shape shape, rpr_shape * out_instance);
 
-/** @brief Create a mesh
- *
- *  FireRender supports mixed meshes consisting of triangles and quads.
- *
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  vertices            Pointer to position data (each position is described with 3 rpr_float numbers)
- *  @param  num_vertices        Number of entries in position array
- *  @param  vertex_stride       Number of bytes between the beginnings of two successive position entries
- *  @param  normals             Pointer to normal data (each normal is described with 3 rpr_float numbers), can be NULL
- *  @param  num_normals         Number of entries in normal array
- *  @param  normal_stride       Number of bytes between the beginnings of two successive normal entries
- *  @param  texcoord            Pointer to texcoord data (each texcoord is described with 2 rpr_float numbers), can be NULL
- *  @param  num_texcoords       Number of entries in texcoord array
- *  @param  texcoord_stride     Number of bytes between the beginnings of two successive texcoord entries
- *  @param  vertex_indices      Pointer to an array of vertex indices
- *  @param  vidx_stride         Number of bytes between the beginnings of two successive vertex index entries
- *  @param  normal_indices      Pointer to an array of normal indices
- *  @param  nidx_stride         Number of bytes between the beginnings of two successive normal index entries
- *  @param  texcoord_indices    Pointer to an array of texcoord indices
- *  @param  tidx_stride         Number of bytes between the beginnings of two successive texcoord index entries
- *  @param  num_face_vertices   Pointer to an array of num_faces numbers describing number of vertices for each face (can be 3(triangle) or 4(quad))
- *  @param  num_faces           Number of faces in the mesh
- *  @param  out_mesh            Pointer to mesh object
- *  @return                     RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create a mesh
+    *
+    *  FireRender supports mixed meshes consisting of triangles and quads.
+    *
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  vertices            Pointer to position data (each position is described with 3 rpr_float numbers)
+    *  @param  num_vertices        Number of entries in position array
+    *  @param  vertex_stride       Number of bytes between the beginnings of two successive position entries
+    *  @param  normals             Pointer to normal data (each normal is described with 3 rpr_float numbers), can be NULL
+    *  @param  num_normals         Number of entries in normal array
+    *  @param  normal_stride       Number of bytes between the beginnings of two successive normal entries
+    *  @param  texcoord            Pointer to texcoord data (each texcoord is described with 2 rpr_float numbers), can be NULL
+    *  @param  num_texcoords       Number of entries in texcoord array
+    *  @param  texcoord_stride     Number of bytes between the beginnings of two successive texcoord entries
+    *  @param  vertex_indices      Pointer to an array of vertex indices
+    *  @param  vidx_stride         Number of bytes between the beginnings of two successive vertex index entries
+    *  @param  normal_indices      Pointer to an array of normal indices
+    *  @param  nidx_stride         Number of bytes between the beginnings of two successive normal index entries
+    *  @param  texcoord_indices    Pointer to an array of texcoord indices
+    *  @param  tidx_stride         Number of bytes between the beginnings of two successive texcoord index entries
+    *  @param  num_face_vertices   Pointer to an array of num_faces numbers describing number of vertices for each face (can be 3(triangle) or 4(quad))
+    *  @param  num_faces           Number of faces in the mesh
+    *  @param  out_mesh            Pointer to mesh object
+    *  @return                     RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateMesh(rpr_context context, rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, rpr_float const * normals, size_t num_normals, rpr_int normal_stride, rpr_float const * texcoords, size_t num_texcoords, rpr_int texcoord_stride, rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, rpr_int const * texcoord_indices, rpr_int tidx_stride, rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh);
 
-/*  @brief Create a mesh
- *
- *  @return                     RPR_SUCCESS in case of success, error code otherwise	
-	*/
+
+    /*  @brief Create a mesh
+    *
+    *  @return                     RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateMeshEx(rpr_context context, rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, rpr_float const * normals, size_t num_normals, rpr_int normal_stride, rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers, rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride, rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, rpr_int const ** texcoord_indices, rpr_int const * tidx_stride, rpr_int const * num_face_vertices, size_t num_faces, rpr_shape * out_mesh);
 
-/*  @brief Create a mesh
- *
- *  @return                     RPR_SUCCESS in case of success, error code otherwise	
-	*/
+
+    /*  @brief Create a mesh
+    *
+    *  @return                     RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateMeshEx2(rpr_context context, rpr_float const * vertices, size_t num_vertices, rpr_int vertex_stride, rpr_float const * normals, size_t num_normals, rpr_int normal_stride, rpr_int const * perVertexFlag, size_t num_perVertexFlags, rpr_int perVertexFlag_stride, rpr_int numberOfTexCoordLayers, rpr_float const ** texcoords, size_t const * num_texcoords, rpr_int const * texcoord_stride, rpr_int const * vertex_indices, rpr_int vidx_stride, rpr_int const * normal_indices, rpr_int nidx_stride, rpr_int const ** texcoord_indices, rpr_int const * tidx_stride, rpr_int const * num_face_vertices, size_t num_faces, rpr_mesh_info const * mesh_properties, rpr_shape * out_mesh);
 
-/** @brief Create a camera
- *
- *  There are several camera types supported by a single rpr_camera type.
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *
- *  @param  context The context to create a camera for
- *  @param  out_camera Pointer to camera object
- *  @return RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create a camera
+    *
+    *  There are several camera types supported by a single rpr_camera type.
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    *  @param  context The context to create a camera for
+    *  @param  out_camera Pointer to camera object
+    *  @return RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateCamera(rpr_context context, rpr_camera * out_camera);
 
-/** @brief Create framebuffer object
- *
- *  Framebuffer is used to store final rendering result.
- *
- *  Possible error codes are:
- *
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *
- *  @param  context  The context to create framebuffer
- *  @param  format   Framebuffer format
- *  @param  fb_desc  Framebuffer layout description
- *  @param  status   Pointer to framebuffer object
- *  @return          RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Create framebuffer object
+    *
+    *  Framebuffer is used to store final rendering result.
+    *
+    *  Possible error codes are:
+    *
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    *  @param  context  The context to create framebuffer
+    *  @param  format   Framebuffer format
+    *  @param  fb_desc  Framebuffer layout description
+    *  @param  status   Pointer to framebuffer object
+    *  @return          RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateFrameBuffer(rpr_context context, rpr_framebuffer_format const format, rpr_framebuffer_desc const * fb_desc, rpr_framebuffer * out_fb);
 
 /* rpr_camera */
-/** @brief Query information about a camera
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data.
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  camera      The camera to query
- *  @param  camera_info The type of info to query
- *  @param  size        The size of the buffer pointed by data
- *  @param  data        The buffer to store queried info
- *  @param  size_ret    Returns the size in bytes of the data being queried
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a camera
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data.
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  camera      The camera to query
+    *  @param  camera_info The type of info to query
+    *  @param  size        The size of the buffer pointed by data
+    *  @param  data        The buffer to store queried info
+    *  @param  size_ret    Returns the size in bytes of the data being queried
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraGetInfo(rpr_camera camera, rpr_camera_info camera_info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Set camera focal length.
- *
- *  @param  camera  The camera to set focal length
- *  @param  flength Focal length in millimeters, default is 35mm
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set camera focal length.
+    *
+    *  @param  camera  The camera to set focal length
+    *  @param  flength Focal length in millimeters, default is 35mm
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetFocalLength(rpr_camera camera, rpr_float flength);
 
-/** @brief Set camera focus distance
- *
- *  @param  camera  The camera to set focus distance
- *  @param  fdist   Focus distance in meters, default is 1m
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set camera linear motion.
+    *
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprCameraSetLinearMotion(rpr_camera camera, rpr_float x, rpr_float y, rpr_float z);
+
+
+     /** @brief Set camera angular motion.
+    *
+	* x,y,z : vector  -  w : angle in radian
+	*
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprCameraSetAngularMotion(rpr_camera camera, rpr_float x, rpr_float y, rpr_float z, rpr_float w);
+
+
+    /** @brief Set camera focus distance
+    *
+    *  @param  camera  The camera to set focus distance
+    *  @param  fdist   Focus distance in meters, default is 1m
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetFocusDistance(rpr_camera camera, rpr_float fdist);
 
-/** @brief Sets an image option
- *
- *	The default option for each image is FR_IMAGE_FILTER_LINEAR | FR_IMAGE_WRAP_REPEAT
- *  Possible error codes are:
- *
- *      FR_ERROR_INVALID_PARAMETER
- *
- *  @param  image				The image to set the option for
- *  @param  option      The option to set
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
-extern RPR_API_ENTRY rpr_int rprImageSetOption(rpr_image image, rpr_image_option option);
 
-/** @brief Set world transform for the camera
- *
- *  @param  camera      The camera to set transform for
- *  @param  transpose   Determines whether the basis vectors are in columns(false) or in rows(true) of the matrix
- *  @param  transform   Array of 16 rpr_float values (row-major form)
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+    /** @brief Set world transform for the camera
+    *
+    *  @param  camera      The camera to set transform for
+    *  @param  transpose   Determines whether the basis vectors are in columns(false) or in rows(true) of the matrix
+    *  @param  transform   Array of 16 rpr_float values (row-major form)
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetTransform(rpr_camera camera, rpr_bool transpose, rpr_float * transform);
 
-/** @brief Set sensor size for the camera
- *
- *  Default sensor size is the one corresponding to full frame 36x24mm sensor
- *
- *  @param  camera  The camera to set transform for
- *  @param  width   Sensor width in millimeters
- *  @param  height  Sensor height in millimeters
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set sensor size for the camera
+    *
+    *  Default sensor size is the one corresponding to full frame 36x24mm sensor
+    *
+    *  @param  camera  The camera to set transform for
+    *  @param  width   Sensor width in millimeters
+    *  @param  height  Sensor height in millimeters
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetSensorSize(rpr_camera camera, rpr_float width, rpr_float height);
 
-/** @brief Set camera transform in lookat form
- *
- *  @param  camera  The camera to set transform for
- *  @param  posx    X component of the position
- *  @param  posy    Y component of the position
- *  @param  posz    Z component of the position
- *  @param  atx     X component of the center point
- *  @param  aty     Y component of the center point
- *  @param  atz     Z component of the center point
- *  @param  upx     X component of the up vector
- *  @param  upy     Y component of the up vector
- *  @param  upz     Z component of the up vector
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set camera transform in lookat form
+    *
+    *  @param  camera  The camera to set transform for
+    *  @param  posx    X component of the position
+    *  @param  posy    Y component of the position
+    *  @param  posz    Z component of the position
+    *  @param  atx     X component of the center point
+    *  @param  aty     Y component of the center point
+    *  @param  atz     Z component of the center point
+    *  @param  upx     X component of the up vector
+    *  @param  upy     Y component of the up vector
+    *  @param  upz     Z component of the up vector
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraLookAt(rpr_camera camera, rpr_float posx, rpr_float posy, rpr_float posz, rpr_float atx, rpr_float aty, rpr_float atz, rpr_float upx, rpr_float upy, rpr_float upz);
 
-/** @brief Set f-stop for the camera
- *
- *  @param  camera  The camera to set f-stop for
- *  @param  fstop   f-stop value in mm^-1, default is FLT_MAX
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set f-stop for the camera
+    *
+    *  @param  camera  The camera to set f-stop for
+    *  @param  fstop   f-stop value in mm^-1, default is FLT_MAX
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetFStop(rpr_camera camera, rpr_float fstop);
 
-/** @brief Set the number of aperture blades
- *
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  camera      The camera to set aperture blades for
- *  @param  num_blades  Number of aperture blades 4 to 32
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set the number of aperture blades
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  camera      The camera to set aperture blades for
+    *  @param  num_blades  Number of aperture blades 4 to 32
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetApertureBlades(rpr_camera camera, rpr_uint num_blades);
 
-/** @brief Set the exposure of a camera
- *
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  camera    The camera to set aperture blades for
- *  @param  exposure  Exposure value 0.0 - 1.0
- *  @return           RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set the exposure of a camera
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  camera    The camera to set aperture blades for
+    *  @param  exposure  Exposure value 0.0 - 1.0
+    *  @return           RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetExposure(rpr_camera camera, rpr_float exposure);
 
-/** @brief Set camera mode
- *
- *  Camera modes include:
- *      RPR_CAMERA_MODE_PERSPECTIVE
- *      RPR_CAMERA_MODE_ORTHOGRAPHIC
- *      RPR_CAMERA_MODE_LATITUDE_LONGITUDE_360
- *      RPR_CAMERA_MODE_LATITUDE_LONGITUDE_STEREO
- *      RPR_CAMERA_MODE_CUBEMAP
- *      RPR_CAMERA_MODE_CUBEMAP_STEREO
- *      RPR_CAMERA_MODE_FISHEYE
- *
- *  @param  camera  The camera to set mode for
- *  @param  mode    Camera mode, default is RPR_CAMERA_MODE_PERSPECTIVE
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set camera mode
+    *
+    *  Camera modes include:
+    *      RPR_CAMERA_MODE_PERSPECTIVE
+    *      RPR_CAMERA_MODE_ORTHOGRAPHIC
+    *      RPR_CAMERA_MODE_LATITUDE_LONGITUDE_360
+    *      RPR_CAMERA_MODE_LATITUDE_LONGITUDE_STEREO
+    *      RPR_CAMERA_MODE_CUBEMAP
+    *      RPR_CAMERA_MODE_CUBEMAP_STEREO
+    *      RPR_CAMERA_MODE_FISHEYE
+    *
+    *  @param  camera  The camera to set mode for
+    *  @param  mode    Camera mode, default is RPR_CAMERA_MODE_PERSPECTIVE
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetMode(rpr_camera camera, rpr_camera_mode mode);
 
-/** @brief Set orthographic view volume width
- *
- *  @param  camera  The camera to set volume width for
- *  @param  width   View volume width in meters, default is 1 meter
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set orthographic view volume width
+    *
+    *  @param  camera  The camera to set volume width for
+    *  @param  width   View volume width in meters, default is 1 meter
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetOrthoWidth(rpr_camera camera, rpr_float width);
 extern RPR_API_ENTRY rpr_int rprCameraSetFocalTilt(rpr_camera camera, rpr_float tilt);
 extern RPR_API_ENTRY rpr_int rprCameraSetIPD(rpr_camera camera, rpr_float ipd);
 extern RPR_API_ENTRY rpr_int rprCameraSetLensShift(rpr_camera camera, rpr_float shiftx, rpr_float shifty);
 extern RPR_API_ENTRY rpr_int rprCameraSetTiltCorrection(rpr_camera camera, rpr_float tiltX, rpr_float tiltY);
 
-/** @brief Set orthographic view volume height
-*
-*  @param  camera  The camera to set volume height for
-*  @param  width   View volume height in meters, default is 1 meter
-*  @return         RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set orthographic view volume height
+    *
+    *  @param  camera  The camera to set volume height for
+    *  @param  width   View volume height in meters, default is 1 meter
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetOrthoHeight(rpr_camera camera, rpr_float height);
 
-/** @brief Set near plane of a camear
-*
-*  @param  camera  The camera to set near plane for
-*  @param  near   Near plane distance in meters, default is 0.01f
-*  @return         RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set near plane of a camear
+    *
+    *  @param  camera  The camera to set near plane for
+    *  @param  near   Near plane distance in meters, default is 0.01f
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetNearPlane(rpr_camera camera, rpr_float near);
 
-/** @brief Set far plane of a camear
-*
-*  @param  camera  The camera to set far plane for
-*  @param  far   Far plane distance in meters, default is 100000000.f
-*  @return         RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set far plane of a camear
+    *
+    *  @param  camera  The camera to set far plane for
+    *  @param  far   Far plane distance in meters, default is 100000000.f
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprCameraSetFarPlane(rpr_camera camera, rpr_float far);
 
 /* rpr_image*/
-/** @brief Query information about an image
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  image       An image object to query
- *  @param  image_info  The type of info to query
- *  @param  size        The size of the buffer pointed by data
- *  @param  data        The buffer to store queried info
- *  @param  size_ret    Returns the size in bytes of the data being queried
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about an image
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  image       An image object to query
+    *  @param  image_info  The type of info to query
+    *  @param  size        The size of the buffer pointed by data
+    *  @param  data        The buffer to store queried info
+    *  @param  size_ret    Returns the size in bytes of the data being queried
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprImageGetInfo(rpr_image image, rpr_image_info image_info, size_t size, void * data, size_t * size_ret);
 
-/** @brief 
-*
-*
-*  @param  image       The image to set wrap for
-*  @param  type	   
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief
+    *
+    *
+    *  @param  image       The image to set wrap for
+    *  @param  type
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprImageSetWrap(rpr_image image, rpr_image_wrap_type type);
 
+
+    /** @brief
+    *
+    *
+    *  @param  image       The image to set filter for
+    *  @param  type
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprImageSetFilter(rpr_image image, rpr_image_filter_type type);
+
+/** @brief 
+*
+*  @param  image       The image to set gamma for
+*  @param  type    
+*  @return             RPR_SUCCESS in case of success, error code otherwise
+*/
+extern RPR_API_ENTRY rpr_int rprImageSetGamma(rpr_image image, rpr_float type);
+
+/** @brief 
+*
+*  @param  image       The image to set mipmap for
+*  @param  enabled     true (enable) or false (disable)
+*  @return             RPR_SUCCESS in case of success, error code otherwise
+*/
+extern RPR_API_ENTRY rpr_int rprImageSetMipmapEnabled(rpr_image image, rpr_bool enabled);
+
 /* rpr_shape */
-/** @brief Set shape world transform
- *
- *
- *  @param  shape       The shape to set transform for
- *  @param  transpose   Determines whether the basis vectors are in columns(false) or in rows(true) of the matrix
- *  @param  transform   Array of 16 rpr_float values (row-major form)
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set shape world transform
+    *
+    *
+    *  @param  shape       The shape to set transform for
+    *  @param  transpose   Determines whether the basis vectors are in columns(false) or in rows(true) of the matrix
+    *  @param  transform   Array of 16 rpr_float values (row-major form)
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetTransform(rpr_shape shape, rpr_bool transpose, rpr_float const * transform);
 
-/** @brief Set shape subdivision
-*
-*
-*  @param  shape       The shape to set subdivision for
-*  @param  factor	   Number of subdivision steps to do
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set shape subdivision
+    *
+    *
+    *  @param  shape       The shape to set subdivision for
+    *  @param  factor	   Number of subdivision steps to do
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetSubdivisionFactor(rpr_shape shape, rpr_uint factor);
 
-/** @brief 
-*
-*
-*  @param  shape       The shape to set subdivision for
-*  @param  factor	   
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief
+    *
+    *
+    *  @param  shape       The shape to set subdivision for
+    *  @param  factor
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetSubdivisionCreaseWeight(rpr_shape shape, rpr_float factor);
 
-/** @brief 
-*
-*
-*  @param  shape       The shape to set subdivision for
-*  @param  type	   
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief
+    *
+    *
+    *  @param  shape       The shape to set subdivision for
+    *  @param  type
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetSubdivisionBoundaryInterop(rpr_shape shape, rpr_subdiv_boundary_interfop_type type);
 
-/** @brief Set displacement scale
-*
-*
-*  @param  shape       The shape to set subdivision for
-*  @param  scale	   The amount of displacement applied
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Call this function to automatically set the Subdivision Factor depending on the camera position, frame buffer size.
+    *          You can retrieve the internally computed factor with rprShapeGetInfo(...,RPR_SHAPE_SUBDIVISION_FACTOR,...)
+    *          You have to call this function each time you want to re-adapt the Subdivision Factor : 
+    *          internally the factor will NOT be automatically re-computed when camera/shape/framebuffer changes. 
+    *
+    *  @param  shape       The shape to set subdivision for
+    *  @param  framebuffer frame buffer used for factor adaptation
+    *  @param  camera      camera used for factor adaptation
+    *  @param  factor      factor to regulate the intensity of adaptation
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprShapeAutoAdaptSubdivisionFactor(rpr_shape shape, rpr_framebuffer framebuffer, rpr_camera camera, rpr_int factor);
+
+
+    /** @brief Set displacement scale
+    *
+    *
+    *  @param  shape       The shape to set subdivision for
+    *  @param  scale	   The amount of displacement applied
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetDisplacementScale(rpr_shape shape, rpr_float minscale, rpr_float maxscale);
 
-/** @brief Set object group ID (mainly for debugging).
-*
-*
-*  @param  shape          The shape to set
-*  @param  objectGroupID  The ID
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set object group ID (mainly for debugging).
+    *
+    *
+    *  @param  shape          The shape to set
+    *  @param  objectGroupID  The ID
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint objectGroupID);
 
-/** @brief Set displacement texture
-*
-*
-*  @param  shape         The shape to set subdivision for
-*  @param  materialNode  Displacement texture , as material.
-*  @return               RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set object rendering layer mask
+    *          then, use   rprContextSetParameter1u(context,"renderLayerMask",mask)  
+    *          in order to render only a group of shape
+    *
+    *  @param  shape       The shape to set
+    *  @param  layerMask   The render mask
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprShapeSetLayerMask(rpr_shape shape, rpr_uint layerMask);
+
+
+    /** @brief Set displacement texture
+    *
+    *
+    *  @param  shape         The shape to set subdivision for
+    *  @param  materialNode  Displacement texture , as material.
+    *  @return               RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetDisplacementMaterial(rpr_shape shape, rpr_material_node materialNode);
 
 
-/** @brief Set shape material
-*
-*/
+    /** @brief Set shape material
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetMaterial(rpr_shape shape, rpr_material_node node);
 
-/** @brief Set shape materials for specific faces
-*
-*  @param  shape	The shape to set the material for
-*  @param  node 	The material to set
-*  @param  face_indices	
-*  @return		RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set shape materials for specific faces
+    *
+    *  @param  shape	The shape to set the material for
+    *  @param  node 	The material to set
+    *  @param  face_indices
+    *  @return		RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetMaterialFaces(rpr_shape shape, rpr_material_node node, rpr_int* face_indices, size_t num_faces);
 
 
 
 
-	
-/** @brief Set shape volume material
-*
-*/
+
+    /** @brief Set shape volume material
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetVolumeMaterial(rpr_shape shape, rpr_material_node node);
 
-/** @brief Set shape linear motion
- *
- *  @param  shape       The shape to set linear motion for
- *  @param  x           X component of a motion vector
- *  @param  y           Y component of a motion vector
- *  @param  z           Z component of a motion vector
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set shape linear motion
+    *
+    *  @param  shape       The shape to set linear motion for
+    *  @param  x           X component of a motion vector
+    *  @param  y           Y component of a motion vector
+    *  @param  z           Z component of a motion vector
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetLinearMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_float z);
 
-/** @brief Set angular linear motion
- *
- *  @param  shape       The shape to set linear motion for
- *  @param  x           X component of the rotation axis
- *  @param  y           Y component of the rotation axis
- *  @param  z           Z component of the rotation axis
- *  @param  w           W rotation angle in radians
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set angular linear motion
+    *
+    *  @param  shape       The shape to set linear motion for
+    *  @param  x           X component of the rotation axis
+    *  @param  y           Y component of the rotation axis
+    *  @param  z           Z component of the rotation axis
+    *  @param  w           W rotation angle in radians
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetAngularMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_float z, rpr_float w);
 
 
@@ -1513,696 +1698,872 @@ extern RPR_API_ENTRY rpr_int rprShapeSetAngularMotion(rpr_shape shape, rpr_float
     *  @param  z           Z component of the scale
     *  @return             RPR_SUCCESS in case of success, error code otherwise
     */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetScaleMotion(rpr_shape shape, rpr_float x, rpr_float y, rpr_float z);
 
-/** @brief Set visibility flag
- *
- *  @param  shape       The shape to set visibility for
- *  @param  visible     Determines if the shape is visible or not
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set visibility flag
+    *
+    *  @param  shape       The shape to set visibility for
+    *  @param  visible     Determines if the shape is visible or not
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetVisibility(rpr_shape shape, rpr_bool visible);
 
-/** @brief Set visibility flag for primary rays
-*
-*  @param  shape       The shape to set visibility for
-*  @param  visible     Determines if the shape is visible or not
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set visibility flag for primary rays
+    *
+    *  @param  shape       The shape to set visibility for
+    *  @param  visible     Determines if the shape is visible or not
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetVisibilityPrimaryOnly(rpr_shape shape, rpr_bool visible);
 
-/** @brief Set visibility flag for specular refleacted\refracted rays
-*
-*  @param  shape       The shape to set visibility for
-*  @param  visible     Determines if the shape is visible or not
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set visibility flag for specular refleacted\refracted rays
+    *
+    *  @param  shape       The shape to set visibility for
+    *  @param  visible     Determines if the shape is visible or not
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetVisibilityInSpecular(rpr_shape shape, rpr_bool visible);
 
-/** @brief Set shadow catcher flag
-*
-*  @param  shape         The shape to set shadow catcher flag for
-*  @param  shadowCatcher Determines if the shape behaves as shadow catcher
-*  @return               RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set shadow catcher flag
+    *
+    *  @param  shape         The shape to set shadow catcher flag for
+    *  @param  shadowCatcher Determines if the shape behaves as shadow catcher
+    *  @return               RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetShadowCatcher(rpr_shape shape, rpr_bool shadowCatcher);
 
-/** @brief Set shadow flag
-*
-*  @param  shape       The shape to set shadow flag for
-*  @param  visible     Determines if the shape casts shadow
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set shadow flag
+    *
+    *  @param  shape       The shape to set shadow flag for
+    *  @param  visible     Determines if the shape casts shadow
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeSetShadow(rpr_shape shape, rpr_bool casts_shadow);
 
-/** @brief Set light world transform
- *
- *
- *  @param  light       The light to set transform for
- *  @param  transpose   Determines whether the basis vectors are in columns(false) or in rows(true) of the matrix
- *  @param  transform   Array of 16 rpr_float values (row-major form)
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set light world transform
+    *
+    *
+    *  @param  light       The light to set transform for
+    *  @param  transpose   Determines whether the basis vectors are in columns(false) or in rows(true) of the matrix
+    *  @param  transform   Array of 16 rpr_float values (row-major form)
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprLightSetTransform(rpr_light light, rpr_bool transpose, rpr_float const * transform);
 
-/** @brief Query information about a shape
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  shape           The shape object to query
- *  @param  material_info   The type of info to query
- *  @param  size            The size of the buffer pointed by data
- *  @param  data            The buffer to store queried info
- *  @param  size_ret        Returns the size in bytes of the data being queried
- *  @return                 RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a shape
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  shape           The shape object to query
+    *  @param  material_info   The type of info to query
+    *  @param  size            The size of the buffer pointed by data
+    *  @param  data            The buffer to store queried info
+    *  @param  size_ret        Returns the size in bytes of the data being queried
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprShapeGetInfo(rpr_shape arg0, rpr_shape_info arg1, size_t arg2, void * arg3, size_t * arg4);
 
 /* rpr_shape - mesh */
-/** @brief Query information about a mesh
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  shape       The mesh to query
- *  @param  mesh_info   The type of info to query
- *  @param  size        The size of the buffer pointed by data
- *  @param  data        The buffer to store queried info
- *  @param  size_ret    Returns the size in bytes of the data being queried
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a mesh
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  shape       The mesh to query
+    *  @param  mesh_info   The type of info to query
+    *  @param  size        The size of the buffer pointed by data
+    *  @param  data        The buffer to store queried info
+    *  @param  size_ret    Returns the size in bytes of the data being queried
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMeshGetInfo(rpr_shape mesh, rpr_mesh_info mesh_info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Query information about a mesh polygon
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  mesh        The mesh to query
- *  @param  polygon_index The index of a polygon
- *  @param  polygon_info The type of info to query
- *  @param  size        The size of the buffer pointed by data
- *  @param  data        The buffer to store queried info
- *  @param  size_ret    Returns the size in bytes of the data being queried
- *  @return             RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a hetero volume
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  heteroVol       The heteroVolume to query
+    *  @param  heteroVol_info  The type of info to query
+    *  @param  size            The size of the buffer pointed by data
+    *  @param  data            The buffer to store queried info
+    *  @param  size_ret        Returns the size in bytes of the data being queried
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprHeteroVolumeGetInfo(rpr_hetero_volume heteroVol, rpr_hetero_volume_parameter heteroVol_info, size_t size, void * data, size_t * size_ret);
+
+
+    /** @brief Query information about a Buffer
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  buffer       The heteroVolume to query
+    *  @param  buffer_info  The type of info to query
+    *  @param  size            The size of the buffer pointed by data
+    *  @param  data            The buffer to store queried info
+    *  @param  size_ret        Returns the size in bytes of the data being queried
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprBufferGetInfo(rpr_buffer buffer, rpr_buffer_info buffer_info, size_t size, void * data, size_t * size_ret);
+
+
+    /** @brief Query information about a mesh polygon
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  mesh        The mesh to query
+    *  @param  polygon_index The index of a polygon
+    *  @param  polygon_info The type of info to query
+    *  @param  size        The size of the buffer pointed by data
+    *  @param  data        The buffer to store queried info
+    *  @param  size_ret    Returns the size in bytes of the data being queried
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMeshPolygonGetInfo(rpr_shape mesh, size_t polygon_index, rpr_mesh_polygon_info polygon_info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Get the parent shape for an instance
- *
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  shape    The shape to get a parent shape from
- *  @param  status   RPR_SUCCESS in case of success, error code otherwise
- *  @return          Shape object
- */
+
+    /** @brief Get the parent shape for an instance
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  shape    The shape to get a parent shape from
+    *  @param  status   RPR_SUCCESS in case of success, error code otherwise
+    *  @return          Shape object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprInstanceGetBaseShape(rpr_shape shape, rpr_shape * out_shape);
 
 /* rpr_light - point */
-/** @brief Create point light
- *
- *  Create analytic point light represented by a point in space.
-  *  Possible error codes:
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *
- *  @param  context The context to create a light for
- *  @param  status  RPR_SUCCESS in case of success, error code otherwise
- *  @return         Light object
- */
+
+    /** @brief Create point light
+    *
+    *  Create analytic point light represented by a point in space.
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return         Light object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreatePointLight(rpr_context context, rpr_light * out_light);
 
-/** @brief Set radiant power of a point light source
- *
- *  @param  r       R component of a radiant power vector
- *  @param  g       G component of a radiant power vector
- *  @param  b       B component of a radiant power vector
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set radiant power of a point light source
+    *
+    *  @param  r       R component of a radiant power vector
+    *  @param  g       G component of a radiant power vector
+    *  @param  b       B component of a radiant power vector
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprPointLightSetRadiantPower3f(rpr_light light, rpr_float r, rpr_float g, rpr_float b);
 
 /* rpr_light - spot */
-/** @brief Create spot light
- *
- *  Create analytic spot light
- *
- *  Possible error codes:
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *
- *  @param  context The context to create a light for
- *  @param  status  RPR_SUCCESS in case of success, error code otherwise
- *  @return         Light object
- */
+
+    /** @brief Create spot light
+    *
+    *  Create analytic spot light
+    *
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return         Light object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateSpotLight(rpr_context context, rpr_light * light);
 
-/** @brief Set radiant power of a spot light source
- *
- *  @param  r R component of a radiant power vector
- *  @param  g G component of a radiant power vector
- *  @param  b B component of a radiant power vector
- *  @return   RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set radiant power of a spot light source
+    *
+    *  @param  r R component of a radiant power vector
+    *  @param  g G component of a radiant power vector
+    *  @param  b B component of a radiant power vector
+    *  @return   RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSpotLightSetRadiantPower3f(rpr_light light, rpr_float r, rpr_float g, rpr_float b);
 
-/** @brief Set cone shape for a spot light
- *
- * Spot light produces smooth penumbra in a region between inner and outer circles,
- * the area inside the inner cicrle receives full power while the area outside the
- * outer one is fully in shadow.
- *
- *  @param  iangle Inner angle of a cone in radians
- *  @param  oangle Outer angle of a coner in radians, should be greater that or equal to inner angle
- *  @return status RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set cone shape for a spot light
+    *
+    * Spot light produces smooth penumbra in a region between inner and outer circles,
+    * the area inside the inner cicrle receives full power while the area outside the
+    * outer one is fully in shadow.
+    *
+    *  @param  iangle Inner angle of a cone in radians
+    *  @param  oangle Outer angle of a coner in radians, should be greater that or equal to inner angle
+    *  @return status RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSpotLightSetConeShape(rpr_light light, rpr_float iangle, rpr_float oangle);
 
 /* rpr_light - directional */
-/** @brief Create directional light
- *
- *  Create analytic directional light.
- *  Possible error codes:
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *
- *  @param  context The context to create a light for
- *  @param  status  RPR_SUCCESS in case of success, error code otherwise
- *  @return light id of a newly created light
- */
+
+    /** @brief Create directional light
+    *
+    *  Create analytic directional light.
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return light id of a newly created light
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateDirectionalLight(rpr_context context, rpr_light * out_light);
 
-/** @brief Set radiant power of a directional light source
- *
- *  @param  r R component of a radiant power vector
- *  @param  g G component of a radiant power vector
- *  @param  b B component of a radiant power vector
- *  @return   RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set radiant power of a directional light source
+    *
+    *  @param  r R component of a radiant power vector
+    *  @param  g G component of a radiant power vector
+    *  @param  b B component of a radiant power vector
+    *  @return   RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprDirectionalLightSetRadiantPower3f(rpr_light light, rpr_float r, rpr_float g, rpr_float b);
 
-/** @brief Set softness of shadow produced by the light
- *
- *  @param  coeff value between [0;1]. 0.0 is sharp  
- *  @return   RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set softness of shadow produced by the light
+    *
+    *  @param  coeff value between [0;1]. 0.0 is sharp
+    *  @return   RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprDirectionalLightSetShadowSoftness(rpr_light light, rpr_float coeff);
 
 /* rpr_light - environment */
-/** @brief Create an environment light
- *
- *  Environment light is a light based on lightprobe.
- *  Possible error codes:
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *
- *  @param  context The context to create a light for
- *  @param  status  RPR_SUCCESS in case of success, error code otherwise
- *  @return         Light object
- */
+
+    /** @brief Create an environment light
+    *
+    *  Environment light is a light based on lightprobe.
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return         Light object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateEnvironmentLight(rpr_context context, rpr_light * out_light);
 
-/** @brief Set image for an environment light
- *
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
- *
- *  @param  env_light Environment light
- *  @param  image     Image object to set
- *  @return           RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set image for an environment light
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT
+    *
+    *  @param  env_light Environment light
+    *  @param  image     Image object to set
+    *  @return           RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprEnvironmentLightSetImage(rpr_light env_light, rpr_image image);
 
-/** @brief Set intensity scale or an env light
- *
- *  @param  env_light       Environment light
- *  @param  intensity_scale Intensity scale
- *  @return                 RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set intensity scale or an env light
+    *
+    *  @param  env_light       Environment light
+    *  @param  intensity_scale Intensity scale
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprEnvironmentLightSetIntensityScale(rpr_light env_light, rpr_float intensity_scale);
 
-/** @brief Set portal for environment light to accelerate convergence of indoor scenes
-*
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  env_light Environment light
-*  @param  portal    Portal mesh, might have multiple components
-*  @return           RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set portal for environment light to accelerate convergence of indoor scenes
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  env_light Environment light
+    *  @param  portal    Portal mesh, might have multiple components
+    *  @return           RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprEnvironmentLightAttachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal);
 
-/** @brief Remove portal for environment light.
-*
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  env_light Environment light
-*  @param  portal    Portal mesh, that have been added to light.
-*  @return           RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Remove portal for environment light.
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  env_light Environment light
+    *  @param  portal    Portal mesh, that have been added to light.
+    *  @return           RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprEnvironmentLightDetachPortal(rpr_scene scene, rpr_light env_light, rpr_shape portal);
 
 /* rpr_light - sky */
-/** @brief Create sky light
-*
-*  Analytical sky model
-*  Possible error codes:
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*
-*  @param  context The context to create a light for
-*  @param  status  RPR_SUCCESS in case of success, error code otherwise
-*  @return         Light object
-*/
+
+    /** @brief Create sky light
+    *
+    *  Analytical sky model
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return         Light object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateSkyLight(rpr_context context, rpr_light * out_light);
 
-/** @brief Set turbidity of a sky light
-*
-*  @param  skylight        Sky light
-*  @param  turbidity       Turbidity value
-*  @return                 RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set turbidity of a sky light
+    *
+    *  @param  skylight        Sky light
+    *  @param  turbidity       Turbidity value
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSkyLightSetTurbidity(rpr_light skylight, rpr_float turbidity);
 
-/** @brief Set albedo of a sky light
-*
-*  @param  skylight        Sky light
-*  @param  albedo          Albedo value
-*  @return                 RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set albedo of a sky light
+    *
+    *  @param  skylight        Sky light
+    *  @param  albedo          Albedo value
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSkyLightSetAlbedo(rpr_light skylight, rpr_float albedo);
 
-/** @brief Set scale of a sky light
-*
-*  @param  skylight        Sky light
-*  @param  scale           Scale value
-*  @return                 RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set scale of a sky light
+    *
+    *  @param  skylight        Sky light
+    *  @param  scale           Scale value
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSkyLightSetScale(rpr_light skylight, rpr_float scale);
 
-/** @brief Set portal for sky light to accelerate convergence of indoor scenes
-*
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  skylight  Sky light
-*  @param  portal    Portal mesh, might have multiple components
-*  @return           RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set the direction of the sky light
+    *
+    *  @param  skylight        Sky light
+    *  @param  x               direction x
+    *  @param  y               direction y
+    *  @param  z               direction z
+    *  @return                 RPR_SUCCESS in case of success, error code otherwise
+    */
+  
+extern RPR_API_ENTRY rpr_int rprSkyLightSetDirection(rpr_light skylight, rpr_float x, rpr_float y, rpr_float z);
+
+
+    /** @brief Set portal for sky light to accelerate convergence of indoor scenes
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  skylight  Sky light
+    *  @param  portal    Portal mesh, might have multiple components
+    *  @return           RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSkyLightAttachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal);
 
-/** @brief Remove portal for Sky light.
-*
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  env_light Sky light
-*  @param  portal    Portal mesh, that have been added to light.
-*  @return           RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Remove portal for Sky light.
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  env_light Sky light
+    *  @param  portal    Portal mesh, that have been added to light.
+    *  @return           RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSkyLightDetachPortal(rpr_scene scene, rpr_light skylight, rpr_shape portal);
 
-/** @brief Create IES light
-*
-*  Create IES light
-*
-*  Possible error codes:
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*
-*  @param  context The context to create a light for
-*  @param  status  RPR_SUCCESS in case of success, error code otherwise
-*  @return         Light object
-*/
+
+    /** @brief Create IES light
+    *
+    *  Create IES light
+    *
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return         Light object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateIESLight(rpr_context context, rpr_light * light);
 
-/** @brief Set radiant power of a IES light source
-*
-*  @param  r R component of a radiant power vector
-*  @param  g G component of a radiant power vector
-*  @param  b B component of a radiant power vector
-*  @return   RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set radiant power of a IES light source
+    *
+    *  @param  r R component of a radiant power vector
+    *  @param  g G component of a radiant power vector
+    *  @param  b B component of a radiant power vector
+    *  @return   RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprIESLightSetRadiantPower3f(rpr_light light, rpr_float r, rpr_float g, rpr_float b);
 
-/** @brief Set image for an IES light
-*
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT : If the format of the IES file is not supported by Radeon ProRender.
-*      RPR_ERROR_IO_ERROR : If the IES image path file doesn't exist.
-*
-*  @param  env_light     Environment light
-*  @param  imagePath     Image path to set
-*  @param  nx			  resolution X of the IES image
-*  @param  ny            resolution Y of the IES image
-*  @return               RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set image for an IES light
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT : If the format of the IES file is not supported by Radeon ProRender.
+    *      RPR_ERROR_IO_ERROR : If the IES image path file doesn't exist.
+    *
+    *  @param  env_light     Environment light
+    *  @param  imagePath     Image path to set
+    *  @param  nx			  resolution X of the IES image
+    *  @param  ny            resolution Y of the IES image
+    *  @return               RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprIESLightSetImageFromFile(rpr_light env_light, rpr_char const * imagePath, rpr_int nx, rpr_int ny);
 
-/** @brief Set image for an IES light
-*
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT : If the format of the IES data is not supported by Radeon ProRender.
-*
-*  @param  env_light     Environment light
-*  @param  iesData       Image data string defining the IES. null terminated string. IES format.
-*  @param  nx			  resolution X of the IES image
-*  @param  ny            resolution Y of the IES image
-*  @return               RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set image for an IES light
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *      RPR_ERROR_UNSUPPORTED_IMAGE_FORMAT : If the format of the IES data is not supported by Radeon ProRender.
+    *
+    *  @param  env_light     Environment light
+    *  @param  iesData       Image data string defining the IES. null terminated string. IES format.
+    *  @param  nx			  resolution X of the IES image
+    *  @param  ny            resolution Y of the IES image
+    *  @return               RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprIESLightSetImageFromIESdata(rpr_light env_light, rpr_char const * iesData, rpr_int nx, rpr_int ny);
 
 /* rpr_light */
-/** @brief Query information about a light
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  light    The light to query
- *  @param  light_info The type of info to query
- *  @param  size     The size of the buffer pointed by data
- *  @param  data     The buffer to store queried info
- *  @param  size_ret Returns the size in bytes of the data being queried
- *  @return          RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a light
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  light    The light to query
+    *  @param  light_info The type of info to query
+    *  @param  size     The size of the buffer pointed by data
+    *  @param  data     The buffer to store queried info
+    *  @param  size_ret Returns the size in bytes of the data being queried
+    *  @return          RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprLightGetInfo(rpr_light light, rpr_light_info info, size_t size, void * data, size_t * size_ret);
 
 /* rpr_scene */
-/** @brief Remove all objects from a scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions.
- *
- *  @param  scene   The scene to clear
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Remove all objects from a scene
+    *          Also detaches the camera
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions.
+    *
+    *  @param  scene   The scene to clear
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneClear(rpr_scene scene);
 
-/** @brief Attach a shape to the scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions.
- *
- *  @param  scene  The scene to attach
- *  @param  shape  The shape to attach
- *  @return        RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Attach a shape to the scene
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions.
+    *
+    *  @param  scene  The scene to attach
+    *  @param  shape  The shape to attach
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneAttachShape(rpr_scene scene, rpr_shape shape);
 
-/** @brief Detach a shape from the scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions.
- *
- *  @param  scene   The scene to dettach from
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Detach a shape from the scene
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions.
+    *
+    *  @param  scene   The scene to dettach from
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneDetachShape(rpr_scene scene, rpr_shape shape);
 
-/** @brief Attach a heteroVolume to the scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions.
- *
- *  @param  scene  The scene to attach
- *  @param  heteroVolume  The heteroVolume to attach
- *  @return        RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Attach a heteroVolume to the scene
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions.
+    *
+    *  @param  scene  The scene to attach
+    *  @param  heteroVolume  The heteroVolume to attach
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneAttachHeteroVolume(rpr_scene scene, rpr_hetero_volume heteroVolume);
 
-/** @brief Detach a heteroVolume from the scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions.
- *
- *  @param  scene   The scene to dettach from
- *  @return         RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Detach a heteroVolume from the scene
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions.
+    *
+    *  @param  scene   The scene to dettach from
+    *  @return         RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneDetachHeteroVolume(rpr_scene scene, rpr_hetero_volume heteroVolume);
 
-/** @brief Attach a light to the scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions
- *
- *  @param  scene  The scene to attach
- *  @param  light  The light to attach
- *  @return        RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Attach a light to the scene
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions
+    *
+    *  @param  scene  The scene to attach
+    *  @param  light  The light to attach
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneAttachLight(rpr_scene scene, rpr_light light);
 
-/** @brief Detach a light from the scene
- *
- *  A scene is essentially a collection of shapes, lights and volume regions
- *
- *  @param  scene  The scene to dettach from
- *  @param  light  The light to detach
- *  @return        RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Detach a light from the scene
+    *
+    *  A scene is essentially a collection of shapes, lights and volume regions
+    *
+    *  @param  scene  The scene to dettach from
+    *  @param  light  The light to detach
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneDetachLight(rpr_scene scene, rpr_light light);
 
-/** @brief Query information about a scene
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  scene    The scene to query
- *  @param  info     The type of info to query
- *  @param  size     The size of the buffer pointed by data
- *  @param  data     The buffer to store queried info
- *  @param  size_ret Returns the size in bytes of the data being queried
- *  @return          RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a scene
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  scene    The scene to query
+    *  @param  info     The type of info to query
+    *  @param  size     The size of the buffer pointed by data
+    *  @param  data     The buffer to store queried info
+    *  @param  size_ret Returns the size in bytes of the data being queried
+    *  @return          RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneGetInfo(rpr_scene scene, rpr_scene_info info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Get background override light 
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  scene       The scene to set background for
-*  @param  overrride   overrride type
-*  @param  out_light   light returned
-*  @return        RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Get background override light
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  scene       The scene to set background for
+    *  @param  overrride   overrride type
+    *  @param  out_light   light returned
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneGetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light * out_light);
 
-/** @brief Set background light for the scene which does not affect the scene lighting,
-*    but gets shown as a background image
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  scene  The scene to set background for
-*  @param  light  Background light
-*  @return        RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set background light for the scene which does not affect the scene lighting,
+    *    but gets shown as a background image
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  scene  The scene to set background for
+    *  @param  light  Background light
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneSetEnvironmentOverride(rpr_scene scene, rpr_environment_override overrride, rpr_light light);
 
-/** @brief Set background image for the scene which does not affect the scene lighting,
-*    it is shown as view-independent rectangular background
-*   Possible error codes:
-*      RPR_ERROR_INVALID_PARAMETER
-*
-*  @param  scene  The scene to set background for
-*  @param  image  Background image
-*  @return        RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set background image for the scene which does not affect the scene lighting,
+    *    it is shown as view-independent rectangular background
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  scene  The scene to set background for
+    *  @param  image  Background image
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneSetBackgroundImage(rpr_scene scene, rpr_image image);
 
-/** @brief Get background image
-*
-*  @param  scene  The scene to get background image from
-*  @param  status RPR_SUCCESS in case of success, error code otherwise
-*  @return        Image object
-*/
+
+    /** @brief Get background image
+    *
+    *  @param  scene  The scene to get background image from
+    *  @param  status RPR_SUCCESS in case of success, error code otherwise
+    *  @return        Image object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneGetBackgroundImage(rpr_scene scene, rpr_image * out_image);
 
-/** @brief Set camera for the scene
- *
- *  This is the main camera which for rays generation for the scene.
- *
- *  @param  scene  The scene to set camera for
- *  @param  camera Camera
- *  @return        RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Set camera for the scene
+    *
+    *  This is the main camera which for rays generation for the scene.
+    *
+    *  @param  scene  The scene to set camera for
+    *  @param  camera Camera
+    *  @return        RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneSetCamera(rpr_scene scene, rpr_camera camera);
 
-/** @brief Get camera for the scene
- *
- *  @param  scene  The scene to get camera for
- *  @param  status RPR_SUCCESS in case of success, error code otherwise
- *  @return camera id for the camera if any, NULL otherwise
- */
+
+    /** @brief Get camera for the scene
+    *
+    *  @param  scene  The scene to get camera for
+    *  @param  status RPR_SUCCESS in case of success, error code otherwise
+    *  @return camera id for the camera if any, NULL otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprSceneGetCamera(rpr_scene scene, rpr_camera * out_camera);
 
-/* rpr_framebuffer*/
-/** @brief Query information about a framebuffer
- *
- *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
- *  then query with size_ret == NULL to fill the buffer with the data
- *   Possible error codes:
- *      RPR_ERROR_INVALID_PARAMETER
- *
- *  @param  framebuffer  Framebuffer object to query
- *  @param  info         The type of info to query
- *  @param  size         The size of the buffer pointed by data
- *  @param  data         The buffer to store queried info
- *  @param  size_ret     Returns the size in bytes of the data being queried
- *  @return              RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Query information about a framebuffer
+    *
+    *  The workflow is usually two-step: query with the data == NULL to get the required buffer size,
+    *  then query with size_ret == NULL to fill the buffer with the data
+    *   Possible error codes:
+    *      RPR_ERROR_INVALID_PARAMETER
+    *
+    *  @param  framebuffer  Framebuffer object to query
+    *  @param  info         The type of info to query
+    *  @param  size         The size of the buffer pointed by data
+    *  @param  data         The buffer to store queried info
+    *  @param  size_ret     Returns the size in bytes of the data being queried
+    *  @return              RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprFrameBufferGetInfo(rpr_framebuffer framebuffer, rpr_framebuffer_info info, size_t size, void * data, size_t * size_ret);
 
-/** @brief Clear contents of a framebuffer to zero
- *
- *   Possible error codes:
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *
- *  The call is blocking and the image is ready when returned
- *
- *  @param  frame_buffer  Framebuffer to clear
- *  @return              RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Clear contents of a framebuffer to zero
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    *  The call is blocking and the image is ready when returned
+    *
+    *  @param  frame_buffer  Framebuffer to clear
+    *  @return              RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprFrameBufferClear(rpr_framebuffer frame_buffer);
 
-/** @brief Save frame buffer to file
- *
- *   Possible error codes:
- *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
- *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
- *
- *  @param  frame_buffer Frame buffer to save
- *  @param  path         Path to file
- *  @return              RPR_SUCCESS in case of success, error code otherwise
- */
+
+    /** @brief Save frame buffer to file
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    *  @param  frame_buffer Frame buffer to save
+    *  @param  path         Path to file
+    *  @return              RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprFrameBufferSaveToFile(rpr_framebuffer frame_buffer, rpr_char const * file_path);
 
-/** @brief Resolve framebuffer
-*
-*   Resolve applies AA filters and tonemapping operators to the framebuffer data
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*/
+
+    /** @brief Resolve framebuffer
+    *
+    *   Resolve applies AA filters and tonemapping operators to the framebuffer data
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextResolveFrameBuffer(rpr_context context, rpr_framebuffer src_frame_buffer, rpr_framebuffer dst_frame_buffer, rpr_bool normalizeOnly = false);
 
-/** @brief Create material system
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Create material system
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreateMaterialSystem(rpr_context in_context, rpr_material_system_type type, rpr_material_system * out_matsys);
 
-/** @brief Create material node
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Create material node
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMaterialSystemGetSize(rpr_context in_context, rpr_uint * out_size);
 
-/** @brief Returns the number of material nodes for a given material system
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Returns the number of material nodes for a given material system
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMaterialSystemCreateNode(rpr_material_system in_matsys, rpr_material_node_type in_type, rpr_material_node * out_node);
 
-/** @brief Connect nodes
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Connect nodes
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputN(rpr_material_node in_node, rpr_char const * in_input, rpr_material_node in_input_node);
 
-/** @brief Set float input value
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Set float input value
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputF(rpr_material_node in_node, rpr_char const * in_input, rpr_float in_value_x, rpr_float in_value_y, rpr_float in_value_z, rpr_float in_value_w);
 
-/** @brief Set uint input value
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Set uint input value
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputU(rpr_material_node in_node, rpr_char const * in_input, rpr_uint in_value);
 
-/** @brief Set image input value
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Set image input value
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputImageData(rpr_material_node in_node, rpr_char const * in_input, rpr_image image);
 extern RPR_API_ENTRY rpr_int rprMaterialNodeSetInputBufferData(rpr_material_node in_node, rpr_char const * in_input, rpr_buffer buffer);
 extern RPR_API_ENTRY rpr_int rprMaterialNodeGetInfo(rpr_material_node in_node, rpr_material_node_info in_info, size_t in_size, void * in_data, size_t * out_size);
 extern RPR_API_ENTRY rpr_int rprMaterialNodeGetInputInfo(rpr_material_node in_node, rpr_int in_input_idx, rpr_material_node_input_info in_info, size_t in_size, void * in_data, size_t * out_size);
 extern RPR_API_ENTRY rpr_int rprContextCreateComposite(rpr_context context, rpr_composite_type in_type, rpr_composite * out_composite);
-extern RPR_API_ENTRY rpr_int rprCompositeSetInputFb(rpr_composite composite, const char * inputName, rpr_framebuffer input);
-extern RPR_API_ENTRY rpr_int rprCompositeSetInputC(rpr_composite composite, const char * inputName, rpr_composite input);
-extern RPR_API_ENTRY rpr_int rprCompositeSetInput4f(rpr_composite composite, const char * inputName, float x, float y, float z, float w);
-extern RPR_API_ENTRY rpr_int rprCompositeSetInput1u(rpr_composite composite, const char * inputName, unsigned int value);
-extern RPR_API_ENTRY rpr_int rprCompositeSetInputOp(rpr_composite composite, const char * inputName, rpr_material_node_arithmetic_operation op);
+extern RPR_API_ENTRY rpr_int rprContextCreateLUTFromFile(rpr_context context, const rpr_char * fileLutPath, rpr_lut * out_lut);
+extern RPR_API_ENTRY rpr_int rprContextCreateLUTFromData(rpr_context context, const rpr_char * lutData, rpr_lut * out_lut);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputFb(rpr_composite composite, const rpr_char * inputName, rpr_framebuffer input);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputC(rpr_composite composite, const rpr_char * inputName, rpr_composite input);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputLUT(rpr_composite composite, const rpr_char * inputName, rpr_lut input);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInput4f(rpr_composite composite, const rpr_char * inputName, float x, float y, float z, float w);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInput1u(rpr_composite composite, const rpr_char * inputName, unsigned int value);
+extern RPR_API_ENTRY rpr_int rprCompositeSetInputOp(rpr_composite composite, const rpr_char * inputName, rpr_material_node_arithmetic_operation op);
 extern RPR_API_ENTRY rpr_int rprCompositeCompute(rpr_composite composite, rpr_framebuffer fb);
 extern RPR_API_ENTRY rpr_int rprCompositeGetInfo(rpr_composite composite, rpr_composite_info composite_info, size_t size, void *  data, size_t * size_ret);
 
-/** @brief Delete object
-*
-*  rprObjectDelete(obj) deletes 'obj' from memory. 
-*  User has to make sure that 'obj' will not be used anymore after this call.
-*
-*   Possible error codes:
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*
-*/
+
+    /** @brief Delete object
+    *
+    *  rprObjectDelete(obj) deletes 'obj' from memory.
+    *  User has to make sure that 'obj' will not be used anymore after this call.
+    *
+    *   Possible error codes:
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *
+    */
+  
 extern RPR_API_ENTRY rpr_int rprObjectDelete(void * obj);
 
-/** @brief Set material node name
-*
-*
-*  @param  node        Node to set the name for
-*  @param  name       NULL terminated string name
-*  @return             RPR_SUCCESS in case of success, error code otherwise
-*/
+
+    /** @brief Set material node name
+    *
+    *
+    *  @param  node        Node to set the name for
+    *  @param  name       NULL terminated string name
+    *  @return             RPR_SUCCESS in case of success, error code otherwise
+    */
+  
 extern RPR_API_ENTRY rpr_int rprObjectSetName(void * node, rpr_char const * name);
 
 /* rpr_post_effect */
-/** @brief Create post effect
-*
-*  Create analytic point light represented by a point in space.
-*  Possible error codes:
-*      RPR_ERROR_OUT_OF_VIDEO_MEMORY
-*      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
-*
-*  @param  context The context to create a light for
-*  @param  status  RPR_SUCCESS in case of success, error code otherwise
-*  @return         Light object
-*/
+
+    /** @brief Create post effect
+    *
+    *  Create analytic point light represented by a point in space.
+    *  Possible error codes:
+    *      RPR_ERROR_OUT_OF_VIDEO_MEMORY
+    *      RPR_ERROR_OUT_OF_SYSTEM_MEMORY
+    *
+    *  @param  context The context to create a light for
+    *  @param  status  RPR_SUCCESS in case of success, error code otherwise
+    *  @return         Light object
+    */
+  
 extern RPR_API_ENTRY rpr_int rprContextCreatePostEffect(rpr_context context, rpr_post_effect_type type, rpr_post_effect * out_effect);
 extern RPR_API_ENTRY rpr_int rprContextAttachPostEffect(rpr_context context, rpr_post_effect effect);
 extern RPR_API_ENTRY rpr_int rprContextDetachPostEffect(rpr_context context, rpr_post_effect effect);
@@ -2213,11 +2574,14 @@ extern RPR_API_ENTRY rpr_int rprPostEffectSetParameter4f(rpr_post_effect effect,
 extern RPR_API_ENTRY rpr_int rprContextGetAttachedPostEffectCount(rpr_context context, rpr_uint *  nb);
 extern RPR_API_ENTRY rpr_int rprContextGetAttachedPostEffect(rpr_context context, rpr_uint i, rpr_post_effect * out_effect);
 extern RPR_API_ENTRY rpr_int rprPostEffectGetInfo(rpr_post_effect effect, rpr_post_effect_info info, size_t size,  void *  data, size_t *  size_ret);
-extern RPR_API_ENTRY rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, rpr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, rpr_uint gridDataTopology___unused);
+extern RPR_API_ENTRY rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void const * indicesList, size_t numberOfIndices, rpr_hetero_volume_indices_topology indicesListTopology, void const * gridData, size_t gridDataSizeByte, rpr_uint gridDataTopology___unused);
 extern RPR_API_ENTRY rpr_int rprShapeSetHeteroVolume(rpr_shape shape, rpr_hetero_volume heteroVolume);
-extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_heteroVolume, rpr_bool transpose, rpr_float const * transform);
+extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume heteroVolume, rpr_bool transpose, rpr_float const * transform);
+extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetEmission(rpr_hetero_volume heteroVolume, rpr_float r, rpr_float g, rpr_float b);
+extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetAlbedo(rpr_hetero_volume heteroVolume, rpr_float r, rpr_float g, rpr_float b);
+extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetFilter(rpr_hetero_volume heteroVolume, rpr_hetero_volume_filter filter);
 /***************compatibility part***************/
-#define FR_API_VERSION 0x010028200 
+#define FR_API_VERSION 0x010029700 
 #define FR_SUCCESS 0 
 #define FR_ERROR_COMPUTE_API_NOT_SUPPORTED -1 
 #define FR_ERROR_OUT_OF_SYSTEM_MEMORY -2 
@@ -2242,6 +2606,10 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_ERROR_INVALID_PARAMETER_TYPE -22 
 #define FR_ERROR_UNSUPPORTED -23 
 #define FR_ERROR_OPENCL_OUT_OF_HOST_MEMORY -24 
+#define FR_ERROR_OPENGL -25 
+#define FR_ERROR_OPENCL -26 
+#define FR_ERROR_NULLPTR -27 
+#define FR_ERROR_NODETYPE -28 
 #define FR_PARAMETER_TYPE_FLOAT 0x1 
 #define FR_PARAMETER_TYPE_FLOAT2 0x2 
 #define FR_PARAMETER_TYPE_FLOAT3 0x3 
@@ -2250,11 +2618,6 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_PARAMETER_TYPE_STRING 0x6 
 #define FR_PARAMETER_TYPE_SHADER 0x7 
 #define FR_PARAMETER_TYPE_UINT 0x8 
-#define FR_CONTEXT_OPENCL (1 << 0) 
-#define FR_CONTEXT_DIRECTCOMPUTE (1 << 1) 
-#define FR_CONTEXT_REFERENCE (1 << 2) 
-#define FR_CONTEXT_OPENGL (1 << 3) 
-#define FR_CONTEXT_METAL (1 << 4) 
 #define FR_CREATION_FLAGS_ENABLE_GPU0 (1 << 0) 
 #define FR_CREATION_FLAGS_ENABLE_GPU1 (1 << 1) 
 #define FR_CREATION_FLAGS_ENABLE_GPU2 (1 << 2) 
@@ -2266,6 +2629,7 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_CREATION_FLAGS_ENABLE_GPU6 (1 << 8) 
 #define FR_CREATION_FLAGS_ENABLE_GPU7 (1 << 9) 
 #define FR_CREATION_FLAGS_ENABLE_METAL (1 << 10) 
+#define FR_FILTER_NONE 0x0 
 #define FR_FILTER_BOX 0x1 
 #define FR_FILTER_TRIANGLE 0x2 
 #define FR_FILTER_GAUSSIAN 0x3 
@@ -2282,6 +2646,8 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_LIGHT_TYPE_IES 0x6 
 #define FR_OBJECT_NAME 0x777777 
 #define FR_CONTEXT_CREATEPROP_CPU_THREAD_LIMIT 0x600 
+#define FR_CONTEXT_CREATEPROP_COMPILE_CALLBACK 0x601 
+#define FR_CONTEXT_CREATEPROP_COMPILE_USER_DATA 0x602 
 #define FR_CONTEXT_CREATION_FLAGS 0x102 
 #define FR_CONTEXT_CACHE_PATH 0x103 
 #define FR_CONTEXT_RENDER_STATUS 0x104 
@@ -2292,6 +2658,7 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_CONTEXT_SCENE 0x109 
 #define FR_CONTEXT_AA_CELL_SIZE 0x10A 
 #define FR_CONTEXT_AA_SAMPLES 0x10B 
+#define FR_CONTEXT_ITERATIONS 0x10B 
 #define FR_CONTEXT_IMAGE_FILTER_TYPE 0x10C 
 #define FR_CONTEXT_IMAGE_FILTER_BOX_RADIUS 0x10D 
 #define FR_CONTEXT_IMAGE_FILTER_GAUSSIAN_RADIUS 0x10E 
@@ -2339,7 +2706,13 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_CONTEXT_MAX_DEPTH_DIFFUSE 0x138 
 #define FR_CONTEXT_MAX_DEPTH_GLOSSY 0x139 
 #define FR_CONTEXT_OOC_CACHE_PATH 0x13a 
-#define FR_CONTEXT_MAX 0x13b 
+#define FR_CONTEXT_MAX_DEPTH_REFRACTION 0x13B 
+#define FR_CONTEXT_MAX_DEPTH_GLOSSY_REFRACTION 0x13C 
+#define FR_CONTEXT_RENDER_LAYER_MASK 0x13D 
+#define FR_CONTEXT_SINGLE_LEVEL_BVH_ENABLED 0x13E 
+#define FR_CONTEXT_TRANSPARENT_BACKGROUND 0x13F 
+#define FR_CONTEXT_MAX_DEPTH_SHADOW 0x140 
+#define FR_CONTEXT_MAX 0x141 
 #define FR_CAMERA_TRANSFORM 0x201 
 #define FR_CAMERA_FSTOP 0x202 
 #define FR_CAMERA_APERTURE_BLADES 0x203 
@@ -2360,19 +2733,18 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_CAMERA_TILT_CORRECTION 0x212 
 #define FR_CAMERA_NEAR_PLANE 0x213 
 #define FR_CAMERA_FAR_PLANE 0x214 
+#define FR_CAMERA_LINEAR_MOTION 0x215 
+#define FR_CAMERA_ANGULAR_MOTION 0x216 
 #define FR_IMAGE_FORMAT 0x301 
 #define FR_IMAGE_DESC 0x302 
 #define FR_IMAGE_DATA 0x303 
 #define FR_IMAGE_DATA_SIZEBYTE 0x304 
 #define FR_IMAGE_WRAP 0x305 
+#define FR_IMAGE_FILTER 0x306 
+#define FR_IMAGE_GAMMA 0x307 
+#define FR_IMAGE_MIPMAP_ENABLED 0x308 
 #define FR_BUFFER_DESC 0x350 
 #define FR_BUFFER_DATA 0x351 
-#define FR_IMAGE_FILTER_NEAREST (1 << 0) 
-#define FR_IMAGE_FILTER_LINEAR (1 << 1) 
-#define FR_IMAGE_WRAP_REPEAT (1 << 2) 
-#define FR_IMAGE_WRAP_MIRRORED_REPEAT (1 << 3) 
-#define FR_IMAGE_WRAP_CLAMP_TO_EDGE (1 << 4) 
-#define FR_IMAGE_WRAP_CLAMP_TO_BORDER (1 << 5) 
 #define FR_SHAPE_TYPE 0x401 
 #define FR_SHAPE_VIDMEM_USAGE 0x402 
 #define FR_SHAPE_TRANSFORM 0x403 
@@ -2394,6 +2766,7 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_SHAPE_MATERIALS_PER_FACE 0x415 
 #define FR_SHAPE_SCALE_MOTION 0x416 
 #define FR_SHAPE_HETERO_VOLUME 0x417 
+#define FR_SHAPE_LAYER_MASK 0x418 
 #define FR_MESH_POLYGON_COUNT 0x501 
 #define FR_MESH_VERTEX_COUNT 0x502 
 #define FR_MESH_NORMAL_COUNT 0x503 
@@ -2430,6 +2803,8 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_SCENE_AABB 0x70D 
 #define FR_SCENE_HETEROVOLUME_LIST 0x70E 
 #define FR_SCENE_HETEROVOLUME_COUNT 0x70F 
+#define FR_LUT_FILENAME 0x850 
+#define FR_LUT_DATA 0x851 
 #define FR_LIGHT_TYPE 0x801 
 #define FR_LIGHT_TRANSFORM 0x803 
 #define FR_POINT_LIGHT_RADIANT_POWER 0x804 
@@ -2444,6 +2819,7 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_SKY_LIGHT_TURBIDITY 0x812 
 #define FR_SKY_LIGHT_ALBEDO 0x813 
 #define FR_SKY_LIGHT_SCALE 0x814 
+#define FR_SKY_LIGHT_DIRECTION 0x815 
 #define FR_SKY_LIGHT_PORTAL_LIST 0x820 
 #define FR_SKY_LIGHT_PORTAL_COUNT 0x821 
 #define FR_IES_LIGHT_RADIANT_POWER 0x816 
@@ -2539,6 +2915,7 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_MATERIAL_NODE_MICROFACET_BECKMANN 0x22 
 #define FR_MATERIAL_NODE_PHONG 0x23 
 #define FR_MATERIAL_NODE_BUFFER_SAMPLER 0x24 
+#define FR_MATERIAL_NODE_UV_TRIPLANAR 0x25 
 #define FR_MATERIAL_INPUT_COLOR 0x0 
 #define FR_MATERIAL_INPUT_COLOR0 0x1 
 #define FR_MATERIAL_INPUT_COLOR1 0x2 
@@ -2571,7 +2948,8 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_MATERIAL_INPUT_ZAXIS 0x1d 
 #define FR_MATERIAL_INPUT_XAXIS 0x1e 
 #define FR_MATERIAL_INPUT_THRESHOLD 0x1f 
-#define FR_MATERIAL_INPUT_MAX 0x20 
+#define FR_MATERIAL_INPUT_OFFSET 0x20 
+#define FR_MATERIAL_INPUT_MAX 0x21 
 #define FR_MATERIAL_STANDARD_INPUT_DIFFUSE_COLOR 0x112 
 #define FR_MATERIAL_STANDARD_INPUT_DIFFUSE_NORMAL 0x113 
 #define FR_MATERIAL_STANDARD_INPUT_GLOSSY_COLOR 0x114 
@@ -2661,7 +3039,14 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_AOV_VELOCITY 0x0d 
 #define FR_AOV_DIRECT_ILLUMINATION 0x0e 
 #define FR_AOV_INDIRECT_ILLUMINATION 0x0f 
-#define FR_AOV_MAX 0x10 
+#define FR_AOV_AO 0x10 
+#define FR_AOV_DIRECT_DIFFUSE 0x11 
+#define FR_AOV_DIRECT_REFLECT 0x12 
+#define FR_AOV_INDIRECT_DIFFUSE 0x13 
+#define FR_AOV_INDIRECT_REFLECT 0x14 
+#define FR_AOV_REFRACT 0x15 
+#define FR_AOV_VOLUME 0x16 
+#define FR_AOV_MAX 0x17 
 #define FR_POST_EFFECT_TONE_MAP 0x0 
 #define FR_POST_EFFECT_WHITE_BALANCE 0x1 
 #define FR_POST_EFFECT_SIMPLE_TONEMAP 0x2 
@@ -2684,8 +3069,8 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_IMAGE_WRAP_TYPE_CLAMP_TO_BORDER 0x4 
 #define FR_IMAGE_WRAP_TYPE_CLAMP_ZERO 0x5 
 #define FR_IMAGE_WRAP_TYPE_CLAMP_ONE 0x6 
-#define FR_MAX_AA_SAMPLES 32 
-#define FR_MAX_AA_GRID_SIZE 16 
+#define FR_IMAGE_FILTER_TYPE_NEAREST 0x1 
+#define FR_IMAGE_FILTER_TYPE_LINEAR 0x2 
 #define FR_COMPOSITE_TYPE 0x1  
 #define FR_COMPOSITE_FRAMEBUFFER_INPUT_FB 0x2  
 #define FR_COMPOSITE_NORMALIZE_INPUT_COLOR 0x3  
@@ -2698,6 +3083,8 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_COMPOSITE_ARITHMETIC_INPUT_COLOR1 0x0a  
 #define FR_COMPOSITE_ARITHMETIC_INPUT_OP 0x0b  
 #define FR_COMPOSITE_GAMMA_CORRECTION_INPUT_COLOR 0x0c  
+#define FR_COMPOSITE_LUT_INPUT_LUT 0x0d  
+#define FR_COMPOSITE_LUT_INPUT_COLOR 0x0e  
 #define FR_COMPOSITE_ARITHMETIC 0x1  
 #define FR_COMPOSITE_LERP_VALUE 0x2  
 #define FR_COMPOSITE_INVERSE 0x3  
@@ -2711,6 +3098,7 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_COMPOSITE_TONEMAP_LINEAR 0xb  
 #define FR_COMPOSITE_FRAMEBUFFER 0xc  
 #define FR_COMPOSITE_CONSTANT 0xd  
+#define FR_COMPOSITE_LUT 0xe  
 #define FR_HETEROVOLUME_SIZE_X 0x730 
 #define FR_HETEROVOLUME_SIZE_Y 0x731 
 #define FR_HETEROVOLUME_SIZE_Z 0x732 
@@ -2720,10 +3108,15 @@ extern RPR_API_ENTRY rpr_int rprHeteroVolumeSetTransform(rpr_hetero_volume out_h
 #define FR_HETEROVOLUME_INDICES 0x736 
 #define FR_HETEROVOLUME_INDICES_NUMBER 0x737 
 #define FR_HETEROVOLUME_INDICES_TOPOLOGY 0x738 
+#define FR_HETEROVOLUME_EMISSION 0x739 
+#define FR_HETEROVOLUME_ALBEDO 0x73a 
+#define FR_HETEROVOLUME_FILTER 0x73b 
 #define FR_HETEROVOLUME_INDICES_TOPOLOGY_I_U64 0x750 
 #define FR_HETEROVOLUME_INDICES_TOPOLOGY_XYZ_U32 0x751 
 #define FR_HETEROVOLUME_INDICES_TOPOLOGY_I_S64 0x752 
 #define FR_HETEROVOLUME_INDICES_TOPOLOGY_XYZ_S32 0x753 
+#define FR_HETEROVOLUME_FILTER_NEAREST 0x760 
+#define FR_HETEROVOLUME_FILTER_LINEAR 0x761 
 #define FR_FALSE 0 
 #define FR_TRUE 1 
 typedef rpr_char fr_char;
@@ -2739,6 +3132,7 @@ typedef rpr_double fr_double;
 typedef rpr_longlong fr_longlong;
 typedef rpr_bool fr_bool;
 typedef rpr_bitfield fr_bitfield;
+typedef rpr_status fr_status;
 typedef rpr_context fr_context;
 typedef rpr_camera fr_camera;
 typedef rpr_shape fr_shape;
@@ -2753,6 +3147,7 @@ typedef rpr_material_node fr_material_node;
 typedef rpr_post_effect fr_post_effect;
 typedef rpr_context_properties fr_context_properties;
 typedef rpr_composite fr_composite;
+typedef rpr_lut fr_lut;
 typedef rpr_light_type fr_light_type;
 typedef rpr_image_option fr_image_option;
 typedef rpr_shape_type fr_shape_type;
@@ -2768,6 +3163,7 @@ typedef rpr_mesh_info fr_mesh_info;
 typedef rpr_mesh_polygon_info fr_mesh_polygon_info;
 typedef rpr_mesh_polygon_vertex_info fr_mesh_polygon_vertex_info;
 typedef rpr_light_info fr_light_info;
+typedef rpr_lut_info fr_lut_info;
 typedef rpr_scene_info fr_scene_info;
 typedef rpr_parameter_info fr_parameter_info;
 typedef rpr_framebuffer_info fr_framebuffer_info;
@@ -2783,6 +3179,7 @@ typedef rpr_volume_type fr_volume_type;
 typedef rpr_material_system_type fr_material_system_type;
 typedef rpr_material_node_type fr_material_node_type;
 typedef rpr_material_node_input fr_material_node_input;
+typedef rpr_material_node_input_type fr_material_node_input_type;
 typedef rpr_material_node_info fr_material_node_info;
 typedef rpr_material_node_input_info fr_material_node_input_info;
 typedef rpr_aov fr_aov;
@@ -2795,8 +3192,11 @@ typedef rpr_environment_override fr_environment_override;
 typedef rpr_subdiv_boundary_interfop_type fr_subdiv_boundary_interfop_type;
 typedef rpr_material_node_lookup_value fr_material_node_lookup_value;
 typedef rpr_image_wrap_type fr_image_wrap_type;
+typedef rpr_image_filter_type fr_image_filter_type;
 typedef rpr_material_node_arithmetic_operation fr_material_node_arithmetic_operation;
+typedef rpr_hetero_volume_parameter fr_hetero_volume_parameter;
 typedef rpr_hetero_volume_indices_topology fr_hetero_volume_indices_topology;
+typedef rpr_hetero_volume_filter fr_hetero_volume_filter;
 typedef _rpr_image_desc _fr_image_desc;
 typedef rpr_image_desc fr_image_desc;
 typedef _rpr_buffer_desc _fr_buffer_desc;
@@ -2817,6 +3217,7 @@ extern RPR_API_ENTRY fr_int frContextGetInfo(fr_context context, fr_context_info
 extern RPR_API_ENTRY fr_int frContextGetParameterInfo(fr_context context, int param_idx, fr_parameter_info parameter_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frContextGetAOV(fr_context context, fr_aov aov, fr_framebuffer * out_fb);
 extern RPR_API_ENTRY fr_int frContextSetAOV(fr_context context, fr_aov aov, fr_framebuffer frame_buffer);
+extern RPR_API_ENTRY fr_int frContextSetAOVindexLookup(fr_context context, fr_int key, fr_float colorR, fr_float colorG, fr_float colorB, fr_float colorA);
 extern RPR_API_ENTRY fr_int frContextSetScene(fr_context context, fr_scene scene);
 extern RPR_API_ENTRY fr_int frContextGetScene(fr_context arg0, fr_scene * out_scene);
 extern RPR_API_ENTRY fr_int frContextSetParameter1u(fr_context context, fr_char const * name, fr_uint x);
@@ -2839,8 +3240,9 @@ extern RPR_API_ENTRY fr_int frContextCreateCamera(fr_context context, fr_camera 
 extern RPR_API_ENTRY fr_int frContextCreateFrameBuffer(fr_context context, fr_framebuffer_format const format, fr_framebuffer_desc const * fb_desc, fr_framebuffer * out_fb);
 extern RPR_API_ENTRY fr_int frCameraGetInfo(fr_camera camera, fr_camera_info camera_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frCameraSetFocalLength(fr_camera camera, fr_float flength);
+extern RPR_API_ENTRY fr_int frCameraSetLinearMotion(fr_camera camera, fr_float x, fr_float y, fr_float z);
+extern RPR_API_ENTRY fr_int frCameraSetAngularMotion(fr_camera camera, fr_float x, fr_float y, fr_float z, fr_float w);
 extern RPR_API_ENTRY fr_int frCameraSetFocusDistance(fr_camera camera, fr_float fdist);
-extern RPR_API_ENTRY fr_int frImageSetOption(fr_image image, fr_image_option option);
 extern RPR_API_ENTRY fr_int frCameraSetTransform(fr_camera camera, fr_bool transpose, fr_float * transform);
 extern RPR_API_ENTRY fr_int frCameraSetSensorSize(fr_camera camera, fr_float width, fr_float height);
 extern RPR_API_ENTRY fr_int frCameraLookAt(fr_camera camera, fr_float posx, fr_float posy, fr_float posz, fr_float atx, fr_float aty, fr_float atz, fr_float upx, fr_float upy, fr_float upz);
@@ -2858,12 +3260,17 @@ extern RPR_API_ENTRY fr_int frCameraSetNearPlane(fr_camera camera, fr_float near
 extern RPR_API_ENTRY fr_int frCameraSetFarPlane(fr_camera camera, fr_float far);
 extern RPR_API_ENTRY fr_int frImageGetInfo(fr_image image, fr_image_info image_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frImageSetWrap(fr_image image, fr_image_wrap_type type);
+extern RPR_API_ENTRY fr_int frImageSetFilter(fr_image image, fr_image_filter_type type);
+extern RPR_API_ENTRY fr_int frImageSetGamma(fr_image image, fr_float type);
+extern RPR_API_ENTRY fr_int frImageSetMipmapEnabled(fr_image image, fr_bool enabled);
 extern RPR_API_ENTRY fr_int frShapeSetTransform(fr_shape shape, fr_bool transpose, fr_float const * transform);
 extern RPR_API_ENTRY fr_int frShapeSetSubdivisionFactor(fr_shape shape, fr_uint factor);
 extern RPR_API_ENTRY fr_int frShapeSetSubdivisionCreaseWeight(fr_shape shape, fr_float factor);
 extern RPR_API_ENTRY fr_int frShapeSetSubdivisionBoundaryInterop(fr_shape shape, fr_subdiv_boundary_interfop_type type);
+extern RPR_API_ENTRY fr_int frShapeAutoAdaptSubdivisionFactor(fr_shape shape, fr_framebuffer framebuffer, fr_camera camera, fr_int factor);
 extern RPR_API_ENTRY fr_int frShapeSetDisplacementScale(fr_shape shape, fr_float minscale, fr_float maxscale);
 extern RPR_API_ENTRY fr_int frShapeSetObjectGroupID(fr_shape shape, fr_uint objectGroupID);
+extern RPR_API_ENTRY fr_int frShapeSetLayerMask(fr_shape shape, fr_uint layerMask);
 extern RPR_API_ENTRY fr_int frShapeSetDisplacementMaterial(fr_shape shape, fr_material_node materialNode);
 extern RPR_API_ENTRY fr_int frShapeSetMaterial(fr_shape shape, fr_material_node node);
 extern RPR_API_ENTRY fr_int frShapeSetMaterialFaces(fr_shape shape, fr_material_node node, fr_int* face_indices, size_t num_faces);
@@ -2879,6 +3286,8 @@ extern RPR_API_ENTRY fr_int frShapeSetShadow(fr_shape shape, fr_bool casts_shado
 extern RPR_API_ENTRY fr_int frLightSetTransform(fr_light light, fr_bool transpose, fr_float const * transform);
 extern RPR_API_ENTRY fr_int frShapeGetInfo(fr_shape arg0, fr_shape_info arg1, size_t arg2, void * arg3, size_t * arg4);
 extern RPR_API_ENTRY fr_int frMeshGetInfo(fr_shape mesh, fr_mesh_info mesh_info, size_t size, void * data, size_t * size_ret);
+extern RPR_API_ENTRY fr_int frHeteroVolumeGetInfo(fr_hetero_volume heteroVol, fr_hetero_volume_parameter heteroVol_info, size_t size, void * data, size_t * size_ret);
+extern RPR_API_ENTRY fr_int frBufferGetInfo(fr_buffer buffer, fr_buffer_info buffer_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frMeshPolygonGetInfo(fr_shape mesh, size_t polygon_index, fr_mesh_polygon_info polygon_info, size_t size, void * data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frInstanceGetBaseShape(fr_shape shape, fr_shape * out_shape);
 extern RPR_API_ENTRY fr_int frContextCreatePointLight(fr_context context, fr_light * out_light);
@@ -2898,6 +3307,7 @@ extern RPR_API_ENTRY fr_int frContextCreateSkyLight(fr_context context, fr_light
 extern RPR_API_ENTRY fr_int frSkyLightSetTurbidity(fr_light skylight, fr_float turbidity);
 extern RPR_API_ENTRY fr_int frSkyLightSetAlbedo(fr_light skylight, fr_float albedo);
 extern RPR_API_ENTRY fr_int frSkyLightSetScale(fr_light skylight, fr_float scale);
+extern RPR_API_ENTRY fr_int frSkyLightSetDirection(fr_light skylight, fr_float x, fr_float y, fr_float z);
 extern RPR_API_ENTRY fr_int frSkyLightAttachPortal(fr_scene scene, fr_light skylight, fr_shape portal);
 extern RPR_API_ENTRY fr_int frSkyLightDetachPortal(fr_scene scene, fr_light skylight, fr_shape portal);
 extern RPR_API_ENTRY fr_int frContextCreateIESLight(fr_context context, fr_light * light);
@@ -2934,11 +3344,14 @@ extern RPR_API_ENTRY fr_int frMaterialNodeSetInputBufferData(fr_material_node in
 extern RPR_API_ENTRY fr_int frMaterialNodeGetInfo(fr_material_node in_node, fr_material_node_info in_info, size_t in_size, void * in_data, size_t * out_size);
 extern RPR_API_ENTRY fr_int frMaterialNodeGetInputInfo(fr_material_node in_node, fr_int in_input_idx, fr_material_node_input_info in_info, size_t in_size, void * in_data, size_t * out_size);
 extern RPR_API_ENTRY fr_int frContextCreateComposite(fr_context context, fr_composite_type in_type, fr_composite * out_composite);
-extern RPR_API_ENTRY fr_int frCompositeSetInputFb(fr_composite composite, const char * inputName, fr_framebuffer input);
-extern RPR_API_ENTRY fr_int frCompositeSetInputC(fr_composite composite, const char * inputName, fr_composite input);
-extern RPR_API_ENTRY fr_int frCompositeSetInput4f(fr_composite composite, const char * inputName, float x, float y, float z, float w);
-extern RPR_API_ENTRY fr_int frCompositeSetInput1u(fr_composite composite, const char * inputName, unsigned int value);
-extern RPR_API_ENTRY fr_int frCompositeSetInputOp(fr_composite composite, const char * inputName, fr_material_node_arithmetic_operation op);
+extern RPR_API_ENTRY fr_int frContextCreateLUTFromFile(fr_context context, const fr_char * fileLutPath, fr_lut * out_lut);
+extern RPR_API_ENTRY fr_int frContextCreateLUTFromData(fr_context context, const fr_char * lutData, fr_lut * out_lut);
+extern RPR_API_ENTRY fr_int frCompositeSetInputFb(fr_composite composite, const fr_char * inputName, fr_framebuffer input);
+extern RPR_API_ENTRY fr_int frCompositeSetInputC(fr_composite composite, const fr_char * inputName, fr_composite input);
+extern RPR_API_ENTRY fr_int frCompositeSetInputLUT(fr_composite composite, const fr_char * inputName, fr_lut input);
+extern RPR_API_ENTRY fr_int frCompositeSetInput4f(fr_composite composite, const fr_char * inputName, float x, float y, float z, float w);
+extern RPR_API_ENTRY fr_int frCompositeSetInput1u(fr_composite composite, const fr_char * inputName, unsigned int value);
+extern RPR_API_ENTRY fr_int frCompositeSetInputOp(fr_composite composite, const fr_char * inputName, fr_material_node_arithmetic_operation op);
 extern RPR_API_ENTRY fr_int frCompositeCompute(fr_composite composite, fr_framebuffer fb);
 extern RPR_API_ENTRY fr_int frCompositeGetInfo(fr_composite composite, fr_composite_info composite_info, size_t size, void *  data, size_t * size_ret);
 extern RPR_API_ENTRY fr_int frObjectDelete(void * obj);
@@ -2953,9 +3366,12 @@ extern RPR_API_ENTRY fr_int frPostEffectSetParameter4f(fr_post_effect effect, fr
 extern RPR_API_ENTRY fr_int frContextGetAttachedPostEffectCount(fr_context context, fr_uint *  nb);
 extern RPR_API_ENTRY fr_int frContextGetAttachedPostEffect(fr_context context, fr_uint i, fr_post_effect * out_effect);
 extern RPR_API_ENTRY fr_int frPostEffectGetInfo(fr_post_effect effect, fr_post_effect_info info, size_t size,  void *  data, size_t *  size_ret);
-extern RPR_API_ENTRY fr_int frContextCreateHeteroVolume(fr_context context, fr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void * indicesList, size_t numberOfIndices, fr_hetero_volume_indices_topology indicesListTopology, void * gridData, size_t gridDataSizeByte, fr_uint gridDataTopology___unused);
+extern RPR_API_ENTRY fr_int frContextCreateHeteroVolume(fr_context context, fr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void const * indicesList, size_t numberOfIndices, fr_hetero_volume_indices_topology indicesListTopology, void const * gridData, size_t gridDataSizeByte, fr_uint gridDataTopology___unused);
 extern RPR_API_ENTRY fr_int frShapeSetHeteroVolume(fr_shape shape, fr_hetero_volume heteroVolume);
-extern RPR_API_ENTRY fr_int frHeteroVolumeSetTransform(fr_hetero_volume out_heteroVolume, fr_bool transpose, fr_float const * transform);
+extern RPR_API_ENTRY fr_int frHeteroVolumeSetTransform(fr_hetero_volume heteroVolume, fr_bool transpose, fr_float const * transform);
+extern RPR_API_ENTRY fr_int frHeteroVolumeSetEmission(fr_hetero_volume heteroVolume, fr_float r, fr_float g, fr_float b);
+extern RPR_API_ENTRY fr_int frHeteroVolumeSetAlbedo(fr_hetero_volume heteroVolume, fr_float r, fr_float g, fr_float b);
+extern RPR_API_ENTRY fr_int frHeteroVolumeSetFilter(fr_hetero_volume heteroVolume, fr_hetero_volume_filter filter);
 
 /** @brief Connect nodes
 *

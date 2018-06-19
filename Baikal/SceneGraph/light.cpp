@@ -87,6 +87,7 @@ namespace Baikal
         , m_transparency_texture(nullptr)
         , m_background_texture(nullptr)
         , m_multiplier(1.f)
+        , mirror_x_(false)
     {
     }
 
@@ -228,6 +229,17 @@ namespace Baikal
         // We do not count background texture here since it is only for missing primary rays
         return PI * avg * (1.f / cnt) * scene_radius * scene_radius;
     }
+
+    void ImageBasedLight::SetMirrorX(bool mirror_x)
+    {
+        mirror_x_ = mirror_x;
+    }
+
+    bool ImageBasedLight::GetMirrorX() const
+    {
+        return mirror_x_;
+    }
+
 
     RadeonRays::float3 AreaLight::GetPower(Scene1 const& scene) const
     {

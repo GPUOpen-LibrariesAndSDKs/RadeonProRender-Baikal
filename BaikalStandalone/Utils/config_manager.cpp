@@ -67,13 +67,13 @@ void ConfigManager::CreateConfigs(
     bool hasprimary = false;
 
     int i = (req_platform_index >= 0) ? (req_platform_index) : 0;
-    int d = (req_device_index >= 0) ? (req_device_index) : 0;
 
     int platforms_end = (req_platform_index >= 0) ?
         (req_platform_index + 1) : ((int)platforms.size());
 
     for (; i < platforms_end; ++i)
     {
+        int d = (req_device_index >= 0) ? (req_device_index) : 0;
         int device_end = 0;
 
         if (req_platform_index < 0 || req_device_index < 0)

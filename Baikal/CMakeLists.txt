@@ -49,6 +49,8 @@ set(UTILS_SOURCES
     Utils/tiny_obj_loader.h
     Utils/toFloat.h
     Utils/version.h
+    Utils/mkpath.cpp
+    Utils/mkpath.h
     Utils/cl_inputmap_generator.cpp
     Utils/cl_inputmap_generator.h
     Utils/cl_program.cpp

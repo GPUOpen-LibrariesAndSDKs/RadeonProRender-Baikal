@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "CLW.h"
 #include "RenderFactory/clw_render_factory.h"
 #include "Renderers/renderer.h"
+#include "RadeonProRender.h"
 #include <vector>
 #include <memory>
 
@@ -71,12 +72,9 @@ public:
     };
 
     static void CreateConfigs(
-        Mode mode,
-        bool interop,
-        std::vector<Config>& renderers,
-        int initial_num_bounces,
-        int req_platform_index = -1,
-        int req_device_index = -1);
+        rpr_creation_flags flags,
+        std::vector<Config>& configs,
+        int initial_num_bounces);
 
 private:
 

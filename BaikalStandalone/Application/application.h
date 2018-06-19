@@ -25,6 +25,7 @@
 #include "Application/app_utils.h"
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
+#include "Application/material_explorer.h"
 #include "image_io.h"
 
 #include <future>
@@ -70,24 +71,6 @@ namespace Baikal
         std::string m_object_name;
         std::future<int> m_shape_id_future;
 
-        class MaterialSelector
-        {
-        public:
-            MaterialSelector(Material::Ptr root);
-
-            void GetParent();
-            void SelectMaterial(Material::Ptr);
-            Material::Ptr Get();
-
-            bool IsRoot() const;
-
-        private:
-
-            Material::Ptr m_root;
-            Material::Ptr m_current;
-            VolumeMaterial::Ptr  m_volume;
-        };
-
         class InputSettings
         {
         public:
@@ -111,21 +94,7 @@ namespace Baikal
             std::pair<bool, std::string> m_texture_path;
         };
 
-        // this struct needs to save material parametrs from gui
-        struct MaterialSettings
-        {
-            int id; // shape id
-            std::vector<InputSettings> inputs_info;
-
-            void Clear();
-        };
-
-        bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix = std::string());
-        bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
-
-        std::unique_ptr<MaterialSelector> m_material_selector;
-        std::unique_ptr<ImageIo> m_image_io;
-        std::vector<MaterialSettings> m_material_settings;
-        std::vector<MaterialSettings> m_volume_settings;
+        int m_material_id;
+        MaterialExplorer::Ptr m_material_explorer;
     };
 }
