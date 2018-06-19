@@ -204,8 +204,9 @@ namespace Baikal
         
         RadeonRays::float3 GetPower(Scene1 const& scene) const override;
 
+        // Get and set mirror status for texture around Y axis. (switch X axis direction)
         void SetMirrorX(bool mirror_x);
-        float GetMirrorX() const;
+        bool GetMirrorX() const;
     protected:
         ImageBasedLight();
 

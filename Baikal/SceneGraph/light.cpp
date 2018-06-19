@@ -235,7 +235,7 @@ namespace Baikal
         mirror_x_ = mirror_x;
     }
 
-    float ImageBasedLight::GetMirrorX() const
+    bool ImageBasedLight::GetMirrorX() const
     {
         return mirror_x_;
     }
