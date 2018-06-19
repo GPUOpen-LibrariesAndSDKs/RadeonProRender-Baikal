@@ -14,7 +14,7 @@ def make_header_list_recursive(file, files_to_headers_map):
 
 # generate variable name based on file and its type
 def filevarname(file, typest):
-    return 'g_'+ file.replace(kernels_rel_path, '').replace(ext, '').replace('/', '_') + '_' + typest
+    return 'g_'+ file.replace(dir, '').replace(ext, '').replace('/', '_') + '_' + typest
 
 def print_file(filename, dir):
     fh = open(dir + filename)
@@ -39,14 +39,11 @@ def stringify(filename, dir, typest):
 argvs = sys.argv
 
 if len(argvs) == 4:
-    dir = argvs[1] # Kernels/CL/
+    dir = argvs[1]
     ext = argvs[2]
     typest = argvs[3]
 else:
 	sys.error('Wrong argument count!')
-
-# This is '../Baikal/Kernels/CL/
-kernels_rel_path = os.path.join('../Baikal/', dir)
 
 files = []
 for root, directories, filenames in os.walk(dir):
@@ -55,6 +52,7 @@ for root, directories, filenames in os.walk(dir):
         name = name.replace('\\', '/')
         name = name.replace('./', '')
         files.append(name)
+
 
 print('/* This is an auto-generated file. Do not edit manually! */\n')
 print('#pragma once\n')
@@ -66,7 +64,7 @@ for file in files:
     if file.find(ext) == -1:
         continue
     header_list = stringify(file, dir, typest)
-    files_to_headers_map.append((kernels_rel_path + file, header_list))
+    files_to_headers_map.append((dir + file, header_list))
 
 for file, headers in files_to_headers_map:
     if not headers:
