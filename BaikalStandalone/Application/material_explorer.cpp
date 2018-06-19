@@ -28,9 +28,6 @@ using namespace Baikal;
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs)
 { return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y); }
 
-static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs)
-{ return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y); }
-
 ////////////////////////////////////////////////////////
 //// MaterialExplorer implementation
 ////////////////////////////////////////////////////////
@@ -64,28 +61,46 @@ MaterialExplorer::MaterialExplorer(UberV2Material::Ptr material) :
                 [layers](LayerDesc desc)
                 {
                     if (desc.first == layers)
+                    {
                         return true;
+                    }
                     return false;
                 }));
         };
 
     // collect all supported layers
     if (layers & UberV2Material::kEmissionLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kEmissionLayer));
+    }
     if (layers & UberV2Material::kTransparencyLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kTransparencyLayer));
+    }
     if (layers & UberV2Material::kCoatingLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kCoatingLayer));
+    }
     if (layers & UberV2Material::kReflectionLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kReflectionLayer));
+    }
     if (layers & UberV2Material::kDiffuseLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kDiffuseLayer));
+    }
     if (layers & UberV2Material::kRefractionLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kRefractionLayer));
+    }
     if (layers & UberV2Material::kSSSLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kSSSLayer));
+    }
     if (layers & UberV2Material::kShadingNormalLayer)
+    {
         m_layers.push_back(find_layer(UberV2Material::kShadingNormalLayer));
+    }
 }
 
 bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
@@ -321,7 +336,9 @@ bool MaterialExplorer::DrawExplorer(ImVec2 win_size)
 
     // Scrolling
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
+    {
         scrolling = scrolling + ImGui::GetIO().MouseDelta;
+    }
 
     ImGui::EndChild();
     ImGui::PopStyleColor();

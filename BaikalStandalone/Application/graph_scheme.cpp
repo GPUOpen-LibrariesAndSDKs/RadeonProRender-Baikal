@@ -198,7 +198,9 @@ GraphScheme::Node::Node(
 float GraphScheme::Node::GetFloat() const
 {
     if (node->GetDataType() != InputMap::InputMapType::kConstantFloat)
+    {
         return 0.f;
+    }
 
     auto float_node = std::dynamic_pointer_cast<UberNode_Float>(node);
 
@@ -213,7 +215,9 @@ float GraphScheme::Node::GetFloat() const
 void GraphScheme::Node::SetFloat(float value)
 {
     if (node->GetDataType() != InputMap::InputMapType::kConstantFloat)
+    {
         return;
+    }
 
     auto float_node = std::dynamic_pointer_cast<UberNode_Float>(node);
 
@@ -243,22 +247,26 @@ RadeonRays::float3 GraphScheme::Node::GetFloat3() const
 void GraphScheme::Node::SetFloat3(RadeonRays::float3 value)
 {
     if (node->GetDataType() != InputMap::InputMapType::kConstantFloat3)
+    {
         return;
+    }
 
-        auto float_node = std::dynamic_pointer_cast<UberNode_Float3>(node);
+    auto float_node = std::dynamic_pointer_cast<UberNode_Float3>(node);
 
-        if (!float_node)
-        {
-            throw std::runtime_error("Node::SetFloat3(...): dynamic_pointer_cast failure");
-        }
+    if (!float_node)
+    {
+        throw std::runtime_error("Node::SetFloat3(...): dynamic_pointer_cast failure");
+    }
 
-        float_node->SetValue(value);
+    float_node->SetValue(value);
 }
 
 void GraphScheme::Node::SetTexture(Texture::Ptr texture)
 {
     if (node->GetDataType() != InputMap::InputMapType::kSampler)
+    {
         return;
+    }
 
     auto texture_node = std::dynamic_pointer_cast<UberNode_Sampler>(node);
 

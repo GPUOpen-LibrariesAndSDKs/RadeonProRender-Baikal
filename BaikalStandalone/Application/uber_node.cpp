@@ -34,16 +34,18 @@ std::uint32_t UberNode::m_next_id = 0;
 #define GET_ONE_ARG(type, sufix)\
     {\
         auto input_map = std::dynamic_pointer_cast<type>(m_input_map);\
-        if (!input_map)\
+        if (!input_map){\
             throw std::runtime_error("Dynamic_cast failure");\
+        }\
         return input_map->Get##sufix();\
     }\
 
 #define SET_ONE_ARG(param, type, sufix)\
     {\
         auto input_map_ = std::dynamic_pointer_cast<type>(m_input_map);\
-        if (!input_map_)\
+        if (!input_map_){\
             throw std::runtime_error("Dynamic_cast failure");\
+        }\
         input_map_->Set##sufix(param);\
         break;\
     }\
@@ -138,11 +140,15 @@ std::uint32_t UberNode::m_next_id = 0;
 InputMap::Ptr UberNode_Arg::GetArg(std::uint32_t arg_number)
 {
     if (arg_number != 0)
+    {
         throw std::logic_error(
             "UberNode_Arg::GetArg(...): attempt to set arg_number distinguish");
+    }
 
     if (m_children[arg_number] < 0)
+    {
         return nullptr;
+    }
 
     switch (m_input_map->m_type)
     {
@@ -174,8 +180,10 @@ InputMap::Ptr UberNode_Arg::GetArg(std::uint32_t arg_number)
 void UberNode_Arg::SetArg(InputMap::Ptr input_map, std::uint32_t arg_number)
 {
     if (arg_number != 0)
+    {
         throw std::logic_error(
             "UberNode_Arg::SetArg(...): attempt to set arg_number distinguish");
+    }
 
     if (!input_map)
     { return; }
@@ -235,7 +243,9 @@ bool UberNode::IsValid() const
     for (size_t i = 0; i < arg_number; i++)
     {
         if (m_children[i] < 0)
+        {
             return false;
+        }
     }
 
     return true;
@@ -257,7 +267,10 @@ InputMap_Select::Selection UberNode_Select::GetSelection()
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Select>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Select::GetSelection(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Select::GetSelection(...): invalid dynamic_cast");
+    }
     return input_map->GetSelection();
 }
 
@@ -266,7 +279,10 @@ void UberNode_Select::SetSelection(Baikal::InputMap_Select::Selection selection)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Select>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Select::SetSelection(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Select::SetSelection(...): invalid dynamic_cast");
+    }
     input_map->SetSelection(selection);
 }
 
@@ -278,7 +294,10 @@ std::array<uint32_t, 4> UberNode_Shuffle::GetMask() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+    }
     return input_map->GetMask();
 }
 
@@ -286,7 +305,10 @@ void UberNode_Shuffle::SetMask(const std::array<uint32_t, 4>& mask)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Shuffle::GetMask(...): invalid dynamic_cast");
+    }
     input_map->SetMask(mask);
 }
 
@@ -298,7 +320,10 @@ RadeonRays::matrix UberNode_Matmul::GetMatrix() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_MatMul>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Matmul::GetMatrix(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Matmul::GetMatrix(...): invalid dynamic_cast");
+    }
     return input_map->GetMatrix();
 }
 
@@ -306,7 +331,10 @@ void UberNode_Matmul::SetMatrix(const RadeonRays::matrix &mat4)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_MatMul>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Matmul::SetMatrix(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Matmul::SetMatrix(...): invalid dynamic_cast");
+    }
     input_map->SetMatrix(mat4);
 }
 
@@ -317,28 +345,42 @@ void UberNode_Matmul::SetMatrix(const RadeonRays::matrix &mat4)
 InputMap::Ptr UberNode_TwoArgs::GetArg(std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
+    {
         throw std::logic_error(
             "UberNode_TwoArgs::GetArg(...): 'arg_number' can not be bigger than 1");
+    }
 
     if (arg_number == 0)
+    {
         GET_ARG_HANDLER_A(m_input_map->m_type)
+    }
     else
+    {
         GET_ARG_HANDLER_B(m_input_map->m_type)
+    }
 }
 
 void UberNode_TwoArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
+    {
         throw std::logic_error(
             "UberNode_TwoArgs::SetArg(...): 'arg_number' can not be bigger than 1");
+    }
 
     if (!arg)
+    {
         return;
+    }
 
     if (arg_number == 0)
+    {
         SET_ARG_HANDLER_A(arg, m_input_map->m_type)
+    }
     else
+    {
         SET_ARG_HANDLER_B(arg, m_input_map->m_type)
+    }
 }
 
 ////////////////////////////////////////
@@ -350,7 +392,10 @@ Baikal::InputMap::Ptr UberNode_Lerp::GetControl()
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Lerp>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+    }
     return input_map->GetControl();
 }
 
@@ -359,7 +404,10 @@ void UberNode_Lerp::SetControl(Baikal::InputMap::Ptr control)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Lerp>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Lerp::GetControl(...): invalid dynamic_cast");
+    }
     return input_map->SetControl(control);
 }
 
@@ -372,7 +420,10 @@ std::array<uint32_t, 4> UberNode_Shuffle2::GetMask() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle2>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+    }
     return input_map->GetMask();
 }
 
@@ -381,7 +432,10 @@ void UberNode_Shuffle2::SetMask(const std::array<uint32_t, 4>& mask)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Shuffle2>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Shuffle2::GetMask(...): invalid dynamic_cast");
+    }
     input_map->SetMask(mask);
 }
 
@@ -393,7 +447,10 @@ float UberNode_Float::GetValue() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Float::GetValue(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Float::GetValue(...): invalid dynamic_cast");
+    }
     return input_map->GetValue();
 }
 
@@ -401,7 +458,10 @@ void UberNode_Float::SetValue(float value)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Float::SetValue(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Float::SetValue(...): invalid dynamic_cast");
+    }
     input_map->SetValue(value);
 }
 
@@ -413,7 +473,10 @@ RadeonRays::float3 UberNode_Float3::GetValue() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat3>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Float3::GetValue(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Float3::GetValue(...): invalid dynamic_cast");
+    }
     return input_map->GetValue();
 }
 
@@ -421,7 +484,10 @@ void UberNode_Float3::SetValue(RadeonRays::float3 value)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_ConstantFloat3>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Float3::SetValue(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Float3::SetValue(...): invalid dynamic_cast");
+    }
     input_map->SetValue(value);
 }
 
@@ -433,7 +499,10 @@ Texture::Ptr UberNode_Sampler::GetValue() const
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Sampler>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Sampler::GetValue(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Sampler::GetValue(...): invalid dynamic_cast");
+    }
     return input_map->GetTexture();
 }
 
@@ -441,7 +510,10 @@ void UberNode_Sampler::SetValue(Texture::Ptr value)
 {
     auto input_map = std::dynamic_pointer_cast<InputMap_Sampler>(m_input_map);
     if (!input_map)
-        throw std::runtime_error("UberNode_Sampler::SetValue(...): invalid dynamic_cast");
+    {
+        throw std::runtime_error(
+            "UberNode_Sampler::SetValue(...): invalid dynamic_cast");
+    }
     input_map->SetTexture(value);
 }
 
@@ -452,41 +524,62 @@ void UberNode_Sampler::SetValue(Texture::Ptr value)
 InputMap::Ptr UberNode_ThreeArgs::GetArg(std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
+    {
         throw std::logic_error(
             "UberNode_ThreeArgs::GetArg(...): 'arg_number can not be bigger than two");
+    }
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(m_input_map);
 
     if (!input_map)
-        throw std::runtime_error("UberNode_ThreeArgs::GetArg_(...): Dynamic_cast failure");
+    {
+        throw std::runtime_error(
+            "UberNode_ThreeArgs::GetArg_(...): Dynamic_cast failure");
+    }
 
     if (arg_number == 0)
+    {
         return input_map->GetSourceRange();
+    }
     else if (arg_number == 1)
+    {
         return input_map->GetDestinationRange();
+    }
     else
+    {
         return input_map->GetData();
+    }
 }
 
 // Set UberNode_ThreeArgs child
 void UberNode_ThreeArgs::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 {
     if (arg_number > MAX_ARGS - 1)
+    {
         throw std::logic_error(
             "UberNode_ThreeArgs::SetArg(...): 'arg_number can not be bigger than two");
+    }
 
     auto input_map = std::dynamic_pointer_cast<InputMap_Remap>(arg);
 
     if (!input_map)
+    {
         throw std::runtime_error(
             "UberNode_ThreeArgs::SetArg(...): dynamic_cast failure");
+    }
 
     if (arg_number == 0)
+    {
         input_map->SetSourceRange(input_map);
+    }
     else if (arg_number == 1)
+    {
         input_map->SetDestinationRange(input_map);
+    }
     else
+    {
         input_map->SetData(input_map);
+    }
 }
 
 
@@ -576,7 +669,10 @@ void UberNode::SetArg(InputMap::Ptr arg, std::uint32_t arg_number)
 UberNode::Ptr UberNode::GetChildren(std::uint32_t arg_number) const
 {
     if ((size_t)arg_number > m_children.size())
-        throw std::logic_error("UberNode::GetChildren(...): attempt to get nonexistent 'arg_number'");
+    {
+        throw std::logic_error(
+            "UberNode::GetChildren(...): attempt to get nonexistent 'arg_number'");
+    }
 
     return m_children[arg_number];
 }
@@ -684,7 +780,9 @@ std::uint32_t UberNode::GetArgNumber()
 int UberNode::GetParentId() const
 {
     if (m_parent)
+    {
         return m_parent->GetId();
+    }
     return -1;
 }
 

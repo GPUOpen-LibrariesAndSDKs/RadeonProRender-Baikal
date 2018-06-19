@@ -53,18 +53,24 @@ void UberTree::BuildTree(InputMap::Ptr input_map)
 bool UberTree::AddTree(std::uint32_t id, std::uint32_t arg_number, UberTree::Ptr tree)
 {
     if (arg_number > MAX_ARGS - 1)
+    {
         return false;
+    }
 
     UberNode::Ptr parent = nullptr;
 
     for (const auto& node : m_nodes)
     {
         if (node->GetId() == id)
+        {
             parent = node;
+        }
     }
 
     if (!parent)
+    {
         return false; // there is no Node with such id (argument 'id')
+    }
 
     auto child = tree->m_nodes.begin();
 
@@ -86,7 +92,9 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
     for (const auto& node : m_nodes)
     {
         if (node->GetId() == id)
+        {
             removed_node = node;
+        }
     }
 
     if (!removed_node)
@@ -102,7 +110,9 @@ std::vector<UberTree::Ptr> UberTree::ExcludeNode(std::uint32_t id)
         {
             auto child = parent->m_children[i];
             if (child->GetId() == id)
+            {
                 parent->m_children[i] = nullptr;
+            }
         }
     }
 
@@ -137,7 +147,9 @@ bool UberTree::IsValid() const
     for (const auto& node : m_nodes)
     {
         if (!node->IsValid())
+        {
             return false;
+        }
     }
     return true;
 }
@@ -147,7 +159,9 @@ UberNode::Ptr UberTree::Find(std::uint32_t id)
     for (auto node : m_nodes)
     {
         if (node->GetId() == id)
+        {
             return node;
+        }
     }
     return nullptr;
 }
@@ -189,7 +203,9 @@ UberTreeIterator::UberTreeIterator(UberTree::Ptr tree) : m_tree(tree)
 bool UberTreeIterator::IsValid() const
 {
     if (!m_tree)
+    {
         return false;
+    }
 
     return !m_queue.empty();
 }
