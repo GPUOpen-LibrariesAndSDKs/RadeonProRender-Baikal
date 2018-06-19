@@ -5,7 +5,8 @@ import re
 
 def make_header_list_recursive(file, files_to_headers_map):
     header_list = []
-    for i in [incs for f, incs in files_to_headers_map if f == file][0]:
+    file_includes = [incs for f, incs in files_to_headers_map if f == file]
+    for i in file_includes[0]:
         header_list += make_header_list_recursive(i, files_to_headers_map)
         header_list += [i]
     # remove duplicates and save order
@@ -13,22 +14,20 @@ def make_header_list_recursive(file, files_to_headers_map):
 
 # generate variable name based on file and its type
 def filevarname(file, typest):
-    return 'g_'+ file.replace(ext, '') + '_' + typest
+    return 'g_'+ file.replace(kernels_rel_path, '').replace(ext, '').replace('/', '_') + '_' + typest
 
 def print_file(filename, dir):
-    fh = open(dir + '/' + filename)
+    fh = open(dir + filename)
     # include only new files
     header_list = []
     for line in fh.readlines():
         a = line.strip('\r\n')
-        match = re.search('#include\s*<.*/(.+)>', a)
+        match = re.search('#include\s*<(.*/.+)>', a)
         if match:
             header_name = match.group(1)
             if header_name not in header_list:
                 header_list.append(header_name)
-                print('\"#include <' + header_name + '> \\n\"\\')
-        else:
-            print('"' + a.replace('\\','\\\\').replace('"', '\\"') + ' \\n"\\')
+        print('"' + a.replace('\\','\\\\').replace('"', '\\"') + ' \\n"\\')
     return header_list
 
 def stringify(filename, dir, typest):
@@ -40,13 +39,22 @@ def stringify(filename, dir, typest):
 argvs = sys.argv
 
 if len(argvs) == 4:
-    dir = argvs[1]
+    dir = argvs[1] # Kernels/CL/
     ext = argvs[2]
     typest = argvs[3]
 else:
 	sys.error('Wrong argument count!')
 
-files = os.listdir(dir)
+# This is '../Baikal/Kernels/CL/
+kernels_rel_path = os.path.join('../Baikal/', dir)
+
+files = []
+for root, directories, filenames in os.walk(dir):
+    for filename in filenames:
+        name = os.path.join(os.path.relpath(root, dir), filename)
+        name = name.replace('\\', '/')
+        name = name.replace('./', '')
+        files.append(name)
 
 print('/* This is an auto-generated file. Do not edit manually! */\n')
 print('#pragma once\n')
@@ -58,7 +66,7 @@ for file in files:
     if file.find(ext) == -1:
         continue
     header_list = stringify(file, dir, typest)
-    files_to_headers_map.append((file, header_list))
+    files_to_headers_map.append((kernels_rel_path + file, header_list))
 
 for file, headers in files_to_headers_map:
     if not headers:

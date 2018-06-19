@@ -162,7 +162,7 @@ if (BAIKAL_EMBED_KERNELS)
     target_compile_definitions(Baikal PRIVATE BAIKAL_EMBED_KERNELS)
     add_custom_command(
         OUTPUT ${KERNEL_HEADER}
-        COMMAND ${PYTHON_EXECUTABLE} ${STRINGIFY_SCRIPT} ${Baikal_SOURCE_DIR}/Baikal/Kernels/CL/ .cl opencl > ${KERNEL_HEADER}
+        COMMAND ${PYTHON_EXECUTABLE} ${STRINGIFY_SCRIPT} Kernels/CL/ .cl opencl > ${KERNEL_HEADER}
         DEPENDS ${KERNELS_SOURCES}
         COMMENT "Generating Baikal kernel cache"
         VERBATIM)

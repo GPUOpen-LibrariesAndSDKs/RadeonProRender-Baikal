@@ -69,11 +69,10 @@ namespace Baikal
         AddCommonOptions(options);
 
         m_program_id = m_program_manager->CreateProgramFromSource(context, name, source);
-        std::for_each(headers.cbegin(), headers.cend(),
-                      [this](std::pair<char const*, char const*> const& it)
-                      {
-                          m_program_manager->AddHeader(it.first, it.second);
-                      });
+        for (auto const& header : headers)
+        {
+            m_program_manager->AddHeader(header.first, header.second);
+        }
     }
 #else
     inline ClwClass::ClwClass(
