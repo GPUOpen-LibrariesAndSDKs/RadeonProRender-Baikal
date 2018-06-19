@@ -1065,6 +1065,7 @@ namespace Baikal
                 clw_light->tex_transparency = transparency_tex ? tex_collector.GetItemIndex(transparency_tex) : -1;
                 auto background_tex = ibl.GetBackgroundTexture();
                 clw_light->tex_background = background_tex ? tex_collector.GetItemIndex(background_tex) : -1;
+                clw_light->ibl_mirror_x = ibl.GetMirrorX();
                 break;
             }
 
