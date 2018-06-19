@@ -97,9 +97,10 @@ namespace Baikal
         }
 
         // Sets layers that should be enabled in material
-        void SetLayers(uint32_t layers);
+        void SetLayers(std::uint32_t layers);
+
         // Returns enabled material layers
-        uint32_t GetLayers() const
+        std::uint32_t GetLayers() const
         {
             return layers_;
         }
@@ -111,7 +112,7 @@ namespace Baikal
         bool is_link_to_reflection_;
         bool is_double_sided_;
         bool is_multiscatter_;
-        uint32_t layers_;
+        std::uint32_t layers_;
         std::set<std::string> m_active_inputs;
 
     };
