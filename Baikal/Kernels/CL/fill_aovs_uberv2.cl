@@ -180,7 +180,7 @@ KERNEL void FillAOVsUberV2(
                 int tex = EnvironmentLight_GetBackgroundTexture(&light);
                 if (tex != -1)
                 {
-                    aov_background[idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex));
+                    aov_background[idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex), light.ibl_mirror_x);
                 }
             }
             aov_background[idx].w += 1.0f;
