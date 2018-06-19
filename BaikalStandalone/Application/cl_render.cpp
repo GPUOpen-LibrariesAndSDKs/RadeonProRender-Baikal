@@ -69,7 +69,7 @@ namespace Baikal
         catch (CLWException &)
         {
             force_disable_itnerop = true;
-            ConfigManager::CreateConfigs(settings.mode, false, m_cfgs, settings.num_bounces);
+            ConfigManager::CreateConfigs(settings.mode, false, m_cfgs, settings.num_bounces, settings.platform_index, settings.device_index);
         }
 
         m_width = (std::uint32_t)settings.width;

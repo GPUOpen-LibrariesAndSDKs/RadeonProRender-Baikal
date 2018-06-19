@@ -110,24 +110,15 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = (creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP) != 0;
-    if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
+    try
     {
-        try
-        {
-            //TODO: check num_bounces 
-            ConfigManager::CreateConfigs(ConfigManager::kUseSingleGpu, interop, m_cfgs, 5);
-        }
-        catch (...)
-        {
-            // failed to create context with interop
-            result = RPR_ERROR_UNSUPPORTED;
-        }
+        //TODO: check num_bounces
+        ConfigManager::CreateConfigs(creation_flags, m_cfgs, 5);
     }
-    else
+    catch (...)
     {
-        result = RPR_ERROR_UNIMPLEMENTED;
-    }    
+        result = RPR_ERROR_UNSUPPORTED;
+    }
 
     if (result != RPR_SUCCESS)
     {
@@ -303,7 +294,7 @@ FramebufferObject* ContextObject::CreateFrameBuffer(rpr_framebuffer_format const
     //TODO:: implement for several devices
     if (m_cfgs.size() != 1)
     {
-        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
+        throw Exception(RPR_ERROR_UNIMPLEMENTED, "ContextObject: invalid config count.");
     }
     auto& c = m_cfgs[0];
     Baikal::Output* out = c.factory->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height).release();
