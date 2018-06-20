@@ -19,19 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include "Application/application.h"
 
-int main(int argc, char * argv[])
-{
-    try
-    {
-        Baikal::Application app(argc, argv);
-        app.Run();
-    }
-    catch (std::exception& ex)
-    {
-        std::cout << ex.what() << std::endl;
-        return -1;
-    }
-    return 0;
-}
+int main()
+{ }
