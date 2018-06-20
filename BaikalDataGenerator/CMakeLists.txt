@@ -1,5 +1,7 @@
 set(DATAGENERATOR_SOURCES
-    Source/main.cpp)
+    Source/main.cpp
+    Source/render.h
+    Source/render.cpp)
 
 set(MAIN_SOURCES Source/main.cpp)
 
@@ -16,7 +18,7 @@ target_include_directories(BaikalDataGenerator
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE .)
     
-target_link_libraries(BaikalDataGenerator PRIVATE Baikal BaikalIO glfw3::glfw3 OpenGL::GL GLEW::GLEW)
+target_link_libraries(BaikalDataGenerator PRIVATE Baikal BaikalIO)
 
 set_target_properties(BaikalDataGenerator
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGenerator)
@@ -24,14 +26,14 @@ set_target_properties(BaikalDataGenerator
 if (WIN32)
     add_custom_command(TARGET BaikalDataGenerator POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${BAIKALDATAGENERATOR_DLLS}
+            ${IO_DLLS}
             "$<TARGET_FILE_DIR:BaikalDataGenerator>"
     )
 endif ()
 
 install(TARGETS BaikalDataGenerator RUNTIME DESTINATION bin)
 if (WIN32)
-    install(FILES ${BAIKALDATAGENERATOR_DLLS} DESTINATION bin)
+    install(FILES ${IO_DLLS} DESTINATION bin)
 endif ()
 install(DIRECTORY ${RESOURCES_SRC} DESTINATION .)
 

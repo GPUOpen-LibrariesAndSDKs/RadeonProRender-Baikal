@@ -93,6 +93,9 @@ namespace Baikal
         char* camera_focal_length = GetCmdOption(argv, argv + argc, "-fl");
         s.camera_focal_length = camera_focal_length ? (float)atof(camera_focal_length) : s.camera_focal_length;
 
+        char* out_folder = GetCmdOption(argv, argv + argc, "-output_cam");
+        s.camera_out_folder = out_folder ? out_folder : s.camera_out_folder;
+
         char* camera_senor_size_x = GetCmdOption(argv, argv + argc, "-ssx");
         s.camera_sensor_size.x = camera_senor_size_x ? (float)atof(camera_senor_size_x) : s.camera_sensor_size.x;
 
@@ -217,6 +220,7 @@ namespace Baikal
         , camera_focus_distance(1.f)
         , camera_focal_length(0.035f) // 35mm lens
         , camera_type (CameraType::kPerspective)
+        , camera_out_folder(".")
 
         //app
         , progressive(false)
