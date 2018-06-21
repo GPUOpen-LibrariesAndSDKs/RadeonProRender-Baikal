@@ -73,7 +73,7 @@ public:
         m_reference_path.append("/");
         m_output_path.append("/");
 
-
+        Baikal::SceneObject::ResetId();
 
         // Prefer GPU devices if nothing has been specified
         if (platform_index == -1)

@@ -76,18 +76,10 @@ namespace Baikal
 
     void MonteCarloRenderer::Render(ClwScene const& scene)
     {
-        auto output = FindFirstNonZeroOutput();
-
+        auto output = FindFirstNonZeroOutput(true, true);
         if (!output)
         {
-            if (GetOutput(OutputType::kVisibility))
-            {
-                throw std::runtime_error("Visibility AOV requires color AOV to be set");
-            }
-            else
-            {
-                throw std::runtime_error("No outputs set");
-            }
+            throw std::runtime_error("No outputs set");
         }
 
         auto output_size = int2(output->width(), output->height());
@@ -119,15 +111,15 @@ namespace Baikal
     void MonteCarloRenderer::RenderTile(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
         // Number of rays to generate
-        auto output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
+        auto color_output = static_cast<ClwOutput*>(GetOutput(OutputType::kColor));
 
-        if (output)
+        if (color_output)
         {
             auto num_rays = tile_size.x * tile_size.y;
-            auto output_size = int2(output->width(), output->height());
+            auto output_size = int2(color_output->width(), color_output->height());
 
             GenerateTileDomain(output_size, tile_origin, tile_size);
-            GeneratePrimaryRays(scene, *output, tile_size);
+            GeneratePrimaryRays(scene, *color_output, tile_size);
 
             if (scene.background_idx > -1)
             {
@@ -135,7 +127,7 @@ namespace Baikal
                     scene,
                     num_rays,
                     Estimator::QualityLevel::kStandard,
-                    output->data(),
+                    color_output->data(),
                     true,
                     false,
                     std::bind(&MonteCarloRenderer::HandleMissedRays, this, std::ref(scene), output_size.x, output_size.y,
@@ -147,11 +139,22 @@ namespace Baikal
                     scene,
                     num_rays,
                     Estimator::QualityLevel::kStandard,
-                    output->data());
+                    color_output->data());
 
         }
+        else
+        {
+            // Check if we set intermediate value output without enabled color output
+            for (std::size_t i = 0; i < static_cast<std::size_t>(Estimator::IntermediateValue::kMax); ++i)
+            {
+                if (m_estimator->HasIntermediateValueBuffer(static_cast<Estimator::IntermediateValue>(i)))
+                {
+                    throw std::runtime_error("IntermediateValue AOV require color AOV to be set");
+                }
+            }
+        }
 
-        // Check if we have other outputs, than color
+        // Check if we have outputs that we can render in single pass
         bool aov_pass_needed = (FindFirstNonZeroOutput(false) != nullptr);
         if (aov_pass_needed)
         {
@@ -193,38 +196,55 @@ namespace Baikal
         }
     }
 
-    Output* MonteCarloRenderer::FindFirstNonZeroOutput(bool include_color) const
+    Output* MonteCarloRenderer::FindFirstNonZeroOutput(bool include_multipass, bool include_singlepass) const
     {
-        // Find first non-zero output
-        auto current_output = include_color ? GetOutput(Renderer::OutputType::kColor) : nullptr;
-        if (!current_output)
-        {
-            for (auto i = 1U; i < static_cast<std::uint32_t>(Renderer::OutputType::kVisibility); ++i)
-            {
-                current_output = GetOutput(static_cast<Renderer::OutputType>(i));
+        // If we don't use anything, why are we calling this function?
+        assert(include_multipass || include_singlepass);
 
-                if (current_output)
-                {
-                    break;
-                }
+        std::uint32_t start_index = include_multipass ? 0
+            : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
+        std::uint32_t end_index = include_singlepass ? static_cast<std::uint32_t>(Renderer::OutputType::kMax)
+            : static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput);
+        
+        Output* current_output = nullptr;
+        for (auto i = start_index; i < end_index; ++i)
+        {
+            current_output = GetOutput(static_cast<Renderer::OutputType>(i));
+
+            if (current_output)
+            {
+                break;
             }
         }
-
         return current_output;
     }
 
     void MonteCarloRenderer::SetOutput(OutputType type, Output* output)
     {
-        if (type == OutputType::kVisibility)
+        static const std::map<OutputType, Estimator::IntermediateValue> kOutputTypeToIntermediateValue = 
         {
-            if (!m_estimator->SupportsIntermediateValue(Estimator::IntermediateValue::kVisibility))
+            { OutputType::kOpacity, Estimator::IntermediateValue::kOpacity },
+            { OutputType::kVisibility, Estimator::IntermediateValue::kVisibility },
+        };
+        
+        auto it = kOutputTypeToIntermediateValue.find(type);
+        if (it != kOutputTypeToIntermediateValue.end())
+        {
+            if (!m_estimator->SupportsIntermediateValue(it->second))
             {
-                throw std::runtime_error("Visibility AOV not supported by an underlying estimator");
+                throw std::runtime_error("Visibility AOV is not supported by an underlying estimator");
             }
 
-            auto clw_output = static_cast<ClwOutput*>(output);
-
-            m_estimator->SetIntermediateValueBuffer(Estimator::IntermediateValue::kVisibility, clw_output->data());
+            if (output)
+            {
+                auto clw_output = static_cast<ClwOutput*>(output);
+                m_estimator->SetIntermediateValueBuffer(it->second, clw_output->data());
+            }
+            else
+            {
+                // Set empty buffer
+                m_estimator->SetIntermediateValueBuffer(it->second, CLWBuffer<RadeonRays::float3>());
+            }
         }
 
         Renderer::SetOutput(type, output);
@@ -234,7 +254,7 @@ namespace Baikal
     void MonteCarloRenderer::FillAOVs(ClwScene const& scene, int2 const& tile_origin, int2 const& tile_size)
     {
         // Find first non-zero AOV to get buffer dimensions
-        auto output = FindFirstNonZeroOutput();
+        auto output = FindFirstNonZeroOutput(false);
         auto output_size = int2(output->width(), output->height());
 
         // Generate tile domain
@@ -260,17 +280,22 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.uvs);
         fill_kernel.SetArg(argc++, scene.indices);
         fill_kernel.SetArg(argc++, scene.shapes);
+        fill_kernel.SetArg(argc++, scene.shapes_additional);
         fill_kernel.SetArg(argc++, scene.material_attributes);
         fill_kernel.SetArg(argc++, scene.textures);
         fill_kernel.SetArg(argc++, scene.texturedata);
         fill_kernel.SetArg(argc++, scene.envmapidx);
+        fill_kernel.SetArg(argc++, scene.background_idx);
+        fill_kernel.SetArg(argc++, output_size.x);
+        fill_kernel.SetArg(argc++, output_size.y);
         fill_kernel.SetArg(argc++, scene.lights);
         fill_kernel.SetArg(argc++, scene.num_lights);
         fill_kernel.SetArg(argc++, rand_uint());
         fill_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kRandomSeed));
         fill_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kSobolLUT));
         fill_kernel.SetArg(argc++, m_sample_counter);
-        for (auto i = 1U; i < static_cast<std::uint32_t>(Renderer::OutputType::kMax); ++i)
+        for (auto i = static_cast<std::uint32_t>(Renderer::OutputType::kMaxMultiPassOutput) + 1;
+            i < static_cast<std::uint32_t>(Renderer::OutputType::kMax); ++i)
         {
             if (auto aov = static_cast<ClwOutput*>(GetOutput(static_cast<Renderer::OutputType>(i))))
             {

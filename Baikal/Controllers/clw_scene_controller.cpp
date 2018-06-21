@@ -444,12 +444,14 @@ namespace Baikal
         // Total number of entries in shapes GPU array
         auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
         out.shapes = m_context.CreateBuffer<ClwScene::Shape>(num_shapes, CL_MEM_READ_ONLY);
+        out.shapes_additional = m_context.CreateBuffer<ClwScene::ShapeAdditionalData>(num_shapes, CL_MEM_READ_ONLY);
 
         float3* vertices = nullptr;
         float3* normals = nullptr;
         float2* uvs = nullptr;
         int* indices = nullptr;
         ClwScene::Shape* shapes = nullptr;
+        ClwScene::ShapeAdditionalData* shapes_additional = nullptr;
 
         // Map arrays and prepare to write data
         LogInfo("Mapping buffers...\n");
@@ -458,6 +460,7 @@ namespace Baikal
         m_context.MapBuffer(0, out.uvs, CL_MAP_WRITE, &uvs);
         m_context.MapBuffer(0, out.indices, CL_MAP_WRITE, &indices);
         m_context.MapBuffer(0, out.shapes, CL_MAP_WRITE, &shapes).Wait();
+        m_context.MapBuffer(0, out.shapes_additional, CL_MAP_WRITE, &shapes_additional).Wait();
 
         // Keep associated shapes data for instance look up.
         // We retrieve data from here while serializing instances,
@@ -518,7 +521,11 @@ namespace Baikal
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
+
+            ClwScene::ShapeAdditionalData shape_additional;
+            shape_additional.group_id = mesh->GetGroupId();
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         // Excluded shapes are handled in almost the same way
@@ -575,7 +582,11 @@ namespace Baikal
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
+
+            ClwScene::ShapeAdditionalData shape_additional;
+            shape_additional.group_id = mesh->GetGroupId();
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         // Handle instances
@@ -605,7 +616,11 @@ namespace Baikal
 
             shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
+
+            ClwScene::ShapeAdditionalData shape_additional;
+            shape_additional.group_id = iter->GetGroupId();
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         LogInfo("Unmapping buffers...\n");
@@ -614,6 +629,7 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.uvs, uvs);
         m_context.UnmapBuffer(0, out.indices, indices);
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
+        m_context.UnmapBuffer(0, out.shapes_additional, shapes_additional).Wait();
 
         LogInfo("Updating intersector...\n");
 
@@ -635,11 +651,14 @@ namespace Baikal
         SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
 
         ClwScene::Shape* shapes = nullptr;
+        ClwScene::ShapeAdditionalData* shapes_additional = nullptr;
 
         // Map arrays and prepare to write data
         m_context.MapBuffer(0, out.shapes, CL_MAP_READ | CL_MAP_WRITE, &shapes).Wait();
+        m_context.MapBuffer(0, out.shapes_additional, CL_MAP_READ | CL_MAP_WRITE, &shapes_additional).Wait();
 
         auto current_shape = shapes;
+        auto current_shape_additional = shapes_additional;
         for (auto& iter : meshes)
         {
             auto mesh = iter;
@@ -655,8 +674,10 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape_additional->group_id = iter->GetGroupId();
 
             ++current_shape;
+            ++current_shape_additional;
         }
 
         // Excluded shapes are handled in almost the same way
@@ -676,8 +697,10 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape_additional->group_id = iter->GetGroupId();
 
             ++current_shape;
+            ++current_shape_additional;
         }
 
         // Handle instances
@@ -697,11 +720,14 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape_additional->group_id = iter->GetGroupId();
 
             ++current_shape;
+            ++current_shape_additional;
         }
 
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
+        m_context.UnmapBuffer(0, out.shapes_additional, shapes_additional).Wait();
     }
 
     void ClwSceneController::UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const

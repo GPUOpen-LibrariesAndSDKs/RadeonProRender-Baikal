@@ -51,7 +51,14 @@ namespace Baikal
     public:
         enum class OutputType
         {
+            // Multi-pass outputs that will
+            // be rendered in Estimator kernel
             kColor = 0,
+            kOpacity,
+            kVisibility,
+            kMaxMultiPassOutput,
+            // Single-pass outputs that will
+            // be rendered in AOV kernel
             kWorldPosition,
             kWorldShadingNormal,
             kWorldGeometricNormal,
@@ -62,9 +69,10 @@ namespace Baikal
             kWorldBitangent,
             kGloss,
             kMeshID,
+            kGroupID,
+            kBackground,
             kDepth,
             kShapeId,
-            kVisibility,
             kMax
         };
 

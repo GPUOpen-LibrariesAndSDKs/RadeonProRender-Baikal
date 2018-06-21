@@ -77,12 +77,56 @@ TEST_F(AovTest, Aov_ShadingNormal)
     TestAovImplemented(RPR_AOV_SHADING_NORMAL);
 }
 
-// Make sure that aovs below are not implemented
 TEST_F(AovTest, Aov_Opacity)
 {
-    TestAovNotImplemented(RPR_AOV_OPACITY);
+    // Create dummy framebuffer
+    rpr_framebuffer_desc desc = { kOutputWidth, kOutputHeight };
+    rpr_framebuffer_format fmt = { 4, RPR_COMPONENT_TYPE_FLOAT32 };
+    rpr_framebuffer dummy_fb = nullptr;
+    ASSERT_EQ(rprContextCreateFrameBuffer(m_context, fmt, &desc, &dummy_fb), RPR_SUCCESS);
+    ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_COLOR, dummy_fb), RPR_SUCCESS);
+
+    CreateScene(SceneType::kOpacityPlanes);
+    AddEnvironmentLight("../Resources/Textures/studio015.hdr");
+    
+    ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_OPACITY, m_framebuffer), RPR_SUCCESS);
+    Render();
+    SaveAndCompare();
 }
 
+TEST_F(AovTest, Aov_ObjectID)
+{
+    TestAovImplemented(RPR_AOV_OBJECT_ID);
+}
+
+TEST_F(AovTest, Aov_ObjectGroupID)
+{
+    CreateScene(SceneType::kSphereAndPlane);
+    AddEnvironmentLight("../Resources/Textures/studio015.hdr");
+
+    ASSERT_EQ(rprContextSetAOV(m_context, RPR_AOV_OBJECT_GROUP_ID, m_framebuffer), RPR_SUCCESS);
+    const rpr_shape sphere = GetShape("sphere");
+    ASSERT_EQ(rprShapeSetObjectGroupID(sphere, 0), RPR_SUCCESS);
+    const rpr_shape plane = GetShape("plane");
+    ASSERT_EQ(rprShapeSetObjectGroupID(plane, 1), RPR_SUCCESS);
+
+    Render();
+    SaveAndCompare("1");
+
+    // Move sphere to group 1
+    ASSERT_EQ(rprShapeSetObjectGroupID(sphere, 1), RPR_SUCCESS);
+    
+    Render();
+    SaveAndCompare("2");
+
+}
+
+TEST_F(AovTest, Aov_Background)
+{
+    TestAovImplemented(RPR_AOV_BACKGROUND);
+}
+
+// Make sure that aovs below are not implemented
 TEST_F(AovTest, Aov_MaterialIndex)
 {
     TestAovNotImplemented(RPR_AOV_MATERIAL_IDX);
@@ -93,24 +137,9 @@ TEST_F(AovTest, Aov_Depth)
     TestAovNotImplemented(RPR_AOV_DEPTH);
 }
 
-TEST_F(AovTest, Aov_ObjectID)
-{
-    TestAovNotImplemented(RPR_AOV_OBJECT_ID);
-}
-
-TEST_F(AovTest, Aov_ObjectGroupID)
-{
-    TestAovNotImplemented(RPR_AOV_OBJECT_GROUP_ID);
-}
-
 TEST_F(AovTest, Aov_ShadowCatcher)
 {
     TestAovNotImplemented(RPR_AOV_SHADOW_CATCHER);
-}
-
-TEST_F(AovTest, Aov_Background)
-{
-    TestAovNotImplemented(RPR_AOV_BACKGROUND);
 }
 
 TEST_F(AovTest, Aov_Emission)

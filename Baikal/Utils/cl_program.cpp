@@ -193,7 +193,7 @@ CLWProgram CLProgram::Compile(const std::string &opts)
         file.close();
 #endif
     }
-    catch (CLWException exception)
+    catch (CLWException& )
     {
         std::cerr << "Compilation failed!" << std::endl;
         std::cerr << "Dumping source to file:" << m_program_name << ".cl.failed" << std::endl;

@@ -100,7 +100,11 @@ namespace
                                                                         {RPR_AOV_GEOMETRIC_NORMAL, Baikal::Renderer::OutputType::kWorldGeometricNormal},
                                                                         {RPR_AOV_SHADING_NORMAL, Baikal::Renderer::OutputType::kWorldShadingNormal},
                                                                         {RPR_AOV_UV, Baikal::Renderer::OutputType::kUv},
-                                                                        {RPR_AOV_WORLD_COORDINATE, Baikal::Renderer::OutputType::kWorldPosition}, 
+                                                                        {RPR_AOV_WORLD_COORDINATE, Baikal::Renderer::OutputType::kWorldPosition},
+                                                                        {RPR_AOV_OBJECT_ID, Baikal::Renderer::OutputType::kMeshID},
+                                                                        {RPR_AOV_OBJECT_GROUP_ID, Baikal::Renderer::OutputType::kGroupID},
+                                                                        {RPR_AOV_BACKGROUND, Baikal::Renderer::OutputType::kBackground},
+                                                                        {RPR_AOV_OPACITY, Baikal::Renderer::OutputType::kOpacity},
                                                                         };
 
 }// anonymous

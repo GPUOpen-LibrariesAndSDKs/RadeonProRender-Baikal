@@ -588,6 +588,49 @@ namespace Baikal
             light->SetConeShape(RadeonRays::float2(0.05f, 0.1f));
             scene->AttachLight(light);
         }
+        else if (fname == "transparent_planes")
+        {
+            auto transparent_mtl = UberV2Material::Create();
+            transparent_mtl->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f)));
+            transparent_mtl->SetInputValue("uberv2.transparency", InputMap_ConstantFloat::Create(0.9f));
+            transparent_mtl->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kTransparencyLayer);
+
+            for (int i = 0; i < 8; ++i)
+            {
+                auto wall = CreateQuad(
+                    {
+                        RadeonRays::float3(-8, 8, i * 2.0f),
+                        RadeonRays::float3(-8, 0, i * 2.0f),
+                        RadeonRays::float3( 8, 0, i * 2.0f),
+                        RadeonRays::float3( 8, 8, i * 2.0f),
+                    }
+                    , false);
+                wall->SetMaterial(transparent_mtl);
+                scene->AttachShape(wall);
+            }
+
+            auto floor_mtl = UberV2Material::Create();
+            floor_mtl->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(0.5f, 0.5f, 0.5f, 0.0f)));
+            floor_mtl->SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create(0.01f));
+            floor_mtl->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+
+            auto floor = CreateQuad(
+                {
+                    RadeonRays::float3(-8, 0, -8),
+                    RadeonRays::float3(8, 0, -8),
+                    RadeonRays::float3(8, 0, 8),
+                    RadeonRays::float3(-8, 0, 8),
+                }
+            , false);
+            floor->SetMaterial(floor_mtl);
+            scene->AttachShape(floor);
+
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+			auto ibl = ImageBasedLight::Create();
+			ibl->SetTexture(ibl_texture);
+			ibl->SetMultiplier(1.f);
+			scene->AttachLight(ibl);
+		}
         else if (fname == "4kmaterials")
         {
             auto mesh = CreateSphere(64, 32, 0.1f, float3(0.f, 0.0f, 0.f));

@@ -1057,7 +1057,15 @@ rpr_int rprShapeSetDisplacementScale(rpr_shape shape, rpr_float minscale, rpr_fl
 
 rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint objectGroupID)
 {
-    UNSUPPORTED_FUNCTION
+    //cast data
+    ShapeObject* mesh = WrapObject::Cast<ShapeObject>(shape);
+    if (!shape)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    mesh->GetShape()->SetGroupId(objectGroupID);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprShapeSetDisplacementMaterial(rpr_shape shape, rpr_material_node materialNode)

@@ -56,12 +56,18 @@ KERNEL void FillAOVsUberV2(
     GLOBAL int const* restrict indices,
     // Shapes
     GLOBAL Shape const* restrict shapes,
+    GLOBAL ShapeAdditionalData const* restrict shapes_additional,
     // Materials
     GLOBAL int const* restrict material_attributes,
     // Textures
     TEXTURE_ARG_LIST,
     // Environment texture index
     int env_light_idx,
+    // Background texture index
+    int background_idx,
+    // Output size
+    int width,
+    int height,
     // Emissives
     GLOBAL Light const* restrict lights,
     // Number of emissive objects
@@ -110,10 +116,18 @@ KERNEL void FillAOVsUberV2(
     int gloss_enabled,
     // Specularity map
     GLOBAL float4* restrict aov_gloss,
-	// Mesh_id enabled flag
+    // Mesh_id enabled flag
     int mesh_id_enabled,
-	// Mesh_id AOV
+    // Mesh_id AOV
     GLOBAL float4* restrict mesh_id,
+    // Group id enabled flag
+    int group_id_enabled,
+    // Group id AOV
+    GLOBAL float4* restrict group_id,
+    // Background enabled flag
+    int background_enabled,
+    // Background aov
+    GLOBAL float4* restrict aov_background,
     // Depth enabled flag
     int depth_enabled,
     // Depth map
@@ -123,9 +137,6 @@ KERNEL void FillAOVsUberV2(
     // Shape id map stores shape ud in every pixel
     // And negative number if there is no any shape in the pixel
     GLOBAL float4* restrict aov_shape_ids,
-    // NOTE: following are fake parameters, handled outside
-    int visibility_enabled,
-    GLOBAL float4* restrict aov_visibility,
     GLOBAL InputMapData const* restrict input_map_values
 )
 {
@@ -153,6 +164,27 @@ KERNEL void FillAOVsUberV2(
 
         if (shape_ids_enabled)
             aov_shape_ids[idx].x = -1;
+
+        if (background_enabled)
+        {
+            if (background_idx != -1)
+            {
+                float x = (float)(idx % width) / (float)width;
+                float y = (float)(idx / width) / (float)height;
+                float2 uv = make_float2(x, y);
+                aov_background[idx].xyz += Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
+            }
+            else if (env_light_idx != -1)
+            {
+                Light light = lights[env_light_idx];
+                int tex = EnvironmentLight_GetBackgroundTexture(&light);
+                if (tex != -1)
+                {
+                    aov_background[idx].xyz += light.multiplier * Texture_SampleEnvMap(rays[global_id].d.xyz, TEXTURE_ARGS_IDX(tex), light.ibl_mirror_x);
+                }
+            }
+            aov_background[idx].w += 1.0f;
+        }
 
         if (isect.shapeid > -1)
         {
@@ -338,9 +370,24 @@ KERNEL void FillAOVsUberV2(
             
             if (mesh_id_enabled)
             {
-                mesh_id[idx] = make_float4(isect.shapeid, isect.shapeid, isect.shapeid, 1.f);
+                Sampler shapeid_sampler;
+                shapeid_sampler.index = shapes[isect.shapeid - 1].id;
+                mesh_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&shapeid_sampler),
+                    UniformSampler_Sample1D(&shapeid_sampler),
+                    UniformSampler_Sample1D(&shapeid_sampler)), 0.0f, 1.0f);
+                mesh_id[idx].w += 1.0f;
             }
-            
+
+            if (group_id_enabled)
+            {
+                Sampler groupid_sampler;
+                groupid_sampler.index = shapes_additional[isect.shapeid - 1].group_id;
+                group_id[idx].xyz += clamp(make_float3(UniformSampler_Sample1D(&groupid_sampler),
+                    UniformSampler_Sample1D(&groupid_sampler),
+                    UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);
+                group_id[idx].w += 1.0f;
+            }
+
             if (depth_enabled)
             {
                 float w = aov_depth[idx].w;

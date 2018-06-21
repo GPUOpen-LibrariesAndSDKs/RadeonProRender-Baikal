@@ -103,7 +103,7 @@ namespace Baikal
         Estimator& GetEstimator() { return *m_estimator;  }
 
         // Find non-zero AOV
-        Output* FindFirstNonZeroOutput(bool include_color = true) const;
+        Output* FindFirstNonZeroOutput(bool include_multipass = true, bool include_singlepass = true) const;
 
         // Handler for missed rays used when scene have background override with plain image
         void HandleMissedRays(const ClwScene &scene, uint32_t w, uint32_t h,
