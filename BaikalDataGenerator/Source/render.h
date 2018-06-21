@@ -39,15 +39,15 @@
 
 struct CameraInfo
 {
-    RadeonRays::float3 camera_pos;
-    RadeonRays::float3 camera_at;
-    RadeonRays::float3 camera_up;
-    RadeonRays::float2 camera_sensor_size;
-    RadeonRays::float2 camera_zcap;
-    float camera_aperture;
-    float camera_focus_distance;
-    float camera_focal_length;
-    Baikal::CameraType camera_type;
+    RadeonRays::float3 pos;
+    RadeonRays::float3 at;
+    RadeonRays::float3 up;
+    RadeonRays::float2 sensor_size;
+    RadeonRays::float2 zcap;
+    float aperture;
+    float focus_distance;
+    float focal_length;
+    Baikal::CameraType type;
 };
 
 

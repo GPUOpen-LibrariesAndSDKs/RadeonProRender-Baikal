@@ -95,19 +95,24 @@ void Render::LoadCameraXml(const std::string &full_path)
         CameraInfo cam_info;
 
         // eye
-        cam_info.camera_pos.x = elem->FloatAttribute("cpx");
-        cam_info.camera_pos.y = elem->FloatAttribute("cpy");
-        cam_info.camera_pos.z = elem->FloatAttribute("cpz");
+        cam_info.pos.x = elem->FloatAttribute("cpx");
+        cam_info.pos.y = elem->FloatAttribute("cpy");
+        cam_info.pos.z = elem->FloatAttribute("cpz");
 
         // center
-        cam_info.camera_pos.x = elem->FloatAttribute("tpx");
-        cam_info.camera_pos.y = elem->FloatAttribute("tpy");
-        cam_info.camera_pos.z = elem->FloatAttribute("tpz");
+        cam_info.at.x = elem->FloatAttribute("tpx");
+        cam_info.at.y = elem->FloatAttribute("tpy");
+        cam_info.at.z = elem->FloatAttribute("tpz");
+
+        // up
+        cam_info.up.x = elem->FloatAttribute("upx");
+        cam_info.up.y = elem->FloatAttribute("upy");
+        cam_info.up.z = elem->FloatAttribute("upz");
 
         //other values
-        cam_info.camera_focal_length = elem->FloatAttribute("focal_length");
-        cam_info.camera_focus_distance = elem->FloatAttribute("focus_dist");
-        cam_info.camera_aperture = elem->FloatAttribute("aperture");
+        cam_info.focal_length = elem->FloatAttribute("focal_length");
+        cam_info.focus_distance = elem->FloatAttribute("focus_dist");
+        cam_info.aperture = elem->FloatAttribute("aperture");
 
         m_camera_states.push_back(cam_info);
     }
@@ -189,6 +194,46 @@ void Render::LoadLightXml(const std::string &full_path)
         new_light->SetEmittedRadiance(r);
         m_scene->AttachLight(new_light);
         elem = elem->NextSiblingElement("light");
+    }
+}
+
+static bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
+{
+    return (left.x != right.x) ||
+           (left.y != right.y) ||
+           (left.z != right.z);
+}
+
+void Render::GenerateDataset(const std::string &full_path)
+{
+    // do not forget to iplement light loading
+    for (const auto &cam_state: m_camera_states)
+    {
+        if (cam_state.aperture != m_camera->GetAperture())
+        {
+            m_camera->SetAperture(cam_state.aperture);
+        }
+
+        if (cam_state.focal_length != m_camera->GetFocalLength())
+        {
+            m_camera->SetFocalLength(cam_state.focal_length);
+        }
+
+        if (cam_state.focus_distance != m_camera->GetFocusDistance())
+        {
+            m_camera->SetFocusDistance(cam_state.focus_distance);
+        }
+
+        auto cur_pos = m_camera->GetPosition();
+        auto at = m_camera->GetForwardVector();
+        auto up = m_camera->GetUpVector();
+
+        if (cur_pos != cam_state.pos ||
+            at != cam_state.at ||
+            up != cam_state.up)
+        {
+            m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
+        }
     }
 }
 
