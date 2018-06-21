@@ -61,10 +61,10 @@ public:
                       std::uint32_t output_width = 256,
                       std::uint32_t output_height = 256);
 
-    void LoadCameraXml(const std::string &file_name, const std::string &path);
-    void LoadLightXml(const std::string &file_name, const std::string &path);
+    void LoadCameraXml(const std::string &full_path);
+    void LoadLightXml(const std::string &full_path);
 
-    void GenerateDataset(const std::string &file_name, const std::string &path);
+    void GenerateDataset(const std::string &full_path);
 
 protected:
     Render(const std::string &file_name,

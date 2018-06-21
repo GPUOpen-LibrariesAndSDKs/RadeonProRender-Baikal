@@ -21,7 +21,11 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "render.h"
+#include "XML/tinyxml2.h"
+#include "SceneGraph/light.h"
+#include "BaikalIO/image_io.h"
 
+using namespace Baikal;
 
 Render::Render(const std::string &file_name,
                const std::string &path,
@@ -70,6 +74,83 @@ Render::Render(const std::string &file_name,
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get());
 }
 
+void Render::LoadLightXml(const std::string &full_path)
+{
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(full_path.c_str());
+    auto root = doc.FirstChildElement("light_list");
+
+    if (!root)
+    {
+        throw std::runtime_error("Render::LoadLightXml(...):"
+                                 "Failed to open lights set file.");
+    }
+
+    Light::Ptr new_light;
+    tinyxml2::XMLElement* elem = root->FirstChildElement("light");
+
+    while (elem)
+    {
+        //type
+        std::string type = elem->Attribute("type");
+        if (type == "point")
+        {
+            new_light = PointLight::Create();
+        }
+        else if (type == "direct")
+        {
+            new_light = DirectionalLight::Create();
+        }
+        else if (type == "spot")
+        {
+            new_light = SpotLight::Create();
+            RadeonRays::float2 cs;
+            cs.x = elem->FloatAttribute("csx");
+            cs.y = elem->FloatAttribute("csy");
+            //this option available only for spot light
+            SpotLight::Ptr spot = std::dynamic_pointer_cast<SpotLight>(new_light);
+            spot->SetConeShape(cs);
+        }
+        else if (type == "ibl")
+        {
+            new_light = ImageBasedLight::Create();
+            std::string tex_name = elem->Attribute("tex");
+            float mul = elem->FloatAttribute("mul");
+            
+            //this option available only for ibl
+            ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<ImageBasedLight>(new_light);
+            auto image_io = ImageIo::CreateImageIo();
+            Texture::Ptr tex = image_io->LoadImage(tex_name.c_str());
+            ibl->SetTexture(tex);
+            ibl->SetMultiplier(mul);
+        }
+        else
+        {
+            throw std::runtime_error("Render::LoadLightXml(...): Invalid light type " + type);
+        }
+        RadeonRays::float3 p;
+        RadeonRays::float3 d;
+        RadeonRays::float3 r;
+
+        p.x = elem->FloatAttribute("posx");
+        p.y = elem->FloatAttribute("posy");
+        p.z = elem->FloatAttribute("posz");
+
+        d.x = elem->FloatAttribute("dirx");
+        d.y = elem->FloatAttribute("diry");
+        d.z = elem->FloatAttribute("dirz");
+
+        r.x = elem->FloatAttribute("radx");
+        r.y = elem->FloatAttribute("rady");
+        r.z = elem->FloatAttribute("radz");
+
+        new_light->SetPosition(p);
+        new_light->SetDirection(d);
+        new_light->SetEmittedRadiance(r);
+        m_scene->AttachLight(new_light);
+        elem = elem->NextSiblingElement("light");
+    }
+}
 
 namespace {
 
