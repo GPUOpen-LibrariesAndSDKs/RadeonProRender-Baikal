@@ -74,6 +74,45 @@ Render::Render(const std::string &file_name,
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get());
 }
 
+void Render::LoadCameraXml(const std::string &full_path)
+{
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(full_path.c_str());
+    auto root = doc.FirstChildElement("cam_list");
+
+    if (!root)
+    {
+        throw std::runtime_error("Render::LoadCameraXml(...):"
+                                 "Failed to open lights set file.");
+    }
+
+    tinyxml2::XMLElement* elem = root->FirstChildElement("camera");
+
+    m_camera_states.clear();
+
+    while (elem)
+    {
+        CameraInfo cam_info;
+
+        // eye
+        cam_info.camera_pos.x = elem->FloatAttribute("cpx");
+        cam_info.camera_pos.y = elem->FloatAttribute("cpy");
+        cam_info.camera_pos.z = elem->FloatAttribute("cpz");
+
+        // center
+        cam_info.camera_pos.x = elem->FloatAttribute("tpx");
+        cam_info.camera_pos.y = elem->FloatAttribute("tpy");
+        cam_info.camera_pos.z = elem->FloatAttribute("tpz");
+
+        //other values
+        cam_info.camera_focal_length = elem->FloatAttribute("focal_length");
+        cam_info.camera_focus_distance = elem->FloatAttribute("focus_dist");
+        cam_info.camera_aperture = elem->FloatAttribute("aperture");
+
+        m_camera_states.push_back(cam_info);
+    }
+}
+
 void Render::LoadLightXml(const std::string &full_path)
 {
     tinyxml2::XMLDocument doc;
@@ -128,6 +167,7 @@ void Render::LoadLightXml(const std::string &full_path)
         {
             throw std::runtime_error("Render::LoadLightXml(...): Invalid light type " + type);
         }
+
         RadeonRays::float3 p;
         RadeonRays::float3 d;
         RadeonRays::float3 r;

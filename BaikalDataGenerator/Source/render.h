@@ -81,5 +81,4 @@ private:
     Baikal::PerspectiveCamera::Ptr m_camera;
 
     std::vector<CameraInfo> m_camera_states;
-    Baikal::Light::Ptr m_light;
 };
