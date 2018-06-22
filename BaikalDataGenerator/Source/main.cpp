@@ -32,7 +32,7 @@ void Run(DGenConfig config)
 
     render->LoadLightXml(config.light_dir, config.light_file);
     render->LoadCameraXml(config.camera_dir, config.camera_file);
-    render->GenerateDataset(config.outpute_dir, config.outpute_file);
+    render->GenerateDataset(config.output_dir, config.output_file);
 }
 
 int main(int argc, char *argv[])

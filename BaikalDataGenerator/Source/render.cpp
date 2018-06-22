@@ -90,6 +90,10 @@ Render::Render(const std::string &file_name,
     m_output = m_factory->CreateOutput(output_width, output_height);
     m_output->Clear(RadeonRays::float3(0.0f));
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get());
+
+    m_camera = Baikal::PerspectiveCamera::Create(RadeonRays::float3(0.f, 0.f, 0.f),
+                                                 RadeonRays::float3(0.f, 0.f, 0.f),
+                                                 RadeonRays::float3(0.f, 0.f, 0.f));
 }
 
 void Render::LoadCameraXml(const std::string &path, const std::string &file_name)
@@ -137,6 +141,7 @@ void Render::LoadCameraXml(const std::string &path, const std::string &file_name
         cam_info.aperture = elem->FloatAttribute("aperture");
 
         m_camera_states.push_back(cam_info);
+        elem = elem->NextSiblingElement("camera");
     }
 }
 
