@@ -2566,3 +2566,42 @@ rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * ou
     UNSUPPORTED_FUNCTION
 }
 
+rpr_int rprImageSetGamma(rpr_image image, rpr_float type)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprImageSetMipmapEnabled(rpr_image image, rpr_bool enabled)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprImageSetFilter(rpr_image image, rpr_image_filter_type type)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeSetFilter(rpr_hetero_volume heteroVolume, rpr_hetero_volume_filter filter)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeSetEmission(rpr_hetero_volume heteroVolume, rpr_float r, rpr_float g, rpr_float b)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeSetAlbedo(rpr_hetero_volume heteroVolume, rpr_float r, rpr_float g, rpr_float b)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeGetInfo(rpr_hetero_volume heteroVol, rpr_hetero_volume_parameter heteroVol_info, size_t size, void * data, size_t * size_ret)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprBufferGetInfo(rpr_buffer buffer, rpr_buffer_info buffer_info, size_t size, void * data, size_t * size_ret)
+{
+    UNSUPPORTED_FUNCTION
+}
