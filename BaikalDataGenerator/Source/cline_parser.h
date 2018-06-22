@@ -27,21 +27,26 @@
 
 struct DGenConfig
 {
+    std::string scene_dir;
+    std::string scene_file;
     std::string light_dir;
     std::string light_file;
     std::string camera_dir;
     std::string camera_file;
     std::string outpute_dir;
+    std::string outpute_file;
 };
 
 class ClineParser
 {
 public:
     ClineParser();
+
     DGenConfig Parse(int argc, char * argv[]);
+
+    bool CmdOptionExists(char** begin, char** end, const std::string& option);
+    void ShowHelp();
 
 private:
     char* GetCmdOption(char ** begin, char ** end, const std::string & option);
-    bool CmdOptionExists(char** begin, char** end, const std::string& option);
-    void ShowHelp();
 };

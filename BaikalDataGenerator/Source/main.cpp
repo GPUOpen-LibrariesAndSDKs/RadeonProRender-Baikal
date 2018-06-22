@@ -23,13 +23,33 @@ THE SOFTWARE.
 #include "cline_parser.h"
 #include "render.h"
 
+void Run(DGenConfig config)
+{
+    config.scene_file = (!config.scene_file.empty()) ? (config.scene_file) :
+                                                       ("sphere + ibl.test");
+
+    auto render = Render::Create(config.scene_file, config.scene_dir);
+
+    render->LoadLightXml(config.light_dir, config.light_file);
+    render->LoadCameraXml(config.camera_dir, config.camera_file);
+    render->GenerateDataset(config.outpute_dir, config.outpute_file);
+}
+
 int main(int argc, char *argv[])
 {
     try
     {
         ClineParser cline_parser;
 
+        if (cline_parser.CmdOptionExists(argv, argv + argc, "-help"))
+        {
+            cline_parser.ShowHelp();
+            return 0;
+        }
+
         auto config = cline_parser.Parse(argc, argv);
+
+        Run(config);
     }
     catch (std::exception& ex)
     {

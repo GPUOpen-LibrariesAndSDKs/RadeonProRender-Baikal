@@ -92,10 +92,14 @@ Render::Render(const std::string &file_name,
     m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get());
 }
 
-void Render::LoadCameraXml(const std::string &full_path)
+void Render::LoadCameraXml(const std::string &path, const std::string &file_name)
 {
+    std::stringstream ss;
+
+    ss << path << "/" << file_name;
+
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(full_path.c_str());
+    doc.LoadFile(ss.str().c_str());
     auto root = doc.FirstChildElement("cam_list");
 
     if (!root)
@@ -136,10 +140,14 @@ void Render::LoadCameraXml(const std::string &full_path)
     }
 }
 
-void Render::LoadLightXml(const std::string &full_path)
+void Render::LoadLightXml(const std::string &path, const std::string &file_name)
 {
+    std::stringstream ss;
+
+    ss << path << "/" << file_name;
+
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(full_path.c_str());
+    doc.LoadFile(ss.str().c_str());
     auto root = doc.FirstChildElement("light_list");
 
     if (!root)

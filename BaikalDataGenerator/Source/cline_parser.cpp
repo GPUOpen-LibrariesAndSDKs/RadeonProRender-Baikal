@@ -68,8 +68,17 @@ DGenConfig ClineParser::Parse(int argc, char * argv[])
     char* camera_file = GetCmdOption(argv, argv + argc, "-camera_file");
     config.camera_file = camera_file ? camera_file : "";
 
+    char* outpute_file = GetCmdOption(argv, argv + argc, "-outpute_file");
+    config.outpute_file = outpute_file ? outpute_file : "";
+
     char* outpute_dir = GetCmdOption(argv, argv + argc, "-outpute_dir");
     config.outpute_dir = outpute_dir ? outpute_dir : "";
+
+    char* scene_dir = GetCmdOption(argv, argv + argc, "-scene_dir");
+    config.scene_dir = scene_dir ? scene_dir : "";
+
+    char* scene_file = GetCmdOption(argv, argv + argc, "-scene_file");
+    config.scene_file = scene_file ? scene_file : "";
 
     return config;
 }
