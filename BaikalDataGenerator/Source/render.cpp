@@ -23,6 +23,7 @@ THE SOFTWARE.
 #include "render.h"
 #include "XML/tinyxml2.h"
 #include "SceneGraph/light.h"
+#include "Output/clwoutput.h"
 #include "BaikalIO/image_io.h"
 
 using namespace Baikal;
@@ -64,9 +65,9 @@ Render::Render(const std::string &file_name,
 
     auto platform = platforms[platform_index];
     auto device = platform.GetDevice(device_index);
-    auto context = CLWContext::Create(device);
+    m_context = CLWContext::Create(device);
 
-    m_factory = std::make_unique<Baikal::ClwRenderFactory>(context, "cache");
+    m_factory = std::make_unique<Baikal::ClwRenderFactory>(m_context, "cache");
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     m_controller = m_factory->CreateSceneController();
     m_output = m_factory->CreateOutput(output_width, output_height);
@@ -204,36 +205,116 @@ static bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
            (left.z != right.z);
 }
 
+void Render::UpdateCameraPos(const CameraInfo& cam_state)
+{
+    if (cam_state.aperture != m_camera->GetAperture())
+    {
+        m_camera->SetAperture(cam_state.aperture);
+    }
+
+    if (cam_state.focal_length != m_camera->GetFocalLength())
+    {
+        m_camera->SetFocalLength(cam_state.focal_length);
+    }
+
+    if (cam_state.focus_distance != m_camera->GetFocusDistance())
+    {
+        m_camera->SetFocusDistance(cam_state.focus_distance);
+    }
+
+    auto cur_pos = m_camera->GetPosition();
+    auto at = m_camera->GetForwardVector();
+    auto up = m_camera->GetUpVector();
+
+    if (cur_pos != cam_state.pos ||
+        at != cam_state.at ||
+        up != cam_state.up)
+    {
+        m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
+    }
+}
+
+void Render::SaveOutput(Renderer::OutputType type,
+                        const std::string& path,
+                        const std::string& file_name,
+                        int bpp)
+{
+    OIIO_NAMESPACE_USING;
+
+    std::vector<RadeonRays::float3> output_data;
+    auto output = m_renderer->GetOutput(type);
+    int width = output->width;
+    int height = output->height;
+
+    assert(output);
+
+    auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
+    output_data.resize(buffer.GetElementCount());
+
+    m_context.ReadBuffer(0,
+                         static_cast<Baikal::ClwOutput*>(output)->data(),
+                         &output_data[0],
+                         output_data.size()).Wait();
+
+    TypeDesc fmt;
+    switch (bpp)
+    {
+        case 8:
+            fmt = TypeDesc::UINT8;
+            break;
+        case 16:
+            fmt = TypeDesc::UINT16;
+            break;
+        case 32:
+            fmt = TypeDesc::FLOAT;
+            break;
+        default:
+            throw std::runtime_error("Render::SaveOutput(...):"
+                                     "Unhandled bpp of image.");
+    }
+
+    for (auto y = 0u; y < height; ++y)
+    {
+        for (auto x = 0u; x < width; ++x)
+        {
+            float3 val = output_data[(height - 1 - y) * width + x];
+            val *= (1.f / val.w);
+            output_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
+            output_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
+            output_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
+        }
+    }
+
+    std::string full_path = path;
+    full_path.append("/");
+    full_path.append(file_name);
+
+    auto out = std::make_unique<ImageOutput>(ImageOutput::create(full_path));
+
+    if (!out)
+    {
+        throw std::runtime_error("Render::SaveOutput(...):"
+                                 "Can't create image file on disk");
+    }
+
+    ImageSpec spec(width, height, 3, fmt);
+    out->open(file_name, spec);
+    out->write_image(TypeDesc::FLOAT, &output_data[0], sizeof(float3));
+    out->close();
+}
+
 void Render::GenerateDataset(const std::string &full_path)
 {
-    // do not forget to iplement light loading
+    using namespace RadeonRays;
+
+    auto width = m_output->width();
+    auto height = m_output->height();
+    std::vector<float3> data(width * height);
+    std::vector<float3>  out_data(width * height);
+
     for (const auto &cam_state: m_camera_states)
     {
-        if (cam_state.aperture != m_camera->GetAperture())
-        {
-            m_camera->SetAperture(cam_state.aperture);
-        }
-
-        if (cam_state.focal_length != m_camera->GetFocalLength())
-        {
-            m_camera->SetFocalLength(cam_state.focal_length);
-        }
-
-        if (cam_state.focus_distance != m_camera->GetFocusDistance())
-        {
-            m_camera->SetFocusDistance(cam_state.focus_distance);
-        }
-
-        auto cur_pos = m_camera->GetPosition();
-        auto at = m_camera->GetForwardVector();
-        auto up = m_camera->GetUpVector();
-
-        if (cur_pos != cam_state.pos ||
-            at != cam_state.at ||
-            up != cam_state.up)
-        {
-            m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
-        }
+        UpdateCameraPos(cam_state);
     }
 }
 
@@ -245,7 +326,7 @@ namespace {
                        const std::string &path,
                        std::uint32_t output_width,
                        std::uint32_t output_height)
-            : Render(file_name, path, output_width, output_height) {}
+        : Render(file_name, path, output_width, output_height) {}
     };
 }
 

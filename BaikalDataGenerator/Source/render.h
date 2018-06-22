@@ -73,12 +73,15 @@ protected:
            std::uint32_t output_height);
 
 private:
+    void UpdateCameraPos(const CameraInfo& cam_state);
+    void SaveOutput(Renderer::OutputType type, const std::string& path, const std::string& name, int bpp);
+
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> m_factory;
     std::unique_ptr<Baikal::Output> m_output;
     Baikal::Scene1::Ptr m_scene;
     Baikal::PerspectiveCamera::Ptr m_camera;
-
+    CLWContext m_context;
     std::vector<CameraInfo> m_camera_states;
 };
