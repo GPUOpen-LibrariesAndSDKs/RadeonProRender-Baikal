@@ -64,7 +64,7 @@ public:
     void LoadCameraXml(const std::string &full_path);
     void LoadLightXml(const std::string &full_path);
 
-    void GenerateDataset(const std::string &full_path);
+    void GenerateDataset(const std::string &path, const std::string &file_name);
 
 protected:
     Render(const std::string &file_name,
@@ -74,7 +74,11 @@ protected:
 
 private:
     void UpdateCameraPos(const CameraInfo& cam_state);
-    void SaveOutput(Renderer::OutputType type, const std::string& path, const std::string& name, int bpp);
+    void SaveOutput(Baikal::Renderer::OutputType type,
+                    const std::string& path,
+                    const std::string& name,
+                    const std::string& extension,
+                    int bpp);
 
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;

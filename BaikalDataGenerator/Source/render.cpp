@@ -28,6 +28,23 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
+struct OutputDesc
+{
+    Renderer::OutputType type;
+    std::string name;
+    // extansion of the file to save
+    std::string file_ext;
+    int bpp;
+};
+
+// if you need to add new output for saving to disk
+// just put its description in thic collection
+std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "exr", 16 },
+                                               { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "jpg", 8 },
+                                               { Renderer::OutputType::kDepth, "view_shading_depth", "exr", 16 },
+                                               { Renderer::OutputType::kAlbedo, "albedo", "jpg", 8 },
+                                               { Renderer::OutputType::kGloss, "gloss", "jpg", 8 } };
+
 Render::Render(const std::string &file_name,
                const std::string &path,
                std::uint32_t output_width,
@@ -237,14 +254,15 @@ void Render::UpdateCameraPos(const CameraInfo& cam_state)
 void Render::SaveOutput(Renderer::OutputType type,
                         const std::string& path,
                         const std::string& file_name,
+                        const std::string& extension,
                         int bpp)
 {
     OIIO_NAMESPACE_USING;
 
     std::vector<RadeonRays::float3> output_data;
     auto output = m_renderer->GetOutput(type);
-    int width = output->width;
-    int height = output->height;
+    auto width = output->width();
+    auto height = output->height();
 
     assert(output);
 
@@ -285,11 +303,15 @@ void Render::SaveOutput(Renderer::OutputType type,
         }
     }
 
-    std::string full_path = path;
-    full_path.append("/");
-    full_path.append(file_name);
+    std::stringstream ss;
 
-    auto out = std::make_unique<ImageOutput>(ImageOutput::create(full_path));
+    auto time = std::chrono::high_resolution_clock::now();
+
+    ss << path << "/" << file_name << "-" 
+       << std::to_string(time.time_since_epoch().count())
+       << "." << extension;
+
+    std::unique_ptr<ImageOutput> out(ImageOutput::create(ss.str()));
 
     if (!out)
     {
@@ -298,12 +320,12 @@ void Render::SaveOutput(Renderer::OutputType type,
     }
 
     ImageSpec spec(width, height, 3, fmt);
-    out->open(file_name, spec);
+    out->open(ss.str(), spec);
     out->write_image(TypeDesc::FLOAT, &output_data[0], sizeof(float3));
     out->close();
 }
 
-void Render::GenerateDataset(const std::string &full_path)
+void Render::GenerateDataset(const std::string &path, const std::string &file_name)
 {
     using namespace RadeonRays;
 
@@ -315,6 +337,11 @@ void Render::GenerateDataset(const std::string &full_path)
     for (const auto &cam_state: m_camera_states)
     {
         UpdateCameraPos(cam_state);
+
+        for (const auto& item: outputs_collection)
+        {
+            SaveOutput(item.type, path, file_name, item.file_ext, item.bpp);
+        }
     }
 }
 

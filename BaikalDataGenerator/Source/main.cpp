@@ -20,5 +20,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-int main()
-{ }
+#include "cline_parser.h"
+#include "render.h"
+
+int main(int argc, char *argv[])
+{
+    try
+    {
+        ClineParser cline_parser;
+
+        auto config = cline_parser.Parse(argc, argv);
+    }
+    catch (std::exception& ex)
+    {
+        std::cout << ex.what();
+    }
+}
