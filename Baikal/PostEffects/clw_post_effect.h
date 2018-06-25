@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "Utils/clw_class.h"
 
 #include <string>
+#include <unordered_map>
 
 namespace Baikal
 {
@@ -41,7 +42,7 @@ namespace Baikal
 #ifdef BAIKAL_EMBED_KERNELS
         // Constructor, receives CLW context
         ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& name,
-            std::string const& source, std::map<char const*, char const*> const& headers);
+            std::string const& source, std::unordered_map<char const*, char const*> const& headers);
 #else
         ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& file_name);
 #endif
@@ -49,7 +50,7 @@ namespace Baikal
 
 #ifdef BAIKAL_EMBED_KERNELS
     inline ClwPostEffect::ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& name,
-        std::string const& source, std::map<char const*, char const*> const& headers)
+        std::string const& source, std::unordered_map<char const*, char const*> const& headers)
         : ClwClass(context, program_manager, name, source, headers)
     {
     }

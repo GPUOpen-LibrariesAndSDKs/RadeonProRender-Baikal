@@ -23,7 +23,7 @@ namespace Baikal
             const CLProgramManager *program_manager,
             std::string const& name,
             std::string const& source,
-            std::map<char const*, char const*> const& headers,
+            std::unordered_map<char const*, char const*> const& headers,
             std::string const& opts = "");
 #else
         //create from file
@@ -60,7 +60,7 @@ namespace Baikal
         const CLProgramManager *program_manager,
         std::string const& name,
         std::string const& source,
-        std::map<char const*, char const*> const& headers,
+        std::unordered_map<char const*, char const*> const& headers,
         std::string const& opts)
         : m_context(context)
         , m_program_manager(program_manager)

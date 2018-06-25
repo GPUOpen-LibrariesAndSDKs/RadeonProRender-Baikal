@@ -56,7 +56,7 @@ for root, directories, filenames in os.walk(dir):
 
 print('/* This is an auto-generated file. Do not edit manually! */\n')
 print('#pragma once\n')
-print('#include <map>\n')
+print('#include <unordered_map>\n')
 
 # this will contain tuple(filename, include files)
 files_to_headers_map = []
@@ -69,7 +69,7 @@ for file in files:
 for file, headers in files_to_headers_map:
     if not headers:
         continue
-    print('static const std::map<char const*, char const*> ' + filevarname(file, typest) + '_headers =\n{')
+    print('static const std::unordered_map<char const*, char const*> ' + filevarname(file, typest) + '_headers =\n{')
     for i in make_header_list_recursive(file, files_to_headers_map):
         print('    {"' + i + '", ' + filevarname(i, typest) + '},')
     print('};\n')
