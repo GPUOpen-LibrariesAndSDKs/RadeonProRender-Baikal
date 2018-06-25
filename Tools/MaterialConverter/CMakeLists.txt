@@ -1,16 +1,8 @@
 SET(BAIKAL_OLD_SOURCES
-    #BaikalOld/SceneGraph/camera.cpp
-    #BaikalOld/SceneGraph/camera.h
     BaikalOld/SceneGraph/iterator.h
-    #BaikalOld/SceneGraph/light.cpp
-    #BaikalOld/SceneGraph/light.h
     BaikalOld/SceneGraph/material.cpp
     BaikalOld/SceneGraph/material.h
     BaikalOld/SceneGraph/scene_object.h
-    #BaikalOld/SceneGraph/scene1.cpp
-    #BaikalOld/SceneGraph/scene1.h
-    #BaikalOld/SceneGraph/shape.cpp
-    #BaikalOld/SceneGraph/shape.h
     BaikalOld/SceneGraph/texture.cpp
     BaikalOld/SceneGraph/texture.h)
 
