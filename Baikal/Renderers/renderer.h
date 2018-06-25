@@ -61,7 +61,6 @@ namespace Baikal
             // be rendered in AOV kernel
             kWorldPosition,
             kWorldShadingNormal,
-            kViewShadingNormal,
             kWorldGeometricNormal,
             kUv,
             kWireframe,

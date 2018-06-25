@@ -42,7 +42,7 @@ struct OutputDesc
 // if you need to add new output for saving to disk
 // just put its description in thic collection
 std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "jpg", 16 },
-                                               { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "jpg", 8 },
+                                               // { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "jpg", 8 },
                                                { Renderer::OutputType::kDepth, "view_shading_depth", "exr", 16 },
                                                { Renderer::OutputType::kAlbedo, "albedo", "jpg", 8 },
                                                { Renderer::OutputType::kGloss, "gloss", "jpg", 8 } };
