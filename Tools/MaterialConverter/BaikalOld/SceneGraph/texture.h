@@ -33,6 +33,7 @@
 #include "math/int2.h"
 #include <memory>
 #include <string>
+#include <iostream>
 
 #include "scene_object.h"
 

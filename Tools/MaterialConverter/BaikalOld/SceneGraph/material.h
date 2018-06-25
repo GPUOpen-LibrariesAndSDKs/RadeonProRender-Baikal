@@ -32,7 +32,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
-
+#include <iostream>
 #include "math/float3.h"
 
 #include "scene_object.h"

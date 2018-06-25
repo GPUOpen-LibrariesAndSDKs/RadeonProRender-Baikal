@@ -1,8 +1,6 @@
 #include "material_io.h"
 
-#include "BaikalOld/SceneGraph/scene1.h"
 #include "BaikalOld/SceneGraph/iterator.h"
-#include "BaikalOld/SceneGraph/shape.h"
 #include "BaikalOld/SceneGraph/material.h"
 #include "BaikalOld/SceneGraph/IO/image_io.h"
 
@@ -435,97 +433,6 @@ namespace BaikalOld
         return std::make_unique<ContainerIterator<std::set<Material::Ptr>>>(std::move(materials));
     }
 
-    //void MaterialIo::SaveMaterialsFromScene(std::string const& filename, Scene1 const& scene)
-    //{
-    //    auto shape_iter = scene.CreateShapeIterator();
-
-    //    Collector mat_collector;
-    //    // Collect materials from shapes first
-    //    mat_collector.Collect(*shape_iter,
-    //        // This function adds all materials to resulting map
-    //        // recursively via Material dependency API
-    //    [](SceneObject::Ptr item) -> std::set<SceneObject::Ptr>
-    //    {
-    //        // Resulting material set
-    //        std::set<SceneObject::Ptr> mats;
-    //        // Material stack
-    //        std::stack<Material::Ptr> material_stack;
-
-    //        // Get material from current shape
-    //        auto shape = std::static_pointer_cast<Shape>(item);
-    //        auto material = shape->GetMaterial();
-
-    //        if (material)
-    //        {
-    //            // Push to stack as an initializer
-    //            material_stack.push(material);
-    //        }
-
-    //        // Drain the stack
-    //        while (!material_stack.empty())
-    //        {
-    //            // Get current material
-    //            auto m = material_stack.top();
-    //            material_stack.pop();
-
-    //            // Emplace into the set
-    //            mats.emplace(m);
-
-    //            // Create dependency iterator
-    //            std::unique_ptr<Iterator> mat_iter = m->CreateMaterialIterator();
-
-    //            // Push all dependencies into the stack
-    //            for (; mat_iter->IsValid(); mat_iter->Next())
-    //            {
-    //                material_stack.push(mat_iter->ItemAs<Material>());
-    //            }
-    //        }
-
-    //        // Return resulting set
-    //        return mats;
-    //    });
-
-    //    auto mat_iter = mat_collector.CreateIterator();
-
-    //    SaveMaterials(filename, *mat_iter);
-    //}
-
-    void MaterialIo::ReplaceSceneMaterials(Scene1& scene, Iterator& iterator, MaterialMap const& mapping)
-    {
-        std::map<std::string, Material::Ptr> name2mat;
-
-        for (iterator.Reset(); iterator.IsValid(); iterator.Next())
-        {
-            auto material = iterator.ItemAs<Material>();
-            auto name = material->GetName();
-            name2mat[name] = material;
-        }
-
-        auto shape_iter = scene.CreateShapeIterator();
-
-        for (; shape_iter->IsValid(); shape_iter->Next())
-        {
-            auto shape = shape_iter->ItemAs<Shape>();
-            auto material = shape->GetMaterial();
-
-            if (!material)
-                continue;
-
-            auto name = material->GetName();
-            auto citer = mapping.find(name);
-
-            if (citer != mapping.cend())
-            {
-                auto mat_iter = name2mat.find(citer->second);
-
-                if (mat_iter != name2mat.cend())
-                {
-                    shape->SetMaterial(mat_iter->second);
-                }
-            }
-        }
-    }
-
     MaterialIo::MaterialMap MaterialIo::LoadMaterialMapping(std::string const& filename)
     {
         MaterialMap map;
@@ -543,31 +450,4 @@ namespace BaikalOld
         return map;
     }
 
-    void MaterialIo::SaveIdentityMapping(std::string const& filename, Scene1 const& scene)
-    {
-        XMLDocument doc;
-        XMLPrinter printer;
-
-        auto shape_iter = scene.CreateShapeIterator();
-        std::set<Material::Ptr> serialized_mats;
-
-        for (; shape_iter->IsValid(); shape_iter->Next())
-        {
-            auto material = shape_iter->ItemAs<Shape>()->GetMaterial();
-
-            if (material && serialized_mats.find(material) == serialized_mats.cend())
-            {
-                auto name = material->GetName();
-                printer.OpenElement("Mapping");
-                printer.PushAttribute("from", name.c_str());
-                printer.PushAttribute("to", name.c_str());
-                printer.CloseElement();
-                serialized_mats.emplace(material);
-            }
-        }
-
-        doc.Parse(printer.CStr());
-
-        doc.SaveFile(filename.c_str());
-    }
 }

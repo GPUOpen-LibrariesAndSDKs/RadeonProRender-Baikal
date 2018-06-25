@@ -1,6 +1,5 @@
 #include "material_converter.h"
 
-#include "BaikalOld/SceneGraph/scene1.h"
 #include "BaikalOld/SceneGraph/iterator.h"
 
 #include "SceneGraph/iterator.h"
@@ -57,8 +56,10 @@ Baikal::InputMap::Ptr MaterialConverter::TranslateInput(BaikalOld::Material::Ptr
     {
         LOG("Texture value: " << old_input_value.tex_value->GetName());
         RadeonRays::int2 old_size = old_input_value.tex_value->GetSize();
-        auto new_texture = Baikal::Texture::Create(const_cast<char*>(old_input_value.tex_value->GetData()),
-            RadeonRays::int3(old_size.x, old_size.y, 0),
+        char* data = new char[old_size.x * old_size.y];
+        memcpy(data, old_input_value.tex_value->GetData(), old_size.x * old_size.y);
+        auto new_texture = Baikal::Texture::Create(data,
+            RadeonRays::int3(old_size.x, old_size.y, 1),
             TranslateFormat(old_input_value.tex_value->GetFormat()));
         new_texture->SetName(old_input_value.tex_value->GetName());
         input_map = Baikal::InputMap_Sampler::Create(new_texture);

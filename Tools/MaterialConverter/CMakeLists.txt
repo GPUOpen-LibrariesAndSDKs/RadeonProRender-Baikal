@@ -1,15 +1,16 @@
-SET(BAIKAL_OLD_SOURCES BaikalOld/SceneGraph/camera.cpp
-    BaikalOld/SceneGraph/camera.h
+SET(BAIKAL_OLD_SOURCES
+    #BaikalOld/SceneGraph/camera.cpp
+    #BaikalOld/SceneGraph/camera.h
     BaikalOld/SceneGraph/iterator.h
-    BaikalOld/SceneGraph/light.cpp
-    BaikalOld/SceneGraph/light.h
+    #BaikalOld/SceneGraph/light.cpp
+    #BaikalOld/SceneGraph/light.h
     BaikalOld/SceneGraph/material.cpp
     BaikalOld/SceneGraph/material.h
     BaikalOld/SceneGraph/scene_object.h
-    BaikalOld/SceneGraph/scene1.cpp
-    BaikalOld/SceneGraph/scene1.h
-    BaikalOld/SceneGraph/shape.cpp
-    BaikalOld/SceneGraph/shape.h
+    #BaikalOld/SceneGraph/scene1.cpp
+    #BaikalOld/SceneGraph/scene1.h
+    #BaikalOld/SceneGraph/shape.cpp
+    #BaikalOld/SceneGraph/shape.h
     BaikalOld/SceneGraph/texture.cpp
     BaikalOld/SceneGraph/texture.h)
 
@@ -17,9 +18,7 @@ SET(BAIKAL_OLD_IO_SOURCES
     BaikalOld/SceneGraph/IO/image_io.cpp
     BaikalOld/SceneGraph/IO/image_io.h
     BaikalOld/SceneGraph/IO/material_io.cpp
-    BaikalOld/SceneGraph/IO/material_io.h
-    BaikalOld/SceneGraph/IO/scene_io.cpp
-    BaikalOld/SceneGraph/IO/scene_io.h)
+    BaikalOld/SceneGraph/IO/material_io.h)
 
 source_group("BaikalOld\\SceneGraph" FILES ${BAIKAL_OLD_SOURCES})
 source_group("BaikalOld\\SceneGraph\\IO" FILES ${BAIKAL_OLD_IO_SOURCES})
