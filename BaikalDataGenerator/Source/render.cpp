@@ -28,6 +28,8 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
+static std::uint32_t constexpr kNumIterations = 32;
+
 struct OutputDesc
 {
     Renderer::OutputType type;
@@ -39,11 +41,19 @@ struct OutputDesc
 
 // if you need to add new output for saving to disk
 // just put its description in thic collection
-std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "exr", 16 },
+std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "jpg", 16 },
                                                { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "jpg", 8 },
                                                { Renderer::OutputType::kDepth, "view_shading_depth", "exr", 16 },
                                                { Renderer::OutputType::kAlbedo, "albedo", "jpg", 8 },
                                                { Renderer::OutputType::kGloss, "gloss", "jpg", 8 } };
+
+
+static bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
+{
+    return (left.x != right.x) ||
+        (left.y != right.y) ||
+        (left.z != right.z);
+}
 
 Render::Render(const std::string &file_name,
                const std::string &path,
@@ -78,7 +88,9 @@ Render::Render(const std::string &file_name,
         }
     }
 
-    m_scene = Baikal::SceneIo::LoadScene(file_name, path);
+
+    m_scene = (file_name.empty() || path.empty()) ? Baikal::SceneIo::LoadScene("sphere+plane.test", ""):
+                                    Baikal::SceneIo::LoadScene(file_name, path);
 
     auto platform = platforms[platform_index];
     auto device = platform.GetDevice(device_index);
@@ -87,13 +99,19 @@ Render::Render(const std::string &file_name,
     m_factory = std::make_unique<Baikal::ClwRenderFactory>(m_context, "cache");
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     m_controller = m_factory->CreateSceneController();
-    m_output = m_factory->CreateOutput(output_width, output_height);
-    m_output->Clear(RadeonRays::float3(0.0f));
-    m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get());
+
+    for (const auto output_info: outputs_collection)
+    {
+        m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
+        m_outputs.back()->Clear(RadeonRays::float3(0.5f));
+        m_renderer->SetOutput(output_info.type, m_outputs.back().get());
+    }
 
     m_camera = Baikal::PerspectiveCamera::Create(RadeonRays::float3(0.f, 0.f, 0.f),
                                                  RadeonRays::float3(0.f, 0.f, 0.f),
                                                  RadeonRays::float3(0.f, 0.f, 0.f));
+
+    m_scene->SetCamera(m_camera);
 }
 
 void Render::LoadCameraXml(const std::string &path, const std::string &file_name)
@@ -228,13 +246,6 @@ void Render::LoadLightXml(const std::string &path, const std::string &file_name)
     }
 }
 
-static bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
-{
-    return (left.x != right.x) ||
-           (left.y != right.y) ||
-           (left.z != right.z);
-}
-
 void Render::UpdateCameraPos(const CameraInfo& cam_state)
 {
     if (cam_state.aperture != m_camera->GetAperture())
@@ -338,22 +349,29 @@ void Render::SaveOutput(Renderer::OutputType type,
     out->close();
 }
 
-void Render::GenerateDataset(const std::string &path, const std::string &file_name)
+void Render::GenerateDataset(const std::string &path)
 {
     using namespace RadeonRays;
 
-    auto width = m_output->width();
-    auto height = m_output->height();
-    std::vector<float3> data(width * height);
-    std::vector<float3>  out_data(width * height);
+    m_controller->CompileScene(m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
     for (const auto &cam_state: m_camera_states)
     {
         UpdateCameraPos(cam_state);
 
-        for (const auto& item: outputs_collection)
+        for (auto i = 0u; i < kNumIterations; i++)
         {
-            SaveOutput(item.type, path, file_name, item.file_ext, item.bpp);
+            m_renderer->Render(scene);
+        }
+
+        for (const auto& output : outputs_collection)
+        {
+            SaveOutput(output.type,
+                       path,
+                       output.name,
+                       output.file_ext,
+                       output.bpp);
         }
     }
 }

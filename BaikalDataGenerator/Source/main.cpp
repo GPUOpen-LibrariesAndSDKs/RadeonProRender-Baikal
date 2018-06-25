@@ -25,14 +25,11 @@ THE SOFTWARE.
 
 void Run(DGenConfig config)
 {
-    config.scene_file = (!config.scene_file.empty()) ? (config.scene_file) :
-                                                       ("sphere + ibl.test");
-
     auto render = Render::Create(config.scene_file, config.scene_dir);
 
     render->LoadLightXml(config.light_dir, config.light_file);
     render->LoadCameraXml(config.camera_dir, config.camera_file);
-    render->GenerateDataset(config.output_dir, config.output_file);
+    render->GenerateDataset(config.output_dir);
 }
 
 int main(int argc, char *argv[])

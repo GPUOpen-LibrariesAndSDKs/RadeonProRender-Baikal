@@ -34,7 +34,6 @@ struct DGenConfig
     std::string camera_dir;
     std::string camera_file;
     std::string output_dir;
-    std::string output_file;
 };
 
 class ClineParser

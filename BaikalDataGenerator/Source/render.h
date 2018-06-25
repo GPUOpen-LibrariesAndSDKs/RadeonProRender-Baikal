@@ -64,7 +64,7 @@ public:
     void LoadCameraXml(const std::string &path, const std::string &file_name);
     void LoadLightXml(const std::string &path, const std::string &file_name);
 
-    void GenerateDataset(const std::string &path, const std::string &file_name);
+    void GenerateDataset(const std::string &path);
 
 protected:
     Render(const std::string &file_name,
@@ -83,7 +83,7 @@ private:
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> m_factory;
-    std::unique_ptr<Baikal::Output> m_output;
+    std::vector<std::unique_ptr<Baikal::Output>> m_outputs;
     Baikal::Scene1::Ptr m_scene;
     Baikal::PerspectiveCamera::Ptr m_camera;
     CLWContext m_context;
