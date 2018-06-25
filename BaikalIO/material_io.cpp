@@ -650,7 +650,7 @@ namespace Baikal
                     m_name2tex[name] = texture;
                 }
 
-                result = InputMap_Sampler::Create(texture);
+                result = InputMap_Pow::Create(InputMap_Sampler::Create(texture), InputMap_ConstantFloat::Create(2.2f));
 
                 break;
             }
