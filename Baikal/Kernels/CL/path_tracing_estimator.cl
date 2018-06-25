@@ -196,6 +196,40 @@ KERNEL void GatherVisibility(
     }
 }
 
+///< Gather opacity information and store it in opacity buffer
+KERNEL void GatherOpacity(
+    // Pixel indices
+    GLOBAL int const* restrict pixel_indices,
+    // Output indices
+    GLOBAL int const* restrict output_indices,
+    // Number of rays
+    GLOBAL int* restrict num_rays,
+    // Paths
+    GLOBAL Path const* restrict paths,
+    int last_bounce,
+    // Radiance sample buffer
+    GLOBAL float4* restrict output
+)
+{
+    int global_id = get_global_id(0);
+    if (global_id < *num_rays)
+    {
+        int pixel_idx = pixel_indices[global_id];
+        int output_index = output_indices[pixel_idx];
+        GLOBAL Path* path = paths + pixel_idx;
+        
+        if (!Path_IsAlive(path) || last_bounce)
+        {
+            float4 v = make_float4(0.f, 0.f, 0.f, 1.f);
+            if (Path_ContainsOpacity(path))
+            {
+                v.xyz = 1.0f;
+            }
+            ADD_FLOAT4(&output[output_index], v);
+        }
+    }
+}
+
 ///< Restore pixel indices after compaction
 KERNEL void RestorePixelIndices(
     // Compacted indices
@@ -232,7 +266,7 @@ KERNEL void FilterPathStream(
 )
 {
     int global_id = get_global_id(0);
-
+    
     // Handle only working subset
     if (global_id < *num_elements)
     {
@@ -242,11 +276,11 @@ KERNEL void FilterPathStream(
 
         if (Path_IsAlive(path))
         {
-            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT);
+            bool kill = (length(Path_GetThroughput(path)) < CRAZY_LOW_THROUGHPUT) || (isects[global_id].shapeid < 0);
 
             if (!kill)
             {
-                predicate[global_id] = isects[global_id].shapeid >= 0 ? 1 : 0;
+                predicate[global_id] = 1;
             }
             else
             {

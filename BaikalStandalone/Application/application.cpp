@@ -757,19 +757,25 @@ namespace Baikal
         static float focal_length = 35.f;
         static float focus_distance = 1.f;
         static int num_bounces = 5;
-        static char const* outputs =
-            "Color\0"
-            "World position\0"
-            "Shading normal\0"
-            "Geometric normal\0"
-            "Texture coords\0"
-            "Wire\0"
-            "Albedo\0"
-            "Tangent\0"
-            "Bitangent\0"
-            "Gloss\0"
-            "Depth\0\0"
-            ;
+        static const std::vector<std::pair<Baikal::Renderer::OutputType, char const*>> kBaikalOutputs =
+        {
+            { Renderer::OutputType::kColor, "Color" },
+            { Renderer::OutputType::kOpacity, "Opacity" },
+            { Renderer::OutputType::kVisibility, "Visibility" },
+            { Renderer::OutputType::kWorldPosition, "World Position" },
+            { Renderer::OutputType::kWorldShadingNormal, "Shading Normal" },
+            { Renderer::OutputType::kWorldGeometricNormal, "Geometric Normal" },
+            { Renderer::OutputType::kUv, "Texture Coordinates" },
+            { Renderer::OutputType::kWireframe, "Wireframe" },
+            { Renderer::OutputType::kAlbedo, "Albedo" },
+            { Renderer::OutputType::kWorldTangent, "Tangent" },
+            { Renderer::OutputType::kWorldBitangent, "Bitangent" },
+            { Renderer::OutputType::kGloss, "Glossiness" },
+            { Renderer::OutputType::kMeshID, "Object ID" },
+            { Renderer::OutputType::kGroupID, "Object Group ID" },
+            { Renderer::OutputType::kBackground, "Background" },
+            { Renderer::OutputType::kDepth, "Depth" }
+        };
 
         static int output = 0;
         bool update = false;
@@ -837,7 +843,7 @@ namespace Baikal
                 update = true;
             }
 
-            auto gui_out_type = static_cast<Baikal::Renderer::OutputType>(output);
+            auto gui_out_type = kBaikalOutputs[output].first;
 
             if (gui_out_type != m_cl->GetOutputType())
             {
@@ -849,7 +855,15 @@ namespace Baikal
             eye = camera->GetPosition();
             at = eye + camera->GetForwardVector();
 
-            ImGui::Combo("Output", &output, outputs);
+            ImGui::Combo("Output", &output,
+                [](void* , int idx, const char** out_text)
+                {
+                    if (out_text)
+                        *out_text = kBaikalOutputs[idx].second;
+                    return true;
+                },
+                nullptr, (int)kBaikalOutputs.size()
+            );
             ImGui::Text(" ");
             ImGui::Text("Number of samples: %d", m_settings.samplecount);
             ImGui::Text("Frame time %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

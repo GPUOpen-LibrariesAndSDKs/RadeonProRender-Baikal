@@ -39,7 +39,8 @@ typedef enum _PathFlags
 {
     kNone = 0x0,
     kKilled = 0x1,
-    kScattered = 0x2
+    kScattered = 0x2,
+    kOpaque = 0x4
 } PathFlags;
 
 INLINE bool Path_IsScattered(__global Path const* path)
@@ -52,6 +53,11 @@ INLINE bool Path_IsAlive(__global Path const* path)
     return ((path->flags & kKilled) == 0);
 }
 
+INLINE bool Path_ContainsOpacity(__global Path const* path)
+{
+    return path->flags & kOpaque;
+}
+
 INLINE void Path_ClearScatterFlag(__global Path* path)
 {
     path->flags &= ~kScattered;
@@ -62,19 +68,24 @@ INLINE void Path_SetScatterFlag(__global Path* path)
     path->flags |= kScattered;
 }
 
+INLINE void Path_SetOpacityFlag(__global Path* path)
+{
+    path->flags |= kOpaque;
+}
+
 INLINE void Path_ClearBxdfFlags(__global Path* path)
 {
-    path->flags &= (kKilled | kScattered);
+    path->flags &= (kKilled | kScattered | kOpaque);
 }
 
 INLINE int Path_GetBxdfFlags(__global Path const* path)
 {
-    return path->flags >> 2;
+    return path->flags >> 8;
 }
 
 INLINE int Path_SetBxdfFlags(__global Path* path, int flags)
 {
-    return path->flags |= (flags << 2);
+    return path->flags |= (flags << 8);
 }
 
 INLINE void Path_Restart(__global Path* path)
