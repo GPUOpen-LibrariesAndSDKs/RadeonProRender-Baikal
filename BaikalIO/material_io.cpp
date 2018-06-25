@@ -149,6 +149,10 @@ namespace Baikal
             for (size_t a = 0; a < num_inputs; ++a)
             {
                 auto input = uberv2_material->GetInput(static_cast<uint32_t>(a));
+                if (!uberv2_material->IsActive(input))
+                {
+                    continue;
+                }
                 printer.PushAttribute(input.info.name.c_str(), input.value.input_map_value->GetId());
             }
         }
@@ -236,6 +240,10 @@ namespace Baikal
         for (std::size_t a = 0u; a < num_inputs; ++a)
         {
             auto inputs = material->GetInput(a);
+            if (!material->IsActive(inputs))
+            {
+                continue;
+            }
             uint32_t input_id = element.UnsignedAttribute(inputs.info.name.c_str());
             material->SetInputValue(inputs.info.name, loaded_inputs.at(input_id));
         }
@@ -468,14 +476,14 @@ namespace Baikal
                 }
                 else
                 {
-                    std::ostringstream oss;
-                    oss << (std::uint64_t)texture.get() << ".jpg";
+                    //std::ostringstream oss;
+                    //oss << (std::uint64_t)texture.get() << ".jpg";
 
-                    io.SaveImage(m_base_path + oss.str(), texture);
+                    //io.SaveImage(m_base_path + oss.str(), texture);
 
-                    m_tex2name[texture] = oss.str();
+                    m_tex2name[texture] = texture->GetName();//oss.str();
 
-                    printer.PushAttribute("value", oss.str().c_str());
+                    printer.PushAttribute("value", texture->GetName().c_str());
                 }
                 printer.CloseElement();
                 break;
