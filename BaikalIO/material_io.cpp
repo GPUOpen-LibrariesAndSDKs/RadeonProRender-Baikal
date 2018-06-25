@@ -50,6 +50,7 @@ namespace Baikal
 
         std::map<std::string, Texture::Ptr> m_name2tex;
         std::map<std::uint64_t, Material::Ptr> m_id2mat;
+        std::set<InputMap::Ptr> m_saved_inputs;
 
         struct ResolveRequest
         {
@@ -440,6 +441,15 @@ namespace Baikal
 
     void MaterialIoXML::WriteInputMap(ImageIo& io, XMLPrinter& printer, InputMap::Ptr inputMap)
     {
+        if (m_saved_inputs.find(inputMap) != m_saved_inputs.end())
+        {
+            return;
+        }
+        else
+        {
+            m_saved_inputs.insert(inputMap);
+        }
+
         printer.OpenElement("Input");
 
         printer.PushAttribute("name", inputMap->GetName().c_str());
@@ -650,7 +660,7 @@ namespace Baikal
                     m_name2tex[name] = texture;
                 }
 
-                result = InputMap_Pow::Create(InputMap_Sampler::Create(texture), InputMap_ConstantFloat::Create(2.2f));
+                result = InputMap_Sampler::Create(texture);
 
                 break;
             }

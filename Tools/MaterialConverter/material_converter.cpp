@@ -9,8 +9,12 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef USE_LOGFILE
 std::ofstream logfile("log.txt");
 #define LOG(x) logfile << x << std::endl
+#else
+#define LOG(x)
+#endif
 
 Baikal::Texture::Format MaterialConverter::TranslateFormat(BaikalOld::Texture::Format old_format)
 {
@@ -24,6 +28,11 @@ Baikal::Texture::Format MaterialConverter::TranslateFormat(BaikalOld::Texture::F
         return Baikal::Texture::Format::kRgba32;
     }
     return Baikal::Texture::Format::kRgba8;
+}
+
+namespace
+{
+    static const Baikal::InputMap_ConstantFloat::Ptr kGammaPower = Baikal::InputMap_ConstantFloat::Create(2.2f);
 }
 
 Baikal::InputMap::Ptr MaterialConverter::TranslateInput(BaikalOld::Material::Ptr old_mtl, std::string const& input_name)
@@ -53,6 +62,11 @@ Baikal::InputMap::Ptr MaterialConverter::TranslateInput(BaikalOld::Material::Ptr
             TranslateFormat(old_input_value.tex_value->GetFormat()));
         new_texture->SetName(old_input_value.tex_value->GetName());
         input_map = Baikal::InputMap_Sampler::Create(new_texture);
+        if (input_name == "albedo")
+        {
+            // Convert texture from gamma to linear space
+            input_map = Baikal::InputMap_Pow::Create(input_map, kGammaPower);
+        }
     }
         break;
     default:
@@ -253,7 +267,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::MergeMaterials(Baikal::UberV2Mate
 
             // Top is coating
             result_layers |= Baikal::UberV2Material::kCoatingLayer;
-            Baikal::InputMap::Ptr coating_color = top->GetInputValue("uberv2.coating.color").input_map_value;
+            Baikal::InputMap::Ptr coating_color = top->GetInputValue("uberv2.reflection.color").input_map_value;
             result->SetInputValue("uberv2.coating.color", coating_color);
             result->SetInputValue("uberv2.coating.ior", blend_factor);
         }
@@ -469,7 +483,11 @@ std::set<Baikal::UberV2Material::Ptr> MaterialConverter::TranslateMaterials(std:
             new_mtl->SetName(old_mtl->GetName());
             result.insert(new_mtl);
         }
-        catch (std::exception const& ex)
+        catch (std::exception const&
+            #ifdef USE_LOG
+            ex
+            #endif
+            )
         {
             LOG(">>> Caught exception: " << ex.what());
             throw;
