@@ -109,6 +109,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         uber_mtl->SetLayers(Baikal::UberV2Material::kReflectionLayer);
         uber_mtl->SetInputValue("uberv2.reflection.color", TranslateInput(old_mtl, "albedo"));
         uber_mtl->SetInputValue("uberv2.reflection.roughness", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        uber_mtl->SetInputValue("uberv2.reflection.ior", TranslateInput(old_mtl, "ior"));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetBeckmann:
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetGGX:
@@ -116,6 +117,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         uber_mtl->SetLayers(Baikal::UberV2Material::kReflectionLayer);
         uber_mtl->SetInputValue("uberv2.reflection.color", TranslateInput(old_mtl, "albedo"));
         uber_mtl->SetInputValue("uberv2.reflection.roughness", TranslateInput(old_mtl, "roughness"));
+        uber_mtl->SetInputValue("uberv2.reflection.ior", TranslateInput(old_mtl, "ior"));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kEmissive:
         LOG("BxdfType: Emission");
@@ -139,6 +141,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         uber_mtl->SetLayers(Baikal::UberV2Material::kRefractionLayer);
         uber_mtl->SetInputValue("uberv2.refraction.color", TranslateInput(old_mtl, "albedo"));
         uber_mtl->SetInputValue("uberv2.refraction.roughness", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        uber_mtl->SetInputValue("uberv2.refraction.ior", TranslateInput(old_mtl, "ior"));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetRefractionGGX:
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann:
@@ -146,6 +149,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         uber_mtl->SetLayers(Baikal::UberV2Material::kRefractionLayer);
         uber_mtl->SetInputValue("uberv2.refraction.color", TranslateInput(old_mtl, "albedo"));
         uber_mtl->SetInputValue("uberv2.refraction.roughness", TranslateInput(old_mtl, "roughness"));
+        uber_mtl->SetInputValue("uberv2.refraction.ior", TranslateInput(old_mtl, "ior"));
         break;
     default:
         throw std::runtime_error("TranslateSingleBxdfMaterial: You shouldn't get here");
