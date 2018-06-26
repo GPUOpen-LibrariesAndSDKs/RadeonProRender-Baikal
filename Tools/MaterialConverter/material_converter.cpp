@@ -561,19 +561,18 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateMaterial(BaikalOld::Mate
     }
     else if (auto disney_bxdf = std::dynamic_pointer_cast<BaikalOld::DisneyBxdf>(mtl))
     {
-        throw std::exception("Translation of disney bxdf materials is not supported");
+        throw std::runtime_error("Translation of disney bxdf materials is not supported");
     }
     else if (auto volume_mtl = std::dynamic_pointer_cast<BaikalOld::VolumeMaterial>(mtl))
     {
-        throw std::exception("Translation of volume materials is not supported");
+        throw std::runtime_error("Translation of volume materials is not supported");
     }
-    throw std::exception("TranslateMaterial: unsupported material type");
+    throw std::runtime_error("TranslateMaterial: unsupported material type");
 }
 
 std::set<Baikal::UberV2Material::Ptr> MaterialConverter::TranslateMaterials(std::set<BaikalOld::Material::Ptr> const& old_materials)
 {
     std::set<Baikal::UberV2Material::Ptr> result;
-    unsigned int i = 0;
     for (auto old_mtl : old_materials)
     {
         if (!old_mtl)

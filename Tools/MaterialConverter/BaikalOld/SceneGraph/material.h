@@ -86,9 +86,9 @@ namespace BaikalOld
             
             InputValue()
             : type(InputType::kMaterial)
-            , mat_value(nullptr)
-            , tex_value(nullptr)
             , float_value()
+            , tex_value(nullptr)
+            , mat_value(nullptr)
             {
             }
         };
