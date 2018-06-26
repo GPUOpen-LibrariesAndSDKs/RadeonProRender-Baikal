@@ -7,7 +7,8 @@
 
 #include <iostream>
 #include <fstream>
-
+#include <map>
+//#define USE_LOGFILE
 #ifdef USE_LOGFILE
 std::ofstream logfile("log.txt");
 #define LOG(x) logfile << x << std::endl
@@ -104,9 +105,14 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         }
         break;
     case BaikalOld::SingleBxdf::BxdfType::kIdealReflect:
+        LOG("BxdfType: Ideal reflection");
+        uber_mtl->SetLayers(Baikal::UberV2Material::kReflectionLayer);
+        uber_mtl->SetInputValue("uberv2.reflection.color", TranslateInput(old_mtl, "albedo"));
+        uber_mtl->SetInputValue("uberv2.reflection.roughness", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        break;
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetBeckmann:
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetGGX:
-        LOG("BxdfType: Reflection");
+        LOG("BxdfType: Microfacet reflection");
         uber_mtl->SetLayers(Baikal::UberV2Material::kReflectionLayer);
         uber_mtl->SetInputValue("uberv2.reflection.color", TranslateInput(old_mtl, "albedo"));
         uber_mtl->SetInputValue("uberv2.reflection.roughness", TranslateInput(old_mtl, "roughness"));
@@ -118,18 +124,25 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         break;
     case BaikalOld::SingleBxdf::BxdfType::kPassthrough:
         LOG("BxdfType: Passthrough");
-        // Nothing?
+        uber_mtl->SetLayers(Baikal::UberV2Material::kTransparencyLayer);
+        uber_mtl->SetInputValue("uberv2.transparency", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kTranslucent:
         LOG("BxdfType: Translucensy");
-        uber_mtl->SetLayers(Baikal::UberV2Material::kTransparencyLayer);
+        throw std::runtime_error("TranslateSingleBxdfMaterial: Translucent materials isn't supported in UberV2");
+        //uber_mtl->SetLayers(Baikal::UberV2Material::kTransparencyLayer);
         // CHECK: albedo or (1 - albedo)?
-        uber_mtl->SetInputValue("uberv2.transparency", TranslateInput(old_mtl, "albedo"));
+        //uber_mtl->SetInputValue("uberv2.transparency", TranslateInput(old_mtl, "albedo"));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kIdealRefract:
+        LOG("BxdfType: Ideal refraction");
+        uber_mtl->SetLayers(Baikal::UberV2Material::kRefractionLayer);
+        uber_mtl->SetInputValue("uberv2.refraction.color", TranslateInput(old_mtl, "albedo"));
+        uber_mtl->SetInputValue("uberv2.refraction.roughness", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        break;
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetRefractionGGX:
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetRefractionBeckmann:
-        LOG("BxdfType: Refraction");
+        LOG("BxdfType: Microfacet refraction");
         uber_mtl->SetLayers(Baikal::UberV2Material::kRefractionLayer);
         uber_mtl->SetInputValue("uberv2.refraction.color", TranslateInput(old_mtl, "albedo"));
         uber_mtl->SetInputValue("uberv2.refraction.roughness", TranslateInput(old_mtl, "roughness"));
@@ -146,13 +159,15 @@ bool HasLayer(std::uint32_t all_layers, std::uint32_t layer)
     return (all_layers & layer) == layer;
 }
 
-Baikal::UberV2Material::Ptr MaterialConverter::MergeMaterials(Baikal::UberV2Material::Ptr base, Baikal::UberV2Material::Ptr top, Baikal::InputMap::Ptr blend_factor)
+Baikal::UberV2Material::Ptr MaterialConverter::MergeFresnelBlendMaterials(Baikal::UberV2Material::Ptr base, Baikal::UberV2Material::Ptr top, BaikalOld::Material::Ptr mtl)
 {
     LOG("Merge materials " << base->GetName() << " and " << top->GetName() << " into one");
     auto result = Baikal::UberV2Material::Create();
+    result->SetName(mtl->GetName());
     std::uint32_t base_layers = base->GetLayers();
     std::uint32_t top_layers = top->GetLayers();
     std::uint32_t result_layers = 0;
+    Baikal::InputMap::Ptr blend_factor = TranslateInput(mtl, "ior");
 
     // Emission
     {
@@ -411,7 +426,98 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateFresnelBlend(BaikalOld::
     // Then 'Merge' them to get single uber material
     auto base_new = TranslateMaterial(base);
     auto top_new = TranslateMaterial(top);
-    return MergeMaterials(base_new, top_new, TranslateInput(mtl, "ior"));
+    return MergeFresnelBlendMaterials(base_new, top_new, mtl);
+}
+
+Baikal::UberV2Material::Ptr MaterialConverter::MergeMixMaterials(Baikal::UberV2Material::Ptr base, Baikal::UberV2Material::Ptr top, BaikalOld::Material::Ptr mtl)
+{
+    LOG("Merge mix materials " << base->GetName() << " and " << top->GetName() << " into one");
+    auto result = Baikal::UberV2Material::Create();
+    result->SetName(mtl->GetName());
+    std::uint32_t base_layers = base->GetLayers();
+    std::uint32_t top_layers = top->GetLayers();
+    std::uint32_t result_layers = 0;
+    Baikal::InputMap::Ptr blend_factor = TranslateInput(mtl, "weight");
+
+    static const std::map<Baikal::UberV2Material::Layers, std::vector<std::string>> kLayersInputs =
+    {
+        {
+            Baikal::UberV2Material::kEmissionLayer,
+            { "uberv2.emission.color" }
+        },
+        {
+            Baikal::UberV2Material::kTransparencyLayer,
+            { "uberv2.transparency" }
+        },
+        {
+            Baikal::UberV2Material::kCoatingLayer,
+            { "uberv2.coating.color", "uberv2.coating.ior" }
+        },
+        {
+            Baikal::UberV2Material::kReflectionLayer,
+            { "uberv2.reflection.color", "uberv2.reflection.roughness", "uberv2.reflection.anisotropy",
+                "uberv2.reflection.anisotropy_rotation", "uberv2.reflection.ior", "uberv2.reflection.metalness" }
+        },
+        {
+            Baikal::UberV2Material::kDiffuseLayer,
+            { "uberv2.diffuse.color" }
+        },
+        {
+            Baikal::UberV2Material::kRefractionLayer,
+            { "uberv2.refraction.color", "uberv2.refraction.roughness", "uberv2.refraction.ior" }
+        },
+        {
+            Baikal::UberV2Material::kSSSLayer,
+            { "uberv2.sss.absorption_color", "uberv2.sss.scatter_color", "uberv2.sss.absorption_distance",
+                "uberv2.sss.scatter_distance", "uberv2.sss.scatter_direction", "uberv2.sss.subsurface_color" }
+        },
+        {
+            Baikal::UberV2Material::kShadingNormalLayer,
+            { "uberv2.shading_normal" }
+        },
+    };
+
+    // Iterate through layers
+    for (auto const& item: kLayersInputs)
+    {
+        bool base_has_layer = HasLayer(base_layers, item.first);
+        bool top_has_layer = HasLayer(top_layers, item.first);
+        if (base_has_layer && top_has_layer)
+        {
+            result_layers |= item.first;
+            // Lerp inputs
+            for (auto const& input_name: item.second)
+            {
+                LOG("Base and top materials both have " << input_name << ": merging as result = lerp(base, top, factor)");
+                auto base_input = base->GetInputValue(input_name).input_map_value;
+                auto top_input = top->GetInputValue(input_name).input_map_value;
+                result->SetInputValue(input_name, Baikal::InputMap_Lerp::Create(base_input, top_input, blend_factor));
+            }
+        }
+        else if (base_has_layer || top_has_layer)
+        {
+            result_layers |= item.first;
+            for (auto const& input_name: item.second)
+            {
+                Baikal::InputMap::Ptr input = nullptr;
+                if (base_has_layer)
+                {
+                    LOG("Base material: " << input_name);
+                    input = base->GetInputValue(input_name).input_map_value;
+                }
+                if (top_has_layer)
+                {
+                    LOG("Top material: " << input_name);
+                    input = top->GetInputValue(input_name).input_map_value;
+                }
+                result->SetInputValue(input_name, input);
+            }
+        }
+    }
+
+    // Don't forget to set layers
+    result->SetLayers(result_layers);
+    return result;
 }
 
 Baikal::UberV2Material::Ptr MaterialConverter::TranslateMix(BaikalOld::MultiBxdf::Ptr mtl)
@@ -425,7 +531,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateMix(BaikalOld::MultiBxdf
     // Then 'Merge' them to get single uber material
     auto base_new = TranslateMaterial(base);
     auto top_new = TranslateMaterial(top);
-    return MergeMaterials(base_new, top_new, TranslateInput(mtl, "weight"));
+    return MergeMixMaterials(base_new, top_new, mtl);
 }
 
 Baikal::UberV2Material::Ptr MaterialConverter::TranslateMultiBxdfMaterial(BaikalOld::MultiBxdf::Ptr mtl)
@@ -434,7 +540,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateMultiBxdfMaterial(Baikal
     switch (mtl->GetType())
     {
     case BaikalOld::MultiBxdf::Type::kLayered:
-        throw std::exception("kLayered translation is not supported");
+        throw std::runtime_error("kLayered translation is not supported");
     case BaikalOld::MultiBxdf::Type::kFresnelBlend:
         return TranslateFresnelBlend(mtl);
     case BaikalOld::MultiBxdf::Type::kMix:
@@ -485,7 +591,7 @@ std::set<Baikal::UberV2Material::Ptr> MaterialConverter::TranslateMaterials(std:
             result.insert(new_mtl);
         }
         catch (std::exception const&
-            #ifdef USE_LOG
+            #ifdef USE_LOGFILE
             ex
             #endif
             )

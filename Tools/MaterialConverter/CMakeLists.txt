@@ -19,15 +19,9 @@ SET(SOURCES
     material_converter.cpp
     material_converter.h
     main.cpp
-    ${Baikal_SOURCE_DIR}/Baikal/Utils/half.cpp
-    ${Baikal_SOURCE_DIR}/Baikal/Utils/half.h)
+    ${Baikal_SOURCE_DIR}/Baikal/Utils/half.cpp)
 
 add_executable(MaterialConverter ${SOURCES} ${BAIKAL_OLD_SOURCES} ${BAIKAL_OLD_IO_SOURCES})
 target_compile_features(MaterialConverter PRIVATE cxx_std_14)
-target_include_directories(MaterialConverter PRIVATE 
-    ${Baikal_SOURCE_DIR}/Baikal
-    .)
-target_link_libraries(MaterialConverter PRIVATE Baikal BaikalIO)
-
-set_target_properties(MaterialConverter
-    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR})
+target_include_directories(MaterialConverter PRIVATE .)
+target_link_libraries(MaterialConverter PUBLIC Baikal BaikalIO)
