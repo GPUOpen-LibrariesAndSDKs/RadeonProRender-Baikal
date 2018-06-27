@@ -19,7 +19,7 @@
 namespace
 {
     char const* kHelpMessage =
-        "MaterialConverter [-p path_to_models]";
+        "MaterialConverter -p <path to materials.xml and mapping.xml folder>";
 }
 
 static char* GetCmdOption(char** begin, char** end, const std::string& option)
@@ -43,6 +43,21 @@ void Process(int argc, char** argv)
     }
 
     std::string scene_path_str = std::string(scene_path);
+
+    std::ifstream in_materials(scene_path_str + "materials.xml");
+    if (!in_materials)
+    {
+        std::cerr << "Failed to open materials.xml file!" << std::endl;
+        return;
+    }
+    std::ifstream in_mapping(scene_path_str + "mapping.xml");
+    if (!in_mapping)
+    {
+        std::cerr << "Failed to open mapping.xml file!" << std::endl;
+        return;
+    }
+    in_materials.close();
+    in_mapping.close();
 
     std::cout << "Loading materials.xml" << std::endl;
     auto material_io = BaikalOld::MaterialIo::CreateMaterialIoXML();

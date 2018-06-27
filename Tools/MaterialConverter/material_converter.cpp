@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <map>
+#include <vector>
 
 Baikal::Texture::Format MaterialConverter::TranslateFormat(BaikalOld::Texture::Format old_format)
 {
@@ -28,8 +28,12 @@ Baikal::Texture::Format MaterialConverter::TranslateFormat(BaikalOld::Texture::F
 namespace
 {
     static const Baikal::InputMap_ConstantFloat::Ptr kGammaPower = Baikal::InputMap_ConstantFloat::Create(2.2f);
+    static const Baikal::InputMap_ConstantFloat3::Ptr kBlackColor = Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f));
     // Mark for passthrough bxdfs
     static const Baikal::InputMap_ConstantFloat3::Ptr kPassthroughTransparency = Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f));
+    // Used by shading normal layer
+    static const Baikal::InputMap_ConstantFloat3::Ptr kNormalSrcRange = Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 1.0f, 0.0f));
+    static const Baikal::InputMap_ConstantFloat3::Ptr kNormalDstRange = Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(-1.0f, 1.0f, 0.0f));
 }
 
 Baikal::InputMap::Ptr MaterialConverter::TranslateInput(BaikalOld::Material::Ptr old_mtl, std::string const& input_name)
@@ -84,7 +88,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         Baikal::LogInfo("BxdfType: Zero\n");
         uber_mtl->SetLayers(Baikal::UberV2Material::kDiffuseLayer);
         // Black diffuse
-        uber_mtl->SetInputValue("uberv2.diffuse.color", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        uber_mtl->SetInputValue("uberv2.diffuse.color", kBlackColor);
         break;
     case BaikalOld::SingleBxdf::BxdfType::kLambert:
         Baikal::LogInfo("BxdfType: Lambert\n");
@@ -95,16 +99,14 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
             Baikal::LogInfo("Found normal\n");
             uber_mtl->SetLayers(Baikal::UberV2Material::kDiffuseLayer | Baikal::UberV2Material::kShadingNormalLayer);
             uber_mtl->SetInputValue("uberv2.shading_normal", Baikal::InputMap_Remap::Create(
-                Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 1.0f, 0.0f)),
-                Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(-1.0f, 1.0f, 0.0f)),
-                TranslateInput(old_mtl, "normal")));
+                kNormalSrcRange, kNormalDstRange, TranslateInput(old_mtl, "normal")));
         }
         break;
     case BaikalOld::SingleBxdf::BxdfType::kIdealReflect:
         Baikal::LogInfo("BxdfType: Ideal reflection\n");
         uber_mtl->SetLayers(Baikal::UberV2Material::kReflectionLayer);
         uber_mtl->SetInputValue("uberv2.reflection.color", TranslateInput(old_mtl, "albedo"));
-        uber_mtl->SetInputValue("uberv2.reflection.roughness", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        uber_mtl->SetInputValue("uberv2.reflection.roughness", kBlackColor);
         uber_mtl->SetInputValue("uberv2.reflection.ior", TranslateInput(old_mtl, "ior"));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetBeckmann:
@@ -133,7 +135,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::TranslateSingleBxdfMaterial(Baika
         Baikal::LogInfo("BxdfType: Ideal refraction\n");
         uber_mtl->SetLayers(Baikal::UberV2Material::kRefractionLayer);
         uber_mtl->SetInputValue("uberv2.refraction.color", TranslateInput(old_mtl, "albedo"));
-        uber_mtl->SetInputValue("uberv2.refraction.roughness", Baikal::InputMap_ConstantFloat3::Create(RadeonRays::float3(0.0f, 0.0f, 0.0f)));
+        uber_mtl->SetInputValue("uberv2.refraction.roughness", kBlackColor);
         uber_mtl->SetInputValue("uberv2.refraction.ior", TranslateInput(old_mtl, "ior"));
         break;
     case BaikalOld::SingleBxdf::BxdfType::kMicrofacetRefractionGGX:
@@ -375,17 +377,6 @@ Baikal::UberV2Material::Ptr MaterialConverter::MergeFresnelBlendMaterials(Baikal
         }
     }
 
-    // SSS
-    {
-        bool base_has_sss = HasLayer(base_layers, Baikal::UberV2Material::kSSSLayer);
-        bool top_has_sss = HasLayer(top_layers, Baikal::UberV2Material::kSSSLayer);
-
-        if (base_has_sss && top_has_sss)
-        {
-            throw std::runtime_error("SSS merging is not supported");
-        }
-    }
-
     // Shading normal
     {
         bool base_has_shading_normal = HasLayer(base_layers, Baikal::UberV2Material::kShadingNormalLayer);
@@ -441,7 +432,7 @@ Baikal::UberV2Material::Ptr MaterialConverter::MergeMixMaterials(Baikal::UberV2M
     std::uint32_t result_layers = 0;
     Baikal::InputMap::Ptr blend_factor = TranslateInput(mtl, "weight");
 
-    static const std::map<Baikal::UberV2Material::Layers, std::vector<std::string>> kLayersInputs =
+    static const std::vector<std::pair<Baikal::UberV2Material::Layers, std::vector<std::string>>> kLayersInputs =
     {
         {
             Baikal::UberV2Material::kEmissionLayer,
@@ -467,11 +458,6 @@ Baikal::UberV2Material::Ptr MaterialConverter::MergeMixMaterials(Baikal::UberV2M
         {
             Baikal::UberV2Material::kRefractionLayer,
             { "uberv2.refraction.color", "uberv2.refraction.roughness", "uberv2.refraction.ior" }
-        },
-        {
-            Baikal::UberV2Material::kSSSLayer,
-            { "uberv2.sss.absorption_color", "uberv2.sss.scatter_color", "uberv2.sss.absorption_distance",
-                "uberv2.sss.scatter_distance", "uberv2.sss.scatter_direction", "uberv2.sss.subsurface_color" }
         },
         {
             Baikal::UberV2Material::kShadingNormalLayer,
