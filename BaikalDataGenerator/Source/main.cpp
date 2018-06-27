@@ -27,6 +27,7 @@ void Run(DGenConfig config)
 {
     auto render = Render::Create(config.scene_file, config.scene_dir);
 
+    render->LoadMaterialXml(config.material_dir, config.material_file);
     render->LoadLightXml(config.light_dir, config.light_file);
     render->LoadCameraXml(config.camera_dir, config.camera_file);
     render->GenerateDataset(config.output_dir);

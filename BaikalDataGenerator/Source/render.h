@@ -61,6 +61,7 @@ public:
                       std::uint32_t output_width = 256,
                       std::uint32_t output_height = 256);
 
+    void LoadMaterialXml(const std::string &path, const std::string &file_name);
     void LoadCameraXml(const std::string &path, const std::string &file_name);
     void LoadLightXml(const std::string &path, const std::string &file_name);
 
@@ -73,7 +74,7 @@ protected:
            std::uint32_t output_height);
 
 private:
-    void UpdateCameraPos(const CameraInfo& cam_state);
+    void UpdateCameraSettings(const CameraInfo& cam_state);
     void SaveOutput(Baikal::Renderer::OutputType type,
                     const std::string& path,
                     const std::string& name,

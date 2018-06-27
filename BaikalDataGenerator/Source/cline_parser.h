@@ -33,6 +33,8 @@ struct DGenConfig
     std::string light_file;
     std::string camera_dir;
     std::string camera_file;
+    std::string material_dir;
+    std::string material_file;
     std::string output_dir;
 };
 

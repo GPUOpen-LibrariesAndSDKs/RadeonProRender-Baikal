@@ -290,6 +290,7 @@ namespace Baikal
         fill_kernel.SetArg(argc++, output_size.y);
         fill_kernel.SetArg(argc++, scene.lights);
         fill_kernel.SetArg(argc++, scene.num_lights);
+        fill_kernel.SetArg(argc++, scene.camera);
         fill_kernel.SetArg(argc++, rand_uint());
         fill_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kRandomSeed));
         fill_kernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kSobolLUT));

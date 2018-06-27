@@ -30,6 +30,8 @@ namespace
         "[-light_file name_of_the_light_config]"
         "[-camera_dir path_to_camera_config]"
         "[-camera_file name_of_the_camera_config]"
+        "[-material_dir path_to_material_config]"
+        "[-material_file name_to_material_config]"
         "[-outpute_dir path_to_generate_data]";
 }
 
@@ -76,6 +78,12 @@ DGenConfig ClineParser::Parse(int argc, char * argv[])
 
     char* scene_file = GetCmdOption(argv, argv + argc, "-scene_file");
     config.scene_file = scene_file ? scene_file : "";
+
+    char* material_dir = GetCmdOption(argv, argv + argc, "-material_dir");
+    config.material_dir = material_dir ? material_dir : "";
+
+    char* material_file = GetCmdOption(argv, argv + argc, "-material_file");
+    config.material_file = material_file ? material_file : "";
 
     return config;
 }

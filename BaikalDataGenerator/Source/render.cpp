@@ -21,10 +21,14 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "render.h"
-#include "XML/tinyxml2.h"
+#include "scene_io.h"
+#include "material_io.h"
 #include "SceneGraph/light.h"
 #include "Output/clwoutput.h"
 #include "BaikalIO/image_io.h"
+
+#include <fstream>
+#include "XML/tinyxml2.h"
 
 using namespace Baikal;
 
@@ -41,9 +45,9 @@ struct OutputDesc
 
 // if you need to add new output for saving to disk
 // just put its description in thic collection
-std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "jpg", 16 },
+std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "png", 8 },
                                                // { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "jpg", 8 },
-                                               { Renderer::OutputType::kDepth, "view_shading_depth", "exr", 16 },
+                                               { Renderer::OutputType::kDepth, "view_shading_depth", "png", 16 },
                                                { Renderer::OutputType::kAlbedo, "albedo", "jpg", 8 },
                                                { Renderer::OutputType::kGloss, "gloss", "jpg", 8 } };
 
@@ -88,10 +92,6 @@ Render::Render(const std::string &file_name,
         }
     }
 
-
-    m_scene = (file_name.empty() || path.empty()) ? Baikal::SceneIo::LoadScene("sphere+plane.test", ""):
-                                    Baikal::SceneIo::LoadScene(file_name, path);
-
     auto platform = platforms[platform_index];
     auto device = platform.GetDevice(device_index);
     m_context = CLWContext::Create(device);
@@ -103,15 +103,33 @@ Render::Render(const std::string &file_name,
     for (const auto output_info: outputs_collection)
     {
         m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
-        m_outputs.back()->Clear(RadeonRays::float3(0.5f));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
 
-    m_camera = Baikal::PerspectiveCamera::Create(RadeonRays::float3(0.f, 0.f, 0.f),
-                                                 RadeonRays::float3(0.f, 0.f, 0.f),
-                                                 RadeonRays::float3(0.f, 0.f, 0.f));
+    m_scene = (file_name.empty() || path.empty()) ? Baikal::SceneIo::LoadScene("sphere+plane.test", "") :
+                                                    Baikal::SceneIo::LoadScene(file_name, path);
+}
 
-    m_scene->SetCamera(m_camera);
+void Render::LoadMaterialXml(const std::string &path, const std::string &file_name)
+{
+    std::stringstream ss;
+    ss << path << "/" << file_name;
+
+    // Check it we have material remapping
+    std::ifstream in_materials(ss.str());
+    std::ifstream in_mapping(ss.str());
+
+    if (in_materials && in_mapping)
+    {
+        in_materials.close();
+        in_mapping.close();
+
+        auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
+        auto mats = material_io->LoadMaterials(ss.str());
+        auto mapping = material_io->LoadMaterialMapping(ss.str());
+
+        material_io->ReplaceSceneMaterials(*m_scene, *mats, mapping);
+    }
 }
 
 void Render::LoadCameraXml(const std::string &path, const std::string &file_name)
@@ -246,7 +264,7 @@ void Render::LoadLightXml(const std::string &path, const std::string &file_name)
     }
 }
 
-void Render::UpdateCameraPos(const CameraInfo& cam_state)
+void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 {
     if (cam_state.aperture != m_camera->GetAperture())
     {
@@ -284,6 +302,7 @@ void Render::SaveOutput(Renderer::OutputType type,
     OIIO_NAMESPACE_USING;
 
     std::vector<RadeonRays::float3> output_data;
+    std::vector<RadeonRays::float3> image_data;
     auto output = m_renderer->GetOutput(type);
     auto width = output->width();
     auto height = output->height();
@@ -292,11 +311,9 @@ void Render::SaveOutput(Renderer::OutputType type,
 
     auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
     output_data.resize(buffer.GetElementCount());
+    image_data.resize(buffer.GetElementCount());
 
-    m_context.ReadBuffer(0,
-                         static_cast<Baikal::ClwOutput*>(output)->data(),
-                         &output_data[0],
-                         output_data.size()).Wait();
+    output->GetData(output_data.data());
 
     TypeDesc fmt;
     switch (bpp)
@@ -321,9 +338,9 @@ void Render::SaveOutput(Renderer::OutputType type,
         {
             float3 val = output_data[(height - 1 - y) * width + x];
             val *= (1.f / val.w);
-            output_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
-            output_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
-            output_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
+            image_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
+            image_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
+            image_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
         }
     }
 
@@ -343,9 +360,9 @@ void Render::SaveOutput(Renderer::OutputType type,
                                  "Can't create image file on disk");
     }
 
-    ImageSpec spec(width, height, 3, fmt);
+    ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
     out->open(ss.str(), spec);
-    out->write_image(TypeDesc::FLOAT, &output_data[0], sizeof(float3));
+    out->write_image(TypeDesc::FLOAT, image_data.data(), sizeof(float3));
     out->close();
 }
 
@@ -353,12 +370,33 @@ void Render::GenerateDataset(const std::string &path)
 {
     using namespace RadeonRays;
 
-    m_controller->CompileScene(m_scene);
-    auto& scene = m_controller->GetCachedScene(m_scene);
-
     for (const auto &cam_state: m_camera_states)
     {
-        UpdateCameraPos(cam_state);
+        if (!m_camera)
+        {
+            m_camera = Baikal::PerspectiveCamera::Create(cam_state.at, cam_state.pos, cam_state.up);
+            m_scene->SetCamera(m_camera);
+            m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+            m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+
+            m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+            m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+            m_camera->SetFocalLength(0.035f);
+            m_camera->SetFocusDistance(1.f);
+            m_camera->SetAperture(0.f);
+
+            m_scene->SetCamera(m_camera);
+        }
+
+        UpdateCameraSettings(cam_state);
+
+        for (const auto& output: m_outputs)
+        {
+            output->Clear(RadeonRays::float3(.0f, .0f, .0f, .0f));
+        }
+
+        m_controller->CompileScene(m_scene);
+        auto& scene = m_controller->GetCachedScene(m_scene);
 
         for (auto i = 0u; i < kNumIterations; i++)
         {
