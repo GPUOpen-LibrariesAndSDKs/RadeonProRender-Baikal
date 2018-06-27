@@ -1,12 +1,8 @@
 #pragma once
 
-#define BaikalOld BaikalOld
 #include "BaikalOld/SceneGraph/material.h"
-#undef BaikalOld
 
-#define BaikalOld Baikal
 #include "SceneGraph/uberv2material.h"
-#undef BaikalOld
 
 #include <set>
 

@@ -18,8 +18,7 @@ source_group("BaikalOld\\SceneGraph\\IO" FILES ${BAIKAL_OLD_IO_SOURCES})
 SET(SOURCES
     material_converter.cpp
     material_converter.h
-    main.cpp
-    ${Baikal_SOURCE_DIR}/Baikal/Utils/half.cpp)
+    main.cpp)
 
 add_executable(MaterialConverter ${SOURCES} ${BAIKAL_OLD_SOURCES} ${BAIKAL_OLD_IO_SOURCES})
 target_compile_features(MaterialConverter PRIVATE cxx_std_14)
