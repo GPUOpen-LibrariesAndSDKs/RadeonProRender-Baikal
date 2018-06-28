@@ -486,14 +486,18 @@ namespace Baikal
                 }
                 else
                 {
-                    //std::ostringstream oss;
-                    //oss << (std::uint64_t)texture.get() << ".jpg";
+                    std::string texture_name = texture->GetName();
+                    if (texture_name.empty())
+                    {
+                        std::ostringstream oss;
+                        oss << (std::uint64_t)texture.get() << ".jpg";
+                        texture_name = oss.str();
+                        io.SaveImage(m_base_path + texture_name, texture);
+                    }
 
-                    //io.SaveImage(m_base_path + oss.str(), texture);
+                    m_tex2name[texture] = texture_name;
 
-                    m_tex2name[texture] = texture->GetName();//oss.str();
-
-                    printer.PushAttribute("value", texture->GetName().c_str());
+                    printer.PushAttribute("value", texture_name.c_str());
                 }
                 printer.CloseElement();
                 break;

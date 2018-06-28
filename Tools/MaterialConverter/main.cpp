@@ -50,16 +50,19 @@ void Process(int argc, char** argv)
         std::cerr << "Failed to open materials.xml file!" << std::endl;
         return;
     }
+
     std::ifstream in_mapping(scene_path_str + "mapping.xml");
     if (!in_mapping)
     {
         std::cerr << "Failed to open mapping.xml file!" << std::endl;
         return;
     }
+
     in_materials.close();
     in_mapping.close();
 
     std::cout << "Loading materials.xml" << std::endl;
+
     auto material_io = BaikalOld::MaterialIo::CreateMaterialIoXML();
     auto mats = material_io->LoadMaterials(scene_path_str + "materials.xml");
 
@@ -72,6 +75,7 @@ void Process(int argc, char** argv)
 
     tinyxml2::XMLDocument doc;
     doc.LoadFile((scene_path_str + "mapping.xml").c_str());
+
     std::set<BaikalOld::Material::Ptr> old_materials;
     for (auto element = doc.FirstChildElement(); element; element = element->NextSiblingElement())
     {
@@ -83,6 +87,7 @@ void Process(int argc, char** argv)
 
     auto material_io_new = Baikal::MaterialIo::CreateMaterialIoXML();
     auto material_new_iterator = std::make_unique<Baikal::ContainerIterator<decltype(new_materials)>>(std::move(new_materials));
+
     std::cout << "Saving to new materials xml file" << std::endl;
     material_io_new->SaveMaterials(scene_path_str + "materials_new.xml", *material_new_iterator);
 
