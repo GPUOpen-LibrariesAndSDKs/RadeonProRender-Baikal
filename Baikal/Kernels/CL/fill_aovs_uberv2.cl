@@ -35,7 +35,6 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/volumetrics.cl>
 #include <../Baikal/Kernels/CL/path.cl>
 #include <../Baikal/Kernels/CL/vertex.cl>
-#include <../Baikal/Kernels/CL/normalmap.cl>
 
 // Fill AOVs
 KERNEL void FillAOVsUberV2(
