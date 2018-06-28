@@ -10,9 +10,7 @@ option(BAIKAL_ENABLE_STANDALONE "Enable standalone application build" ON)
 option(BAIKAL_ENABLE_DATAGENERATOR "Enable data generator application build" OFF)
 option(BAIKAL_ENABLE_IO "Enable IO library build" ON)
 option(BAIKAL_ENABLE_FBX "Enable FBX import in BaikalIO. Requires BaikalIO to be turned ON" OFF)
-
-#Disabled for now.
-#option(BAIKAL_EMBED_KERNELS "Embed CL kernels into binary module" OFF)
+option(BAIKAL_EMBED_KERNELS "Embed CL kernels into binary module" OFF)
 
 #Sanity checks
 if (BAIKAL_ENABLE_GLTF AND NOT BAIKAL_ENABLE_RPR)

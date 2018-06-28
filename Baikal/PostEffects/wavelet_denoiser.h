@@ -30,7 +30,7 @@ THE SOFTWARE.
 #include <limits>
 
 #ifdef BAIKAL_EMBED_KERNELS
-#include "./Kernels/CL/cache/kernels.h"
+#include "embed_kernels.h"
 #endif
 
 namespace Baikal
@@ -105,12 +105,9 @@ namespace Baikal
 
     inline WaveletDenoiser::WaveletDenoiser(CLWContext context, const CLProgramManager *program_manager)
 #ifdef BAIKAL_EMBED_KERNELS
-        : ClwPostEffect(context,
-            g_wavelet_denoise_opencl,
-            g_wavelet_denoise_opencl_inc,
-            sizeof(g_wavelet_denoise_opencl_inc) / sizeof(*g_wavelet_denoise_opencl_inc))
+        : ClwPostEffect(context, program_manager, "wavelet_denoise", g_wavelet_denoise_opencl, g_wavelet_denoise_opencl_headers)
 #else
-        : ClwPostEffect(program_manager, context, "../Baikal/Kernels/CL/wavelet_denoise.cl")
+        : ClwPostEffect(context, program_manager, "../Baikal/Kernels/CL/wavelet_denoise.cl")
 #endif
         , m_current_buffer_index(0) 
         , m_max_wavelet_passes(5)
