@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/volumetrics.cl>
 #include <../Baikal/Kernels/CL/path.cl>
 #include <../Baikal/Kernels/CL/vertex.cl>
-#include <../Baikal/Kernels/CL/integrator_bdpt.cl>
+#include <../Baikal/Kernels/CL/normalmap.cl>
 
 // Fill AOVs
 KERNEL void FillAOVsUberV2(
@@ -417,34 +417,13 @@ KERNEL void FillAOVsUberV2(
 
             if (view_shading_normal_enabled)
             {
-                float ngdotwi = dot(diffgeo.ng, wi);
-                bool backfacing = ngdotwi < 0.f;
+                float3 res = make_float3(dot(camera->right, diffgeo.n), 
+                                        dot(camera->up, diffgeo.n), 
+                                        dot(camera->forward, diffgeo.n));
+                res = normalize(res);
 
-                // Select BxDF
-                //Material_Select(&scene, wi, &sampler, TEXTURE_ARGS, SAMPLER_ARGS, &diffgeo);
-
-                // float s = Bxdf_IsBtdf(&diffgeo) ? (-sign(ngdotwi)) : 1.f;
-                // if (backfacing && !Bxdf_IsBtdf(&diffgeo))
-                // {
-                //     //Reverse normal and tangents in this case
-                //     //but not for BTDFs, since BTDFs rely
-                //     //on normal direction in order to arrange   
-                //     //indices of refraction
-                //     diffgeo.n = -diffgeo.n;
-                //     diffgeo.dpdu = -diffgeo.dpdu;
-                //     diffgeo.dpdv = -diffgeo.dpdv;
-                // }
-
-                // DifferentialGeometry_ApplyBumpNormalMap(&diffgeo, TEXTURE_ARGS);
-                // DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
-
-                // float3 res = make_float3(dot(camera->right, diffgeo.n), 
-                //                         dot(camera->up, diffgeo.n), 
-                //                         dot(camera->forward, diffgeo.n));
-                // res = normalize(res);
-
-                // aov_view_shading_normal[idx].xyz += res;
-                // aov_view_shading_normal[idx].w += 1.f;
+                aov_view_shading_normal[idx].xyz += res;
+                aov_view_shading_normal[idx].w += 1.f;
             }
         }
     }
