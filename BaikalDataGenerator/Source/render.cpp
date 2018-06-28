@@ -32,7 +32,7 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
-static std::uint32_t constexpr kNumIterations = 32;
+static std::uint32_t constexpr kNumIterations = 4096;
 
 struct OutputDesc
 {
@@ -45,12 +45,11 @@ struct OutputDesc
 
 // if you need to add new output for saving to disk
 // just put its description in thic collection
-std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "png", 8 },
-                                               { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "jpg", 8 },
-                                               { Renderer::OutputType::kDepth, "view_shading_depth", "png", 16 },
-                                               { Renderer::OutputType::kAlbedo, "albedo", "jpg", 8 },
-                                               { Renderer::OutputType::kGloss, "gloss", "jpg", 8 } };
-
+std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "png", 16 },
+                                               { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "png", 8 },
+                                               { Renderer::OutputType::kDepth, "depth", "png", 16 },
+                                               { Renderer::OutputType::kAlbedo, "albedo", "png", 8 },
+                                               { Renderer::OutputType::kGloss, "gloss", "png", 8 } };
 
 static bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
 {
