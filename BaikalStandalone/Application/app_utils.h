@@ -26,6 +26,7 @@
 
 #include "radeon_rays.h"
 #include "Utils/config_manager.h"
+#include "Utils/cmd_parser.h"
 #include "Baikal/Renderers/renderer.h"
 #include "Baikal/Estimators/estimator.h"
 
@@ -102,11 +103,11 @@ namespace Baikal
 
         AppCliParser();
         AppSettings Parse(int argc, char * argv[]);
+
     private:
-        char* GetCmdOption(char ** begin, char ** end, const std::string & option);
-        bool CmdOptionExists(char** begin, char** end, const std::string& option);
+
         void ShowHelp();
 
-
+        CmdParser m_cmd_parser;
     };
 }

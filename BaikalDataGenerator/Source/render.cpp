@@ -1,5 +1,5 @@
 /**********************************************************************
-Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
+#include "utils.h"
 #include "render.h"
 #include "scene_io.h"
 #include "material_io.h"
@@ -32,34 +33,39 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
-static std::uint32_t constexpr kNumIterations = 4096;
+namespace
+{
+    std::uint32_t constexpr kNumIterations = 4096;
+
+    bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
+    {
+        return (left.x != right.x) ||
+               (left.y != right.y) ||
+               (left.z != right.z);
+    }
+}
 
 struct OutputDesc
 {
     Renderer::OutputType type;
     std::string name;
-    // extansion of the file to save
+    // extension of the file to save
     std::string file_ext;
-    int bpp;
+    // bites per pixel
+    int width, height;
 };
 
 // if you need to add new output for saving to disk
 // just put its description in thic collection
-std::vector<OutputDesc> outputs_collection = { { Renderer::OutputType::kColor, "color", "png", 16 },
-                                               { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "png", 8 },
-                                               { Renderer::OutputType::kDepth, "depth", "png", 16 },
-                                               { Renderer::OutputType::kAlbedo, "albedo", "png", 8 },
-                                               { Renderer::OutputType::kGloss, "gloss", "png", 8 } };
+std::vector<OutputDesc> outputs_collection = {
+    { Renderer::OutputType::kColor, "color", "png" },
+    { Renderer::OutputType::kViewShadingNormal, "view_shading_depth", "png" },
+    { Renderer::OutputType::kDepth, "depth", "png" },
+    { Renderer::OutputType::kAlbedo, "albedo", "png" },
+    { Renderer::OutputType::kGloss, "gloss", "png" }
+};
 
-static bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
-{
-    return (left.x != right.x) ||
-        (left.y != right.y) ||
-        (left.z != right.z);
-}
-
-Render::Render(const std::string &file_name,
-               const std::string &path,
+Render::Render(std::string file_name,
                std::uint32_t output_width,
                std::uint32_t output_height)
 {
@@ -99,24 +105,27 @@ Render::Render(const std::string &file_name,
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     m_controller = m_factory->CreateSceneController();
 
-    for (const auto output_info: outputs_collection)
+    for (auto& output_info: outputs_collection)
     {
         m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
+        output_info.width = output_width;
+        output_info.height = output_height;
     }
+
+    std::replace(file_name.begin(), file_name.end(), '\\', '/');
+    size_t last_index = file_name.find_last_of('/');
+    std::string path = file_name.substr(0, last_index);
 
     m_scene = (file_name.empty() || path.empty()) ? Baikal::SceneIo::LoadScene("sphere+plane.test", "") :
                                                     Baikal::SceneIo::LoadScene(file_name, path);
 }
 
-void Render::LoadMaterialXml(const std::string &path, const std::string &file_name)
+void Render::LoadMaterialXml(const std::string &file_name)
 {
-    std::stringstream ss;
-    ss << path << "/" << file_name;
-
     // Check it we have material remapping
-    std::ifstream in_materials(ss.str());
-    std::ifstream in_mapping(ss.str());
+    std::ifstream in_materials(file_name);
+    std::ifstream in_mapping(file_name);
 
     if (in_materials && in_mapping)
     {
@@ -124,27 +133,23 @@ void Render::LoadMaterialXml(const std::string &path, const std::string &file_na
         in_mapping.close();
 
         auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
-        auto mats = material_io->LoadMaterials(ss.str());
-        auto mapping = material_io->LoadMaterialMapping(ss.str());
+        auto mats = material_io->LoadMaterials(file_name);
+        auto mapping = material_io->LoadMaterialMapping(file_name);
 
         material_io->ReplaceSceneMaterials(*m_scene, *mats, mapping);
     }
 }
 
-void Render::LoadCameraXml(const std::string &path, const std::string &file_name)
+void Render::LoadCameraXml(const std::string &file_name)
 {
-    std::stringstream ss;
-
-    ss << path << "/" << file_name;
-
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(ss.str().c_str());
+    doc.LoadFile(file_name.c_str());
+
     auto root = doc.FirstChildElement("cam_list");
 
     if (!root)
     {
-        throw std::runtime_error("Render::LoadCameraXml(...):"
-                                 "Failed to open lights set file.");
+        THROW_EX("Failed to open lights set file.")
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("camera");
@@ -180,20 +185,15 @@ void Render::LoadCameraXml(const std::string &path, const std::string &file_name
     }
 }
 
-void Render::LoadLightXml(const std::string &path, const std::string &file_name)
+void Render::LoadLightXml(const std::string &file_name)
 {
-    std::stringstream ss;
-
-    ss << path << "/" << file_name;
-
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(ss.str().c_str());
+    doc.LoadFile(file_name.c_str());
     auto root = doc.FirstChildElement("light_list");
 
     if (!root)
     {
-        throw std::runtime_error("Render::LoadLightXml(...):"
-                                 "Failed to open lights set file.");
+        THROW_EX("Failed to open lights set file.")
     }
 
     Light::Ptr new_light;
@@ -236,7 +236,7 @@ void Render::LoadLightXml(const std::string &path, const std::string &file_name)
         }
         else
         {
-            throw std::runtime_error("Render::LoadLightXml(...): Invalid light type " + type);
+            THROW_EX("Invalid light type " + type);
         }
 
         RadeonRays::float3 p;
@@ -260,6 +260,29 @@ void Render::LoadLightXml(const std::string &path, const std::string &file_name)
         new_light->SetEmittedRadiance(r);
         m_scene->AttachLight(new_light);
         elem = elem->NextSiblingElement("light");
+    }
+}
+
+void Render::LoadSppXml(const std::string& file_name)
+{
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(file_name.c_str());
+    auto root = doc.FirstChildElement("spp_list");
+
+    if (!root)
+    {
+        THROW_EX("Failed to open lights set file.")
+    }
+
+    tinyxml2::XMLElement* elem = root->FirstChildElement("spp");
+
+    m_spp.clear();
+
+    while (elem)
+    {
+        int spp = (int)elem->Int64Attribute("iter_num");
+        m_spp.insert(spp);
+        elem = elem->NextSiblingElement("spp");
     }
 }
 
@@ -292,17 +315,16 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
     }
 }
 
-void Render::SaveOutput(Renderer::OutputType type,
-                        const std::string& path,
-                        const std::string& file_name,
-                        const std::string& extension,
-                        int bpp)
+void Render::SaveOutput(OutputDesc desc,
+                        const std::string& file_dir,
+                        int cam_index,
+                        int spp)
 {
     OIIO_NAMESPACE_USING;
 
     std::vector<RadeonRays::float3> output_data;
     std::vector<RadeonRays::float3> image_data;
-    auto output = m_renderer->GetOutput(type);
+    auto output = m_renderer->GetOutput(desc.type);
     auto width = output->width();
     auto height = output->height();
 
@@ -313,23 +335,6 @@ void Render::SaveOutput(Renderer::OutputType type,
     image_data.resize(buffer.GetElementCount());
 
     output->GetData(output_data.data());
-
-    TypeDesc fmt;
-    switch (bpp)
-    {
-        case 8:
-            fmt = TypeDesc::UINT8;
-            break;
-        case 16:
-            fmt = TypeDesc::UINT16;
-            break;
-        case 32:
-            fmt = TypeDesc::FLOAT;
-            break;
-        default:
-            throw std::runtime_error("Render::SaveOutput(...):"
-                                     "Unhandled bpp of image.");
-    }
 
     for (auto y = 0u; y < height; ++y)
     {
@@ -345,18 +350,14 @@ void Render::SaveOutput(Renderer::OutputType type,
 
     std::stringstream ss;
 
-    auto time = std::chrono::high_resolution_clock::now();
-
-    ss << path << "/" << file_name << "-" 
-       << std::to_string(time.time_since_epoch().count())
-       << "." << extension;
+    ss << file_dir << "/" << "cam_" << cam_index << "_"
+       << desc.name << "_spp_" << spp << ".png";
 
     std::unique_ptr<ImageOutput> out(ImageOutput::create(ss.str()));
 
     if (!out)
     {
-        throw std::runtime_error("Render::SaveOutput(...):"
-                                 "Can't create image file on disk");
+        THROW_EX("Can't create image file on disk");
     }
 
     ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
@@ -369,6 +370,7 @@ void Render::GenerateDataset(const std::string &path)
 {
     using namespace RadeonRays;
 
+    int counter = 1;
     for (const auto &cam_state: m_camera_states)
     {
         if (!m_camera)
@@ -400,38 +402,19 @@ void Render::GenerateDataset(const std::string &path)
         for (auto i = 0u; i < kNumIterations; i++)
         {
             m_renderer->Render(scene);
+
+            if (m_spp.find(i + 1) != m_spp.end())
+            {
+                for (const auto& output : outputs_collection)
+                {
+                    SaveOutput(output,
+                               path,
+                               counter,
+                               i + 1);
+                }
+            }
         }
 
-        for (const auto& output : outputs_collection)
-        {
-            SaveOutput(output.type,
-                       path,
-                       output.name,
-                       output.file_ext,
-                       output.bpp);
-        }
+        counter++;
     }
-}
-
-namespace {
-
-    struct RenderConcrete : public Render
-    {
-        RenderConcrete(const std::string &file_name,
-                       const std::string &path,
-                       std::uint32_t output_width,
-                       std::uint32_t output_height)
-        : Render(file_name, path, output_width, output_height) {}
-    };
-}
-
-Render::Ptr Render::Create(const std::string& file_name,
-                           const std::string& path,
-                           std::uint32_t output_width,
-                           std::uint32_t output_height)
-{
-    return std::make_shared<RenderConcrete>(file_name,
-                                            path,
-                                            output_width,
-                                            output_height);
 }

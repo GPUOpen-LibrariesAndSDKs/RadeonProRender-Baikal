@@ -20,44 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#include "cmd_line_parser.h"
-#include "render.h"
+#pragma once
 
-void Run(const DGenConfig& config)
+#include <string>
+#include <Utils/cmd_parser.h>
+
+struct DGenConfig
 {
-    Render render(config.scene_file, config.width, config.height);
+    std::string scene_file;
+    std::string light_file;
+    std::string camera_file;
+    std::string material_file;
+    std::string spp_file;
+    std::string output_dir;
+    int width, height;
+};
 
-    if (!config.material_file.empty())
-        render.LoadMaterialXml(config.material_file);
-
-    if (!config.spp_file.empty())
-        render.LoadSppXml(config.spp_file);
-
-    render.LoadLightXml(config.light_file);
-    render.LoadCameraXml(config.camera_file);
-
-    render.GenerateDataset(config.output_dir);
-}
-
-int main(int argc, char *argv[])
+class CmdLineParser
 {
-    try
-    {
-        CmdLineParser cline_parser;
+public:
+    CmdLineParser();
 
-        if (cline_parser.CmdOptionExists(argv, argv + argc, "-help"))
-        {
-            cline_parser.ShowHelp();
-            return 0;
-        }
+    bool CmdOptionExists(char** begin, char** end, const std::string& option);
 
-        auto config = cline_parser.Parse(argc, argv);
+    DGenConfig Parse(int argc, char * argv[]);
 
-        Run(config);
-    }
-    catch (std::exception& ex)
-    {
-        std::cout << ex.what();
-        return -1;
-    }
-}
+    void ShowHelp();
+
+private:
+    CmdParser m_cmd_parser;
+};

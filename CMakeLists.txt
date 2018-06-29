@@ -134,7 +134,7 @@ if (BAIKAL_ENABLE_DATAGENERATOR)
     add_subdirectory(BaikalDataGenerator)
 
     if (MSVC)
-	    add_compile_options(/DGENERATE_DATASET)
+        add_compile_options(/DGENERATE_DATASET)
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MGENERATE_DATASET")
     endif()

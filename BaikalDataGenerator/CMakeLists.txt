@@ -1,9 +1,10 @@
 set(DATAGENERATOR_SOURCES
     Source/main.cpp
-    Source/cline_parser.h
-    Source/cline_parser.cpp
+    Source/cmd_line_parser.h
+    Source/cmd_line_parser.cpp
     Source/render.h
-    Source/render.cpp)
+    Source/render.cpp
+    Source/utils.h)
 
 set(MAIN_SOURCES Source/main.cpp)
 

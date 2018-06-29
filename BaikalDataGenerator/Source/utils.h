@@ -20,44 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#include "cmd_line_parser.h"
-#include "render.h"
+#pragma once
 
-void Run(const DGenConfig& config)
-{
-    Render render(config.scene_file, config.width, config.height);
+#include <string>
 
-    if (!config.material_file.empty())
-        render.LoadMaterialXml(config.material_file);
-
-    if (!config.spp_file.empty())
-        render.LoadSppXml(config.spp_file);
-
-    render.LoadLightXml(config.light_file);
-    render.LoadCameraXml(config.camera_file);
-
-    render.GenerateDataset(config.output_dir);
-}
-
-int main(int argc, char *argv[])
-{
-    try
-    {
-        CmdLineParser cline_parser;
-
-        if (cline_parser.CmdOptionExists(argv, argv + argc, "-help"))
-        {
-            cline_parser.ShowHelp();
-            return 0;
-        }
-
-        auto config = cline_parser.Parse(argc, argv);
-
-        Run(config);
-    }
-    catch (std::exception& ex)
-    {
-        std::cout << ex.what();
-        return -1;
-    }
-}
+#define THROW_EX(text) throw std::exception((std::string(__func__) + text).c_str());
