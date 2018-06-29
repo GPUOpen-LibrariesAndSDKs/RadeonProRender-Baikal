@@ -52,7 +52,7 @@ CLProgramManager::CLProgramManager(const std::string &cache_path) :
 
 }
 
-uint32_t CLProgramManager::CreateProgram(CLWContext context, const std::string &fname) const
+uint32_t CLProgramManager::CreateProgramFromFile(CLWContext context, const std::string &fname) const
 {
     std::regex delimiter("\\\\");
     auto fullpath = std::regex_replace(fname, delimiter, "/");
@@ -71,9 +71,13 @@ uint32_t CLProgramManager::CreateProgram(CLWContext context, const std::string &
 
     auto name = fullpath.substr(filename_start, filename_end - filename_start);
 
+    return CLProgramManager::CreateProgramFromSource(context, name, ReadFile(fname));
+}
 
+uint32_t CLProgramManager::CreateProgramFromSource(CLWContext context, const std::string &name, const std::string &source) const
+{
     CLProgram prg(this, m_next_program_id++, context, name, m_cache_path);
-    prg.SetSource(ReadFile(fname));
+    prg.SetSource(source);
     m_programs.insert(std::make_pair(prg.GetId(), prg));
     return prg.GetId();
 }

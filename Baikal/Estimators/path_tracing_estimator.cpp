@@ -11,7 +11,7 @@
 #include "Utils/sobol.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
-#include "./Kernels/CL/cache/kernels.h"
+#include "embed_kernels.h"
 #endif
 
 namespace Baikal
@@ -77,17 +77,17 @@ namespace Baikal
     ) :
         Estimator(api)
 #ifdef BAIKAL_EMBED_KERNELS
-        , ClwClass(context,
-            g_path_tracing_estimator_opencl,
-            g_path_tracing_estimator_opencl_inc,
-            sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
-            "", cache_path)
+        , ClwClass(context, program_manager, "path_tracing_estimator", g_path_tracing_estimator_opencl, g_path_tracing_estimator_opencl_headers, "")
 #else
         , ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
 #endif
         , m_render_data(new RenderData)
         , m_sample_counter(0)
+#ifdef BAIKAL_EMBED_KERNELS
+        , m_uberv2_kernels(context, program_manager, "path_tracing_estimator_uberv2", g_path_tracing_estimator_uberv2_opencl, g_path_tracing_estimator_uberv2_opencl_headers, "")
+#else
         , m_uberv2_kernels(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator_uberv2.cl", "")
+#endif
     {
         // Create parallel primitives
         m_render_data->pp = CLWParallelPrimitives(context, GetFullBuildOpts().c_str());

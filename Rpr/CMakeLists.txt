@@ -47,10 +47,10 @@ source_group("Utils" FILES ${UTILS_SOURCES})
 
 list(APPEND SOURCES ${WRAP_OBJECT_SOURCES} ${UTILS_SOURCES})
 
-add_library(RadeonProRender SHARED ${SOURCES})
-target_compile_definitions(RadeonProRender PRIVATE RPR_EXPORT_API)
-target_compile_features(RadeonProRender PRIVATE cxx_std_14)
-target_include_directories(RadeonProRender PUBLIC ${Baikal_SOURCE_DIR}/Rpr)
-target_link_libraries(RadeonProRender PUBLIC Baikal BaikalIO OpenGL::GL GLEW::GLEW)
+add_library(RadeonProRender64 SHARED ${SOURCES})
+target_compile_definitions(RadeonProRender64 PRIVATE RPR_EXPORT_API)
+target_compile_features(RadeonProRender64 PRIVATE cxx_std_14)
+target_include_directories(RadeonProRender64 PUBLIC ${Baikal_SOURCE_DIR}/Rpr)
+target_link_libraries(RadeonProRender64 PUBLIC Baikal BaikalIO OpenGL::GL GLEW::GLEW)
 
     

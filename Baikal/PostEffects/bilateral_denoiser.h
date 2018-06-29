@@ -22,6 +22,10 @@ THE SOFTWARE.
 #pragma once
 #include "clw_post_effect.h"
 
+#ifdef BAIKAL_EMBED_KERNELS
+#include "embed_kernels.h"
+#endif
+
 namespace Baikal
 {
     /**
@@ -56,7 +60,11 @@ namespace Baikal
     };
 
     inline BilateralDenoiser::BilateralDenoiser(CLWContext context, const CLProgramManager *program_manager)
-        : ClwPostEffect(program_manager, context, "../Baikal/Kernels/CL/denoise.cl")
+#ifdef BAIKAL_EMBED_KERNELS
+        : ClwPostEffect(context, program_manager, "denoise", g_denoise_opencl, g_denoise_opencl_headers)
+#else
+        : ClwPostEffect(context, program_manager, "../Baikal/Kernels/CL/denoise.cl")
+#endif
     {
         // Add necessary params
         RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));

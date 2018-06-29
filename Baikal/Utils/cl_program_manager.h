@@ -40,7 +40,9 @@ namespace Baikal
         // Constructor
         explicit CLProgramManager(const std::string &cache_path);
         // Creates program from file and returns its id
-        uint32_t CreateProgram(CLWContext context, const std::string &fname) const;
+        uint32_t CreateProgramFromFile(CLWContext context, const std::string &fname) const;
+        // Creates program from source and returns its id
+        uint32_t CreateProgramFromSource(CLWContext context, const std::string &name, const std::string &source) const;
         // Loads header from file into map of headers
         void LoadHeader(const std::string &header) const;
         // Adds header to map from source
