@@ -24,4 +24,4 @@ THE SOFTWARE.
 
 #include <string>
 
-#define THROW_EX(text) throw std::exception((std::string(__func__) + text).c_str());
+#define THROW_EX(text) throw std::exception((std::string(__func__) + ": " +text).c_str());

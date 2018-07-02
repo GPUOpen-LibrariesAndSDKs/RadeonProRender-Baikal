@@ -69,7 +69,7 @@ DGenConfig CmdLineParser::Parse(int argc, char* argv[])
     char* width_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-width");
     config.width = (width_str) ? atoi(width_str) : 256;
 
-    char* height_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-width");
+    char* height_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-heiht");
     config.height = (height_str) ? atoi(height_str) : 256;
 
     return config;

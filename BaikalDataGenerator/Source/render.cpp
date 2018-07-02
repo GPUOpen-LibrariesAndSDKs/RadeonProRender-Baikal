@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "Output/clwoutput.h"
 #include "BaikalIO/image_io.h"
 
+#include <filesystem>
 #include <fstream>
 #include "XML/tinyxml2.h"
 
@@ -113,12 +114,19 @@ Render::Render(std::string file_name,
         output_info.height = output_height;
     }
 
-    std::replace(file_name.begin(), file_name.end(), '\\', '/');
-    size_t last_index = file_name.find_last_of('/');
-    std::string path = file_name.substr(0, last_index);
+    std::filesystem::path full_path = file_name;
 
-    m_scene = (file_name.empty() || path.empty()) ? Baikal::SceneIo::LoadScene("sphere+plane.test", "") :
-                                                    Baikal::SceneIo::LoadScene(file_name, path);
+    if (!full_path.has_filename())
+    {
+        THROW_EX("There is no any file to load");
+    }
+    if (!full_path.has_parent_path())
+    {
+        THROW_EX("can not read directory from input scene 'file_name'");
+    }
+
+
+    m_scene = Baikal::SceneIo::LoadScene(full_path.string(), full_path.parent_path().string());
 }
 
 void Render::LoadMaterialXml(const std::string &file_name)
@@ -322,6 +330,20 @@ void Render::SaveOutput(OutputDesc desc,
 {
     OIIO_NAMESPACE_USING;
 
+    std::stringstream ss;
+
+    ss << "cam_" << cam_index << "_"
+        << desc.name << "_spp_" << spp << ".png";
+
+    std::filesystem::path path = file_dir;
+
+    if (!path.has_filename())
+    {
+        THROW_EX("incorrect output path");
+    }
+
+    path.append(ss.str());
+
     std::vector<RadeonRays::float3> output_data;
     std::vector<RadeonRays::float3> image_data;
     auto output = m_renderer->GetOutput(desc.type);
@@ -342,16 +364,11 @@ void Render::SaveOutput(OutputDesc desc,
         {
             float3 val = output_data[(height - 1 - y) * width + x];
             val *= (1.f / val.w);
-            image_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
-            image_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
-            image_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
+            image_data[y * width + x].x = val.x; // std::pow(val.x, 1.f / 2.2f);
+            image_data[y * width + x].y = val.y;  //std::pow(val.y, 1.f / 2.2f);
+            image_data[y * width + x].z = val.z;  //std::pow(val.z, 1.f / 2.2f);
         }
     }
-
-    std::stringstream ss;
-
-    ss << file_dir << "/" << "cam_" << cam_index << "_"
-       << desc.name << "_spp_" << spp << ".png";
 
     std::unique_ptr<ImageOutput> out(ImageOutput::create(ss.str()));
 
@@ -361,7 +378,7 @@ void Render::SaveOutput(OutputDesc desc,
     }
 
     ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
-    out->open(ss.str(), spec);
+    out->open(path.string(), spec);
     out->write_image(TypeDesc::FLOAT, image_data.data(), sizeof(float3));
     out->close();
 }

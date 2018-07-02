@@ -14,7 +14,7 @@ set(SOURCES
 source_group("Source" FILES ${DATAGENERATOR_SOURCES})
     
 add_executable(BaikalDataGenerator ${SOURCES})
-target_compile_features(BaikalDataGenerator PRIVATE cxx_std_14)
+target_compile_features(BaikalDataGenerator PRIVATE cxx_std_17)
 
 #Add project root since BaikalStandalone directly includes Baikal/* files
 target_include_directories(BaikalDataGenerator
@@ -35,6 +35,7 @@ if (WIN32)
 endif ()
 
 install(TARGETS BaikalDataGenerator RUNTIME DESTINATION bin)
+
 if (WIN32)
     install(FILES ${IO_DLLS} DESTINATION bin)
 endif ()
