@@ -50,7 +50,8 @@ public:
     void GenerateDataset(const std::vector<CameraInfo>& camera_states,
                          const std::vector<LightInfo>& light_settings,
                          const std::vector<int>& spp,
-                         const std::filesystem::path& output_dir);
+                         const std::filesystem::path& output_dir,
+                         bool gamma_correction_enabled = false);
 
 private:
     void UpdateCameraSettings(const CameraInfo& cam_state);
@@ -60,7 +61,8 @@ private:
     void SaveOutput(OutputDesc desc,
                     const std::filesystem::path& output_dir,
                     int cam_index,
-                    int spp);
+                    int spp,
+                    bool gamma_correction_enabled);
 
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;

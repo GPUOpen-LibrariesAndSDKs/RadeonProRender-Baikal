@@ -33,6 +33,7 @@ struct DGenConfig
     std::filesystem::path spp_file;
     std::filesystem::path output_dir;
     int width, height;
+    bool gamma_correction;
 };
 
 #define THROW_EX(text) throw std::exception((std::string(__func__) + ": " + text).c_str());

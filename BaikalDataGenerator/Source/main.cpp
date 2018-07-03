@@ -33,7 +33,8 @@ void Run(const DGenConfig& config)
     render.GenerateDataset(config_loader.GetCameraStates(),
                            config_loader.GetLightSettings(),
                            config_loader.GetSpp(),
-                           config.output_dir);
+                           config.output_dir,
+                           config.gamma_correction);
 }
 
 int main(int argc, char *argv[])

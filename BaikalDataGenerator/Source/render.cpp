@@ -155,7 +155,8 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 void Render::SaveOutput(OutputDesc desc,
                         const std::filesystem::path& output_dir,
                         int cam_index,
-                        int spp)
+                        int spp,
+                        bool gamma_correction_enabled)
 {
     OIIO_NAMESPACE_USING;
 
@@ -175,15 +176,38 @@ void Render::SaveOutput(OutputDesc desc,
 
     output->GetData(output_data.data());
 
-    for (auto y = 0u; y < height; ++y)
+    if (gamma_correction_enabled)
     {
-        for (auto x = 0u; x < width; ++x)
+        for (auto y = 0u; y < height; ++y)
         {
-            float3 val = output_data[(height - 1 - y) * width + x];
-            val *= (1.f / val.w);
-            image_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
-            image_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
-            image_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
+            for (auto x = 0u; x < width; ++x)
+            {
+                float3 val = output_data[(height - 1 - y) * width + x];
+                // "The 4-th pixel component is a count of accumulated samples.
+                //It can be different for every pixel in case of adaptive sampling.
+                //So, we need to normalize pixel values here".
+                val *= (1.f / val.w);
+                // gamma corection
+                image_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
+                image_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
+                image_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
+            }
+        }
+    }
+    else
+    {
+        for (auto y = 0u; y < height; ++y)
+        {
+            for (auto x = 0u; x < width; ++x)
+            {
+                float3 val = output_data[(height - 1 - y) * width + x];
+                // "The 4-th pixel component is a count of accumulated samples.
+                //It can be different for every pixel in case of adaptive sampling.
+                //So, we need to normalize pixel values here".
+                val *= (1.f / val.w);
+                // invert the image 
+                image_data[y * width + x] = val;
+            }
         }
     }
 
@@ -272,7 +296,8 @@ void Render::SetLight(const std::vector<LightInfo>& light_settings)
 void Render::GenerateDataset(const std::vector<CameraInfo>& camera_states,
                              const std::vector<LightInfo>& light_settings,
                              const std::vector<int>& spp,
-                             const std::filesystem::path& output_dir)
+                             const std::filesystem::path& output_dir,
+                             bool gamma_corection_enabled)
 {
     using namespace RadeonRays;
 
@@ -329,7 +354,8 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& camera_states,
                     SaveOutput(output,
                                output_dir,
                                counter,
-                               i + 1);
+                               i + 1,
+                               gamma_corection_enabled);
                 }
             }
         }

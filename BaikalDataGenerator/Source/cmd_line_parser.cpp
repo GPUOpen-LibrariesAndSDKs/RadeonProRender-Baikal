@@ -26,15 +26,14 @@ THE SOFTWARE.
 namespace
 {
     char const* kHelpMessage =
-        "Baikal [-light_dir path_to_light_config]"
-        "[-light_file name_of_the_light_config]"
-        "[-camera_dir path_to_camera_config]"
+        "Baikal [-light_file name_of_the_light_config]"
         "[-camera_file name_of_the_camera_config]"
-        "[-material_dir path_to_material_config]"
-        "[-material_file name_to_material_config]"
+        "[-scene_file name_of_the_scene_config]"
+        "[-spp_file name_of_the_spp_config]"
         "[-outpute_dir path_to_generate_data]"
         "[-width output_width]"
-        "[-height output_heoght]";
+        "[-height output_height]"
+        "[-gamma enables_gamma_correction]";
 }
 
 CmdLineParser::CmdLineParser() {}
@@ -62,6 +61,9 @@ DGenConfig CmdLineParser::Parse(int argc, char* argv[])
 
     char* spp_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-spp_file");
     config.spp_file = spp_file ? spp_file : "";
+
+    char* gamma_correction_opt = m_cmd_parser.GetCmdOption(argv, argv + argc, "-gamma");
+    config.gamma_correction = spp_file ? true : false;
 
     char* width_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-width");
     config.width = (width_str) ? atoi(width_str) : 256;
