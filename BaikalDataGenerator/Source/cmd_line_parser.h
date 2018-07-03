@@ -23,18 +23,8 @@ THE SOFTWARE.
 #pragma once
 
 #include <string>
+#include "utils.h"
 #include <Utils/cmd_parser.h>
-
-struct DGenConfig
-{
-    std::string scene_file;
-    std::string light_file;
-    std::string camera_file;
-    std::string material_file;
-    std::string spp_file;
-    std::string output_dir;
-    int width, height;
-};
 
 class CmdLineParser
 {

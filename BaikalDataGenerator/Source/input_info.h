@@ -22,17 +22,34 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <filesystem>
+#include <radeon_rays.h>
 #include <string>
 
-struct DGenConfig
+struct CameraInfo
 {
-    std::filesystem::path scene_file;
-    std::filesystem::path light_file;
-    std::filesystem::path camera_file;
-    std::filesystem::path spp_file;
-    std::filesystem::path output_dir;
-    int width, height;
+    std::string type;
+    RadeonRays::float3 pos;
+    RadeonRays::float3 at;
+    RadeonRays::float3 up;
+    RadeonRays::float2 sensor_size;
+    RadeonRays::float2 zcap;
+    float aperture;
+    float focus_distance;
+    float focal_length;
 };
 
-#define THROW_EX(text) throw std::exception((std::string(__func__) + ": " + text).c_str());
+struct LightInfo
+{
+    std::string type;
+    RadeonRays::float3 pos;
+    RadeonRays::float3 dir;
+    RadeonRays::float3 rad;
+
+    // cone shape, this option available only for spot light
+    RadeonRays::float2 cs;
+
+    // this options available only for ibl
+    // path to texture image
+    std::string texture;
+    float mul;
+};

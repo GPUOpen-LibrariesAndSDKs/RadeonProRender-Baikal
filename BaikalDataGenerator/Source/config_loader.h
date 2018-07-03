@@ -22,17 +22,28 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <filesystem>
-#include <string>
+#include "utils.h"
+#include "input_info.h"
 
-struct DGenConfig
+class ConfigLoader
 {
-    std::filesystem::path scene_file;
-    std::filesystem::path light_file;
-    std::filesystem::path camera_file;
-    std::filesystem::path spp_file;
-    std::filesystem::path output_dir;
-    int width, height;
-};
+public:
 
-#define THROW_EX(text) throw std::exception((std::string(__func__) + ": " + text).c_str());
+    ConfigLoader(const DGenConfig& config);
+
+    std::vector<CameraInfo> GetCameraStates() const;
+    std::vector<LightInfo> GetLightSettings() const;
+    std::vector<int> GetSpp() const;
+
+private:
+
+    void ValidateConfig(const DGenConfig& config) const;
+
+    void LoadCameraConfig(const std::filesystem::path& file_name);
+    void LoadLightConfig(const std::filesystem::path& file_name);
+    void LoadSppConfig(const std::filesystem::path& file_name);
+
+    std::vector<CameraInfo> m_camera_states;
+    std::vector<LightInfo> m_light_settings;
+    std::vector<int> m_spp;
+};

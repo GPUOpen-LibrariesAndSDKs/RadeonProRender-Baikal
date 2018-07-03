@@ -21,22 +21,19 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "cmd_line_parser.h"
+#include "config_loader.h"
 #include "render.h"
 
 void Run(const DGenConfig& config)
 {
+    ConfigLoader config_loader(config);
+
     Render render(config.scene_file, config.width, config.height);
 
-    if (!config.material_file.empty())
-        render.LoadMaterialXml(config.material_file);
-
-    if (!config.spp_file.empty())
-        render.LoadSppXml(config.spp_file);
-
-    render.LoadLightXml(config.light_file);
-    render.LoadCameraXml(config.camera_file);
-
-    render.GenerateDataset(config.output_dir);
+    render.GenerateDataset(config_loader.GetCameraStates(),
+                           config_loader.GetLightSettings(),
+                           config_loader.GetSpp(),
+                           config.output_dir);
 }
 
 int main(int argc, char *argv[])

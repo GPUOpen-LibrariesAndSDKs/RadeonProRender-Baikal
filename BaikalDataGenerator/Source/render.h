@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "Output/output.h"
 #include "SceneGraph/camera.h"
 #include "scene_io.h"
+#include "input_info.h"
 
 #include "OpenImageIO/imageio.h"
 
@@ -37,46 +38,30 @@ THE SOFTWARE.
 #include <algorithm>
 #include <iostream>
 
-struct CameraInfo
-{
-    RadeonRays::float3 pos;
-    RadeonRays::float3 at;
-    RadeonRays::float3 up;
-    RadeonRays::float2 sensor_size;
-    RadeonRays::float2 zcap;
-    float aperture;
-    float focus_distance;
-    float focal_length;
-    Baikal::CameraType type;
-};
-
 struct OutputDesc;
 
 class Render
 {
 public:
-    using Ptr = std::shared_ptr<Render>;
-
-    Render(std::string file_name,
+    Render(std::filesystem::path scene_file,
            std::uint32_t output_width,
            std::uint32_t output_height);
 
-    void LoadMaterialXml(const std::string& file_name);
-    void LoadCameraXml(const std::string& file_name);
-    void LoadLightXml(const std::string& file_name);
-    void LoadSppXml(const std::string& file_name);
-
-    void GenerateDataset(const std::string& file_name);
+    void GenerateDataset(const std::vector<CameraInfo>& camera_states,
+                         const std::vector<LightInfo>& light_settings,
+                         const std::vector<int>& spp,
+                         const std::filesystem::path& output_dir);
 
 private:
     void UpdateCameraSettings(const CameraInfo& cam_state);
 
+    void SetLight(const std::vector<LightInfo>& light_settings);
+
     void SaveOutput(OutputDesc desc,
-                    const std::string& file_dir,
+                    const std::filesystem::path& output_dir,
                     int cam_index,
                     int spp);
 
-    std::set<int> m_spp;
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
@@ -84,5 +69,4 @@ private:
     Baikal::Scene1::Ptr m_scene;
     Baikal::PerspectiveCamera::Ptr m_camera;
     CLWContext m_context;
-    std::vector<CameraInfo> m_camera_states;
 };

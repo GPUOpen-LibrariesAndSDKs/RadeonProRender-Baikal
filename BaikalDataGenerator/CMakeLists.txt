@@ -4,7 +4,10 @@ set(DATAGENERATOR_SOURCES
     Source/cmd_line_parser.cpp
     Source/render.h
     Source/render.cpp
-    Source/utils.h)
+    Source/utils.h
+    Source/config_loader.h
+    Source/config_loader.cpp
+    Source/input_info.h)
 
 set(MAIN_SOURCES Source/main.cpp)
 

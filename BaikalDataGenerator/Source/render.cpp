@@ -66,7 +66,7 @@ std::vector<OutputDesc> outputs_collection = {
     { Renderer::OutputType::kGloss, "gloss", "png" }
 };
 
-Render::Render(std::string file_name,
+Render::Render(std::filesystem::path scene_file,
                std::uint32_t output_width,
                std::uint32_t output_height)
 {
@@ -114,184 +114,13 @@ Render::Render(std::string file_name,
         output_info.height = output_height;
     }
 
-    std::filesystem::path full_path = file_name;
-
-    if (!full_path.has_filename())
+    if (!std::filesystem::exists(scene_file))
     {
-        THROW_EX("There is no any file to load");
-    }
-    if (!full_path.has_parent_path())
-    {
-        THROW_EX("can not read directory from input scene 'file_name'");
+        THROW_EX("There is no any scene file to load");
     }
 
-
-    m_scene = Baikal::SceneIo::LoadScene(full_path.string(), full_path.parent_path().string());
-}
-
-void Render::LoadMaterialXml(const std::string &file_name)
-{
-    // Check it we have material remapping
-    std::ifstream in_materials(file_name);
-    std::ifstream in_mapping(file_name);
-
-    if (in_materials && in_mapping)
-    {
-        in_materials.close();
-        in_mapping.close();
-
-        auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
-        auto mats = material_io->LoadMaterials(file_name);
-        auto mapping = material_io->LoadMaterialMapping(file_name);
-
-        material_io->ReplaceSceneMaterials(*m_scene, *mats, mapping);
-    }
-}
-
-void Render::LoadCameraXml(const std::string &file_name)
-{
-    tinyxml2::XMLDocument doc;
-    doc.LoadFile(file_name.c_str());
-
-    auto root = doc.FirstChildElement("cam_list");
-
-    if (!root)
-    {
-        THROW_EX("Failed to open lights set file.")
-    }
-
-    tinyxml2::XMLElement* elem = root->FirstChildElement("camera");
-
-    m_camera_states.clear();
-
-    while (elem)
-    {
-        CameraInfo cam_info;
-
-        // eye
-        cam_info.pos.x = elem->FloatAttribute("cpx");
-        cam_info.pos.y = elem->FloatAttribute("cpy");
-        cam_info.pos.z = elem->FloatAttribute("cpz");
-
-        // center
-        cam_info.at.x = elem->FloatAttribute("tpx");
-        cam_info.at.y = elem->FloatAttribute("tpy");
-        cam_info.at.z = elem->FloatAttribute("tpz");
-
-        // up
-        cam_info.up.x = elem->FloatAttribute("upx");
-        cam_info.up.y = elem->FloatAttribute("upy");
-        cam_info.up.z = elem->FloatAttribute("upz");
-
-        //other values
-        cam_info.focal_length = elem->FloatAttribute("focal_length");
-        cam_info.focus_distance = elem->FloatAttribute("focus_dist");
-        cam_info.aperture = elem->FloatAttribute("aperture");
-
-        m_camera_states.push_back(cam_info);
-        elem = elem->NextSiblingElement("camera");
-    }
-}
-
-void Render::LoadLightXml(const std::string &file_name)
-{
-    tinyxml2::XMLDocument doc;
-    doc.LoadFile(file_name.c_str());
-    auto root = doc.FirstChildElement("light_list");
-
-    if (!root)
-    {
-        THROW_EX("Failed to open lights set file.")
-    }
-
-    Light::Ptr new_light;
-    tinyxml2::XMLElement* elem = root->FirstChildElement("light");
-
-    while (elem)
-    {
-        //type
-        std::string type = elem->Attribute("type");
-        if (type == "point")
-        {
-            new_light = PointLight::Create();
-        }
-        else if (type == "direct")
-        {
-            new_light = DirectionalLight::Create();
-        }
-        else if (type == "spot")
-        {
-            new_light = SpotLight::Create();
-            RadeonRays::float2 cs;
-            cs.x = elem->FloatAttribute("csx");
-            cs.y = elem->FloatAttribute("csy");
-            //this option available only for spot light
-            SpotLight::Ptr spot = std::dynamic_pointer_cast<SpotLight>(new_light);
-            spot->SetConeShape(cs);
-        }
-        else if (type == "ibl")
-        {
-            new_light = ImageBasedLight::Create();
-            std::string tex_name = elem->Attribute("tex");
-            float mul = elem->FloatAttribute("mul");
-            
-            //this option available only for ibl
-            ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<ImageBasedLight>(new_light);
-            auto image_io = ImageIo::CreateImageIo();
-            Texture::Ptr tex = image_io->LoadImage(tex_name.c_str());
-            ibl->SetTexture(tex);
-            ibl->SetMultiplier(mul);
-        }
-        else
-        {
-            THROW_EX("Invalid light type " + type);
-        }
-
-        RadeonRays::float3 p;
-        RadeonRays::float3 d;
-        RadeonRays::float3 r;
-
-        p.x = elem->FloatAttribute("posx");
-        p.y = elem->FloatAttribute("posy");
-        p.z = elem->FloatAttribute("posz");
-
-        d.x = elem->FloatAttribute("dirx");
-        d.y = elem->FloatAttribute("diry");
-        d.z = elem->FloatAttribute("dirz");
-
-        r.x = elem->FloatAttribute("radx");
-        r.y = elem->FloatAttribute("rady");
-        r.z = elem->FloatAttribute("radz");
-
-        new_light->SetPosition(p);
-        new_light->SetDirection(d);
-        new_light->SetEmittedRadiance(r);
-        m_scene->AttachLight(new_light);
-        elem = elem->NextSiblingElement("light");
-    }
-}
-
-void Render::LoadSppXml(const std::string& file_name)
-{
-    tinyxml2::XMLDocument doc;
-    doc.LoadFile(file_name.c_str());
-    auto root = doc.FirstChildElement("spp_list");
-
-    if (!root)
-    {
-        THROW_EX("Failed to open lights set file.")
-    }
-
-    tinyxml2::XMLElement* elem = root->FirstChildElement("spp");
-
-    m_spp.clear();
-
-    while (elem)
-    {
-        int spp = (int)elem->Int64Attribute("iter_num");
-        m_spp.insert(spp);
-        elem = elem->NextSiblingElement("spp");
-    }
+    m_scene = Baikal::SceneIo::LoadScene(scene_file.string(),
+                                         scene_file.parent_path().string());
 }
 
 void Render::UpdateCameraSettings(const CameraInfo& cam_state)
@@ -324,28 +153,16 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 }
 
 void Render::SaveOutput(OutputDesc desc,
-                        const std::string& file_dir,
+                        const std::filesystem::path& output_dir,
                         int cam_index,
                         int spp)
 {
     OIIO_NAMESPACE_USING;
 
-    std::stringstream ss;
-
-    ss << "cam_" << cam_index << "_"
-        << desc.name << "_spp_" << spp << ".png";
-
-    std::filesystem::path path = file_dir;
-
-    if (!path.has_filename())
-    {
-        THROW_EX("incorrect output path");
-    }
-
-    path.append(ss.str());
-
     std::vector<RadeonRays::float3> output_data;
     std::vector<RadeonRays::float3> image_data;
+
+
     auto output = m_renderer->GetOutput(desc.type);
     auto width = output->width();
     auto height = output->height();
@@ -364,11 +181,19 @@ void Render::SaveOutput(OutputDesc desc,
         {
             float3 val = output_data[(height - 1 - y) * width + x];
             val *= (1.f / val.w);
-            image_data[y * width + x].x = val.x; // std::pow(val.x, 1.f / 2.2f);
-            image_data[y * width + x].y = val.y;  //std::pow(val.y, 1.f / 2.2f);
-            image_data[y * width + x].z = val.z;  //std::pow(val.z, 1.f / 2.2f);
+            image_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
+            image_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
+            image_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
         }
     }
+
+    std::stringstream ss;
+
+    ss << "cam_" << cam_index << "_"
+        << desc.name << "_spp_" << spp << ".png";
+
+    std::filesystem::path file_name = output_dir;
+    file_name.append(ss.str());
 
     std::unique_ptr<ImageOutput> out(ImageOutput::create(ss.str()));
 
@@ -378,30 +203,106 @@ void Render::SaveOutput(OutputDesc desc,
     }
 
     ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
-    out->open(path.string(), spec);
+    out->open(file_name.string(), spec);
     out->write_image(TypeDesc::FLOAT, image_data.data(), sizeof(float3));
     out->close();
 }
 
-void Render::GenerateDataset(const std::string &path)
+void Render::SetLight(const std::vector<LightInfo>& light_settings)
+{
+    // clear light
+    auto iter = m_scene->CreateLightIterator();
+    while (iter->IsValid())
+    {
+        m_scene->DetachLight(iter->ItemAs<Baikal::Light>());
+        iter = m_scene->CreateLightIterator();
+    }
+
+    // set light
+    for (const auto& light: light_settings)
+    {
+        Light::Ptr light_instance;
+
+        if (light.type == "point")
+        {
+            light_instance = PointLight::Create();
+        }
+        else if (light.type == "direct")
+        {
+            light_instance = DirectionalLight::Create();
+        }
+        else if (light.type == "spot")
+        {
+            light_instance = SpotLight::Create();
+            SpotLight::Ptr spot = std::dynamic_pointer_cast<SpotLight>(light_instance);
+            spot->SetConeShape(light.cs);
+        }
+        else if (light.type == "ibl")
+        {
+            light_instance = ImageBasedLight::Create();
+
+            ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<
+                ImageBasedLight>(light_instance);
+
+            auto image_io(ImageIo::CreateImageIo());
+            // check that texture file is exist
+            auto texure_path = std::filesystem::path(light.texture);
+
+            if (!std::filesystem::exists(texure_path))
+            {
+                THROW_EX("textrue image doesn't exist on specidied path")
+            }
+
+            Texture::Ptr tex = image_io->LoadImage(light.texture.c_str());
+            ibl->SetTexture(tex);
+            ibl->SetMultiplier(light.mul);
+        }
+        else
+        {
+            THROW_EX("unsupported light type")
+        }
+
+        light_instance->SetPosition(light.pos);
+        light_instance->SetPosition(light.dir);
+        light_instance->SetPosition(light.rad);
+        m_scene->AttachLight(light_instance);
+    }
+}
+
+void Render::GenerateDataset(const std::vector<CameraInfo>& camera_states,
+                             const std::vector<LightInfo>& light_settings,
+                             const std::vector<int>& spp,
+                             const std::filesystem::path& output_dir)
 {
     using namespace RadeonRays;
 
-    int counter = 1;
-    for (const auto &cam_state: m_camera_states)
+    if (!std::filesystem::is_directory(output_dir))
     {
+        THROW_EX("incorrect output directory signature");
+    }
+
+    // check if number of samples to render wasn't specified
+    if (spp.empty())
+    {
+        return;
+    }
+
+    const int iter_number = *(std::max_element(spp.begin(), spp.end()));
+
+    SetLight(light_settings);
+
+    int counter = 1;
+    for (const auto &cam_state: camera_states)
+    {
+        // create camera if it wasn't  done earlier
         if (!m_camera)
         {
-            m_camera = Baikal::PerspectiveCamera::Create(cam_state.at, cam_state.pos, cam_state.up);
-            m_scene->SetCamera(m_camera);
-            m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
-            m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+            m_camera = Baikal::PerspectiveCamera::Create(cam_state.at,
+                                                         cam_state.pos,
+                                                         cam_state.up);
 
             m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
             m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
-            m_camera->SetFocalLength(0.035f);
-            m_camera->SetFocusDistance(1.f);
-            m_camera->SetAperture(0.f);
 
             m_scene->SetCamera(m_camera);
         }
@@ -410,22 +311,23 @@ void Render::GenerateDataset(const std::string &path)
 
         for (const auto& output: m_outputs)
         {
-            output->Clear(RadeonRays::float3(.0f, .0f, .0f, .0f));
+            output->Clear(RadeonRays::float3());
         }
 
+        // recompile scene cause of changing camera pos and settings
         m_controller->CompileScene(m_scene);
         auto& scene = m_controller->GetCachedScene(m_scene);
 
-        for (auto i = 0u; i < kNumIterations; i++)
+        for (auto i = 0; i < iter_number; i++)
         {
             m_renderer->Render(scene);
 
-            if (m_spp.find(i + 1) != m_spp.end())
+            if (std::find(spp.begin(), spp.end(), i + 1) != spp.end())
             {
                 for (const auto& output : outputs_collection)
                 {
                     SaveOutput(output,
-                               path,
+                               output_dir,
                                counter,
                                i + 1);
                 }

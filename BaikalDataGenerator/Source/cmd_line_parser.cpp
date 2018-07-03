@@ -60,9 +60,6 @@ DGenConfig CmdLineParser::Parse(int argc, char* argv[])
     char* scene_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-scene_file");
     config.scene_file = scene_file ? scene_file : "";
 
-    char* material_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-material_file");
-    config.material_file = material_file ? material_file : "";
-
     char* spp_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-spp_file");
     config.spp_file = spp_file ? spp_file : "";
 
