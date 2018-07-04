@@ -58,7 +58,7 @@ private:
 
     void SetLight(const std::vector<LightInfo>& light_settings);
 
-    void SaveOutput(OutputInfo desc,
+    void SaveOutput(OutputInfo info,
                     int cam_index,
                     int spp,
                     bool gamma_correction_enabled,

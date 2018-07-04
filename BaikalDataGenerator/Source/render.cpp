@@ -140,7 +140,7 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
     }
 }
 
-void Render::SaveOutput(OutputInfo desc,
+void Render::SaveOutput(OutputInfo info,
                         int cam_index,
                         int spp,
                         bool gamma_correction_enabled,
@@ -148,7 +148,7 @@ void Render::SaveOutput(OutputInfo desc,
 {
     OIIO_NAMESPACE_USING;
 
-    auto output = m_renderer->GetOutput(desc.type);
+    auto output = m_renderer->GetOutput(info.type);
 
     assert(output);
 
@@ -162,7 +162,7 @@ void Render::SaveOutput(OutputInfo desc,
     auto width = output->width();
     auto height = output->height();
 
-    if (gamma_correction_enabled && (desc.type == Renderer::OutputType::kColor))
+    if (gamma_correction_enabled && (info.type == Renderer::OutputType::kColor))
     {
         for (auto y = 0u; y < height; ++y)
         {
@@ -200,7 +200,7 @@ void Render::SaveOutput(OutputInfo desc,
     std::stringstream ss;
 
     ss << "cam_" << cam_index << "_"
-        << desc.name << "_spp_" << spp << ".png";
+        << info.name << "_spp_" << spp << ".png";
 
     std::filesystem::path file_name = output_dir;
     file_name.append(ss.str());
@@ -260,7 +260,7 @@ void Render::SetLight(const std::vector<LightInfo>& light_settings)
 
             if (!std::filesystem::exists(texure_path))
             {
-                THROW_EX("textrue image doesn't exist on specidied path")
+                THROW_EX("textrue image doesn't exist on specified path")
             }
 
             Texture::Ptr tex = image_io->LoadImage(light.texture);
@@ -273,8 +273,8 @@ void Render::SetLight(const std::vector<LightInfo>& light_settings)
         }
 
         light_instance->SetPosition(light.pos);
-        light_instance->SetPosition(light.dir);
-        light_instance->SetPosition(light.rad);
+        light_instance->SetDirection(light.dir);
+        light_instance->SetEmittedRadiance(light.rad);
         m_scene->AttachLight(light_instance);
     }
 }
