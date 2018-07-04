@@ -41,15 +41,15 @@ int main(int argc, char *argv[])
 {
     try
     {
-        CmdLineParser cline_parser;
+        CmdLineParser cmd_parser(argc, argv);
 
-        if (cline_parser.CmdOptionExists(argv, argv + argc, "-help"))
+        if (cmd_parser.OptionExists("-help"))
         {
-            cline_parser.ShowHelp();
+            cmd_parser.ShowHelp();
             return 0;
         }
 
-        auto config = cline_parser.Parse(argc, argv);
+        auto config = cmd_parser.Parse();
 
         Run(config);
     }

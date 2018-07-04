@@ -29,13 +29,11 @@ THE SOFTWARE.
 class CmdLineParser
 {
 public:
-    CmdLineParser();
+    CmdLineParser(int argc, char* argv[]);
 
-    bool CmdOptionExists(char** begin, char** end, const std::string& option);
-
-    DGenConfig Parse(int argc, char* argv[]);
-
-    void ShowHelp();
+    bool OptionExists(const std::string& option) const;
+    DGenConfig Parse() const;
+    void ShowHelp() const;
 
 private:
     CmdParser m_cmd_parser;

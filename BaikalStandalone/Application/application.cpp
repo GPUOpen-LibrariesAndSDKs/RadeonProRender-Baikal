@@ -613,8 +613,8 @@ namespace Baikal
         , m_num_instances(0)
     {
         // Command line parsing
-        AppCliParser cli;
-        m_settings = cli.Parse(argc, argv);
+        AppCliParser cli(argc, argv);
+        m_settings = cli.Parse();
         if (!m_settings.cmd_line_mode)
         {
             // Initialize GLFW

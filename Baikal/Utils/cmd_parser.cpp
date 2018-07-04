@@ -23,19 +23,39 @@ THE SOFTWARE.
 #include "Utils/cmd_parser.h"
 #include <algorithm>
 
-char* CmdParser::GetCmdOption(char** begin, char** end, const std::string & option)
-{
-    char ** itr = std::find(begin, end, option);
 
-    if (itr != end && ++itr != end)
+CmdParser::CmdParser(int argc, char* argv[])
+{
+    if (argc < 0)
     {
-        return *itr;
+        std::logic_error(std::string(__func__) + ": 'argc' can't be negative");
+    }
+    if (!argv)
+    {
+        std::logic_error(std::string(__func__) + ": 'argv' is nulltpr");
     }
 
-    return nullptr;
+    for (int i = 0; i < argc; i++)
+    {
+        m_cmd_line.push_back(std::string(argv[i]));
+    }
 }
 
-bool CmdParser::CmdOptionExists(char** begin, char** end, const std::string& option)
+bool CmdParser::OptionExists(const std::string& option) const
 {
-    return std::find(begin, end, option) != end;
+    return (std::find(m_cmd_line.begin(), m_cmd_line.end(), option) != m_cmd_line.end());
+}
+
+const std::string* CmdParser::GetOptionValue(const std::string& option) const
+{
+    auto it = std::find(m_cmd_line.begin(), m_cmd_line.end(), option);
+
+    if ((it == m_cmd_line.end()) || (++it == m_cmd_line.end()))
+    {
+        return nullptr;
+    }
+    else
+    {
+        return &(*it);
+    }
 }

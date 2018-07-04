@@ -101,8 +101,8 @@ namespace Baikal
     {
     public:
 
-        AppCliParser();
-        AppSettings Parse(int argc, char * argv[]);
+        AppCliParser(int argc, char * argv[]);
+        AppSettings Parse();
 
     private:
 

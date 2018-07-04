@@ -58,7 +58,7 @@ struct OutputInfo
 std::vector<OutputInfo> outputs_collection = {
     { Renderer::OutputType::kColor, "color", "png" },
     { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "png" },
-    { Renderer::OutputType::kDepth, "depth", "png" },
+    { Renderer::OutputType::kDepth, "view_shading_depth", "png" },
     { Renderer::OutputType::kAlbedo, "albedo", "png" },
     { Renderer::OutputType::kGloss, "gloss", "png" }
 };
@@ -162,7 +162,7 @@ void Render::SaveOutput(OutputInfo desc,
     auto width = output->width();
     auto height = output->height();
 
-    if (gamma_correction_enabled)
+    if (gamma_correction_enabled && (desc.type == Renderer::OutputType::kColor))
     {
         for (auto y = 0u; y < height; ++y)
         {

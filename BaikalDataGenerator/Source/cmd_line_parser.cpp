@@ -36,57 +36,39 @@ namespace
         "[-gamma enables_gamma_correction]";
 }
 
-CmdLineParser::CmdLineParser() {}
+CmdLineParser::CmdLineParser(int argc, char* argv[])
+    : m_cmd_parser(argc, argv)
+{   }
 
-bool CmdLineParser::CmdOptionExists(char** begin, char** end, const std::string& option)
+bool CmdLineParser::OptionExists(const std::string& option) const
 {
-    return m_cmd_parser.CmdOptionExists(begin, end, option);
+    return m_cmd_parser.OptionExists(option);
 }
 
-DGenConfig CmdLineParser::Parse(int argc, char* argv[])
+DGenConfig CmdLineParser::Parse() const
 {
     DGenConfig config;
 
-    char* light_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-light_file");
-    config.light_file = light_file ? light_file : "";
+    config.light_file = m_cmd_parser.GetOption("-light_file");
 
-    char* camera_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-camera_file");
-    config.camera_file = camera_file ? camera_file : "";
+    config.camera_file = m_cmd_parser.GetOption("-camera_file");
 
-    char* output_dir = m_cmd_parser.GetCmdOption(argv, argv + argc, "-output_dir");
-    config.output_dir = output_dir ? output_dir : "";
+    config.output_dir = m_cmd_parser.GetOption("-output_dir");
 
-    char* scene_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-scene_file");
-    config.scene_file = scene_file ? scene_file : "";
+    config.scene_file = m_cmd_parser.GetOption("-scene_file");
 
-    char* spp_file = m_cmd_parser.GetCmdOption(argv, argv + argc, "-spp_file");
-    config.spp_file = spp_file ? spp_file : "";
+    config.spp_file = m_cmd_parser.GetOption("-spp_file");
 
-    char* gamma_correction_opt = m_cmd_parser.GetCmdOption(argv, argv + argc, "-gamma");
-    config.gamma_correction = spp_file ? true : false;
+    config.width = m_cmd_parser.GetOption<int>("-width");
 
-    char* width_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-width");
+    config.height = m_cmd_parser.GetOption<int>("-height");
 
-    if (width_str == nullptr)
-    {
-        THROW_EX("missed '-width' option")
-    }
-
-    config.width = atoi(width_str);
-
-    char* height_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-height");
-    
-    if (height_str == nullptr)
-    {
-        THROW_EX("missed '-height' option")
-    }
-
-    config.height = atoi(height_str);
+    config.gamma_correction = m_cmd_parser.GetOption<bool>("-gamma", false);
 
     return config;
 }
 
-void CmdLineParser::ShowHelp()
+void CmdLineParser::ShowHelp() const
 {
     std::cout << kHelpMessage << "\n";
 }

@@ -22,12 +22,68 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <sstream>
 #include <string>
+#include <vector>
 
 class CmdParser
 {
 public:
-    static bool CmdOptionExists(char** begin, char** end, const std::string& option);
+    CmdParser(int argc, char* argv[]);
 
-    static char* GetCmdOption(char ** begin, char ** end, const std::string & option);
+    bool OptionExists(const std::string& option) const;
+
+    template <class T = std::string>
+    T GetOption(const std::string& option) const
+    {
+        auto value = GetOptionValue(option);
+
+        if (!value)
+        {
+            std::stringstream ss;
+
+            ss << std::string(__func__) << ": "
+               << option << " :option or its value is missed";
+
+            throw std::logic_error(ss.str());
+        }
+
+        return LexicalCast<T>(*value);
+    }
+
+
+    template <class T = std::string>
+    T GetOption(const std::string& option, const T default_value) const
+    {
+        auto value = GetOptionValue(option);
+
+        if (!value)
+        {
+            return default_value;
+        }
+        else
+        {
+            return LexicalCast<T>(*value);
+        }
+    }
+
+private:
+    const std::string* GetOptionValue(const std::string& option) const;
+
+    template <typename T>
+    static T LexicalCast(const std::string& str)
+    {
+        T var;
+        std::istringstream iss(str);
+
+        if (iss.fail())
+        {
+            throw std::logic_error(std::string(__func__) + "cmd stream failed");
+        }
+
+        iss >> var;
+        return var;
+    }
+
+    std::vector<std::string> m_cmd_line;
 };

@@ -144,9 +144,7 @@ void ConfigLoader::LoadLightConfig(const std::filesystem::path& file_name)
         light_info.type = elem->Attribute("type");
 
         // validate light type
-        if (light_info.type == "point") { }
-        else if (light_info.type == "direct") { }
-        else if (light_info.type == "spot")
+        if (light_info.type == "spot")
         {
             //this option available only for spot light
             light_info.cs.x = elem->FloatAttribute("csx");
@@ -158,7 +156,7 @@ void ConfigLoader::LoadLightConfig(const std::filesystem::path& file_name)
             light_info.texture = elem->Attribute("tex");
             light_info.mul = elem->FloatAttribute("mul");
         }
-        else
+        else if ((light_info.type != "point") && (light_info.type != "direct"))
         {
             THROW_EX(light_info.type + "Is invalid light type");
         }
