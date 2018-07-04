@@ -72,7 +72,7 @@ KERNEL void FillAOVsUberV2(
     GLOBAL Light const* restrict lights,
     // Number of emissive objects
     int num_lights,
-    //camera
+    // camera
     GLOBAL Camera const* camera,
     // RNG seed
     uint rngseed,
@@ -90,7 +90,7 @@ KERNEL void FillAOVsUberV2(
     int world_shading_normal_enabled,
     // World normal AOV
     GLOBAL float4* restrict aov_world_shading_normal,
-     // View normal flag
+    // View normal flag
     int view_shading_normal_enabled,
     // View normal AOV
     GLOBAL float4* restrict aov_view_shading_normal,

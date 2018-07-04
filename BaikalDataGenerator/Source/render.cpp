@@ -40,67 +40,55 @@ namespace
 
     bool operator != (RadeonRays::float3 left, RadeonRays::float3 right)
     {
-        return (left.x != right.x) ||
-               (left.y != right.y) ||
-               (left.z != right.z);
+        return (left.x != right.x) || (left.y != right.y) || (left.z != right.z);
     }
 }
 
-struct OutputDesc
+struct OutputInfo
 {
     Renderer::OutputType type;
     std::string name;
     // extension of the file to save
     std::string file_ext;
-    // bites per pixel
     int width, height;
 };
 
 // if you need to add new output for saving to disk
 // just put its description in thic collection
-std::vector<OutputDesc> outputs_collection = {
+std::vector<OutputInfo> outputs_collection = {
     { Renderer::OutputType::kColor, "color", "png" },
-    { Renderer::OutputType::kViewShadingNormal, "view_shading_depth", "png" },
+    { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "png" },
     { Renderer::OutputType::kDepth, "depth", "png" },
     { Renderer::OutputType::kAlbedo, "albedo", "png" },
     { Renderer::OutputType::kGloss, "gloss", "png" }
 };
 
-Render::Render(std::filesystem::path scene_file,
+Render::Render(const std::filesystem::path& scene_file,
                std::uint32_t output_width,
                std::uint32_t output_height)
 {
     std::vector<CLWPlatform> platforms;
     CLWPlatform::CreateAllPlatforms(platforms);
 
-    int platform_index = 0;
+    bool device_found = false;
 
-    for (auto j = 0u; j < platforms.size(); ++j)
+    for (const auto& platform: platforms)
     {
-        for (auto i = 0u; i < platforms[j].GetDeviceCount(); ++i)
+        for (auto i = 0u; i < platform.GetDeviceCount(); i++)
         {
-            if (platforms[j].GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
+            if (platform.GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
             {
-                platform_index = j;
+                m_context = CLWContext::Create(platform.GetDevice(i));
+                device_found = true;
                 break;
             }
         }
     }
 
-    int device_index = 0;
-
-    for (auto i = 0u; i < platforms[platform_index].GetDeviceCount(); ++i)
+    if (!device_found)
     {
-        if (platforms[platform_index].GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
-        {
-            device_index = i;
-            break;
-        }
+        THROW_EX("can't find device");
     }
-
-    auto platform = platforms[platform_index];
-    auto device = platform.GetDevice(device_index);
-    m_context = CLWContext::Create(device);
 
     m_factory = std::make_unique<Baikal::ClwRenderFactory>(m_context, "cache");
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
@@ -152,29 +140,27 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
     }
 }
 
-void Render::SaveOutput(OutputDesc desc,
-                        const std::filesystem::path& output_dir,
+void Render::SaveOutput(OutputInfo desc,
                         int cam_index,
                         int spp,
-                        bool gamma_correction_enabled)
+                        bool gamma_correction_enabled,
+                        const std::filesystem::path& output_dir)
 {
     OIIO_NAMESPACE_USING;
 
-    std::vector<RadeonRays::float3> output_data;
-    std::vector<RadeonRays::float3> image_data;
-
-
     auto output = m_renderer->GetOutput(desc.type);
-    auto width = output->width();
-    auto height = output->height();
 
     assert(output);
 
     auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
-    output_data.resize(buffer.GetElementCount());
-    image_data.resize(buffer.GetElementCount());
+
+    std::vector<RadeonRays::float3> output_data(buffer.GetElementCount());
+    std::vector<RadeonRays::float3> image_data(buffer.GetElementCount());
 
     output->GetData(output_data.data());
+
+    auto width = output->width();
+    auto height = output->height();
 
     if (gamma_correction_enabled)
     {
@@ -277,7 +263,7 @@ void Render::SetLight(const std::vector<LightInfo>& light_settings)
                 THROW_EX("textrue image doesn't exist on specidied path")
             }
 
-            Texture::Ptr tex = image_io->LoadImage(light.texture.c_str());
+            Texture::Ptr tex = image_io->LoadImage(light.texture);
             ibl->SetTexture(tex);
             ibl->SetMultiplier(light.mul);
         }
@@ -316,7 +302,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& camera_states,
 
     SetLight(light_settings);
 
-    int counter = 1;
+    int cam_index = 1;
     for (const auto &cam_state: camera_states)
     {
         // create camera if it wasn't  done earlier
@@ -343,23 +329,23 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& camera_states,
         m_controller->CompileScene(m_scene);
         auto& scene = m_controller->GetCachedScene(m_scene);
 
-        for (auto i = 0; i < iter_number; i++)
+        for (auto i = 1; i <= iter_number; i++)
         {
             m_renderer->Render(scene);
 
-            if (std::find(spp.begin(), spp.end(), i + 1) != spp.end())
+            if (std::find(spp.begin(), spp.end(), i) != spp.end())
             {
                 for (const auto& output : outputs_collection)
                 {
                     SaveOutput(output,
-                               output_dir,
-                               counter,
-                               i + 1,
-                               gamma_corection_enabled);
+                               cam_index,
+                               i,
+                               gamma_corection_enabled,
+                               output_dir);
                 }
             }
         }
 
-        counter++;
+        cam_index++;
     }
 }

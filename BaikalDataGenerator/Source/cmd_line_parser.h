@@ -33,7 +33,7 @@ public:
 
     bool CmdOptionExists(char** begin, char** end, const std::string& option);
 
-    DGenConfig Parse(int argc, char * argv[]);
+    DGenConfig Parse(int argc, char* argv[]);
 
     void ShowHelp();
 

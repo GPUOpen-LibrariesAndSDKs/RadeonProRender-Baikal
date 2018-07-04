@@ -38,12 +38,12 @@ THE SOFTWARE.
 #include <algorithm>
 #include <iostream>
 
-struct OutputDesc;
+struct OutputInfo;
 
 class Render
 {
 public:
-    Render(std::filesystem::path scene_file,
+    Render(const std::filesystem::path& scene_file,
            std::uint32_t output_width,
            std::uint32_t output_height);
 
@@ -58,11 +58,11 @@ private:
 
     void SetLight(const std::vector<LightInfo>& light_settings);
 
-    void SaveOutput(OutputDesc desc,
-                    const std::filesystem::path& output_dir,
+    void SaveOutput(OutputInfo desc,
                     int cam_index,
                     int spp,
-                    bool gamma_correction_enabled);
+                    bool gamma_correction_enabled,
+                    const std::filesystem::path& output_dir);
 
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;

@@ -25,7 +25,7 @@ THE SOFTWARE.
 
 namespace
 {
-    char const* kHelpMessage =
+    constexpr char const* kHelpMessage =
         "Baikal [-light_file name_of_the_light_config]"
         "[-camera_file name_of_the_camera_config]"
         "[-scene_file name_of_the_scene_config]"
@@ -66,10 +66,22 @@ DGenConfig CmdLineParser::Parse(int argc, char* argv[])
     config.gamma_correction = spp_file ? true : false;
 
     char* width_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-width");
-    config.width = (width_str) ? atoi(width_str) : 256;
 
-    char* height_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-heiht");
-    config.height = (height_str) ? atoi(height_str) : 256;
+    if (width_str == nullptr)
+    {
+        THROW_EX("missed '-width' option")
+    }
+
+    config.width = atoi(width_str);
+
+    char* height_str = m_cmd_parser.GetCmdOption(argv, argv + argc, "-height");
+    
+    if (height_str == nullptr)
+    {
+        THROW_EX("missed '-height' option")
+    }
+
+    config.height = atoi(height_str);
 
     return config;
 }
