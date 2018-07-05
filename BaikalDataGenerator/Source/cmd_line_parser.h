@@ -29,10 +29,10 @@ THE SOFTWARE.
 class CmdLineParser
 {
 public:
-    CmdLineParser(int argc, char* argv[]);
+    explicit CmdLineParser(int argc, char* argv[]);
 
-    bool OptionExists(const std::string& option) const;
     DGenConfig Parse() const;
+    bool HasHelpOption() const;
     void ShowHelp() const;
 
 private:

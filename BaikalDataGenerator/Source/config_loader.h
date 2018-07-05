@@ -29,11 +29,11 @@ class ConfigLoader
 {
 public:
 
-    ConfigLoader(const DGenConfig& config);
+    explicit ConfigLoader(const DGenConfig& config);
 
-    std::vector<CameraInfo> GetCameraStates() const;
-    std::vector<LightInfo> GetLightSettings() const;
-    std::vector<int> GetSpp() const;
+    const std::vector<CameraInfo>& GetCameraStates() const;
+    const std::vector<LightInfo>& GetLightSettings() const;
+    const std::vector<int>& GetSpp() const;
 
 private:
 

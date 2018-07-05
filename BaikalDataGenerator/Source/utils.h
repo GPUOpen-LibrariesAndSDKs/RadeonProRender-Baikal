@@ -36,4 +36,4 @@ struct DGenConfig
     bool gamma_correction;
 };
 
-#define THROW_EX(text) throw std::exception((std::string(__func__) + ": " + text).c_str());
+#define THROW_EX(text) throw std::runtime_error(std::string(__func__) + ": " + text);

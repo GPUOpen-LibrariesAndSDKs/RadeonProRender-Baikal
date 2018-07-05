@@ -53,7 +53,7 @@ public:
 
 
     template <class T = std::string>
-    T GetOption(const std::string& option, const T default_value) const
+    T GetOption(const std::string& option, const T& default_value) const
     {
         auto value = GetOptionValue(option);
 

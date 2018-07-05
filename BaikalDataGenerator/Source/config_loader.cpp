@@ -24,49 +24,50 @@ THE SOFTWARE.
 #include "XML/tinyxml2.h"
 #include "material_io.h"
 #include <filesystem>
+#include <sstream>
 
 // validation checks helper macroses to reduce copy paste
-#define ASSERT_PATH(file_name, message) \
+#define ASSERT_PATH(file_name) \
      if (file_name.empty()) { \
-         THROW_EX(message) } \
+         std::stringstream ss; \
+         ss << "missed " << file_name.string(); \
+         THROW_EX(ss.str().c_str()) } \
 
-#define ASSERT_EXT(file_name, message) \
-     if (camera_file.extension() != ".xml") { \
-         THROW_EX(message) } \
+#define ASSERT_XML(file_name) \
+     if (file_name.extension() != ".xml") { \
+         std::stringstream ss; \
+         ss << "not xml file: " << file_name.string(); \
+         THROW_EX(ss.str().c_str()) } \
 
-#define ASSERT_FILE_EXISTING(file_name, message) \
+#define ASSERT_FILE_EXISTS(file_name) \
      if (!std::filesystem::exists(file_name)) { \
-         THROW_EX(message) } \
+         std::stringstream ss; \
+         ss << "there is no file on specified path: " << file_name.string(); \
+         THROW_EX(ss.str().c_str()) } \
 
 void ConfigLoader::ValidateConfig(const DGenConfig& config) const
 {
-    auto camera_file = config.camera_file;
-    auto light_file = config.light_file;
-    auto spp_file = config.spp_file;
-    auto scene_file = config.scene_file;
-    auto output_dir = config.output_dir;
-
     // validate input config
-    ASSERT_PATH(camera_file, "missed camera file");
-    ASSERT_PATH(light_file, "missed light file");
-    ASSERT_PATH(spp_file, "missed spp file");
-    ASSERT_PATH(scene_file, "missed scene file");
-    ASSERT_PATH(output_dir, "missed output_dir");
+    ASSERT_PATH(config.camera_file);
+    ASSERT_PATH(config.light_file);
+    ASSERT_PATH(config.spp_file);
+    ASSERT_PATH(config.scene_file);
+    ASSERT_PATH(config.output_dir);
 
     // validate extansions
-    ASSERT_EXT(camera_file, "camera config should has extenshion '.xml'")
-    ASSERT_EXT(light_file, "light config should has extenshion '.xml'")
-    ASSERT_EXT(spp_file, "spp config should has extenshion '.xml'")
+    ASSERT_XML(config.camera_file)
+    ASSERT_XML(config.light_file)
+    ASSERT_XML(config.spp_file)
 
     // validate that files really exists
-    ASSERT_FILE_EXISTING(camera_file, "camera file doesn't exist")
-    ASSERT_FILE_EXISTING(light_file, "light file doesn't exist")
-    ASSERT_FILE_EXISTING(spp_file, "spp file doesn't exist")
-    ASSERT_FILE_EXISTING(scene_file, "scene file doesn't exist")
+    ASSERT_FILE_EXISTS(config.camera_file)
+    ASSERT_FILE_EXISTS(config.light_file)
+    ASSERT_FILE_EXISTS(config.spp_file)
+    ASSERT_FILE_EXISTS(config.scene_file)
 
-    if (!std::filesystem::is_directory(output_dir))
+    if (!std::filesystem::is_directory(config.output_dir))
     {
-        THROW_EX("'output_dir' should be directory")
+        THROW_EX((config.output_dir.string() + " should be directory").c_str())
     }
 }
 
@@ -210,17 +211,17 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
     }
 }
 
-std::vector<CameraInfo> ConfigLoader::GetCameraStates() const
+const std::vector<CameraInfo>& ConfigLoader::GetCameraStates() const
 {
     return m_camera_states;
 }
 
-std::vector<LightInfo> ConfigLoader::GetLightSettings() const
+const std::vector<LightInfo>& ConfigLoader::GetLightSettings() const
 {
     return m_light_settings;
 
 }
-std::vector<int> ConfigLoader::GetSpp() const
+const std::vector<int>& ConfigLoader::GetSpp() const
 {
     return m_spp;
 }

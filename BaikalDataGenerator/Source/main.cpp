@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     {
         CmdLineParser cmd_parser(argc, argv);
 
-        if (cmd_parser.OptionExists("-help"))
+        if (cmd_parser.HasHelpOption())
         {
             cmd_parser.ShowHelp();
             return 0;

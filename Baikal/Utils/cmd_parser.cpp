@@ -35,10 +35,7 @@ CmdParser::CmdParser(int argc, char* argv[])
         std::logic_error(std::string(__func__) + ": 'argv' is nulltpr");
     }
 
-    for (int i = 0; i < argc; i++)
-    {
-        m_cmd_line.push_back(std::string(argv[i]));
-    }
+    m_cmd_line = { argv, argv + argc };
 }
 
 bool CmdParser::OptionExists(const std::string& option) const

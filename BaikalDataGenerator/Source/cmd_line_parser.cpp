@@ -40,11 +40,6 @@ CmdLineParser::CmdLineParser(int argc, char* argv[])
     : m_cmd_parser(argc, argv)
 {   }
 
-bool CmdLineParser::OptionExists(const std::string& option) const
-{
-    return m_cmd_parser.OptionExists(option);
-}
-
 DGenConfig CmdLineParser::Parse() const
 {
     DGenConfig config;
@@ -71,4 +66,9 @@ DGenConfig CmdLineParser::Parse() const
 void CmdLineParser::ShowHelp() const
 {
     std::cout << kHelpMessage << "\n";
+}
+
+bool CmdLineParser::HasHelpOption() const
+{
+    return m_cmd_parser.OptionExists("-help");
 }
