@@ -53,13 +53,20 @@ struct OutputInfo
 };
 
 // if you need to add new output for saving to disk
-// just put its description in thic collection
-std::vector<OutputInfo> outputs_collection = {
+// for iterations number counted in spp.xml file
+// just put its description in this collection
+const std::vector<OutputInfo> kMultipleIteratedOutputs = {
     { Renderer::OutputType::kColor, "color", 3 },
-    { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", 3 },
-    { Renderer::OutputType::kDepth, "view_shading_depth", 1 },
     { Renderer::OutputType::kAlbedo, "albedo", 3 },
     { Renderer::OutputType::kGloss, "gloss", 1 }
+};
+
+// if you need to add new output for saving to disk
+// only for the one time
+// just put its description in this collection
+const std::vector<OutputInfo> kSingleIteratedOutputs = {
+    { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", 3 },
+    { Renderer::OutputType::kDepth, "view_shading_depth", 1 }
 };
 
 Render::Render(const std::filesystem::path& scene_file,
@@ -93,7 +100,12 @@ Render::Render(const std::filesystem::path& scene_file,
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     m_controller = m_factory->CreateSceneController();
 
-    for (auto& output_info: outputs_collection)
+    for (auto& output_info: kMultipleIteratedOutputs)
+    {
+        m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
+        m_renderer->SetOutput(output_info.type, m_outputs.back().get());
+    }
+    for (auto& output_info : kSingleIteratedOutputs)
     {
         m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
@@ -138,8 +150,7 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 }
 
 void Render::SaveOutput(OutputInfo info,
-                        int cam_index,
-                        int spp,
+                        const std::string& name,
                         bool gamma_correction_enabled,
                         const std::filesystem::path& output_dir)
 {
@@ -213,13 +224,8 @@ void Render::SaveOutput(OutputInfo info,
         }
     }
 
-    std::stringstream ss;
-
-    ss << "cam_" << cam_index << "_"
-        << info.name << "_spp_" << spp << ".bin";
-
     std::filesystem::path file_name = output_dir;
-    file_name.append(ss.str());
+    file_name.append(name);
 
     std::ofstream f;
 
@@ -346,15 +352,35 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& camera_states,
         {
             m_renderer->Render(scene);
 
-            if (std::find(spp.begin(), spp.end(), i) != spp.end())
+            if (i == 1)
             {
-                for (const auto& output : outputs_collection)
+                for (const auto& output : kSingleIteratedOutputs)
                 {
+                    std::stringstream ss;
+
+                    ss << "cam_" << cam_index << "_"
+                        << output.name << ".bin";
+
                     SaveOutput(output,
-                               cam_index,
-                               i,
+                               ss.str(),
                                gamma_corection_enabled,
                                output_dir);
+                }
+            }
+
+            if (std::find(spp.begin(), spp.end(), i) != spp.end())
+            {
+                for (const auto& output : kMultipleIteratedOutputs)
+                {
+                    std::stringstream ss;
+
+                    ss << "cam_" << cam_index << "_"
+                        << output.name << "_spp_" << i << ".bin";
+
+                    SaveOutput(output,
+                                ss.str(),
+                                gamma_corection_enabled,
+                                output_dir);
                 }
             }
         }

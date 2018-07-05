@@ -59,8 +59,7 @@ private:
     void SetLight(const std::vector<LightInfo>& light_settings);
 
     void SaveOutput(OutputInfo info,
-                    int cam_index,
-                    int spp,
+                    const std::string& name,
                     bool gamma_correction_enabled,
                     const std::filesystem::path& output_dir);
 
