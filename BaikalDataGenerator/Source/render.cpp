@@ -48,19 +48,18 @@ struct OutputInfo
 {
     Renderer::OutputType type;
     std::string name;
-    // extension of the file to save
-    std::string file_ext;
-    int width, height;
+    // chanels number can be only 1 or 3
+    int chanels_num;
 };
 
 // if you need to add new output for saving to disk
 // just put its description in thic collection
 std::vector<OutputInfo> outputs_collection = {
-    { Renderer::OutputType::kColor, "color", "png" },
-    { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", "png" },
-    { Renderer::OutputType::kDepth, "view_shading_depth", "png" },
-    { Renderer::OutputType::kAlbedo, "albedo", "png" },
-    { Renderer::OutputType::kGloss, "gloss", "png" }
+    { Renderer::OutputType::kColor, "color", 3 },
+    { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", 3 },
+    { Renderer::OutputType::kDepth, "view_shading_depth", 1 },
+    { Renderer::OutputType::kAlbedo, "albedo", 3 },
+    { Renderer::OutputType::kGloss, "gloss", 1 }
 };
 
 Render::Render(const std::filesystem::path& scene_file,
@@ -98,8 +97,6 @@ Render::Render(const std::filesystem::path& scene_file,
     {
         m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
-        output_info.width = output_width;
-        output_info.height = output_height;
     }
 
     if (!std::filesystem::exists(scene_file))
@@ -155,14 +152,19 @@ void Render::SaveOutput(OutputInfo info,
     auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
 
     std::vector<RadeonRays::float3> output_data(buffer.GetElementCount());
-    std::vector<RadeonRays::float3> image_data(buffer.GetElementCount());
 
     output->GetData(output_data.data());
 
     auto width = output->width();
     auto height = output->height();
 
-    if (gamma_correction_enabled && (info.type == Renderer::OutputType::kColor))
+    std::vector<float> image_data(info.chanels_num * width * height);
+
+    float* dst_row = image_data.data();
+
+    if (gamma_correction_enabled &&
+       (info.type == Renderer::OutputType::kColor) &&
+       (info.chanels_num == 3))
     {
         for (auto y = 0u; y < height; ++y)
         {
@@ -174,10 +176,11 @@ void Render::SaveOutput(OutputInfo info,
                 //So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
                 // gamma corection
-                image_data[y * width + x].x = std::pow(val.x, 1.f / 2.2f);
-                image_data[y * width + x].y = std::pow(val.y, 1.f / 2.2f);
-                image_data[y * width + x].z = std::pow(val.z, 1.f / 2.2f);
+                dst_row[3 * x] = std::pow(val.x, 1.f / 2.2f);
+                dst_row[3 * x + 1] = std::pow(val.y, 1.f / 2.2f);
+                dst_row[3 * x + 2] = std::pow(val.z, 1.f / 2.2f);
             }
+            dst_row += info.chanels_num * width;
         }
     }
     else
@@ -191,31 +194,41 @@ void Render::SaveOutput(OutputInfo info,
                 //It can be different for every pixel in case of adaptive sampling.
                 //So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
-                // invert the image 
-                image_data[y * width + x] = val;
+
+                if (info.chanels_num == 3)
+                {
+                    int dst_pixel = y * width + x;
+                    // invert the image 
+                    dst_row[3 * x] = val.x;
+                    dst_row[3 * x + 1] = val.y;
+                    dst_row[3 * x + 2] = val.z;
+                }
+                else // info.chanels_num = 1
+                {
+                    // invert the image 
+                    dst_row[x] = val.x;
+                }
             }
+            dst_row += info.chanels_num * width;
         }
     }
 
     std::stringstream ss;
 
     ss << "cam_" << cam_index << "_"
-        << info.name << "_spp_" << spp << ".png";
+        << info.name << "_spp_" << spp << ".bin";
 
     std::filesystem::path file_name = output_dir;
     file_name.append(ss.str());
 
-    std::unique_ptr<ImageOutput> out(ImageOutput::create(ss.str()));
+    std::ofstream f;
 
-    if (!out)
-    {
-        THROW_EX("Can't create image file on disk");
-    }
+    f.open(file_name.string(), std::ofstream::binary);
 
-    ImageSpec spec(width, height, 3, TypeDesc::FLOAT);
-    out->open(file_name.string(), spec);
-    out->write_image(TypeDesc::FLOAT, image_data.data(), sizeof(float3));
-    out->close();
+    f.write(reinterpret_cast<const char*>(image_data.data()),
+            sizeof(float) * image_data.size());
+
+    f.close();
 }
 
 void Render::SetLight(const std::vector<LightInfo>& light_settings)
