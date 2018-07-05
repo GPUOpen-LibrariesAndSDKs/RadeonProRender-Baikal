@@ -42,7 +42,7 @@ public:
         {
             std::stringstream ss;
 
-            ss << std::string(__func__) << ": "
+            ss << __func__ << ": "
                << option << " :option or its value is missed";
 
             throw std::logic_error(ss.str());

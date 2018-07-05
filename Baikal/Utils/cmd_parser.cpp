@@ -28,11 +28,11 @@ CmdParser::CmdParser(int argc, char* argv[])
 {
     if (argc < 0)
     {
-        std::logic_error(std::string(__func__) + ": 'argc' can't be negative");
+        throw std::logic_error(std::string(__func__) + ": 'argc' can't be negative");
     }
     if (!argv)
     {
-        std::logic_error(std::string(__func__) + ": 'argv' is nulltpr");
+        throw std::logic_error(std::string(__func__) + ": 'argv' is nulltpr");
     }
 
     m_cmd_line = { argv, argv + argc };

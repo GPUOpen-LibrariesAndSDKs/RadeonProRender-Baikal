@@ -149,7 +149,7 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
     }
 }
 
-void Render::SaveOutput(OutputInfo info,
+void Render::SaveOutput(const OutputInfo& info,
                         const std::string& name,
                         bool gamma_correction_enabled,
                         const std::filesystem::path& output_dir)
@@ -227,14 +227,10 @@ void Render::SaveOutput(OutputInfo info,
     std::filesystem::path file_name = output_dir;
     file_name.append(name);
 
-    std::ofstream f;
-
-    f.open(file_name.string(), std::ofstream::binary);
+    std::ofstream f (file_name.string(), std::ofstream::binary);
 
     f.write(reinterpret_cast<const char*>(image_data.data()),
             sizeof(float) * image_data.size());
-
-    f.close();
 }
 
 void Render::SetLight(const std::vector<LightInfo>& light_settings)

@@ -31,19 +31,19 @@ THE SOFTWARE.
      if (file_name.empty()) { \
          std::stringstream ss; \
          ss << "missed " << file_name.string(); \
-         THROW_EX(ss.str().c_str()) } \
+         THROW_EX(ss.str()) } \
 
 #define ASSERT_XML(file_name) \
      if (file_name.extension() != ".xml") { \
          std::stringstream ss; \
          ss << "not xml file: " << file_name.string(); \
-         THROW_EX(ss.str().c_str()) } \
+         THROW_EX(ss.str()) } \
 
 #define ASSERT_FILE_EXISTS(file_name) \
      if (!std::filesystem::exists(file_name)) { \
          std::stringstream ss; \
          ss << "there is no file on specified path: " << file_name.string(); \
-         THROW_EX(ss.str().c_str()) } \
+         THROW_EX(ss.str()) } \
 
 void ConfigLoader::ValidateConfig(const DGenConfig& config) const
 {
