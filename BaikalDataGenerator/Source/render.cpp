@@ -49,7 +49,7 @@ struct OutputInfo
     Renderer::OutputType type;
     std::string name;
     // chanels number can be only 1 or 3
-    int chanels_num;
+    int channels_num;
 };
 
 // if you need to add new output for saving to disk
@@ -169,13 +169,13 @@ void Render::SaveOutput(const OutputInfo& info,
     auto width = output->width();
     auto height = output->height();
 
-    std::vector<float> image_data(info.chanels_num * width * height);
+    std::vector<float> image_data(info.channels_num * width * height);
 
     float* dst_row = image_data.data();
 
     if (gamma_correction_enabled &&
        (info.type == Renderer::OutputType::kColor) &&
-       (info.chanels_num == 3))
+       (info.channels_num == 3))
     {
         for (auto y = 0u; y < height; ++y)
         {
@@ -187,11 +187,11 @@ void Render::SaveOutput(const OutputInfo& info,
                 //So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
                 // gamma corection
-                dst_row[info.chanels_num * x] = std::pow(val.x, 1.f / 2.2f);
-                dst_row[info.chanels_num * x + 1] = std::pow(val.y, 1.f / 2.2f);
-                dst_row[info.chanels_num * x + 2] = std::pow(val.z, 1.f / 2.2f);
+                dst_row[info.channels_num * x] = std::pow(val.x, 1.f / 2.2f);
+                dst_row[info.channels_num * x + 1] = std::pow(val.y, 1.f / 2.2f);
+                dst_row[info.channels_num * x + 2] = std::pow(val.z, 1.f / 2.2f);
             }
-            dst_row += info.chanels_num * width;
+            dst_row += info.channels_num * width;
         }
     }
     else
@@ -206,21 +206,21 @@ void Render::SaveOutput(const OutputInfo& info,
                 //So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
 
-                if (info.chanels_num == 3)
+                if (info.channels_num == 3)
                 {
                     int dst_pixel = y * width + x;
                     // invert the image 
-                    dst_row[info.chanels_num * x] = val.x;
-                    dst_row[info.chanels_num * x + 1] = val.y;
-                    dst_row[info.chanels_num * x + 2] = val.z;
+                    dst_row[info.channels_num * x] = val.x;
+                    dst_row[info.channels_num * x + 1] = val.y;
+                    dst_row[info.channels_num * x + 2] = val.z;
                 }
-                else // info.chanels_num = 1
+                else // info.channels_num = 1
                 {
                     // invert the image 
                     dst_row[x] = val.x;
                 }
             }
-            dst_row += info.chanels_num * width;
+            dst_row += info.channels_num * width;
         }
     }
 
