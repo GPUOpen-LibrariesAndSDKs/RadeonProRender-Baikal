@@ -29,7 +29,7 @@ THE SOFTWARE.
 class CmdLineParser
 {
 public:
-    explicit CmdLineParser(int argc, char* argv[]);
+    CmdLineParser(int argc, char* argv[]);
 
     DGenConfig Parse() const;
     bool HasHelpOption() const;

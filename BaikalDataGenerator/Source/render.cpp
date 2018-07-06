@@ -187,9 +187,9 @@ void Render::SaveOutput(const OutputInfo& info,
                 //So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
                 // gamma corection
-                dst_row[3 * x] = std::pow(val.x, 1.f / 2.2f);
-                dst_row[3 * x + 1] = std::pow(val.y, 1.f / 2.2f);
-                dst_row[3 * x + 2] = std::pow(val.z, 1.f / 2.2f);
+                dst_row[info.chanels_num * x] = std::pow(val.x, 1.f / 2.2f);
+                dst_row[info.chanels_num * x + 1] = std::pow(val.y, 1.f / 2.2f);
+                dst_row[info.chanels_num * x + 2] = std::pow(val.z, 1.f / 2.2f);
             }
             dst_row += info.chanels_num * width;
         }
@@ -210,9 +210,9 @@ void Render::SaveOutput(const OutputInfo& info,
                 {
                     int dst_pixel = y * width + x;
                     // invert the image 
-                    dst_row[3 * x] = val.x;
-                    dst_row[3 * x + 1] = val.y;
-                    dst_row[3 * x + 2] = val.z;
+                    dst_row[info.chanels_num * x] = val.x;
+                    dst_row[info.chanels_num * x + 1] = val.y;
+                    dst_row[info.chanels_num * x + 2] = val.z;
                 }
                 else // info.chanels_num = 1
                 {

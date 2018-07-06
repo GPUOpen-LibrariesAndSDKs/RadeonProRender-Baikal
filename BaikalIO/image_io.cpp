@@ -106,7 +106,6 @@ namespace Baikal
             input->close();
         }
 
-        //
         auto tex = Texture::Create(texturedata, RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
         tex->SetName(filename);
         return tex;
