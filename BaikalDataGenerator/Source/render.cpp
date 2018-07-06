@@ -118,6 +118,27 @@ Render::Render(const std::filesystem::path& scene_file,
 
     m_scene = Baikal::SceneIo::LoadScene(scene_file.string(),
                                          scene_file.parent_path().string());
+
+    // load materials.xml if it exists
+    auto materials_file = scene_file;
+    auto mapping_file = scene_file;
+
+    materials_file.append("materials.xml");
+    mapping_file.append("mapping.xml");
+
+    if (std::filesystem::exists(materials_file) &&
+        std::filesystem::exists(mapping_file))
+    {
+        auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
+        auto materials = material_io->LoadMaterials(materials_file.string());
+        auto mapping = material_io->LoadMaterialMapping(mapping_file.string());
+
+        material_io->ReplaceSceneMaterials(*m_scene, *materials, mapping);
+    }
+    else
+    {
+        std::cout << "WARNING: materials.xml or mapping.xml is missed" << std::endl;
+    }
 }
 
 void Render::UpdateCameraSettings(const CameraInfo& cam_state)
