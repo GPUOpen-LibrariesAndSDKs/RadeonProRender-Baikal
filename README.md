@@ -145,7 +145,7 @@ Mandatory command line args:
 - `-height` generated ouput height
 
 Possible command line args:
-- `-gamma` enables gamma corection for 3 chanel color output
+- `-gamma` enables gamma corection for 3 chanel color output. '-gamma 1' means that gamma correction is enabled, otherwise disabled
 
 ## Run unit tests
 - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/build/bin/:${LD_LIBRARY_PATH}`
