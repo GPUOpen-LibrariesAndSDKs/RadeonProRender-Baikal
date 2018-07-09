@@ -58,7 +58,7 @@ DGenConfig CmdLineParser::Parse() const
 
     config.height = m_cmd_parser.GetOption<int>("-height");
 
-    config.gamma_correction = m_cmd_parser.GetOption<bool>("-gamma", false);
+    config.gamma_correction = (m_cmd_parser.GetOption<int>("-gamma", 0) == 1) ? true : false;
 
     return config;
 }

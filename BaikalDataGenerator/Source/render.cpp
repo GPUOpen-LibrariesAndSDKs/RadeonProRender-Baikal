@@ -120,11 +120,8 @@ Render::Render(const std::filesystem::path& scene_file,
                                          scene_file.parent_path().string());
 
     // load materials.xml if it exists
-    auto materials_file = scene_file;
-    auto mapping_file = scene_file;
-
-    materials_file.append("materials.xml");
-    mapping_file.append("mapping.xml");
+    auto materials_file = scene_file.parent_path() / "materials.xml";
+    auto mapping_file = scene_file.parent_path() / "mapping.xml";
 
     if (std::filesystem::exists(materials_file) &&
         std::filesystem::exists(mapping_file))
@@ -256,15 +253,6 @@ void Render::SaveOutput(const OutputInfo& info,
 
 void Render::SetLight(const std::vector<LightInfo>& light_settings)
 {
-    // clear light
-    auto iter = m_scene->CreateLightIterator();
-    while (iter->IsValid())
-    {
-        m_scene->DetachLight(iter->ItemAs<Baikal::Light>());
-        iter = m_scene->CreateLightIterator();
-    }
-
-    // set light
     for (const auto& light: light_settings)
     {
         Light::Ptr light_instance;
