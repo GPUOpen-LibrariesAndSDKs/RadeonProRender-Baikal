@@ -42,28 +42,29 @@ namespace Baikal
         void Run();
     private:
         void Update(bool update_required);
-        
-        //update app state according to gui
-        // return: true if scene update required
+
+        // Update app state according to gui
+        // Return: true if scene update required
         bool UpdateGui();
         void CollectSceneStats();
 
         void SaveToFile(std::chrono::high_resolution_clock::time_point time) const;
 
-        //input callbacks
-        //Note: use glfwGetWindowUserPointer(window) to get app instance
+        // Input callbacks
+        // Note: use glfwGetWindowUserPointer(window) to get app instance
         static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void OnMouseMove(GLFWwindow* window, double x, double y);
         static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
         static void OnMouseScroll(GLFWwindow* window, double x, double y);
 
         AppSettings m_settings;
-        std::unique_ptr<AppClRender> m_cl;
+
+        // Note: the following three members should be declared in strict order
+        std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> m_window;
         std::unique_ptr<AppGlRender> m_gl;
+        std::unique_ptr<AppClRender> m_cl;
 
-        GLFWwindow* m_window;
-
-        //scene stats stuff
+        // Scene stats stuff
         int m_num_triangles;
         int m_num_instances;
 

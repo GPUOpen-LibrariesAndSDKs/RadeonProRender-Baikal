@@ -28,9 +28,15 @@ int main(int argc, char * argv[])
         Baikal::Application app(argc, argv);
         app.Run();
     }
+    catch (CLWException& ex)
+    {
+        std::cerr << ex.what() << " (OpenCL error code: "
+            << ex.errcode_ << ")" << std::endl;
+        return -1;
+    }
     catch (std::exception& ex)
     {
-        std::cout << ex.what() << std::endl;
+        std::cerr << ex.what() << std::endl;
         return -1;
     }
     return 0;
