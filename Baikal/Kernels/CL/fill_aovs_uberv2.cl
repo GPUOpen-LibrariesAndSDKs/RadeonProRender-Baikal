@@ -73,7 +73,7 @@ KERNEL void FillAOVsUberV2(
     // Number of emissive objects
     int num_lights,
     // camera
-    GLOBAL Camera const* camera,
+    GLOBAL Camera const* restrict camera,
     // RNG seed
     uint rngseed,
     // Sampler states

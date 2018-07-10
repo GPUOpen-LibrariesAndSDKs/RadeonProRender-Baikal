@@ -22,68 +22,84 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <utility>
 #include <sstream>
 #include <string>
 #include <vector>
 
-class CmdParser
+
+namespace Baikal
 {
-public:
-    CmdParser(int argc, char* argv[]);
 
-    bool OptionExists(const std::string& option) const;
-
-    template <class T = std::string>
-    T GetOption(const std::string& option) const
+    class CmdParser
     {
-        auto value = GetOptionValue(option);
+    public:
+        // 'argc' - number of the command line arguments
+        // 'argv' - command line arguments string
+        CmdParser(int argc, char* argv[]);
 
-        if (!value)
+        // 'option' - name of the option in command line
+        // returns true in case there's exist
+        bool OptionExists(const std::string& option) const;
+
+        // 'option' - name of the option in command line
+        // return the value of the option (the format of the strign should be 'option' 'value')
+        template <class T = std::string>
+        T GetOption(const std::string& option) const
         {
-            std::stringstream ss;
+            auto value = GetOptionValue(option);
 
-            ss << __func__ << ": "
-               << option << " :option or its value is missed";
+            if (!value)
+            {
+                std::stringstream ss;
 
-            throw std::logic_error(ss.str());
+                ss << __func__ << ": "
+                    << option << " :option or its value is missed";
+
+                throw std::logic_error(ss.str());
+            }
+
+            return LexicalCast<std::remove_cv_t<std::remove_reference_t<T>>>(*value);
         }
 
-        return LexicalCast<T>(*value);
-    }
-
-
-    template <class T = std::string>
-    T GetOption(const std::string& option, const T& default_value) const
-    {
-        auto value = GetOptionValue(option);
-
-        if (!value)
+        // 'option' - name of the option in command line
+        // 'default_value' - default value if option wasn't specified
+        // return the value of the option (the format of the strign should be 'option' 'value') or 'default_value'
+        template <class T = std::string>
+        std::decay_t<T> GetOption(const std::string& option, T&& default_value) const
         {
-            return default_value;
-        }
-        else
-        {
-            return LexicalCast<T>(*value);
-        }
-    }
+            auto value = GetOptionValue(option);
 
-private:
-    const std::string* GetOptionValue(const std::string& option) const;
-
-    template <typename T>
-    static T LexicalCast(const std::string& str)
-    {
-        T var;
-        std::istringstream iss(str);
-
-        if (iss.fail())
-        {
-            throw std::logic_error(std::string(__func__) + "cmd stream failed");
+            if (!value)
+            {
+                return std::forward<T>(default_value);
+            }
+            else
+            {
+                return LexicalCast<std::decay_t<T>>(*value);
+            }
         }
 
-        iss >> var;
-        return var;
-    }
+    private:
+        const std::string* GetOptionValue(const std::string& option) const;
 
-    std::vector<std::string> m_cmd_line;
-};
+        template <typename T>
+        static T LexicalCast(const std::string& str)
+        {
+            T var;
+
+            std::istringstream iss(str);
+
+            if (iss.fail())
+            {
+                throw std::logic_error(std::string(__func__) + "cmd stream failed");
+            }
+
+            iss >> var;
+            return var;
+        }
+
+        std::vector<std::string> m_cmd_line;
+    };
+
+}

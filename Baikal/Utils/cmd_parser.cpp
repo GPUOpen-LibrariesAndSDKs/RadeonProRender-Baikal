@@ -23,36 +23,40 @@ THE SOFTWARE.
 #include "Utils/cmd_parser.h"
 #include <algorithm>
 
-
-CmdParser::CmdParser(int argc, char* argv[])
+namespace Baikal
 {
-    if (argc < 0)
+
+    CmdParser::CmdParser(int argc, char* argv[])
     {
-        throw std::logic_error(std::string(__func__) + ": 'argc' can't be negative");
-    }
-    if (!argv)
-    {
-        throw std::logic_error(std::string(__func__) + ": 'argv' is nulltpr");
+        if (argc < 0)
+        {
+            throw std::logic_error(std::string(__func__) + ": 'argc' can't be negative");
+        }
+        if (!argv)
+        {
+            throw std::logic_error(std::string(__func__) + ": 'argv' is nulltpr");
+        }
+
+        m_cmd_line = { argv, argv + argc };
     }
 
-    m_cmd_line = { argv, argv + argc };
-}
-
-bool CmdParser::OptionExists(const std::string& option) const
-{
-    return (std::find(m_cmd_line.begin(), m_cmd_line.end(), option) != m_cmd_line.end());
-}
-
-const std::string* CmdParser::GetOptionValue(const std::string& option) const
-{
-    auto it = std::find(m_cmd_line.begin(), m_cmd_line.end(), option);
-
-    if ((it == m_cmd_line.end()) || (++it == m_cmd_line.end()))
+    bool CmdParser::OptionExists(const std::string& option) const
     {
-        return nullptr;
+        return (std::find(m_cmd_line.begin(), m_cmd_line.end(), option) != m_cmd_line.end());
     }
-    else
+
+    const std::string* CmdParser::GetOptionValue(const std::string& option) const
     {
-        return &(*it);
+        auto it = std::find(m_cmd_line.begin(), m_cmd_line.end(), option);
+
+        if ((it == m_cmd_line.end()) || (++it == m_cmd_line.end()))
+        {
+            return nullptr;
+        }
+        else
+        {
+            return &(*it);
+        }
     }
+
 }

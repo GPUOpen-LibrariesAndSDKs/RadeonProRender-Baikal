@@ -30,9 +30,9 @@ void Run(const DGenConfig& config)
 
     Render render(config.scene_file, config.width, config.height);
 
-    render.GenerateDataset(config_loader.GetCameraStates(),
-                           config_loader.GetLightSettings(),
-                           config_loader.GetSpp(),
+    render.GenerateDataset(config_loader.CamStatesBegin(), config_loader.CamStatesEnd(),
+                           config_loader.LightsBegin(), config_loader.LightsEnd(),
+                           config_loader.SppBegin(), config_loader.SppEnd(),
                            config.output_dir,
                            config.gamma_correction);
 }

@@ -947,16 +947,6 @@ namespace tinyobj {
         std::string filepath;
 
         if (!m_mtlBasePath.empty()) {
-
-            if (m_mtlBasePath.back() != '/' || m_mtlBasePath.back() != '\\')
-            {
-#ifdef WIN32
-                m_mtlBasePath.append("\\");
-#else 
-                m_mtlBasePath.append("/");
-#endif
-            }
-
             filepath = std::string(m_mtlBasePath) + matId;
         }
         else {

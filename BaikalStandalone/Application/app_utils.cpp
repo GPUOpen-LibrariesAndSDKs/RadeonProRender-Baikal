@@ -45,9 +45,9 @@ namespace Baikal
 
         s.envmapname = m_cmd_parser.GetOption("-e", s.envmapname);
 
-        s.width = m_cmd_parser.GetOption<int>("-w", s.width);
+        s.width = m_cmd_parser.GetOption("-w", s.width);
 
-        s.height = m_cmd_parser.GetOption<int>("-h", s.height);
+        s.height = m_cmd_parser.GetOption("-h", s.height);
 
         if (m_cmd_parser.OptionExists("-ao"))
         {
@@ -56,35 +56,35 @@ namespace Baikal
             s.ao_enabled = true;
         }
 
-        s.num_bounces = m_cmd_parser.GetOption<int>("-nb", s.num_bounces);
+        s.num_bounces = m_cmd_parser.GetOption("-nb", s.num_bounces);
 
-        s.camera_pos.x = m_cmd_parser.GetOption<float>("-cpx", s.camera_pos.x);
+        s.camera_pos.x = m_cmd_parser.GetOption("-cpx", s.camera_pos.x);
 
-        s.camera_pos.y = m_cmd_parser.GetOption<float>("-cpy", s.camera_pos.y);
+        s.camera_pos.y = m_cmd_parser.GetOption("-cpy", s.camera_pos.y);
 
-        s.camera_pos.z = m_cmd_parser.GetOption<float>("-cpz", s.camera_pos.z);
+        s.camera_pos.z = m_cmd_parser.GetOption("-cpz", s.camera_pos.z);
 
-        s.camera_at.x = m_cmd_parser.GetOption<float>("-tpx", s.camera_at.x);
+        s.camera_at.x = m_cmd_parser.GetOption("-tpx", s.camera_at.x);
 
-        s.camera_at.y = m_cmd_parser.GetOption<float>("-tpy", s.camera_at.y);
+        s.camera_at.y = m_cmd_parser.GetOption("-tpy", s.camera_at.y);
 
-        s.camera_at.z = m_cmd_parser.GetOption<float>("-tpz", s.camera_at.z);
+        s.camera_at.z = m_cmd_parser.GetOption("-tpz", s.camera_at.z);
 
-        s.envmapmul = m_cmd_parser.GetOption<float>("-em", s.envmapmul);
+        s.envmapmul = m_cmd_parser.GetOption("-em", s.envmapmul);
 
-        s.num_samples = m_cmd_parser.GetOption<int>("-ns", s.num_samples);
+        s.num_samples = m_cmd_parser.GetOption("-ns", s.num_samples);
 
-        s.camera_aperture = m_cmd_parser.GetOption<float>("-a", s.camera_aperture);
+        s.camera_aperture = m_cmd_parser.GetOption("-a", s.camera_aperture);
 
-        s.camera_focus_distance = m_cmd_parser.GetOption<float>("-fd", s.camera_focus_distance);
+        s.camera_focus_distance = m_cmd_parser.GetOption("-fd", s.camera_focus_distance);
 
-        s.camera_focal_length = m_cmd_parser.GetOption<float>("-fl", s.camera_focal_length);
+        s.camera_focal_length = m_cmd_parser.GetOption("-fl", s.camera_focal_length);
 
         s.camera_out_folder = m_cmd_parser.GetOption("-output_cam", s.camera_out_folder);
 
-        s.camera_sensor_size.x = m_cmd_parser.GetOption<float>("-ssx", s.camera_sensor_size.x);
+        s.camera_sensor_size.x = m_cmd_parser.GetOption("-ssx", s.camera_sensor_size.x);
 
-        s.camera_sensor_size.y = m_cmd_parser.GetOption<float>("-ssy", s.camera_sensor_size.y);
+        s.camera_sensor_size.y = m_cmd_parser.GetOption("-ssy", s.camera_sensor_size.y);
 
         s.base_image_file_name = m_cmd_parser.GetOption("-ifn", s.base_image_file_name);
 
@@ -102,9 +102,9 @@ namespace Baikal
                 throw std::runtime_error("Unsupported camera type");
         }
 
-        s.interop = m_cmd_parser.GetOption<bool>("-ifn", s.interop);
+        s.interop = m_cmd_parser.OptionExists("-ifn");
 
-        s.cspeed = m_cmd_parser.GetOption<float>("-cs", s.cspeed);
+        s.cspeed = m_cmd_parser.GetOption("-cs", s.cspeed);
 
         if (m_cmd_parser.OptionExists("-config"))
         {
@@ -122,9 +122,9 @@ namespace Baikal
                 s.mode = ConfigManager::Mode::kUseAll;
         }
 
-        s.platform_index = m_cmd_parser.GetOption<int>("-platform", s.platform_index);
+        s.platform_index = m_cmd_parser.GetOption("-platform", s.platform_index);
 
-        s.device_index = m_cmd_parser.GetOption<int>("-device", s.device_index);
+        s.device_index = m_cmd_parser.GetOption("-device", s.device_index);
 
         if ((s.device_index >= 0) && (s.platform_index < 0))
         {

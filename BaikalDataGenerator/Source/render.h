@@ -38,6 +38,8 @@ THE SOFTWARE.
 #include <algorithm>
 #include <iostream>
 
+#include "config_loader.h"
+
 struct OutputInfo;
 
 class Render
@@ -47,22 +49,25 @@ public:
            std::uint32_t output_width,
            std::uint32_t output_height);
 
-    void GenerateDataset(const std::vector<CameraInfo>& camera_states,
-                         const std::vector<LightInfo>& light_settings,
-                         const std::vector<int>& spp,
+    void GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
+                         LightsIterator light_begin, LightsIterator light_end,
+                         SppIterator spp_begin, SppIterator spp_end,
                          const std::filesystem::path& output_dir,
                          bool gamma_correction_enabled = false);
 
-private:
-    void UpdateCameraSettings(const CameraInfo& cam_state);
+    ~Render();
 
-    void SetLight(const std::vector<LightInfo>& light_settings);
+private:
+    void UpdateCameraSettings(CameraIterator cam_state);
+
+    void SetLightConfig(LightsIterator begin, LightsIterator end);
 
     void SaveOutput(const OutputInfo& info,
                     const std::string& name,
                     bool gamma_correction_enabled,
                     const std::filesystem::path& output_dir);
 
+    std::uint32_t m_width, m_height;
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;

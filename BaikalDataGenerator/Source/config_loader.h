@@ -22,18 +22,27 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <vector>
 #include "utils.h"
 #include "input_info.h"
+
+using CameraIterator = std::vector<CameraInfo>::const_iterator;
+using LightsIterator = std::vector<LightInfo>::const_iterator;
+using SppIterator = std::vector<int>::const_iterator;
 
 class ConfigLoader
 {
 public:
-
     explicit ConfigLoader(const DGenConfig& config);
 
-    const std::vector<CameraInfo>& GetCameraStates() const;
-    const std::vector<LightInfo>& GetLightSettings() const;
-    const std::vector<int>& GetSpp() const;
+    CameraIterator CamStatesBegin() const;
+    CameraIterator CamStatesEnd() const;
+
+    LightsIterator LightsBegin() const;
+    LightsIterator LightsEnd() const;
+
+    SppIterator SppBegin() const;
+    SppIterator SppEnd() const;
 
 private:
 

@@ -29,12 +29,21 @@ THE SOFTWARE.
 class CmdLineParser
 {
 public:
+
+    // 'argc' - number of the command line arguments
+    // 'argv' - command line arguments string
     CmdLineParser(int argc, char* argv[]);
 
+    // Generate DGenConfig from internal string
     DGenConfig Parse() const;
+
+    // check if there is '-help' option
+    // returns true if there's a help option, false otherwise
     bool HasHelpOption() const;
+
+    // print help option
     void ShowHelp() const;
 
 private:
-    CmdParser m_cmd_parser;
+    Baikal::CmdParser m_cmd_parser;
 };
