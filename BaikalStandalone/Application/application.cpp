@@ -535,6 +535,7 @@ namespace Baikal
         int w, h;
         glfwGetFramebufferSize(m_window.get(), &w, &h);
         assert(glGetError() == 0);
+
         const auto channels = 3;
         auto *data = new GLubyte[channels * w * h];
         glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -546,6 +547,7 @@ namespace Baikal
         }
         
         const auto filename = m_settings.path + "/" + m_settings.base_image_file_name + "-" + std::to_string(time.time_since_epoch().count()) + "." + m_settings.image_file_format;
+        
         auto out = ImageOutput::create(filename);
         if (out)
         {
@@ -608,16 +610,19 @@ namespace Baikal
         // Command line parsing
         AppCliParser cli;
         m_settings = cli.Parse(argc, argv);
+
         if (!m_settings.cmd_line_mode)
         {
             // Initialize GLFW
             try
             {
                 int err = glfwInit();
+
                 if (err != GL_TRUE)
                 {
                     throw std::runtime_error("Error code: " + std::to_string(err));
                 }
+
             }
             catch (std::runtime_error&)
             {
@@ -644,10 +649,12 @@ namespace Baikal
             {
                 glewExperimental = GL_TRUE;
                 GLenum err = glewInit();
+
                 if (err != GLEW_OK)
                 {
                     throw std::runtime_error((const char*)glewGetErrorString(err));
                 }
+
             }
             catch (std::runtime_error&)
             {
@@ -676,6 +683,7 @@ namespace Baikal
                 std::cerr << "Error when inializing AppGlRender or AppClRender!\n";
                 throw;
             }
+
         }
         else
         {
@@ -712,6 +720,7 @@ namespace Baikal
                 std::cout << "Caught exception in Application::Run()\n";
                 throw;
             }
+
         }
         else
         {
