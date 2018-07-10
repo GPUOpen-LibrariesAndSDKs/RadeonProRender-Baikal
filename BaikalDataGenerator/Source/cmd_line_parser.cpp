@@ -54,9 +54,9 @@ DGenConfig CmdLineParser::Parse() const
 
     config.spp_file = m_cmd_parser.GetOption("-spp_file");
 
-    config.width = m_cmd_parser.GetOption<int>("-width");
+    config.width = m_cmd_parser.GetOption<std::uint32_t>("-width");
 
-    config.height = m_cmd_parser.GetOption<int>("-height");
+    config.height = m_cmd_parser.GetOption<std::uint32_t>("-height");
 
     config.gamma_correction = (m_cmd_parser.GetOption<int>("-gamma", 0) == 1);
 

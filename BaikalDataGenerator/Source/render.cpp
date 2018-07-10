@@ -20,6 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
+#include "CLW.h"
+#include "Renderers/renderer.h"
+#include "RenderFactory/clw_render_factory.h"
+#include "SceneGraph/camera.h"
+#include "scene_io.h"
+#include "input_info.h"
+
 #include "utils.h"
 #include "render.h"
 #include "scene_io.h"
@@ -27,6 +34,8 @@ THE SOFTWARE.
 #include "SceneGraph/light.h"
 #include "Output/clwoutput.h"
 #include "BaikalIO/image_io.h"
+
+#include "OpenImageIO/imageio.h"
 
 #include <filesystem>
 #include <fstream>
@@ -38,21 +47,16 @@ namespace
 {
     std::uint32_t constexpr kNumIterations = 4096;
 
-    bool CloseCompare(float3 const& v1, float3 const& v2)
+    bool RoughCompare(float x, float y, float epsilon = std::numeric_limits<float>::epsilon())
     {
-        auto abs_diff = v2 - v1;
+        return std::abs(x - y) < epsilon;
+    }
 
-        abs_diff.x = std::abs(abs_diff.x);
-        abs_diff.y = std::abs(abs_diff.y);
-        abs_diff.z = std::abs(abs_diff.z);
-
-        RadeonRays::float3 min_num = RadeonRays::float3(std::min(std::abs(v1.x), std::abs(v2.x)),
-                                                        std::min(std::abs(v1.y), std::abs(v2.y)),
-                                                        std::min(std::abs(v1.z), std::abs(v2.z)));
-
-        min_num *= std::numeric_limits<float>::epsilon();
-
-        return (abs_diff.x < min_num.x) && (abs_diff.y < min_num.y) && (abs_diff.z < min_num.z);
+    bool RoughCompare(float3 const& l, float3 const& r, float epsilon = std::numeric_limits<float>::epsilon())
+    {
+        return RoughCompare(l.x, r.x, epsilon) &&
+               RoughCompare(l.y, r.y, epsilon) &&
+               RoughCompare(l.z, r.z, epsilon);
     }
 }
 
@@ -90,7 +94,11 @@ const std::array<OutputInfo, 2> kSingleIteratedOutputs =
 Render::Render(const std::filesystem::path& scene_file,
                std::uint32_t output_width,
                std::uint32_t output_height)
+    : m_width(output_width), m_height(output_height)
 {
+    assert(m_width);
+    assert(m_height);
+
     std::vector<CLWPlatform> platforms;
     CLWPlatform::CreateAllPlatforms(platforms);
 
@@ -102,7 +110,7 @@ Render::Render(const std::filesystem::path& scene_file,
         {
             if (platform.GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
             {
-                m_context = CLWContext::Create(platform.GetDevice(i));
+                m_context = std::make_unique<CLWContext>(CLWContext::Create(platform.GetDevice(i)));
                 device_found = true;
                 break;
             }
@@ -114,7 +122,9 @@ Render::Render(const std::filesystem::path& scene_file,
         THROW_EX("can't find device");
     }
 
-    m_factory = std::make_unique<Baikal::ClwRenderFactory>(m_context, "cache");
+    assert(m_context);
+
+    m_factory = std::make_unique<Baikal::ClwRenderFactory>(*m_context, "cache");
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     m_controller = m_factory->CreateSceneController();
 
@@ -177,9 +187,9 @@ void Render::UpdateCameraSettings(CameraIterator cam_state)
     auto at = m_camera->GetForwardVector();
     auto up = m_camera->GetUpVector();
 
-    if (CloseCompare(cur_pos, cam_state->pos) ||
-        CloseCompare(at, cam_state->at) ||
-        CloseCompare(up, cam_state->up))
+    if (RoughCompare(cur_pos, cam_state->pos) ||
+        RoughCompare(at, cam_state->at) ||
+        RoughCompare(up, cam_state->up))
     {
         m_camera->LookAt(cam_state->pos, cam_state->at, cam_state->up);
     }
@@ -202,10 +212,7 @@ void Render::SaveOutput(const OutputInfo& info,
 
     output->GetData(output_data.data());
 
-    auto width = output->width();
-    auto height = output->height();
-
-    std::vector<float> image_data(info.channels_num * width * height);
+    std::vector<float> image_data(info.channels_num * m_width * m_height);
 
     float* dst_row = image_data.data();
 
@@ -213,38 +220,38 @@ void Render::SaveOutput(const OutputInfo& info,
        (info.type == Renderer::OutputType::kColor) &&
        (info.channels_num == 3))
     {
-        for (auto y = 0u; y < height; ++y)
+        for (auto y = 0u; y < m_height; ++y)
         {
-            for (auto x = 0u; x < width; ++x)
+            for (auto x = 0u; x < m_width; ++x)
             {
-                float3 val = output_data[(height - 1 - y) * width + x];
+                float3 val = output_data[(m_height - 1 - y) * m_width + x];
                 // "The 4-th pixel component is a count of accumulated samples.
-                //It can be different for every pixel in case of adaptive sampling.
-                //So, we need to normalize pixel values here".
+                // It can be different for every pixel in case of adaptive sampling.
+                // So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
                 // gamma corection
                 dst_row[info.channels_num * x] = std::pow(val.x, 1.f / 2.2f);
                 dst_row[info.channels_num * x + 1] = std::pow(val.y, 1.f / 2.2f);
                 dst_row[info.channels_num * x + 2] = std::pow(val.z, 1.f / 2.2f);
             }
-            dst_row += info.channels_num * width;
+            dst_row += info.channels_num * m_width;
         }
     }
     else
     {
-        for (auto y = 0u; y < height; ++y)
+        for (auto y = 0u; y < m_height; ++y)
         {
-            for (auto x = 0u; x < width; ++x)
+            for (auto x = 0u; x < m_width; ++x)
             {
-                float3 val = output_data[(height - 1 - y) * width + x];
+                float3 val = output_data[(m_height - 1 - y) * m_width + x];
                 // "The 4-th pixel component is a count of accumulated samples.
-                //It can be different for every pixel in case of adaptive sampling.
-                //So, we need to normalize pixel values here".
+                // It can be different for every pixel in case of adaptive sampling.
+                // So, we need to normalize pixel values here".
                 val *= (1.f / val.w);
 
                 if (info.channels_num == 3)
                 {
-                    int dst_pixel = y * width + x;
+                    int dst_pixel = y * m_width + x;
                     // invert the image 
                     dst_row[info.channels_num * x] = val.x;
                     dst_row[info.channels_num * x + 1] = val.y;
@@ -256,7 +263,7 @@ void Render::SaveOutput(const OutputInfo& info,
                     dst_row[x] = val.x;
                 }
             }
-            dst_row += info.channels_num * width;
+            dst_row += info.channels_num * m_width;
         }
     }
 
@@ -363,7 +370,13 @@ void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
                                                          cam_state->pos,
                                                          cam_state->up);
 
-            m_camera->SetSensorSize(RadeonRays::float2(0.036f, 0.036f));
+            // default sensor width
+            float sensor_width = 0.036f;
+            float inverserd_aspect_ration = static_cast<float>(m_height) /
+                                            static_cast<float>(m_width);
+            float sensor_height = sensor_width * inverserd_aspect_ration;
+
+            m_camera->SetSensorSize(RadeonRays::float2(0.036f, sensor_height));
             m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
 
             m_scene->SetCamera(m_camera);

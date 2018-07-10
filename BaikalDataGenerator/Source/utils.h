@@ -32,7 +32,7 @@ struct DGenConfig
     std::filesystem::path camera_file;
     std::filesystem::path spp_file;
     std::filesystem::path output_dir;
-    int width, height;
+    std::uint32_t width, height;
     bool gamma_correction;
 };
 

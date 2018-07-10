@@ -22,16 +22,6 @@ THE SOFTWARE.
 
 #pragma once
 
-#include "CLW.h"
-#include "Renderers/renderer.h"
-#include "RenderFactory/clw_render_factory.h"
-#include "Output/output.h"
-#include "SceneGraph/camera.h"
-#include "scene_io.h"
-#include "input_info.h"
-
-#include "OpenImageIO/imageio.h"
-
 #include <vector>
 #include <set>
 #include <memory>
@@ -41,6 +31,21 @@ THE SOFTWARE.
 #include "config_loader.h"
 
 struct OutputInfo;
+
+namespace Baikal
+{
+    struct ClwScene;
+    class Renderer;
+    class ClwRenderFactory;
+    class Output;
+    class Scene1;
+    class PerspectiveCamera;
+
+    template <class T = ClwScene>
+    class SceneController;
+}
+
+class CLWContext;
 
 class Render
 {
@@ -72,7 +77,7 @@ private:
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::vector<std::unique_ptr<Baikal::Output>> m_outputs;
-    Baikal::Scene1::Ptr m_scene;
-    Baikal::PerspectiveCamera::Ptr m_camera;
-    CLWContext m_context;
+    std::shared_ptr<Baikal::Scene1> m_scene;
+    std::shared_ptr<Baikal::PerspectiveCamera> m_camera;
+    std::unique_ptr<CLWContext> m_context;
 };
