@@ -49,7 +49,7 @@ namespace
 
     bool RoughCompare(float x, float y, float epsilon = std::numeric_limits<float>::epsilon())
     {
-        return std::abs(x - y) < epsilon;
+    return std::abs(x - y) < epsilon;
     }
 
     bool RoughCompare(float3 const& l, float3 const& r, float epsilon = std::numeric_limits<float>::epsilon())
@@ -71,7 +71,7 @@ struct OutputInfo
 // if you need to add new output for saving to disk
 // for iterations number counted in spp.xml file
 // just put its description in this collection
-const std::array<OutputInfo, 3> kMultipleIteratedOutputs =
+const std::vector<OutputInfo> kMultipleIteratedOutputs =
 {
     {
         { Renderer::OutputType::kColor, "color", 3 },
@@ -83,7 +83,7 @@ const std::array<OutputInfo, 3> kMultipleIteratedOutputs =
 // if you need to add new output for saving to disk
 // only for the one time
 // just put its description in this collection
-const std::array<OutputInfo, 2> kSingleIteratedOutputs =
+const std::vector<OutputInfo> kSingleIteratedOutputs =
 {
     {
         { Renderer::OutputType::kViewShadingNormal, "view_shading_normal", 3 },
@@ -92,8 +92,8 @@ const std::array<OutputInfo, 2> kSingleIteratedOutputs =
 };
 
 Render::Render(const std::filesystem::path& scene_file,
-               std::uint32_t output_width,
-               std::uint32_t output_height)
+    std::uint32_t output_width,
+    std::uint32_t output_height)
     : m_width(output_width), m_height(output_height)
 {
     assert(m_width);
@@ -104,7 +104,7 @@ Render::Render(const std::filesystem::path& scene_file,
 
     bool device_found = false;
 
-    for (const auto& platform: platforms)
+    for (const auto& platform : platforms)
     {
         for (auto i = 0u; i < platform.GetDeviceCount(); i++)
         {
@@ -128,7 +128,7 @@ Render::Render(const std::filesystem::path& scene_file,
     m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
     m_controller = m_factory->CreateSceneController();
 
-    for (auto& output_info: kMultipleIteratedOutputs)
+    for (auto& output_info : kMultipleIteratedOutputs)
     {
         m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
@@ -144,8 +144,19 @@ Render::Render(const std::filesystem::path& scene_file,
         THROW_EX("There is no any scene file to load");
     }
 
-    m_scene = Baikal::SceneIo::LoadScene(scene_file.string(),
-                                         scene_file.parent_path().string());
+    // workaround to avoid issues with tiny_object_loader
+    auto scene_dir = scene_file.parent_path().string();
+
+    if (scene_dir.back() != '/' || scene_dir.back() != '\\')
+    {
+#ifdef WIN32
+        scene_dir.append("\\");
+#else
+        scene_dir.append("/");
+#endif
+    }
+
+    m_scene = Baikal::SceneIo::LoadScene(scene_file.string(), scene_dir);
 
     // load materials.xml if it exists
     auto materials_file = scene_file.parent_path() / "materials.xml";
