@@ -50,6 +50,7 @@ namespace Baikal
 
         std::map<std::string, Texture::Ptr> m_name2tex;
         std::map<std::uint64_t, Material::Ptr> m_id2mat;
+        std::set<InputMap::Ptr> m_saved_inputs;
 
         struct ResolveRequest
         {
@@ -149,6 +150,10 @@ namespace Baikal
             for (size_t a = 0; a < num_inputs; ++a)
             {
                 auto input = uberv2_material->GetInput(static_cast<uint32_t>(a));
+                if (!uberv2_material->IsActive(input))
+                {
+                    continue;
+                }
                 printer.PushAttribute(input.info.name.c_str(), input.value.input_map_value->GetId());
             }
         }
@@ -236,6 +241,10 @@ namespace Baikal
         for (std::size_t a = 0u; a < num_inputs; ++a)
         {
             auto inputs = material->GetInput(a);
+            if (!material->IsActive(inputs))
+            {
+                continue;
+            }
             uint32_t input_id = element.UnsignedAttribute(inputs.info.name.c_str());
             material->SetInputValue(inputs.info.name, loaded_inputs.at(input_id));
         }
@@ -432,6 +441,15 @@ namespace Baikal
 
     void MaterialIoXML::WriteInputMap(ImageIo& io, XMLPrinter& printer, InputMap::Ptr inputMap)
     {
+        if (m_saved_inputs.find(inputMap) != m_saved_inputs.end())
+        {
+            return;
+        }
+        else
+        {
+            m_saved_inputs.insert(inputMap);
+        }
+
         printer.OpenElement("Input");
 
         printer.PushAttribute("name", inputMap->GetName().c_str());
@@ -468,14 +486,18 @@ namespace Baikal
                 }
                 else
                 {
-                    std::ostringstream oss;
-                    oss << (std::uint64_t)texture.get() << ".jpg";
+                    std::string texture_name = texture->GetName();
+                    if (texture_name.empty())
+                    {
+                        std::ostringstream oss;
+                        oss << (std::uint64_t)texture.get() << ".jpg";
+                        texture_name = oss.str();
+                        io.SaveImage(m_base_path + texture_name, texture);
+                    }
 
-                    io.SaveImage(m_base_path + oss.str(), texture);
+                    m_tex2name[texture] = texture_name;
 
-                    m_tex2name[texture] = oss.str();
-
-                    printer.PushAttribute("value", oss.str().c_str());
+                    printer.PushAttribute("value", texture_name.c_str());
                 }
                 printer.CloseElement();
                 break;

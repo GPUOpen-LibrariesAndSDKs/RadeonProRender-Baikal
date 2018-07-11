@@ -85,7 +85,15 @@
 #ifndef _HALF_H_
 #define _HALF_H_
 
+#ifdef WIN32
+#ifdef BAIKAL_EXPORT_DATA_SYMBOLS
+#define HALF_EXPORT __declspec(dllexport)
+#else
+#define HALF_EXPORT __declspec(dllimport)
+#endif
+#else
 #define HALF_EXPORT
+#endif
 #include <iostream>
 
 class half

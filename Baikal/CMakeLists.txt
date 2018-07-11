@@ -154,6 +154,9 @@ elseif (UNIX)
     add_definitions(-fvisibility=default)
 endif (WIN32)
 add_library(Baikal SHARED ${SOURCES})
+# We need to use this definition because CMAKE_EXPORT_ALL_SYMBOLS
+# actually doesn't export data symbols, only functions
+target_compile_definitions(Baikal PRIVATE BAIKAL_EXPORT_DATA_SYMBOLS)
 
 if (BAIKAL_ENABLE_DENOISER)
     target_compile_definitions(Baikal PUBLIC ENABLE_DENOISER)

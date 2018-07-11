@@ -10,6 +10,7 @@ option(BAIKAL_ENABLE_STANDALONE "Enable standalone application build" ON)
 option(BAIKAL_ENABLE_DATAGENERATOR "Enable data generator application build" OFF)
 option(BAIKAL_ENABLE_IO "Enable IO library build" ON)
 option(BAIKAL_ENABLE_FBX "Enable FBX import in BaikalIO. Requires BaikalIO to be turned ON" OFF)
+option(BAIKAL_ENABLE_MATERIAL_CONVERTER "Enable materials.xml converter from old to uberv2 version" OFF)
 option(BAIKAL_EMBED_KERNELS "Embed CL kernels into binary module" OFF)
 
 #Sanity checks
@@ -76,6 +77,9 @@ if (BAIKAL_ENABLE_RPR)
     add_subdirectory(RprSupport)
 endif (BAIKAL_ENABLE_RPR)
 
+if (BAIKAL_ENABLE_MATERIAL_CONVERTER)
+    add_subdirectory(Tools/MaterialConverter)
+endif (BAIKAL_ENABLE_MATERIAL_CONVERTER)
 
 set (BAIKAL_DLLS
     "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"

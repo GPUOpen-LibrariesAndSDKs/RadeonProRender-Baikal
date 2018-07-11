@@ -108,7 +108,7 @@ namespace Baikal
         RadeonRays::float3 cam_pos = cam->GetPosition();
         RadeonRays::float3 cam_at = cam->GetForwardVector();
         RadeonRays::float3 cam_up = cam->GetUpVector();
-        
+
         float aperture = cam->GetAperture();
         float focus_dist = cam->GetFocusDistance();
         float focal_length = cam->GetFocalLength();
@@ -540,8 +540,9 @@ namespace Baikal
     {
         using namespace OIIO;
         int w, h;
-        glfwGetFramebufferSize(m_window, &w, &h);
+        glfwGetFramebufferSize(m_window.get(), &w, &h);
         assert(glGetError() == 0);
+
         const auto channels = 3;
         auto *data = new GLubyte[channels * w * h];
         glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -553,6 +554,7 @@ namespace Baikal
         }
         
         const auto filename = m_settings.path + "/" + m_settings.base_image_file_name + "-" + std::to_string(time.time_since_epoch().count()) + "." + m_settings.image_file_format;
+        
         auto out = ImageOutput::create(filename);
         if (out)
         {
@@ -608,24 +610,33 @@ namespace Baikal
     }
 
     Application::Application(int argc, char * argv[])
-        : m_window(nullptr)
+        : m_window(nullptr, glfwDestroyWindow) // Add custom deleter to shared_ptr
         , m_num_triangles(0)
         , m_num_instances(0)
     {
         // Command line parsing
         AppCliParser cli(argc, argv);
         m_settings = cli.Parse();
+
         if (!m_settings.cmd_line_mode)
         {
             // Initialize GLFW
+            try
             {
-                auto err = glfwInit();
+                int err = glfwInit();
+
                 if (err != GL_TRUE)
                 {
-                    std::cout << "GLFW initialization failed\n";
-                    exit(-1);
+                    throw std::runtime_error("Error code: " + std::to_string(err));
                 }
+
             }
+            catch (std::runtime_error&)
+            {
+                std::cerr << "GLFW initialization failed!\n";
+                throw;
+            }
+
             // Setup window
             glfwSetErrorCallback(OnError);
             glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
@@ -637,42 +648,49 @@ namespace Baikal
     #endif
 
             // GLUT Window Initialization:
-            m_window = glfwCreateWindow(m_settings.width, m_settings.height, "Baikal standalone demo", nullptr, nullptr);
-            glfwMakeContextCurrent(m_window);
+            m_window.reset(glfwCreateWindow(m_settings.width, m_settings.height, "Baikal standalone demo", nullptr, nullptr));
+            glfwMakeContextCurrent(m_window.get());
 
     #ifndef __APPLE__
+            try
             {
                 glewExperimental = GL_TRUE;
                 GLenum err = glewInit();
+
                 if (err != GLEW_OK)
                 {
-                    std::cout << "GLEW initialization failed\n";
-                    exit(-1);
+                    throw std::runtime_error((const char*)glewGetErrorString(err));
                 }
+
+            }
+            catch (std::runtime_error&)
+            {
+                std::cerr << "GLEW initialization failed!\n";
+                throw;
             }
     #endif
 
-            ImGui_ImplGlfwGL3_Init(m_window, true);
+            ImGui_ImplGlfwGL3_Init(m_window.get(), true);
 
+            // Set callbacks
+            glfwSetWindowUserPointer(m_window.get(), this);
+            glfwSetMouseButtonCallback(m_window.get(), Application::OnMouseButton);
+            glfwSetCursorPosCallback(m_window.get(), Application::OnMouseMove);
+            glfwSetKeyCallback(m_window.get(), Application::OnKey);
+            glfwSetScrollCallback(m_window.get(), Application::OnMouseScroll);
+
+            // Initialize AppGlRender and AppClRender
             try
             {
                 m_gl.reset(new AppGlRender(m_settings));
                 m_cl.reset(new AppClRender(m_settings, m_gl->GetTexture()));
-
-                //set callbacks
-                using namespace std::placeholders;
-                glfwSetWindowUserPointer(m_window, this);
-                glfwSetMouseButtonCallback(m_window, Application::OnMouseButton);
-                glfwSetCursorPosCallback(m_window, Application::OnMouseMove);
-                glfwSetKeyCallback(m_window, Application::OnKey);
-                glfwSetScrollCallback(m_window, Application::OnMouseScroll);
             }
-            catch (std::runtime_error& err)
+            catch (std::runtime_error&)
             {
-                glfwDestroyWindow(m_window);
-                std::cout << err.what();
-                exit(-1);
+                std::cerr << "Error when inializing AppGlRender or AppClRender!\n";
+                throw;
             }
+
         }
         else
         {
@@ -691,33 +709,30 @@ namespace Baikal
             {
                 m_cl->StartRenderThreads();
                 static bool update = true;
-                while (!glfwWindowShouldClose(m_window))
+                while (!glfwWindowShouldClose(m_window.get()))
                 {
-
                     ImGui_ImplGlfwGL3_NewFrame();
                     Update(update);
-                    m_gl->Render(m_window);
+                    m_gl->Render(m_window.get());
                     update = UpdateGui();
-
-                    glfwSwapBuffers(m_window);
+                    glfwSwapBuffers(m_window.get());
                     glfwPollEvents();
                 }
 
                 m_cl->StopRenderThreads();
 
-                glfwDestroyWindow(m_window);
             }
-            catch (std::runtime_error& err)
+            catch (std::runtime_error&)
             {
-                glfwDestroyWindow(m_window);
-                std::cout << err.what();
-                exit(-1);
+                std::cout << "Caught exception in Application::Run()\n";
+                throw;
             }
+
         }
         else
         {
             m_cl.reset(new AppClRender(m_settings, -1));
-                        
+
             std::cout << "Number of triangles: " << m_num_triangles << "\n";
             std::cout << "Number of instances: " << m_num_instances << "\n";
 
