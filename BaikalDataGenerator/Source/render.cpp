@@ -187,9 +187,9 @@ void Render::UpdateCameraSettings(CameraIterator cam_state)
     auto at = m_camera->GetForwardVector();
     auto up = m_camera->GetUpVector();
 
-    if (RoughCompare(cur_pos, cam_state->pos) ||
-        RoughCompare(at, cam_state->at) ||
-        RoughCompare(up, cam_state->up))
+    if (!RoughCompare(cur_pos, cam_state->pos) ||
+        !RoughCompare(at, cam_state->at) ||
+        !RoughCompare(up, cam_state->up))
     {
         m_camera->LookAt(cam_state->pos, cam_state->at, cam_state->up);
     }

@@ -50,10 +50,22 @@ class CLWContext;
 class Render
 {
 public:
+    // 'scene_file' - full path till .obj/.objm or some kind of this files with scene
+    // 'output_width' - width of outputs which will be saved on disk
+    // 'output_height' - height of outputs which will be saved on disk
     Render(const std::filesystem::path& scene_file,
            std::uint32_t output_width,
            std::uint32_t output_height);
 
+    // This function generates dataset for network training
+    // 'cam_begin' - begin iterator on camera states collection
+    // 'cam_end' - end iterator camera states collection
+    // 'light_begin' - begin iterator on lights collection
+    // 'light_end' - end iterator on lights collection
+    // 'spp_begin' - begin iterator on spp collection
+    // 'spp_end' - end iterator on spp collection
+    // 'output_dir' - output directory to save dataset
+    // 'gamma_correction_enabled' - flag to enable/disable gamma correction
     void GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
                          LightsIterator light_begin, LightsIterator light_end,
                          SppIterator spp_begin, SppIterator spp_end,
