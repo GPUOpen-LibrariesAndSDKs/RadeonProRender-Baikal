@@ -9,6 +9,11 @@ set(ESTIMATORS_SOURCES
     Estimators/path_tracing_estimator.cpp
     Estimators/path_tracing_estimator.h)
 
+set(ML_SOURCES
+    ML/inference_impl.h
+    ML/inference_impl.cpp
+)
+
 set(OUTPUT_SOURCES
     Output/clwoutput.h
     Output/output.h)
@@ -136,6 +141,7 @@ set(SOURCES
     
 source_group("Controllers" FILES ${CONTROLLERS_SOURCES})
 source_group("Estimators" FILES ${ESTIMATORS_SOURCES})
+source_group("ML" FILES ${ML_SOURCES})
 source_group("Output" FILES ${OUTPUT_SOURCES})
 source_group("Posteffect" FILES ${POSTEFFECT_SOURCES})
 source_group("Renderers" FILES ${RENDERERS_SOURCES})
