@@ -54,23 +54,14 @@ namespace Baikal
 
     void AppClRender::InitCl(AppSettings& settings, GLuint tex)
     {
-        bool force_disable_itnerop = false;
-        //create cl context
-        try
-        {
-            ConfigManager::CreateConfigs(
-                settings.mode,
-                settings.interop,
-                m_cfgs,
-                settings.num_bounces,
-                settings.platform_index,
-                settings.device_index);
-        }
-        catch (CLWException &)
-        {
-            force_disable_itnerop = true;
-            ConfigManager::CreateConfigs(settings.mode, false, m_cfgs, settings.num_bounces, settings.platform_index, settings.device_index);
-        }
+        // Create cl context
+        ConfigManager::CreateConfigs(
+            settings.mode,
+            settings.interop,
+            m_cfgs,
+            settings.num_bounces,
+            settings.platform_index,
+            settings.device_index);
 
         m_width = (std::uint32_t)settings.width;
         m_height = (std::uint32_t)settings.height;
@@ -107,20 +98,13 @@ namespace Baikal
             m_ctrl[i].scene_state = 0;
         }
 
-        if (force_disable_itnerop)
+        if (settings.interop)
         {
-            std::cout << "OpenGL interop is not supported, disabled, -interop flag is ignored\n";
+            std::cout << "OpenGL interop mode enabled\n";
         }
         else
         {
-            if (settings.interop)
-            {
-                std::cout << "OpenGL interop mode enabled\n";
-            }
-            else
-            {
-                std::cout << "OpenGL interop mode disabled\n";
-            }
+            std::cout << "OpenGL interop mode disabled\n";
         }
 
         //create renderer
@@ -130,10 +114,12 @@ namespace Baikal
             m_outputs[i].dummy_output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
 
 #ifdef ENABLE_DENOISER
-            CreateDenoiserOutputs(i, settings.width, settings.height);
-            SetDenoiserOutputs(i);
-            //m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory<Baikal::ClwScene>::PostEffectType::kBilateralDenoiser);
-            m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory<Baikal::ClwScene>::PostEffectType::kWaveletDenoiser);
+            if (m_cfgs[i].type == ConfigManager::kPrimary)
+            {
+                CreateDenoiserOutputs(i, settings.width, settings.height);
+                SetDenoiserOutputs(i);
+                m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory<Baikal::ClwScene>::PostEffectType::kWaveletDenoiser);
+            }
 #endif
             m_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_outputs[i].output.get());
 
@@ -254,6 +240,7 @@ namespace Baikal
 
     void AppClRender::Update(AppSettings& settings)
     {
+        ++settings.samplecount;
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (m_cfgs[i].type == ConfigManager::kPrimary)
@@ -281,6 +268,7 @@ namespace Baikal
 
                 int globalsize = settings.width * settings.height;
                 m_cfgs[m_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, acckernel);
+                settings.samplecount += m_ctrl[i].new_samples_count;
             }
         }
 
@@ -481,6 +469,7 @@ namespace Baikal
         auto updatetime = std::chrono::high_resolution_clock::now();
 
         std::uint32_t scene_state = 0;
+        std::uint32_t new_samples_count = 0;
 
         while (!cd.stop.load())
         {
@@ -496,6 +485,7 @@ namespace Baikal
 
             auto& scene = controller->GetCachedScene(m_scene);
             renderer->Render(scene);
+            ++new_samples_count;
 
             auto now = std::chrono::high_resolution_clock::now();
 
@@ -506,6 +496,8 @@ namespace Baikal
                 m_outputs[cd.idx].output->GetData(&m_outputs[cd.idx].fdata[0]);
                 updatetime = now;
                 m_ctrl[cd.idx].scene_state = scene_state;
+                m_ctrl[cd.idx].new_samples_count = new_samples_count;
+                new_samples_count = 0;
                 cd.newdata.store(1);
             }
 
@@ -520,7 +512,6 @@ namespace Baikal
             if (i != static_cast<std::size_t>(m_primary))
             {
                 m_renderthreads.push_back(std::thread(&AppClRender::RenderThread, this, std::ref(m_ctrl[i])));
-                m_renderthreads.back().detach();
             }
         }
 
@@ -532,9 +523,16 @@ namespace Baikal
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (i == static_cast<std::size_t>(m_primary))
+            {
                 continue;
+            }
 
             m_ctrl[i].stop.store(true);
+        }
+
+        for (std::size_t i = 0; i < m_renderthreads.size(); ++i)
+        {
+            m_renderthreads[i].join();
         }
     }
 

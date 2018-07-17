@@ -71,6 +71,7 @@ namespace Baikal
             std::mutex datamutex;
             int idx;
             std::uint32_t scene_state;
+            std::uint32_t new_samples_count;
         };
 
     public:
@@ -92,7 +93,7 @@ namespace Baikal
 
         inline Baikal::Camera::Ptr GetCamera() { return m_camera; };
         inline Baikal::Scene1::Ptr GetScene() { return m_scene; };
-        inline CLWDevice GetDevice(int i) { return m_cfgs[m_primary].context.GetDevice(i); };
+        inline const std::vector<ConfigManager::Config>& GetConfigs() const { return m_cfgs; };
         inline Renderer::OutputType GetOutputType() { return m_output_type; };
 
         void SetNumBounces(int num_bounces);

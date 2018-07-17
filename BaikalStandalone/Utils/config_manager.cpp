@@ -94,6 +94,7 @@ void ConfigManager::CreateConfigs(
 
             Config cfg;
             cfg.caninterop = false;
+            bool create_secondary = true;
 
             if (platforms[i].GetDevice(d).HasGlInterop() && !hasprimary && interop)
             {
@@ -128,12 +129,29 @@ void ConfigManager::CreateConfigs(
                     (cl_context_properties)kCGLShareGroup, 0
                 };
 #endif
-                cfg.context = CLWContext::Create(platforms[i].GetDevice(d), props);
-                cfg.type = kPrimary;
-                cfg.caninterop = true;
-                hasprimary = true;
+                try
+                {
+                    cfg.context = CLWContext::Create(platforms[i].GetDevice(d), props);
+                    cfg.type = kPrimary;
+                    cfg.caninterop = true;
+                    hasprimary = true;
+                    create_secondary = false;
+                }
+                catch (CLWException& ex)
+                {
+                    // CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR means that
+                    // CL and GL interop not on the same device.
+                    // If we've got another error, throw it up, else simply
+                    // continue execution and get to next 'if' block
+                    if (ex.errcode_ != CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)
+                    {
+                        throw;
+                    }
+
+                }
             }
-            else
+            
+            if (create_secondary)
             {
                 cfg.context = CLWContext::Create(platforms[i].GetDevice(d));
                 cfg.type = kSecondary;
