@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #include "OpenImageIO/imageio.h"
+#include "image_io.h"
 
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
@@ -163,6 +164,19 @@ namespace Baikal
 
         {
             m_scene = Baikal::SceneIo::LoadScene(filename, basepath);
+
+            {
+            #ifdef WIN32
+            #undef LoadImage
+            #endif
+                auto image_io(ImageIo::CreateImageIo());
+                auto ibl_texture = image_io->LoadImage(settings.envmapname);
+
+                auto ibl = ImageBasedLight::Create();
+                ibl->SetTexture(ibl_texture);
+                m_scene->AttachLight(ibl);
+            }
+
             // Enable this to generate new materal mapping for a model
 #if 0
             auto material_io{Baikal::MaterialIo::CreateMaterialIoXML()};
