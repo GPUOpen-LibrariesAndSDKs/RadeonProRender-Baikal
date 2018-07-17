@@ -104,6 +104,7 @@ namespace Baikal
             m_ctrl[i].stop.store(0);
             m_ctrl[i].newdata.store(0);
             m_ctrl[i].idx = static_cast<int>(i);
+            m_ctrl[i].scene_state = 0;
         }
 
         if (force_disable_itnerop)
@@ -234,13 +235,13 @@ namespace Baikal
 
     void AppClRender::UpdateScene()
     {
-
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (i == static_cast<std::size_t>(m_primary))
             {
-                m_cfgs[i].controller->CompileScene(m_scene);
                 m_cfgs[i].renderer->Clear(float3(0, 0, 0), *m_outputs[i].output);
+                m_cfgs[i].controller->CompileScene(m_scene);
+                ++m_ctrl[i].scene_state;
 
 #ifdef ENABLE_DENOISER
                 ClearDenoiserOutputs(i);
@@ -254,8 +255,6 @@ namespace Baikal
 
     void AppClRender::Update(AppSettings& settings)
     {
-        //if (std::chrono::duration_cast<std::chrono::seconds>(time - updatetime).count() > 1)
-        //{
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (m_cfgs[i].type == ConfigManager::kPrimary)
@@ -264,6 +263,12 @@ namespace Baikal
             int desired = 1;
             if (std::atomic_compare_exchange_strong(&m_ctrl[i].newdata, &desired, 0))
             {
+                if (m_ctrl[i].scene_state != m_ctrl[m_primary].scene_state)
+                {
+                    // Skip update if worker has sent us non-actual data
+                    continue;
+                }
+
                 {
                     m_cfgs[m_primary].context.WriteBuffer(0, m_outputs[m_primary].copybuffer, &m_outputs[i].fdata[0], settings.width * settings.height);
                 }
@@ -279,9 +284,6 @@ namespace Baikal
                 m_cfgs[m_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, acckernel);
             }
         }
-
-        //updatetime = time;
-        //}
 
         if (!settings.interop)
         {
@@ -344,7 +346,6 @@ namespace Baikal
             settings.rt_benchmarked = true;
         }
 
-        //ClwClass::Update();
     }
 
     void AppClRender::Render(int sample_cnt)
@@ -357,6 +358,7 @@ namespace Baikal
             wavelet_denoiser->Update(static_cast<PerspectiveCamera*>(m_camera.get()));
         }
 #endif
+
         auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
         m_cfgs[m_primary].renderer->Render(scene);
 
@@ -479,15 +481,17 @@ namespace Baikal
 
         auto updatetime = std::chrono::high_resolution_clock::now();
 
+        std::uint32_t scene_state = 0;
+
         while (!cd.stop.load())
         {
             int result = 1;
             bool update = false;
-
             if (std::atomic_compare_exchange_strong(&cd.clear, &result, 0))
             {
                 renderer->Clear(float3(0, 0, 0), *output);
                 controller->CompileScene(m_scene);
+                scene_state = m_ctrl[m_primary].scene_state;
                 update = true;
             }
 
@@ -502,6 +506,7 @@ namespace Baikal
             {
                 m_outputs[cd.idx].output->GetData(&m_outputs[cd.idx].fdata[0]);
                 updatetime = now;
+                m_ctrl[cd.idx].scene_state = scene_state;
                 cd.newdata.store(1);
             }
 

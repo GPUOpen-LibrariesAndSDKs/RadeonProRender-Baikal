@@ -69,6 +69,7 @@ namespace Baikal
             std::atomic<int> newdata;
             std::mutex datamutex;
             int idx;
+            std::uint32_t scene_state;
         };
 
     public:
