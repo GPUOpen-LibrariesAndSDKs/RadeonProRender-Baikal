@@ -20,7 +20,7 @@ namespace Baikal
         }
         else
         {
-            dirty = (m_dirty & (1 << g_scene_controller_id)) == (1 << g_scene_controller_id);
+            dirty = ((int)m_dirty & (1 << g_scene_controller_id)) == (1 << g_scene_controller_id);
         }
 
         return dirty;
