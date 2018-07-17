@@ -47,6 +47,7 @@ namespace Baikal
         struct OutputData
         {
             std::unique_ptr<Baikal::Output> output;
+            std::unique_ptr<Baikal::Output> dummy_output;
 
 #ifdef ENABLE_DENOISER
             std::unique_ptr<Baikal::Output> output_position;
@@ -120,7 +121,6 @@ namespace Baikal
         std::promise<int> m_promise;
         bool m_shape_id_requested = false;
         OutputData m_shape_id_data;
-        OutputData m_dummy_output_data;
         RadeonRays::float2 m_shape_id_pos;
         std::vector<ConfigManager::Config> m_cfgs;
         std::vector<OutputData> m_outputs;

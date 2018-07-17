@@ -127,6 +127,7 @@ namespace Baikal
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             m_outputs[i].output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
+            m_outputs[i].dummy_output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
 
 #ifdef ENABLE_DENOISER
             CreateDenoiserOutputs(i, settings.width, settings.height);
@@ -146,10 +147,8 @@ namespace Baikal
         }
 
         m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
-        m_dummy_output_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_outputs[m_primary].output);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
-        m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_dummy_output_data.output);
     }
 
 
@@ -605,7 +604,7 @@ namespace Baikal
 #endif
             if (type == Renderer::OutputType::kOpacity || type == Renderer::OutputType::kVisibility)
             {
-                m_cfgs[i].renderer->SetOutput(Renderer::OutputType::kColor, m_dummy_output_data.output.get());
+                m_cfgs[i].renderer->SetOutput(Renderer::OutputType::kColor, m_outputs[i].dummy_output.get());
             }
             else
             {

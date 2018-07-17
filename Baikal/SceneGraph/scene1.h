@@ -126,6 +126,10 @@ namespace Baikal
         // Forbidden stuff
         Scene1(Scene1 const&) = delete;
         Scene1& operator = (Scene1 const&) = delete;
+
+        // Acquire or release scene when scene controller compiles it
+        void Acquire(std::uint32_t controller_id);
+        void Release();
     
     protected:
         // Constructor

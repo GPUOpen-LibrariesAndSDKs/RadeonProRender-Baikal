@@ -110,6 +110,9 @@ namespace Baikal
         mutable Collector m_texture_collector;
         mutable Collector m_input_maps_collector;
         mutable Collector m_input_map_leafs_collector;
+
+        // Scene controller id
+        std::uint32_t m_id;
     };
 }
 
