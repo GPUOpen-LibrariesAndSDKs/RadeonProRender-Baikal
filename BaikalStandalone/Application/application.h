@@ -56,6 +56,7 @@ namespace Baikal
         static void OnMouseMove(GLFWwindow* window, double x, double y);
         static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
         static void OnMouseScroll(GLFWwindow* window, double x, double y);
+        static void OnWindowResize(GLFWwindow* window, int /* width */, int /* height */);
 
         AppSettings m_settings;
 
