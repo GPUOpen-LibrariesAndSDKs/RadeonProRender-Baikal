@@ -1,14 +1,14 @@
-#include "Baikal/PostEffects/ML/inference_impl.h"
+#include "PostEffects/ML/inference_impl.h"
 
 #include <functional>
 #include <numeric>
-
+#include <cassert>
 
 namespace Baikal
 {
     namespace PostEffects
     {
-        InferenceImpl::InferenceImpl(const std::string& model_path,
+        InferenceImpl::InferenceImpl(std::string const& model_path,
                                      size_t width,
                                      size_t height)
             : m_width(width), m_height(height)
@@ -27,17 +27,17 @@ namespace Baikal
 
         Tensor InferenceImpl::GetInputTensor()
         {
-            return AllocBuffer(GetInputShape());
+            return AllocTensor(std::get<2>(GetInputShape()));
         }
 
         void InferenceImpl::PushInput(Tensor&& tensor)
         {
-            assert(tensor.shape() == std::get<2>(GetInputShape()));
+            assert(tensor.shape() == GetInputShape());
         }
 
         Tensor InferenceImpl::PopOutput()
         {
-            return AllocBuffer(std::get<2>(GetOutputShape()));
+            return AllocTensor(std::get<2>(GetOutputShape()));
         }
 
         Tensor InferenceImpl::AllocTensor(size_t channels)

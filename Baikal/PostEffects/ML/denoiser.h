@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Baikal/PostEffects/ML/inference.h"
+#include "PostEffects/ML/inference.h"
 
 
 namespace Baikal

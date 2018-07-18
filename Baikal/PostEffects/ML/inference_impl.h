@@ -1,4 +1,4 @@
-#include "Baikal/PostEffects/ML/inference.h"
+#include "PostEffects/ML/inference.h"
 
 
 namespace Baikal
@@ -8,7 +8,7 @@ namespace Baikal
         class InferenceImpl : public Inference
         {
         public:
-            InferenceImpl(const std::string& model_path,
+            InferenceImpl(std::string const& model_path,
                           size_t width,
                           size_t height);
 

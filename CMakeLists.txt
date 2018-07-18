@@ -4,6 +4,7 @@ project(Baikal CXX)
 
 option(BAIKAL_ENABLE_RAYMASK "Enable visibility flags for shapes (slows down an intersector)" OFF)
 option(BAIKAL_ENABLE_DENOISER "Use denoising on output" OFF)
+option(BAIKAL_ENABLE_MLDENOISER "Use ML denoising on output" ON)
 option(BAIKAL_ENABLE_RPR "Enable RadeonProRender API lib" OFF)
 option(BAIKAL_ENABLE_TESTS "Enable tests" ON)
 option(BAIKAL_ENABLE_STANDALONE "Enable standalone application build" ON)

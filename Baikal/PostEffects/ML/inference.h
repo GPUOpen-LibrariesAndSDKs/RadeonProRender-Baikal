@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Baikal/PostEffects/ML/tensor.h"
+#include "PostEffects/ML/tensor.h"
 
 
 namespace Baikal

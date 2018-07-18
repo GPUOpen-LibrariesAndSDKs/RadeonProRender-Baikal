@@ -1,6 +1,6 @@
-#include "Baikal/PostEffects/ML/denoiser.h"
+#include "PostEffects/ML/denoiser.h"
 
-#include "Baikal/PostEffects/ML/inference_impl.h"
+#include "PostEffects/ML/inference_impl.h"
 
 
 namespace Baikal

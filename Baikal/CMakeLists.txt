@@ -3,7 +3,7 @@ set(CONTROLLERS_SOURCES
     Controllers/clw_scene_controller.h
     Controllers/scene_controller.h
     Controllers/scene_controller.inl)
-    
+
 set(ESTIMATORS_SOURCES 
     Estimators/estimator.h
     Estimators/path_tracing_estimator.cpp
@@ -12,15 +12,22 @@ set(ESTIMATORS_SOURCES
 set(OUTPUT_SOURCES
     Output/clwoutput.h
     Output/output.h)
-    
+
 set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
     PostEffects/post_effect.h
     PostEffects/bilateral_denoiser.h
     PostEffects/wavelet_denoiser.h
-    PostEffects/AreaMap33.h
-    )
-    
+    PostEffects/AreaMap33.h)
+
+SET(MLDENOISER_SOURCES
+    PostEffects/ML/tensor.h
+    PostEffects/ML/denoiser.h
+    PostEffects/ML/denoiser.cpp
+    PostEffects/ML/inference.h
+    PostEffects/ML/inference_impl.h
+    PostEffects/ML/inference_impl.cpp)
+
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp
     Renderers/adaptive_renderer.h
@@ -58,8 +65,7 @@ set(UTILS_SOURCES
     Utils/cl_program_manager.cpp
     Utils/cl_program_manager.h
     Utils/cl_uberv2_generator.h
-    Utils/cl_uberv2_generator.cpp
-)
+    Utils/cl_uberv2_generator.cpp)
 
 set(SCENEGRAPH_SOURCES
     SceneGraph/camera.cpp
@@ -82,11 +88,11 @@ set(SCENEGRAPH_SOURCES
     SceneGraph/uberv2material.h
     SceneGraph/inputmap.h
     SceneGraph/inputmaps.h)
-    
+
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
     SceneGraph/Collector/collector.h)
-       
+
 set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
@@ -116,8 +122,7 @@ set(KERNELS_SOURCES
     Kernels/CL/volumetrics.cl
     Kernels/CL/wavelet_denoise.cl
     Kernels/CL/path_tracing_estimator_uberv2.cl
-    Kernels/CL/fill_aovs_uberv2.cl
-    )
+    Kernels/CL/fill_aovs_uberv2.cl)
 
 set(SOURCES
     ${CONTROLLERS_SOURCES}
@@ -131,9 +136,8 @@ set(SOURCES
     ${SCENEGRAPH_COLLECTOR_SOURCES}
     ${SCENEGRAPH_IO_SOURCES}
     ${XML_SOURCES}
-    ${KERNELS_SOURCES}
-    )
-    
+    ${KERNELS_SOURCES})
+
 source_group("Controllers" FILES ${CONTROLLERS_SOURCES})
 source_group("Estimators" FILES ${ESTIMATORS_SOURCES})
 source_group("Output" FILES ${OUTPUT_SOURCES})
@@ -145,6 +149,11 @@ source_group("SceneGraph" FILES ${SCENEGRAPH_SOURCES})
 source_group("SceneGraph\\Collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
 source_group("XML" FILES ${XML_SOURCES})
 source_group("Kernels\\CL" FILES ${KERNELS_SOURCES})
+
+if (BAIKAL_ENABLE_MLDENOISER)
+    list(APPEND SOURCES ${MLDENOISER_SOURCES})
+    source_group("Posteffect\\ML" FILES ${MLDENOISER_SOURCES})
+endif(BAIKAL_ENABLE_MLDENOISER)
 
 if (WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
