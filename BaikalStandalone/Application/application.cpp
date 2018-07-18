@@ -106,7 +106,9 @@ namespace Baikal
     {
         //camera values
         RadeonRays::float3 cam_pos = cam->GetPosition();
-        RadeonRays::float3 cam_at = cam_pos + cam->GetForwardVector();
+        RadeonRays::float3 cam_at = cam->GetForwardVector();
+        RadeonRays::float3 cam_up = cam->GetUpVector();
+
         float aperture = cam->GetAperture();
         float focus_dist = cam->GetFocusDistance();
         float focal_length = cam->GetFocalLength();
@@ -131,6 +133,11 @@ namespace Baikal
         new_cam->SetAttribute("tpx", cam_at.x);
         new_cam->SetAttribute("tpy", cam_at.y);
         new_cam->SetAttribute("tpz", cam_at.z);
+
+        //uo vector
+        new_cam->SetAttribute("upx", cam_up.x);
+        new_cam->SetAttribute("upy", cam_up.y);
+        new_cam->SetAttribute("upz", cam_up.z);
 
         //other values
         new_cam->SetAttribute("aperture", aperture);
@@ -608,8 +615,8 @@ namespace Baikal
         , m_num_instances(0)
     {
         // Command line parsing
-        AppCliParser cli;
-        m_settings = cli.Parse(argc, argv);
+        AppCliParser cli(argc, argv);
+        m_settings = cli.Parse();
 
         if (!m_settings.cmd_line_mode)
         {

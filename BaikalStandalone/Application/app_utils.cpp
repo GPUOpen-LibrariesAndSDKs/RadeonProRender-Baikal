@@ -31,118 +31,100 @@ namespace
 
 namespace Baikal
 {
-    AppCliParser::AppCliParser()
-    {
+    AppCliParser::AppCliParser(int argc, char * argv[])
+    : m_cmd_parser(argc, argv)
+    {   }
 
-    }
-
-    AppSettings AppCliParser::Parse(int argc, char * argv[])
+    AppSettings AppCliParser::Parse()
     {
         AppSettings s;
-        char* path = GetCmdOption(argv, argv + argc, "-p");
-        s.path = path ? path : s.path;
 
-        char* modelname = GetCmdOption(argv, argv + argc, "-f");
-        s.modelname = modelname ? modelname : s.modelname;
+        s.path = m_cmd_parser.GetOption("-p", s.path);
 
-        char* envmapname = GetCmdOption(argv, argv + argc, "-e");
-        s.envmapname = envmapname ? envmapname : s.envmapname;
+        s.modelname = m_cmd_parser.GetOption("-f", s.modelname);
 
-        char* width = GetCmdOption(argv, argv + argc, "-w");
-        s.width = width ? atoi(width) : s.width;
+        s.envmapname = m_cmd_parser.GetOption("-e", s.envmapname);
 
-        char* height = GetCmdOption(argv, argv + argc, "-h");
-        s.height = width ? atoi(height) : s.height;
+        s.width = m_cmd_parser.GetOption("-w", s.width);
 
-        char* aorays = GetCmdOption(argv, argv + argc, "-ao");
-        s.ao_radius = aorays ? (float)atof(aorays) : s.ao_radius;
+        s.height = m_cmd_parser.GetOption("-h", s.height);
 
-        char* bounces = GetCmdOption(argv, argv + argc, "-nb");
-        s.num_bounces = bounces ? atoi(bounces) : s.num_bounces;
-
-        char* camposx = GetCmdOption(argv, argv + argc, "-cpx");
-        s.camera_pos.x = camposx ? (float)atof(camposx) : s.camera_pos.x;
-
-        char* camposy = GetCmdOption(argv, argv + argc, "-cpy");
-        s.camera_pos.y = camposy ? (float)atof(camposy) : s.camera_pos.y;
-
-        char* camposz = GetCmdOption(argv, argv + argc, "-cpz");
-        s.camera_pos.z = camposz ? (float)atof(camposz) : s.camera_pos.z;
-
-        char* camatx = GetCmdOption(argv, argv + argc, "-tpx");
-        s.camera_at.x = camatx ? (float)atof(camatx) : s.camera_at.x;
-
-        char* camaty = GetCmdOption(argv, argv + argc, "-tpy");
-        s.camera_at.y = camaty ? (float)atof(camaty) : s.camera_at.y;
-
-        char* camatz = GetCmdOption(argv, argv + argc, "-tpz");
-        s.camera_at.z = camatz ? (float)atof(camatz) : s.camera_at.z;
-
-        char* envmapmul = GetCmdOption(argv, argv + argc, "-em");
-        s.envmapmul = envmapmul ? (float)atof(envmapmul) : s.envmapmul;
-
-        char* numsamples = GetCmdOption(argv, argv + argc, "-ns");
-        s.num_samples = numsamples ? atoi(numsamples) : s.num_samples;
-
-        char* camera_aperture = GetCmdOption(argv, argv + argc, "-a");
-        s.camera_aperture = camera_aperture ? (float)atof(camera_aperture) : s.camera_aperture;
-
-        char* camera_dist = GetCmdOption(argv, argv + argc, "-fd");
-        s.camera_focus_distance = camera_dist ? (float)atof(camera_dist) : s.camera_focus_distance;
-
-        char* camera_focal_length = GetCmdOption(argv, argv + argc, "-fl");
-        s.camera_focal_length = camera_focal_length ? (float)atof(camera_focal_length) : s.camera_focal_length;
-
-        char* camera_senor_size_x = GetCmdOption(argv, argv + argc, "-ssx");
-        s.camera_sensor_size.x = camera_senor_size_x ? (float)atof(camera_senor_size_x) : s.camera_sensor_size.x;
-
-        char* image_file_name = GetCmdOption(argv, argv + argc, "-ifn");
-        s.base_image_file_name = image_file_name ? image_file_name : s.base_image_file_name;
-
-        char* image_file_format = GetCmdOption(argv, argv + argc, "-iff");
-        s.image_file_format = image_file_format ? image_file_format : s.image_file_format;
-
-        char* camera_type = GetCmdOption(argv, argv + argc, "-ct");
-
-        if (camera_type)
+        if (m_cmd_parser.OptionExists("-ao"))
         {
-            if (strcmp(camera_type, "perspective") == 0)
+            s.ao_radius = m_cmd_parser.GetOption<float>("-ao");
+            s.num_ao_rays = (int)(s.ao_radius);
+            s.ao_enabled = true;
+        }
+
+        s.num_bounces = m_cmd_parser.GetOption("-nb", s.num_bounces);
+
+        s.camera_pos.x = m_cmd_parser.GetOption("-cpx", s.camera_pos.x);
+
+        s.camera_pos.y = m_cmd_parser.GetOption("-cpy", s.camera_pos.y);
+
+        s.camera_pos.z = m_cmd_parser.GetOption("-cpz", s.camera_pos.z);
+
+        s.camera_at.x = m_cmd_parser.GetOption("-tpx", s.camera_at.x);
+
+        s.camera_at.y = m_cmd_parser.GetOption("-tpy", s.camera_at.y);
+
+        s.camera_at.z = m_cmd_parser.GetOption("-tpz", s.camera_at.z);
+
+        s.envmapmul = m_cmd_parser.GetOption("-em", s.envmapmul);
+
+        s.num_samples = m_cmd_parser.GetOption("-ns", s.num_samples);
+
+        s.camera_aperture = m_cmd_parser.GetOption("-a", s.camera_aperture);
+
+        s.camera_focus_distance = m_cmd_parser.GetOption("-fd", s.camera_focus_distance);
+
+        s.camera_focal_length = m_cmd_parser.GetOption("-fl", s.camera_focal_length);
+
+        s.camera_out_folder = m_cmd_parser.GetOption("-output_cam", s.camera_out_folder);
+
+        s.camera_sensor_size.x = m_cmd_parser.GetOption("-ssx", s.camera_sensor_size.x);
+
+        s.camera_sensor_size.y = m_cmd_parser.GetOption("-ssy", s.camera_sensor_size.y);
+
+        s.base_image_file_name = m_cmd_parser.GetOption("-ifn", s.base_image_file_name);
+
+        s.image_file_format = m_cmd_parser.GetOption("-iff", s.image_file_format);
+
+        if (m_cmd_parser.OptionExists("-ct"))
+        {
+            auto camera_type = m_cmd_parser.GetOption("-ct");
+
+            if (camera_type == "perspective")
                 s.camera_type = CameraType::kPerspective;
-            else if (strcmp(camera_type, "orthographic") == 0)
+            else if (camera_type == "orthographic")
                 s.camera_type = CameraType::kOrthographic;
             else
                 throw std::runtime_error("Unsupported camera type");
         }
 
-        char* interop = GetCmdOption(argv, argv + argc, "-interop");
-        s.interop = interop ? (atoi(interop) > 0) : s.interop;
+        s.interop = m_cmd_parser.OptionExists("-ifn");
 
-        char* cspeed = GetCmdOption(argv, argv + argc, "-cs");
-        s.cspeed = cspeed ? (float)atof(cspeed) : s.cspeed;
+        s.cspeed = m_cmd_parser.GetOption("-cs", s.cspeed);
 
-
-        char* cfg = GetCmdOption(argv, argv + argc, "-config");
-
-        if (cfg)
+        if (m_cmd_parser.OptionExists("-config"))
         {
-            if (strcmp(cfg, "cpu") == 0)
+            auto cfg = m_cmd_parser.GetOption("-config");
+
+            if (cfg == "cpu")
                 s.mode = ConfigManager::Mode::kUseSingleCpu;
-            else if (strcmp(cfg, "gpu") == 0)
+            else if (cfg == "gpu")
                 s.mode = ConfigManager::Mode::kUseSingleGpu;
-            else if (strcmp(cfg, "mcpu") == 0)
+            else if (cfg == "mcpu")
                 s.mode = ConfigManager::Mode::kUseCpus;
-            else if (strcmp(cfg, "mgpu") == 0)
+            else if (cfg == "mgpu")
                 s.mode = ConfigManager::Mode::kUseGpus;
-            else if (strcmp(cfg, "all") == 0)
+            else if (cfg == "all")
                 s.mode = ConfigManager::Mode::kUseAll;
         }
 
+        s.platform_index = m_cmd_parser.GetOption("-platform", s.platform_index);
 
-        char* platform_index = GetCmdOption(argv, argv + argc, "-platform");
-        s.platform_index = platform_index ? (atoi(platform_index)) : s.platform_index;
-
-        char* device_index = GetCmdOption(argv, argv + argc, "-device");
-        s.device_index = device_index ? (atoi(device_index)) : s.device_index;
+        s.device_index = m_cmd_parser.GetOption("-device", s.device_index);
 
         if ((s.device_index >= 0) && (s.platform_index < 0))
         {
@@ -150,39 +132,17 @@ namespace Baikal
                 "Can not set device index, because platform index was not specified" << std::endl;
         }
 
-        if (aorays)
-        {
-            s.num_ao_rays = atoi(aorays);
-            s.ao_enabled = true;
-        }
-
-        if (CmdOptionExists(argv, argv + argc, "-r"))
+        if (m_cmd_parser.OptionExists("-r"))
         {
             s.progressive = true;
         }
 
-        if (CmdOptionExists(argv, argv + argc, "-nowindow"))
+        if (m_cmd_parser.OptionExists("-nowindow"))
         {
             s.cmd_line_mode = true;
         }
 
         return s;
-    }
-
-
-    char* AppCliParser::GetCmdOption(char ** begin, char ** end, const std::string & option)
-    {
-        char ** itr = std::find(begin, end, option);
-        if (itr != end && ++itr != end)
-        {
-            return *itr;
-        }
-        return 0;
-    }
-
-    bool AppCliParser::CmdOptionExists(char** begin, char** end, const std::string& option)
-    {
-        return std::find(begin, end, option) != end;
     }
 
     void AppCliParser::ShowHelp()
@@ -217,6 +177,7 @@ namespace Baikal
         , camera_focus_distance(1.f)
         , camera_focal_length(0.035f) // 35mm lens
         , camera_type (CameraType::kPerspective)
+        , camera_out_folder(".")
 
         //app
         , progressive(false)

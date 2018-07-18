@@ -72,6 +72,8 @@ KERNEL void FillAOVsUberV2(
     GLOBAL Light const* restrict lights,
     // Number of emissive objects
     int num_lights,
+    // camera
+    GLOBAL Camera const* restrict camera,
     // RNG seed
     uint rngseed,
     // Sampler states
@@ -88,6 +90,10 @@ KERNEL void FillAOVsUberV2(
     int world_shading_normal_enabled,
     // World normal AOV
     GLOBAL float4* restrict aov_world_shading_normal,
+    // View normal flag
+    int view_shading_normal_enabled,
+    // View normal AOV
+    GLOBAL float4* restrict aov_view_shading_normal,
     // World true normal flag
     int world_geometric_normal_enabled,
     // World true normal AOV
@@ -406,6 +412,17 @@ KERNEL void FillAOVsUberV2(
             if (shape_ids_enabled)
             {
                 aov_shape_ids[idx].x = shapes[isect.shapeid - 1].id;
+            }
+
+            if (view_shading_normal_enabled)
+            {
+                float3 res = make_float3(dot(camera->right, diffgeo.n), 
+                                        dot(camera->up, diffgeo.n), 
+                                        dot(camera->forward, diffgeo.n));
+                res = normalize(res);
+
+                aov_view_shading_normal[idx].xyz += res;
+                aov_view_shading_normal[idx].w += 1.f;
             }
         }
     }

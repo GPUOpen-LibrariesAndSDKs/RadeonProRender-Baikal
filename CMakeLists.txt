@@ -7,6 +7,7 @@ option(BAIKAL_ENABLE_DENOISER "Use denoising on output" OFF)
 option(BAIKAL_ENABLE_RPR "Enable RadeonProRender API lib" OFF)
 option(BAIKAL_ENABLE_TESTS "Enable tests" ON)
 option(BAIKAL_ENABLE_STANDALONE "Enable standalone application build" ON)
+option(BAIKAL_ENABLE_DATAGENERATOR "Enable data generator application build" OFF)
 option(BAIKAL_ENABLE_IO "Enable IO library build" ON)
 option(BAIKAL_ENABLE_FBX "Enable FBX import in BaikalIO. Requires BaikalIO to be turned ON" OFF)
 option(BAIKAL_ENABLE_MATERIAL_CONVERTER "Enable materials.xml converter from old to uberv2 version" OFF)
@@ -70,14 +71,6 @@ if (BAIKAL_ENABLE_IO)
     add_subdirectory(BaikalIO)
 endif (BAIKAL_ENABLE_IO)
 
-if (BAIKAL_GENERATE_DATASET)
-    if (MSVC)
-	add_compile_options(/DGENERATE_DATASET)
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MGENERATE_DATASET")
-    endif()
-endif(BAIKAL_GENERATE_DATASET)
-
 if (BAIKAL_ENABLE_RPR)
     set(RprSupport_HEADER "${Baikal_SOURCE_DIR}/3rdparty/RprSupport/include/")
     add_subdirectory(Rpr)
@@ -92,14 +85,19 @@ set (BAIKAL_DLLS
     "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
     "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
 )
+
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     list(APPEND BAIKAL_DLLS
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
     )
+    set (IO_DLLS
+         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll")
 else ()
     list(APPEND BAIKAL_DLLS
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
     )
+    set (IO_DLLS
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll")
 endif ()
 
 add_custom_target(ResourcesDir)
@@ -134,6 +132,18 @@ if (BAIKAL_ENABLE_STANDALONE)
 
     add_subdirectory(BaikalStandalone)
 endif (BAIKAL_ENABLE_STANDALONE)
+
+if (BAIKAL_ENABLE_DATAGENERATOR)
+
+    add_subdirectory(BaikalDataGenerator)
+
+    if (MSVC)
+        add_compile_options(/DGENERATE_DATASET)
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MGENERATE_DATASET")
+    endif()
+
+endif (BAIKAL_ENABLE_DATAGENERATOR)
 
 if (BAIKAL_ENABLE_TESTS)
     set(BAIKAL_TESTS_DLLS ${BAIKAL_DLLS})

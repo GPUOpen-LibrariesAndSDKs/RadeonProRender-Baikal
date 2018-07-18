@@ -106,8 +106,9 @@ namespace Baikal
             input->close();
         }
 
-        //
-        return Texture::Create(texturedata, RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
+        auto tex = Texture::Create(texturedata, RadeonRays::int3(spec.width, spec.height, spec.depth), fmt);;
+        tex->SetName(filename);
+        return tex;
     }
 
     void Oiio::SaveImage(std::string const& filename, Texture::Ptr texture) const
