@@ -7,41 +7,30 @@ namespace Baikal
     static int g_scene_controller_id = -1;
 
     SceneObject::SceneObject()
-        : m_dirty(0), m_id(g_next_id++)
+        : m_dirty(), m_id(g_next_id++)
     {
     }
 
     bool SceneObject::IsDirty() const
     {
-        bool dirty = false;
-        if (g_scene_controller_id == -1)
-        {
-            dirty = (m_dirty != 0);
-        }
-        else
-        {
-            dirty = ((int)m_dirty & (1 << g_scene_controller_id)) == (1 << g_scene_controller_id);
-        }
+        assert(g_scene_controller_id >= 0);
 
-        return dirty;
+        return m_dirty[g_scene_controller_id];
+
     }
 
     void SceneObject::SetDirty(bool dirty) const
     {
         if (dirty)
         {
-            m_dirty = 0xFFFFFFFF;
+            // Set all bits to 1
+            m_dirty.set();
         }
         else
         {
-            if (g_scene_controller_id == -1)
-            {
-                m_dirty = 0;
-            }
-            else
-            {
-                m_dirty &= ~(1 << g_scene_controller_id);
-            }
+            assert(g_scene_controller_id >= 0);
+            // Unset corresponging bit
+            m_dirty.set(g_scene_controller_id, false);
         }
     }
 
@@ -52,7 +41,7 @@ namespace Baikal
 
     void SceneObject::SetSceneControllerId(std::uint32_t controller_id)
     {
-        assert(controller_id >= 0 && controller_id < sizeof(std::uint32_t) * 8);
+        assert(controller_id < kMaxDirtyBits);
         g_scene_controller_id = static_cast<int>(controller_id);
     }
 

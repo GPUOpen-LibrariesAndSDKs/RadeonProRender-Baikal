@@ -31,6 +31,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <bitset>
 
 namespace Baikal
 {
@@ -66,7 +67,8 @@ namespace Baikal
         SceneObject();
         
     private:
-        mutable std::uint32_t m_dirty;
+        static const int kMaxDirtyBits = 32;
+        mutable std::bitset<kMaxDirtyBits> m_dirty;
 
         std::string m_name;
         std::uint32_t m_id;
