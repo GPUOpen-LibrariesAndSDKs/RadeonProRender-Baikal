@@ -20,8 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#ifndef __MIPMAP_BUILDER__
-#define __MIPMAP_BUILDER__
+#pragma once
 
 #include <CLW.h>
 #include "SceneGraph/clwscene.h"
@@ -74,4 +73,3 @@ namespace Baikal
         std::vector<ClwScene::MipmapPyramid> m_mipmap_info;
     };
 }
-#endif //__MIPMAP_BUILDER__

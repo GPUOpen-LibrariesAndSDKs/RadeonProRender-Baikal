@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/ray.h>
 
+
 typedef struct
 {
     // Vertices
@@ -196,38 +197,49 @@ INLINE int Scene_GetVolumeIndex(Scene const* scene, int shape_idx)
     return shape.volume_idx;
 }
 
-///Computes screen derivatives, demension (x or y) determined by auxiliary ray
-INLINE float2 Scene_ComputePartialDerivatives(
-                          //auxiliary ray
+// Compute screen-space derivative of uv map
+INLINE float2 Scene_ComputePartialDerivative(
+                          // Auxiliary ray
                           GLOBAL aux_ray const* ray,
                           // Differential geometry
                           DifferentialGeometry* diffgeo
                           )
 {
-    float3 o = vload_half3(0, (GLOBAL half*)&ray->o);
-    float3 d = vload_half3(0, (GLOBAL half*)&ray->d);
 
-    // intersection of x auxiliary ray with tangent plane
-    float t =  dot(diffgeo->n, diffgeo->p - o) / dot(diffgeo->n, d);
-    float3 aux_p = o + d * t;
+    // Find intersection point of auxiliary ray with the tangent plane
+    float t = dot(diffgeo->n, diffgeo->p - ray->o) / dot(diffgeo->n, ray->d);
+    float3 p = ray->o + ray->d * t;
 
-    // compute partial derivatives for x dimension
-    // Calculate cross product of the derivatives to choose not degenerate equations
-    float3 derivative_det = cross(diffgeo->dpdu, diffgeo->dpdv);
+    // Delta position between intersection points of main and auxiliary ray
+    float3 delta_p = p - diffgeo->p;
 
-    // linear system of equations created from partial derivatives
-    float2 aux_ray_delta;
+    // Next we need to find uv offset from the position offset
+    // This can be found by solving the system:
+    // delta_p = dpdu * delta_u + dpdv * delta_v
+
+    // This can be written in matrix form:
+    // (delta_p.x)    (dpdu.x dpdv.x)   (delta_u)
+    // (delta_p.y) == (dpdu.y dpdv.y) * (       )
+    // (delta_p.z)    (dpdu.z dpdv.z)   (delta_v)
+
+    // This is an overdetermined system (has 2 variables and 3 equations), so
+    // one of the equations could be degenerate
+
+    // Calculate cross product of the derivatives (actually, this is the surface normal)
+    // to choose non-degenerate equations
+    float3 derivative_det = diffgeo->n;
+
+    // Linear system of equations created from partial derivatives
     float4 derivative_matrix;
 
-    // choose not degerated matrix rows 
+    // Choose not degenerated matrix rows 
     if (derivative_det.x > max(derivative_det.y, derivative_det.z))
     {
         derivative_matrix.x = diffgeo->dpdu.y;
         derivative_matrix.y = diffgeo->dpdv.y;
         derivative_matrix.z = diffgeo->dpdu.z;
         derivative_matrix.w = diffgeo->dpdv.z;
-        aux_ray_delta.x = aux_p.y - diffgeo->p.y;
-        aux_ray_delta.y = aux_p.z - diffgeo->p.z;
+
     }
     else if (derivative_det.y > max(derivative_det.x, derivative_det.z))
     {
@@ -235,8 +247,7 @@ INLINE float2 Scene_ComputePartialDerivatives(
         derivative_matrix.y = diffgeo->dpdv.x;
         derivative_matrix.z = diffgeo->dpdu.z;
         derivative_matrix.w = diffgeo->dpdv.z;
-        aux_ray_delta.x = aux_p.x - diffgeo->p.x;
-        aux_ray_delta.y = aux_p.z - diffgeo->p.z;
+
     }
     else
     {
@@ -244,22 +255,19 @@ INLINE float2 Scene_ComputePartialDerivatives(
         derivative_matrix.y = diffgeo->dpdv.x;
         derivative_matrix.z = diffgeo->dpdu.y;
         derivative_matrix.w = diffgeo->dpdv.y;
-        aux_ray_delta.x = aux_p.x - diffgeo->p.x;
-        aux_ray_delta.y = aux_p.y - diffgeo->p.y;
+
     }
 
     // Solve linear system using Cramer rule
-    float matrix_det = 
-        derivative_matrix.x * derivative_matrix.w - derivative_matrix.y * derivative_matrix.z;
+    float matrix_det = derivative_matrix.x * derivative_matrix.w
+        - derivative_matrix.y * derivative_matrix.z;
 
-    float det1 =
-        aux_ray_delta.x * derivative_matrix.w - aux_ray_delta.y * derivative_matrix.z;
+    float det1 = delta_p.x * derivative_matrix.w - delta_p.y * derivative_matrix.z;
 
-    float det2 = 
-        derivative_matrix.x * aux_ray_delta.y - derivative_matrix.y * aux_ray_delta.x;
+    float det2 = derivative_matrix.x * delta_p.y - derivative_matrix.y * delta_p.x;
 
-    diffgeo->dudx = det1 / matrix_det;
-    diffgeo->dudy = det2 / matrix_det;
+    return make_float2(det1, det2) / matrix_det;
+
 }
 
 /// Fill DifferentialGeometry structure based on intersection info from RadeonRays
@@ -352,16 +360,18 @@ void Scene_FillDifferentialGeometry(// Scene
     if (x_ray == NULL || y_ray == NULL)
     {
         diffgeo->dudx = diffgeo->dudy = diffgeo->dvdx = diffgeo->dvdy = 0.f;
-        return;    
+    }
+    else
+    {
+        // Calculate differentials
+        float2 differential_x = Scene_ComputePartialDerivative(x_ray, diffgeo);
+        float2 differential_y = Scene_ComputePartialDerivative(y_ray, diffgeo);
+        diffgeo->dudx = differential_x.x;
+        diffgeo->dudy = differential_x.y;
+        diffgeo->dvdx = differential_y.x;
+        diffgeo->dvdy = differential_y.y;
     }
 
-    // Calculate partial screen derivatives
-    float2 screen_derivative_x = Scene_ComputePartialDerivatives(x_ray, diffgeo);
-    float2 screen_derivative_y = Scene_ComputePartialDerivatives(y_ray, diffgeo);
-    diffgeo->dudx = screen_derivative_x.x;
-    diffgeo->dudy = screen_derivative_x.y;
-    diffgeo->dvdx = screen_derivative_y.x;
-    diffgeo->dvdy = screen_derivative_y.y;
 }
 
 

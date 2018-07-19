@@ -297,13 +297,4 @@ typedef struct _DifferentialGeometry
     int padding[2];
 } DifferentialGeometry;
 
-
-
-
-
-
-
-
-
-
 #endif // PAYLOAD_CL

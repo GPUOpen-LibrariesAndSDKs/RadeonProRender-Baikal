@@ -34,12 +34,23 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/path.cl>
 #include <../Baikal/Kernels/CL/vertex.cl>
 
+INLINE
+float3 PerspectiveCamera_SampleToRayDirection(
+    // Camera
+    GLOBAL Camera const* restrict camera,
+    float2 sample)
+{
+    return normalize(camera->focal_length * camera->forward
+        + sample.x * camera->right + sample.y * camera->up);
+}
+
+
 // Pinhole camera implementation.
 // This kernel is being used if aperture value = 0.
 KERNEL
-void PerspectiveCamera_GeneratePaths(
+void PerspectiveCamera_GenerateRays(
     // Camera
-    GLOBAL Camera const* restrict camera, 
+    GLOBAL Camera const* restrict camera,
     // Image resolution
     int output_width,
     int output_height,
@@ -54,9 +65,9 @@ void PerspectiveCamera_GeneratePaths(
     // Rays to generate
     GLOBAL ray* restrict rays,
     // Auxiliary rays to generate in x dimension
-    GLOBAL aux_ray* restrict x_auxiliary_rays,
+    GLOBAL aux_ray* restrict aux_rays_x,
     // Auxiliary rays to generate in y dimension
-    GLOBAL aux_ray* restrict y_auxiliary_rays,
+    GLOBAL aux_ray* restrict aux_rays_y,
     // RNG data
     GLOBAL uint* restrict random,
     GLOBAL uint const* restrict sobol_mat
@@ -70,11 +81,6 @@ void PerspectiveCamera_GeneratePaths(
         int idx = pixel_idx[global_id];
         int y = idx / output_width;
         int x = idx % output_width;
-
-        // Get pointer to ray & path handles
-        GLOBAL ray* my_ray = rays + global_id;
-        GLOBAL aux_ray* my_x_ray = x_auxiliary_rays + global_id;
-        GLOBAL aux_ray* my_y_ray = y_auxiliary_rays + global_id;
 
         // Initialize sampler
         Sampler sampler;
@@ -100,89 +106,73 @@ void PerspectiveCamera_GeneratePaths(
 #ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
         float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
 #else
-        float2 sample0 = make_float2(0.5f, 0.5f);
+        float2 sample0 = 0.5f;
 #endif
 
         // Calculate [0..1] image plane sample
-        float2 img_sample;
-        img_sample.x = (float)x / output_width + sample0.x / output_width;
-        img_sample.y = (float)y / output_height + sample0.y / output_height;
+        float2 img_sample = make_float2(
+            (float)x / output_width + sample0.x / output_width,
+            (float)y / output_height + sample0.y / output_height);
 
-        // Transform into [-0.5, 0.5]
-        float2 h_sample = img_sample - make_float2(0.5f, 0.5f);
         // Transform into [-dim/2, dim/2]
-        float2 c_sample = h_sample * camera->dim;
+        float2 c_sample = (img_sample - 0.5f) * camera->dim;
 
-        // Calculate direction to image plane
-        my_ray->d.xyz = normalize(camera->focal_length * camera->forward + c_sample.x * camera->right + c_sample.y * camera->up);
+        // Get pointer to ray & path handles
+        GLOBAL ray* my_ray = rays + global_id;
 
-        // Origin == camera position + nearz * d
-        my_ray->o.xyz = camera->p + camera->zcap.x * my_ray->d.xyz;
-        // Max T value = zfar - znear since we moved origin to znear
-        my_ray->o.w = camera->zcap.y - camera->zcap.x;
-        // Generate random time from 0 to 1
-        my_ray->d.w = sample0.x;
-        // Set ray max
-        my_ray->extra.x = 0xFFFFFFFF;
-        my_ray->extra.y = 0xFFFFFFFF;
+        Ray_Init(
+            my_ray,
+            // Origin == camera position + nearz * d
+            camera->p + camera->zcap.x * my_ray->d.xyz,
+            // Calculate direction to image plane
+            PerspectiveCamera_SampleToRayDirection(camera, c_sample),
+            // Max T value = zfar - znear since we moved origin to znear
+            camera->zcap.y - camera->zcap.x,
+            // Generate random time from 0 to 1
+            sample0.x,
+            // Set ray max
+            0xFFFFFFFF);
+
         Ray_SetExtra(my_ray, 1.f);
         Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
 
-        // Calculate auxiliary rays
-        float2 aux_img_sample;
-        aux_img_sample.x = (float)(x + 1) / output_width + sample0.x / output_width;
-        aux_img_sample.y = (float)(y + 1)  / output_height + sample0.y / output_height;
+        float2 aux_img_sample = make_float2(
+            (float)(x + 1) / output_width + sample0.x / output_width,
+            (float)(y + 1) / output_height + sample0.y / output_height);
 
         // Transform into [-dim/2, dim/2]
-        float2 aux_c_sample = (aux_img_sample - make_float2(0.5f, 0.5f)) * camera->dim;
+        float2 aux_c_sample = (aux_img_sample - 0.5f) * camera->dim;
 
-        // Calculate direction to image plane for auxiliary x ray
-        vstore_half3(
-            normalize(
-                camera->focal_length * camera->forward +
-                aux_c_sample.x * camera->right +
-                c_sample.y * camera->up).xyz,
-            0,
-            (GLOBAL half*)&my_x_ray->d);
+        // Calculate auxiliary rays
 
-        // origin pos
-        vstore_half3(
-            normalize(my_ray->o.xyz),
-            0,
-            (GLOBAL half*)&my_x_ray->o);
+        GLOBAL aux_ray* my_aux_ray_x = aux_rays_x + global_id;
 
-        // Calculate direction to image plane for auxiliary y ray
-        vstore_half3(
-            normalize(
-                camera->focal_length * camera->forward +
-                c_sample.x * camera->right +
-                aux_c_sample.y * camera->up).xyz,
-            0,
-            (GLOBAL half*)&my_x_ray->d);
-            
-         // origin pos
-        vstore_half3(
-            normalize(my_ray->o.xyz),
-            0,
-            (GLOBAL half*)&my_y_ray->o);
+        Aux_Ray_Init(my_aux_ray_x, my_ray->o.xyz,
+            PerspectiveCamera_SampleToRayDirection(camera,
+                make_float2(aux_c_sample.x, c_sample.y)));
 
         if (x == output_width - 1)
         {
-            my_x_ray->d.xyz = 0.f;
-            my_x_ray->o.xyz = 0.f;
+            Aux_Ray_Init(my_aux_ray_x, 0.0f, 0.0f);
         }
+
+        GLOBAL aux_ray* my_aux_ray_y = aux_rays_y + global_id;
+        // Calculate direction to image plane for auxiliary y ray
+        Aux_Ray_Init(my_aux_ray_y, my_ray->o.xyz,
+            PerspectiveCamera_SampleToRayDirection(camera,
+                make_float2(c_sample.x, aux_c_sample.y)));
 
         if (y == output_height - 1)
         {
-            my_y_ray->d.xyz = 0.f;
-            my_y_ray->o.xyz = 0.f;
+            Aux_Ray_Init(my_aux_ray_y, 0.0f, 0.0f);
         }
+
     }
 }
 
 // Physical camera implemenation.
 // This kernel is being used if aperture > 0.
-KERNEL void PerspectiveCameraDof_GeneratePaths(
+KERNEL void PerspectiveCameraDof_GenerateRays(
     // Camera
     GLOBAL Camera const* restrict camera,
     // Image resolution
@@ -672,7 +662,7 @@ KERNEL void GenerateTileDomain_Adaptive(
     tile_size.y = get_local_size(1);
 
 
-    // Initialize sampler  
+    // Initialize sampler
     Sampler sampler;
     int x = global_id.x;
     int y = global_id.y;
@@ -765,7 +755,7 @@ KERNEL void ApplyGammaAndCopyData(
         float4 val = clamp(native_powr(v / v.w, 1.f / gamma), 0.f, 1.f);
         write_imagef(img, make_int2(global_idx, global_idy), val);
     }
-} 
+}
 
 KERNEL void AccumulateSingleSample(
     GLOBAL float4 const* restrict src_sample_data,
@@ -891,7 +881,7 @@ KERNEL void EstimateVariance(
 }
 
 KERNEL
-void  OrthographicCamera_GeneratePaths(
+void OrthographicCamera_GenerateRays(
     // Camera
     GLOBAL Camera const* restrict camera,
     // Image resolution
@@ -907,10 +897,10 @@ void  OrthographicCamera_GeneratePaths(
     uint frame,
     // Rays to generate
     GLOBAL ray* restrict rays,
-        // Auxiliary rays to generate in x dimension
-    GLOBAL aux_ray* restrict x_auxiliary_rays,
+    // Auxiliary rays to generate in x dimension
+    GLOBAL aux_ray* restrict aux_rays_x,
     // Auxiliary rays to generate in y dimension
-    GLOBAL aux_ray* restrict y_auxiliary_rays,
+    GLOBAL aux_ray* restrict aux_rays_y,
     // RNG data
     GLOBAL uint* restrict random,
     GLOBAL uint const* restrict sobol_mat
@@ -925,22 +915,16 @@ void  OrthographicCamera_GeneratePaths(
         int y = idx / output_width;
         int x = idx % output_width;
 
-        // Get pointer to ray & path handles
-        GLOBAL ray* my_ray = rays + global_id;
-
-        GLOBAL aux_ray* my_x_ray = x_auxiliary_rays + global_id;
-        GLOBAL aux_ray* my_y_ray = y_auxiliary_rays + global_id;
-
         // Initialize sampler
         Sampler sampler;
 #if SAMPLER == SOBOL
         uint scramble = random[x + output_width * y] * 0x1fe3434f;
-        
+
         if (frame & 0xF)
         {
             random[x + output_width * y] = WangHash(scramble);
         }
-        
+
         Sampler_Init(&sampler, frame, SAMPLE_DIM_CAMERA_OFFSET, scramble);
 #elif SAMPLER == RANDOM
         uint scramble = x + output_width * y * rng_seed;
@@ -950,24 +934,27 @@ void  OrthographicCamera_GeneratePaths(
         uint scramble = rnd * 0x1fe3434f * ((frame + 133 * rnd) / (CMJ_DIM * CMJ_DIM));
         Sampler_Init(&sampler, frame % (CMJ_DIM * CMJ_DIM), SAMPLE_DIM_CAMERA_OFFSET, scramble);
 #endif
-        
+
         // Generate sample
 #ifndef BAIKAL_GENERATE_SAMPLE_AT_PIXEL_CENTER
         float2 sample0 = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
 #else
         float2 sample0 = make_float2(0.5f, 0.5f);
 #endif
-        
+
         // Calculate [0..1] image plane sample
         float2 img_sample;
         img_sample.x = (float)x / output_width + sample0.x / output_width;
         img_sample.y = (float)y / output_height + sample0.y / output_height;
-        
+
         // Transform into [-0.5, 0.5]
         float2 h_sample = img_sample - make_float2(0.5f, 0.5f);
         // Transform into [-dim/2, dim/2]
         float2 c_sample = h_sample * camera->dim;
-        
+
+        // Get pointer to ray & path handles
+        GLOBAL ray* my_ray = rays + global_id;
+
         // Calculate direction to image plane
         my_ray->d.xyz = normalize(camera->forward);
         // Origin == camera position + nearz * d
@@ -979,17 +966,22 @@ void  OrthographicCamera_GeneratePaths(
         // Set ray max
         my_ray->extra.x = 0xFFFFFFFF;
         my_ray->extra.y = 0xFFFFFFFF;
+
         Ray_SetExtra(my_ray, 1.f);
         Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
 
+        // Handle auxiliary rays
         float2 aux_img_sample;
         aux_img_sample.x = (float)(x + 1) / output_width + sample0.x / output_width;
         aux_img_sample.y = (float)(y + 1) / output_height + sample0.y / output_height;
-        
+
         // Transform into [-0.5, 0.5]
         float2 aux_h_sample = img_sample - make_float2(0.5f, 0.5f);
         // Transform into [-dim/2, dim/2]
         float2 aux_c_sample = aux_h_sample * camera->dim;
+
+        GLOBAL aux_ray* my_x_ray = aux_rays_x + global_id;
+        GLOBAL aux_ray* my_y_ray = aux_rays_y + global_id;
 
         // compute aux rays
         vstore_half3(
@@ -1067,7 +1059,7 @@ KERNEL void ShadeBackgroundImage(
 
             v.xyz = Texture_UVSample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
         }
-        
+
         ADD_FLOAT4(&output[output_index], v);
     }
 }

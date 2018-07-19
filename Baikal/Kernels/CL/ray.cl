@@ -41,11 +41,10 @@ typedef struct
 typedef struct
 {
     // xyz - origin
-    half3 o;
+    float3 o;
     // xyz - direction
-    half3 d;
+    float3 d;
 } aux_ray;
-
 
 // Set ray activity flag
 INLINE void Ray_SetInactive(GLOBAL ray* r)
@@ -90,6 +89,12 @@ INLINE void Ray_Init(GLOBAL ray* r, float3 o, float3 d, float maxt, float time, 
     r->d.w = time;
     r->extra.x = mask;
     r->extra.y = 0xFFFFFFFF;
+}
+
+INLINE void Aux_Ray_Init(GLOBAL aux_ray* r, float3 o, float3 d)
+{
+    r->o = o;
+    r->d = d;
 }
 
 #endif

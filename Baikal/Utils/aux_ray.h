@@ -20,21 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#ifndef AUX_RAY_H
-#define AUX_RAY_H
+#pragma once
 
 namespace Baikal
 {
-    struct AuxRay
+    struct aux_ray
     {
-        short origin[3];
-        // unused field for alignment
-        short origin_padding;
-
-        short direction[3];
-        // unused field for alignment
-        short direction_padding;
+        float origin[3];
+        float padding1;
+        float direction[3];
+        float padding2;
     };
 }
-
-#endif // AUX_RAY_H

@@ -127,7 +127,7 @@ namespace Baikal
         IMPORTANT: SetWorkBufferSize should be called prior to calling this method.
         Returned buffer size is exacly the size set via SetWorkBufferSize.
         */
-        virtual CLWBuffer<AuxRay> GetAuxRayXBuffer() const = 0;
+        virtual CLWBuffer<aux_ray> GetAuxRayXBuffer() const = 0;
 
         /**
         \brief Get ray buffer handle.
@@ -139,7 +139,7 @@ namespace Baikal
         IMPORTANT: SetWorkBufferSize should be called prior to calling this method.
         Returned buffer size is exacly the size set via SetWorkBufferSize.
         */
-        virtual CLWBuffer<AuxRay> GetAuxRayYBuffer() const = 0;
+        virtual CLWBuffer<aux_ray> GetAuxRayYBuffer() const = 0;
 
         /**
         \brief Get output index buffer handle.

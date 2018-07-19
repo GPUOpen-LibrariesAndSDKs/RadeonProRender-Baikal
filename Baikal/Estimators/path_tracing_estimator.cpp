@@ -30,13 +30,13 @@ namespace Baikal
     {
         // OpenCL stuff
         CLWBuffer<ray> rays[2];
-        CLWBuffer<AuxRay> x_auxiliary_rays[2];
-        CLWBuffer<AuxRay> y_auxiliary_rays[2];
+        CLWBuffer<aux_ray> x_auxiliary_rays[2];
+        CLWBuffer<aux_ray> y_auxiliary_rays[2];
         CLWBuffer<int> hits;
 
         CLWBuffer<ray> shadowrays;
-        CLWBuffer<AuxRay> x_auxiliary_shadow_rays;
-        CLWBuffer<AuxRay> y_auxiliary_shadow_rays;
+        CLWBuffer<aux_ray> x_auxiliary_shadow_rays;
+        CLWBuffer<aux_ray> y_auxiliary_shadow_rays;
         CLWBuffer<int> shadowhits;
 
         CLWBuffer<Intersection> intersections;
@@ -120,10 +120,10 @@ namespace Baikal
     {
         m_render_data->rays[0] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
         m_render_data->rays[1] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->x_auxiliary_rays[0] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
-        m_render_data->x_auxiliary_rays[1] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
-        m_render_data->y_auxiliary_rays[0] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
-        m_render_data->y_auxiliary_rays[1] = GetContext().CreateBuffer<AuxRay>(size, CL_MEM_READ_WRITE);
+        m_render_data->x_auxiliary_rays[0] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+        m_render_data->x_auxiliary_rays[1] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+        m_render_data->y_auxiliary_rays[0] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+        m_render_data->y_auxiliary_rays[1] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
         m_render_data->hits = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->intersections = GetContext().CreateBuffer<Intersection>(size, CL_MEM_READ_WRITE);
         m_render_data->shadowrays = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
@@ -170,12 +170,12 @@ namespace Baikal
         return m_render_data->rays[0];
     }
 
-    CLWBuffer<AuxRay> PathTracingEstimator::GetAuxRayXBuffer() const
+    CLWBuffer<aux_ray> PathTracingEstimator::GetAuxRayXBuffer() const
     {
         return m_render_data->x_auxiliary_rays[0];
     }
 
-    CLWBuffer<AuxRay> PathTracingEstimator::GetAuxRayYBuffer() const
+    CLWBuffer<aux_ray> PathTracingEstimator::GetAuxRayYBuffer() const
     {
         return m_render_data->y_auxiliary_rays[0];
     }
