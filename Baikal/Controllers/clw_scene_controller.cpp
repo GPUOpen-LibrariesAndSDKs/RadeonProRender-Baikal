@@ -715,7 +715,7 @@ namespace Baikal
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
             current_shape->material.offset = GetMaterialIndex(mat_collector, instance->GetMaterial());
-            current_shape->material.layers = std::static_pointer_cast<UberV2Material>(instance->GetMaterial())->GetLayers();
+            current_shape->material.layers = GetMaterialLayers(std::static_pointer_cast<UberV2Material>(instance->GetMaterial()));
 
             current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 

@@ -75,6 +75,11 @@ static const std::map<rpr_material_node_input, std::string> kRPRInputStrings =
     { RPR_UBER_MATERIAL_SSS_MULTISCATTER, "uberv2.sss.multiscatter" }
 };
 
+rpr_int rprLightSetGroupId(rpr_light light, rpr_uint groupId)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
 
 rpr_int rprRegisterPlugin(rpr_char const * path)
 {
@@ -1999,9 +2004,13 @@ rpr_int rprSceneSetEnvironmentOverride(rpr_scene in_scene, rpr_environment_overr
     try
     {
         if ((overrride == RPR_SCENE_ENVIRONMENT_OVERRIDE_BACKGROUND) && light)
-            rprSceneSetBackgroundImage(scene, nullptr);
-
-        scene->SetEnvironmentOverride(override_type->second, light);
+        {
+            rprSceneSetBackgroundImage(scene, light->GetEnvTexture());
+        }
+        else
+        {
+            scene->SetEnvironmentOverride(override_type->second, light);
+        }
     }
     catch (Exception& e)
     {
