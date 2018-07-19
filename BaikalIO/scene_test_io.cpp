@@ -263,6 +263,14 @@ namespace Baikal
                                     , false);
             scene->AttachShape(floor);
 
+            auto mat = UberV2Material::Create();
+            mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            mat->SetInputValue("uberv2.diffuse.color",
+                InputMap_ConstantFloat3::Create(float3(0.8f, 0.8f, 0.8f)));
+
+            floor->SetMaterial(mat);
+            mesh->SetMaterial(mat);
+
             auto emissive = UberV2Material::Create();
             emissive->SetLayers(UberV2Material::Layers::kEmissionLayer);
             emissive->SetInputValue("uberv2.emission.color",
@@ -285,6 +293,42 @@ namespace Baikal
 
             scene->AttachLight(l1);
             scene->AttachLight(l2);
+        }
+        else if (fname == "env_override_spheres")
+        {
+            auto mesh1 = CreateSphere(64, 32, 2.f, float3(-3.f, 2.5f, 0.f));
+            scene->AttachShape(mesh1);
+            auto mesh2 = CreateSphere(64, 32, 2.f, float3(0.f, 2.5f, 0.f));
+            scene->AttachShape(mesh2);
+            auto mesh3 = CreateSphere(64, 32, 2.f, float3(3.f, 2.5f, 0.f));
+            scene->AttachShape(mesh3);
+            
+            auto reflective = UberV2Material::Create();
+            reflective->SetLayers(UberV2Material::Layers::kReflectionLayer);
+            reflective->SetInputValue("uberv2.reflection.color",
+                InputMap_ConstantFloat3::Create(float3(0.9f, 0.9f, 0.9f)));
+            reflective->SetInputValue("uberv2.reflection.roughness",
+                InputMap_ConstantFloat::Create(0.001f));
+            reflective->SetInputValue("uberv2.reflection.ior",
+                InputMap_ConstantFloat::Create(1.33f));
+            mesh1->SetMaterial(reflective);
+
+            auto refractive = UberV2Material::Create();
+            refractive->SetLayers(UberV2Material::Layers::kRefractionLayer);
+            refractive->SetInputValue("uberv2.refraction.color",
+                InputMap_ConstantFloat3::Create(float3(0.7f, 0.7f, 0.7f)));
+            refractive->SetInputValue("uberv2.refraction.ior",
+                InputMap_ConstantFloat3::Create(1.5f));
+            refractive->SetInputValue("uberv2.refraction.roughness",
+                InputMap_ConstantFloat3::Create(0.001f));
+            mesh2->SetMaterial(refractive);
+            
+            auto transparent = UberV2Material::Create();
+            transparent->SetLayers(UberV2Material::Layers::kTransparencyLayer);
+            transparent->SetInputValue("uberv2.transparency",
+                InputMap_ConstantFloat3::Create(1.f));
+            mesh3->SetMaterial(transparent);
+
         }
         else if (fname == "sphere+plane+area+ibl")
         {
@@ -543,6 +587,81 @@ namespace Baikal
             light->SetEmittedRadiance(RadeonRays::float3(100.f, 100.f, 100.f));
             light->SetConeShape(RadeonRays::float2(0.05f, 0.1f));
             scene->AttachLight(light);
+        }
+        else if (fname == "transparent_planes")
+        {
+            auto transparent_mtl = UberV2Material::Create();
+            transparent_mtl->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 0.0f, 0.0f, 0.0f)));
+            transparent_mtl->SetInputValue("uberv2.transparency", InputMap_ConstantFloat::Create(0.9f));
+            transparent_mtl->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kTransparencyLayer);
+
+            for (int i = 0; i < 8; ++i)
+            {
+                auto wall = CreateQuad(
+                    {
+                        RadeonRays::float3(-8, 8, i * 2.0f),
+                        RadeonRays::float3(-8, 0, i * 2.0f),
+                        RadeonRays::float3( 8, 0, i * 2.0f),
+                        RadeonRays::float3( 8, 8, i * 2.0f),
+                    }
+                    , false);
+                wall->SetMaterial(transparent_mtl);
+                scene->AttachShape(wall);
+            }
+
+            auto floor_mtl = UberV2Material::Create();
+            floor_mtl->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(0.5f, 0.5f, 0.5f, 0.0f)));
+            floor_mtl->SetInputValue("uberv2.reflection.roughness", InputMap_ConstantFloat::Create(0.01f));
+            floor_mtl->SetLayers(UberV2Material::Layers::kDiffuseLayer | UberV2Material::Layers::kReflectionLayer);
+
+            auto floor = CreateQuad(
+                {
+                    RadeonRays::float3(-8, 0, -8),
+                    RadeonRays::float3(8, 0, -8),
+                    RadeonRays::float3(8, 0, 8),
+                    RadeonRays::float3(-8, 0, 8),
+                }
+            , false);
+            floor->SetMaterial(floor_mtl);
+            scene->AttachShape(floor);
+
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+			auto ibl = ImageBasedLight::Create();
+			ibl->SetTexture(ibl_texture);
+			ibl->SetMultiplier(1.f);
+			scene->AttachLight(ibl);
+		}
+        else if (fname == "4kmaterials")
+        {
+            auto mesh = CreateSphere(64, 32, 0.1f, float3(0.f, 0.0f, 0.f));
+            scene->AttachShape(mesh);
+            auto roughness = InputMap_ConstantFloat::Create(0.05f);
+
+            auto uberv2 = UberV2Material::Create();
+            uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
+            uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+            mesh->SetMaterial(uberv2);
+            matrix t = RadeonRays::translation(float3(0, 0, -10.f));
+            mesh->SetTransform(t);
+
+            for (int a = 0 ; a < 400; ++a)
+            {
+                auto instance = Instance::Create(mesh);
+                auto uberv2 = UberV2Material::Create();
+                uberv2->SetInputValue("uberv2.diffuse.color", InputMap_ConstantFloat3::Create(float3(1.0f, 1.0f, 1.0f, 0.0f)));
+                uberv2->SetLayers(UberV2Material::Layers::kDiffuseLayer);
+                instance->SetMaterial(uberv2);
+                matrix t = RadeonRays::translation(float3((a/1024-512)/512.f, 0.f, -10.f));
+                instance->SetTransform(t);
+                scene->AttachShape(instance);
+            }
+
+            auto ibl_texture = image_io->LoadImage("../Resources/Textures/studio015.hdr");
+
+            auto ibl = ImageBasedLight::Create();
+            ibl->SetTexture(ibl_texture);
+            ibl->SetMultiplier(1.f);
+            scene->AttachLight(ibl);
         }
 
 

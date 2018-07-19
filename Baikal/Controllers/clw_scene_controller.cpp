@@ -52,9 +52,9 @@ namespace Baikal
 
 
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
-    : m_default_material(UberV2Material::Create())
-    , m_context(context)
+    : m_context(context)
     , m_api(api)
+    , m_default_material(UberV2Material::Create())
     , m_program_manager(program_manager)
     , m_mipmap(Mipmap::Create(context, program_manager))
     {
@@ -445,12 +445,14 @@ namespace Baikal
         // Total number of entries in shapes GPU array
         auto num_shapes = meshes.size() + excluded_meshes.size() + instances.size();
         out.shapes = m_context.CreateBuffer<ClwScene::Shape>(num_shapes, CL_MEM_READ_ONLY);
+        out.shapes_additional = m_context.CreateBuffer<ClwScene::ShapeAdditionalData>(num_shapes, CL_MEM_READ_ONLY);
 
         float3* vertices = nullptr;
         float3* normals = nullptr;
         float2* uvs = nullptr;
         int* indices = nullptr;
         ClwScene::Shape* shapes = nullptr;
+        ClwScene::ShapeAdditionalData* shapes_additional = nullptr;
 
         // Map arrays and prepare to write data
         LogInfo("Mapping buffers...\n");
@@ -459,6 +461,7 @@ namespace Baikal
         m_context.MapBuffer(0, out.uvs, CL_MAP_WRITE, &uvs);
         m_context.MapBuffer(0, out.indices, CL_MAP_WRITE, &indices);
         m_context.MapBuffer(0, out.shapes, CL_MAP_WRITE, &shapes).Wait();
+        m_context.MapBuffer(0, out.shapes_additional, CL_MAP_WRITE, &shapes_additional).Wait();
 
         // Keep associated shapes data for instance look up.
         // We retrieve data from here while serializing instances,
@@ -519,7 +522,11 @@ namespace Baikal
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
+
+            ClwScene::ShapeAdditionalData shape_additional;
+            shape_additional.group_id = mesh->GetGroupId();
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         // Excluded shapes are handled in almost the same way
@@ -576,7 +583,11 @@ namespace Baikal
             std::copy(mesh_index_array, mesh_index_array + mesh_num_indices, indices + num_indices_written);
             num_indices_written += mesh_num_indices;
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
+
+            ClwScene::ShapeAdditionalData shape_additional;
+            shape_additional.group_id = mesh->GetGroupId();
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         // Handle instances
@@ -606,7 +617,11 @@ namespace Baikal
 
             shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
 
-            shapes[num_shapes_written++] = shape;
+            shapes[num_shapes_written] = shape;
+
+            ClwScene::ShapeAdditionalData shape_additional;
+            shape_additional.group_id = iter->GetGroupId();
+            shapes_additional[num_shapes_written++] = shape_additional;
         }
 
         LogInfo("Unmapping buffers...\n");
@@ -615,6 +630,7 @@ namespace Baikal
         m_context.UnmapBuffer(0, out.uvs, uvs);
         m_context.UnmapBuffer(0, out.indices, indices);
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
+        m_context.UnmapBuffer(0, out.shapes_additional, shapes_additional).Wait();
 
         LogInfo("Updating intersector...\n");
 
@@ -636,11 +652,14 @@ namespace Baikal
         SplitMeshesAndInstances(*shape_iter, meshes, instances, excluded_meshes);
 
         ClwScene::Shape* shapes = nullptr;
+        ClwScene::ShapeAdditionalData* shapes_additional = nullptr;
 
         // Map arrays and prepare to write data
         m_context.MapBuffer(0, out.shapes, CL_MAP_READ | CL_MAP_WRITE, &shapes).Wait();
+        m_context.MapBuffer(0, out.shapes_additional, CL_MAP_READ | CL_MAP_WRITE, &shapes_additional).Wait();
 
         auto current_shape = shapes;
+        auto current_shape_additional = shapes_additional;
         for (auto& iter : meshes)
         {
             auto mesh = iter;
@@ -656,8 +675,10 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape_additional->group_id = iter->GetGroupId();
 
             ++current_shape;
+            ++current_shape_additional;
         }
 
         // Excluded shapes are handled in almost the same way
@@ -677,8 +698,10 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape_additional->group_id = iter->GetGroupId();
 
             ++current_shape;
+            ++current_shape_additional;
         }
 
         // Handle instances
@@ -698,11 +721,14 @@ namespace Baikal
             current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 
             current_shape->id = iter->GetId();
+            current_shape_additional->group_id = iter->GetGroupId();
 
             ++current_shape;
+            ++current_shape_additional;
         }
 
         m_context.UnmapBuffer(0, out.shapes, shapes).Wait();
+        m_context.UnmapBuffer(0, out.shapes_additional, shapes_additional).Wait();
     }
 
     void ClwSceneController::UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const
@@ -777,7 +803,6 @@ namespace Baikal
         }
 
         ClwScene::Volume* volumes = nullptr;
-        std::size_t num_materials_written = 0;
 
         // Map GPU materials buffer
         m_context.MapBuffer(0, out.volumes, CL_MAP_WRITE, &volumes).Wait();
@@ -857,7 +882,7 @@ namespace Baikal
             int mip_index = tex->MipmapEnabled() ?
                 (++mip_index_counter) : (-1);
 
-            (textures + num_textures_written)->dataoffset = tex_data_buffer_size;
+            (textures + num_textures_written)->dataoffset = (int)tex_data_buffer_size;
 
             WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written, mip_index);
 
@@ -908,24 +933,24 @@ namespace Baikal
         m_mipmap->Build(textures, num_textures_written, out.mipmap, out.texturedata);
     }
 
+#ifndef NDEBUG
+    // We're not using this function on release
     // Convert Material:: types to ClwScene:: types
     static ClwScene::Bxdf GetMaterialType(Material const& material)
     {
         // Distinguish between single bxdf materials and compound ones
-        if (auto bxdf = dynamic_cast<UberV2Material const*>(&material))
+        if (dynamic_cast<UberV2Material const*>(&material))
         {
             return ClwScene::Bxdf::kUberV2;
         }
 
         return ClwScene::Bxdf::kZero;
     }
+#endif
 
     void ClwSceneController::WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<std::int32_t> &material_data) const
     {
-        // Convert material type and sidedness
-        auto type = GetMaterialType(material);
-        assert(type == ClwScene::Bxdf::kUberV2);
-
+        assert(GetMaterialType(material) == ClwScene::Bxdf::kUberV2);
         const UberV2Material &uber_material = static_cast<const UberV2Material&>(material);
 
         std::uint32_t layers = uber_material.GetLayers();
@@ -933,7 +958,7 @@ namespace Baikal
         m_materialid_to_offset[material.GetId()] = static_cast<int>(material_data.size());
 
         // Pack material parameters
-        std::int32_t params;
+        std::int32_t params = 0;
         params |= ((uber_material.IsLinkRefractionIOR()) ? 1 : 0) << 0;
         params |= ((uber_material.IsThin()) ? 1 : 0) << 1;
         params |= ((uber_material.isDoubleSided()) ? 1 : 0) << 2;
@@ -1086,6 +1111,7 @@ namespace Baikal
                 clw_light->tex_transparency = transparency_tex ? tex_collector.GetItemIndex(transparency_tex) : -1;
                 auto background_tex = ibl.GetBackgroundTexture();
                 clw_light->tex_background = background_tex ? tex_collector.GetItemIndex(background_tex) : -1;
+                clw_light->ibl_mirror_x = ibl.GetMirrorX();
                 break;
             }
 

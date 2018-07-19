@@ -12,7 +12,7 @@
 #include "Utils/aux_ray.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
-#include "./Kernels/CL/cache/kernels.h"
+#include "embed_kernels.h"
 #endif
 
 namespace Baikal
@@ -80,19 +80,19 @@ namespace Baikal
         std::shared_ptr<RadeonRays::IntersectionApi> api,
         const CLProgramManager *program_manager
     ) :
+        Estimator(api)
 #ifdef BAIKAL_EMBED_KERNELS
-        ClwClass(context,
-            g_path_tracing_estimator_opencl,
-            g_path_tracing_estimator_opencl_inc,
-            sizeof(g_path_tracing_estimator_opencl_inc) / sizeof(*g_path_tracing_estimator_opencl_inc),
-            "", cache_path)
+        , ClwClass(context, program_manager, "path_tracing_estimator", g_path_tracing_estimator_opencl, g_path_tracing_estimator_opencl_headers, "")
 #else
-        ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
+        , ClwClass(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator.cl", "")
 #endif
-        , Estimator(api)
-        , m_sample_counter(0)
         , m_render_data(new RenderData)
+        , m_sample_counter(0)
+#ifdef BAIKAL_EMBED_KERNELS
+        , m_uberv2_kernels(context, program_manager, "path_tracing_estimator_uberv2", g_path_tracing_estimator_uberv2_opencl, g_path_tracing_estimator_uberv2_opencl_headers, "")
+#else
         , m_uberv2_kernels(context, program_manager, "../Baikal/Kernels/CL/path_tracing_estimator_uberv2.cl", "")
+#endif
     {
         // Create parallel primitives
         m_render_data->pp = CLWParallelPrimitives(context, GetFullBuildOpts().c_str());
@@ -208,6 +208,9 @@ namespace Baikal
         auto has_visibility_buffer = HasIntermediateValueBuffer(IntermediateValue::kVisibility);
         auto visibility_buffer = GetIntermediateValueBuffer(IntermediateValue::kVisibility);
 
+        auto has_opacity_buffer = HasIntermediateValueBuffer(IntermediateValue::kOpacity);
+        auto opacity_buffer = GetIntermediateValueBuffer(IntermediateValue::kOpacity);
+
         InitPathData(num_estimates, scene.camera_volume_index);
 
         GetContext().CopyBuffer(0u, m_render_data->iota, m_render_data->pixelindices[0], 0, 0, num_estimates);
@@ -252,6 +255,12 @@ namespace Baikal
 
             // Convert intersections to predicates
             FilterPathStream(pass, num_estimates);
+            
+            // Gather opacity if we have opacity buffer
+            if ((pass > 0) && has_opacity_buffer)
+            {
+                GatherOpacity(scene, pass, num_estimates, opacity_buffer, use_output_indices);
+            }
 
             // Compact batch
             m_render_data->pp.Compact(
@@ -329,7 +338,14 @@ namespace Baikal
 
             GetContext().Flush(0);
         }
-
+        // Gather opacity if we have opacity buffer
+        if (has_opacity_buffer)
+        {
+            // Convert intersections to predicates
+            FilterPathStream(GetMaxBounces(), num_estimates);
+            GatherOpacity(scene, GetMaxBounces(), num_estimates, opacity_buffer, use_output_indices);
+            GetContext().Flush(0);
+        }
         ++m_sample_counter;
     }
 
@@ -622,6 +638,32 @@ namespace Baikal
         }
     }
 
+    void PathTracingEstimator::GatherOpacity(ClwScene const& scene,
+        int pass,
+        std::size_t size,
+        CLWBuffer<RadeonRays::float3> output,
+        bool use_output_indices
+    )
+    {
+        // Fetch kernel
+        auto gatherkernel = GetKernel("GatherOpacity");
+
+        auto output_indices = use_output_indices ? m_render_data->output_indices : m_render_data->iota;
+
+        // Set kernel parameters
+        int argc = 0;
+        gatherkernel.SetArg(argc++, m_render_data->pixelindices[(pass + 1) & 0x1]);
+        gatherkernel.SetArg(argc++, output_indices);
+        gatherkernel.SetArg(argc++, m_render_data->hitcount);
+        gatherkernel.SetArg(argc++, m_render_data->paths);
+        gatherkernel.SetArg(argc++, (pass == (int)GetMaxBounces()));
+        gatherkernel.SetArg(argc++, output);
+
+        // Run shading kernel
+        {
+            GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, gatherkernel);
+        }
+    }
 
     void PathTracingEstimator::RestorePixelIndices(int pass, std::size_t size)
     {
@@ -867,7 +909,7 @@ namespace Baikal
 
     bool PathTracingEstimator::SupportsIntermediateValue(IntermediateValue value) const
     {
-        if (value == IntermediateValue::kVisibility)
+        if (value == IntermediateValue::kVisibility || value == IntermediateValue::kOpacity)
         {
             return true;
         }

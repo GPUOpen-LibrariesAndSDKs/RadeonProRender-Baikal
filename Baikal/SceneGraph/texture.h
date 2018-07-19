@@ -128,7 +128,7 @@ namespace Baikal
     inline Texture::Texture()
         : m_data(new char[16])
         , m_format(Format::kRgba8)
-        , m_generate_mipmap (false)
+        , m_generate_mipmap(false)
     {
         m_levels.push_back({ 2, 2, 1 });
 

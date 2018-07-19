@@ -25,6 +25,7 @@
 #include "Application/app_utils.h"
 #include "Application/cl_render.h"
 #include "Application/gl_render.h"
+#include "Application/material_explorer.h"
 #include "image_io.h"
 
 #include <future>
@@ -41,53 +42,35 @@ namespace Baikal
         void Run();
     private:
         void Update(bool update_required);
-        
-        //update app state according to gui
-        // return: true if scene update required
+
+        // Update app state according to gui
+        // Return: true if scene update required
         bool UpdateGui();
         void CollectSceneStats();
 
         void SaveToFile(std::chrono::high_resolution_clock::time_point time) const;
 
-        //input callbacks
-        //Note: use glfwGetWindowUserPointer(window) to get app instance
+        // Input callbacks
+        // Note: use glfwGetWindowUserPointer(window) to get app instance
         static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void OnMouseMove(GLFWwindow* window, double x, double y);
         static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
         static void OnMouseScroll(GLFWwindow* window, double x, double y);
 
         AppSettings m_settings;
-        std::unique_ptr<AppClRender> m_cl;
+
+        // Note: the following three members should be declared in strict order
+        std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> m_window;
         std::unique_ptr<AppGlRender> m_gl;
+        std::unique_ptr<AppClRender> m_cl;
 
-        GLFWwindow* m_window;
-
-        //scene stats stuff
+        // Scene stats stuff
         int m_num_triangles;
         int m_num_instances;
 
-        int m_shape_id_val;
         int m_current_shape_id;
         std::string m_object_name;
         std::future<int> m_shape_id_future;
-
-        class MaterialSelector
-        {
-        public:
-            MaterialSelector(Material::Ptr root);
-
-            void GetParent();
-            void SelectMaterial(Material::Ptr);
-            Material::Ptr Get();
-
-            bool IsRoot() const;
-
-        private:
-
-            Material::Ptr m_root;
-            Material::Ptr m_current;
-            VolumeMaterial::Ptr  m_volume;
-        };
 
         class InputSettings
         {
@@ -112,21 +95,7 @@ namespace Baikal
             std::pair<bool, std::string> m_texture_path;
         };
 
-        // this struct needs to save material parametrs from gui
-        struct MaterialSettings
-        {
-            int id; // shape id
-            std::vector<InputSettings> inputs_info;
-
-            void Clear();
-        };
-
-        bool ReadFloatInput(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx, std::string id_suffix = std::string());
-        bool ReadTextruePath(Material::Ptr material, MaterialSettings& settings, std::uint32_t input_idx);
-
-        std::unique_ptr<MaterialSelector> m_material_selector;
-        std::unique_ptr<ImageIo> m_image_io;
-        std::vector<MaterialSettings> m_material_settings;
-        std::vector<MaterialSettings> m_volume_settings;
+        int m_material_id;
+        MaterialExplorer::Ptr m_material_explorer;
     };
 }

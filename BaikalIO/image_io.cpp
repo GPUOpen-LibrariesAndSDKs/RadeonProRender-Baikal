@@ -10,11 +10,11 @@ namespace Baikal
         Texture::Ptr LoadImage(std::string const& filename, bool generate_mipmap = false) const override;
         void SaveImage(std::string const& filename, Texture::Ptr texture) const override;
     };
-    
+
     static Texture::Format GetTextureFormat(OIIO_NAMESPACE::ImageSpec const& spec)
     {
         OIIO_NAMESPACE_USING
-        
+
         if (spec.format.basetype == TypeDesc::UINT8)
             return Texture::Format::kRgba8;
         else if (spec.format.basetype == TypeDesc::HALF)
@@ -22,11 +22,11 @@ namespace Baikal
         else
             return Texture::Format::kRgba32;
     }
-    
+
     static OIIO_NAMESPACE::TypeDesc GetTextureFormat(Texture::Format fmt)
     {
         OIIO_NAMESPACE_USING
-        
+
         if (fmt == Texture::Format::kRgba8)
             return  TypeDesc::UINT8;
         else if (fmt == Texture::Format::kRgba16)
@@ -34,13 +34,13 @@ namespace Baikal
         else
             return TypeDesc::FLOAT;
     }
-    
+
     Texture::Ptr Oiio::LoadImage(std::string const& filename, bool generate_mipmap) const
     {
         OIIO_NAMESPACE_USING
-        
+
         std::unique_ptr<ImageInput> input{ImageInput::open(filename)};
-        
+
         if (!input)
         {
             throw std::runtime_error("Can't load " + filename + " image");
@@ -48,6 +48,7 @@ namespace Baikal
 
         std::vector<RadeonRays::int3> levels_spec;
         ImageSpec spec = input->spec();
+
         auto fmt = GetTextureFormat(spec);
 
         int texture_data_size = 0;
@@ -153,7 +154,7 @@ namespace Baikal
         OIIO_NAMESPACE_USING;
 
         std::unique_ptr<ImageOutput> out{ImageOutput::create(filename)};
-        
+
         if (!out)
         {
             throw std::runtime_error("Can't create image file on disk");

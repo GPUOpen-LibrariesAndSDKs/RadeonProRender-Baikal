@@ -55,7 +55,7 @@ public:
         std::vector<CLWPlatform> platforms;
 
         ASSERT_NO_THROW(CLWPlatform::CreateAllPlatforms(platforms));
-        ASSERT_GT(platforms.size(), 0);
+        ASSERT_GT(platforms.size(), 0u);
 
         char* device_index_option = GetCmdOption(g_argv, g_argv + g_argc, "-device");
         char* platform_index_option = GetCmdOption(g_argv, g_argv + g_argc, "-platform");
@@ -73,7 +73,7 @@ public:
         m_reference_path.append("/");
         m_output_path.append("/");
 
-
+        Baikal::SceneObject::ResetId();
 
         // Prefer GPU devices if nothing has been specified
         if (platform_index == -1)
@@ -108,7 +108,7 @@ public:
             }
         }
 
-        ASSERT_LT(platform_index, platforms.size());
+        ASSERT_LT((std::size_t)platform_index, platforms.size());
         ASSERT_LT((std::uint32_t)device_index, platforms[platform_index].GetDeviceCount());
 
         auto platform = platforms[platform_index];

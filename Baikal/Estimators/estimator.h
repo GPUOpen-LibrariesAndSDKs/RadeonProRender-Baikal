@@ -54,6 +54,7 @@ namespace Baikal
             kDirectRadiance,
             kIndirectRadiance,
             kVisibility,
+            kOpacity,
             kMax
         };
 

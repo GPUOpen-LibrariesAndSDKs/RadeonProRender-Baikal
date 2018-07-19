@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/scene.cl>
 #include <../Baikal/Kernels/CL/path.cl>
+#include <../Baikal/Kernels/CL/bxdf.cl>
 
 enum LightInteractionType
 {
@@ -111,7 +112,7 @@ float3 EnvironmentLight_GetLe(// Light
         return 0.f;
     }
 
-    return light->multiplier * Texture_SampleEnvMap(normalize(*wo), TEXTURE_ARGS_IDX(tex));
+    return light->multiplier * Texture_SampleEnvMap(normalize(*wo), TEXTURE_ARGS_IDX(tex), light->ibl_mirror_x);
 }
 
 /// Sample direction to the light
@@ -160,7 +161,7 @@ float3 EnvironmentLight_Sample(// Light
     }
 
     // Sample envmap
-    return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(tex));
+    return light->multiplier * Texture_SampleEnvMap(d, TEXTURE_ARGS_IDX(tex), light->ibl_mirror_x);
 }
 
 /// Get PDF for a given direction

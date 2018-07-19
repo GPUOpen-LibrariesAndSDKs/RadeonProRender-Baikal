@@ -88,7 +88,7 @@ ImageMaterialObject::ImageMaterialObject(rpr_image_format const in_format, rpr_i
             for (unsigned int comp_ind = in_format.num_components; comp_ind < 4; ++comp_ind)
             {
                 int index = comp_ind * component_bytes;
-                memset(&data[i * 4 + index], 0, component_bytes);
+                memset(&data[i * 4 * component_bytes + index], 0, component_bytes);
             }
         }
     }

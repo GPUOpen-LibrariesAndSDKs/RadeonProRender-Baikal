@@ -100,6 +100,12 @@ typedef struct
     Material material;
 } Shape;
 
+typedef struct
+{
+    int group_id;
+    int padding[3];
+} ShapeAdditionalData;
+
 typedef enum
 {
     kFloat3 = 0,
@@ -178,7 +184,7 @@ typedef struct
     int type;
     float multiplier;
     int tex_background;
-    int padding2;
+    bool ibl_mirror_x;
 } Light;
 
 typedef enum

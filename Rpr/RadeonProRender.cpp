@@ -239,22 +239,13 @@ rpr_int rprContextSetParameter1u(rpr_context in_context, rpr_char const * name, 
         return RPR_ERROR_INVALID_CONTEXT;
     }
 
-    //TODO: handle context parameters
-    return RPR_SUCCESS;
-
-    if (!strcmp(name, "rendermode"))
+    try
     {
-        switch (x)
-        {
-        case RPR_RENDER_MODE_GLOBAL_ILLUMINATION:
-            break;
-        default:
-            UNIMLEMENTED_FUNCTION
-        }
+        context->SetParameter(name, x);
     }
-    else
+    catch (Exception& e)
     {
-        UNIMLEMENTED_FUNCTION
+        return e.m_error;
     }
 
     return RPR_SUCCESS;
@@ -1016,12 +1007,6 @@ rpr_int rprImageSetWrap(rpr_image image, rpr_image_wrap_type type)
     UNSUPPORTED_FUNCTION
 }
 
-rpr_int rprImageSetOption(rpr_image image, rpr_image_option option)
-{
-    UNSUPPORTED_FUNCTION
-}
-
-
 rpr_int rprShapeSetTransform(rpr_shape in_shape, rpr_bool transpose, rpr_float const * transform)
 {
     //cast data
@@ -1039,6 +1024,12 @@ rpr_int rprShapeSetTransform(rpr_shape in_shape, rpr_bool transpose, rpr_float c
     {
         m = m.transpose();
     }
+
+    RadeonRays::matrix rtol(-1.0f, 0.0f, 0.0f, 0.0f,
+                            0.0f, 1.0f, 0.0f, 0.0f,
+                            0.0f, 0.0f, 1.0f, 0.0f,
+                            0.0f, 0.0f, 0.0f, 1.0f);
+    m = rtol * m;
 
     shape->SetTransform(m);
     return RPR_SUCCESS;
@@ -1066,7 +1057,15 @@ rpr_int rprShapeSetDisplacementScale(rpr_shape shape, rpr_float minscale, rpr_fl
 
 rpr_int rprShapeSetObjectGroupID(rpr_shape shape, rpr_uint objectGroupID)
 {
-    UNSUPPORTED_FUNCTION
+    //cast data
+    ShapeObject* mesh = WrapObject::Cast<ShapeObject>(shape);
+    if (!shape)
+    {
+        return RPR_ERROR_INVALID_PARAMETER;
+    }
+
+    mesh->GetShape()->SetGroupId(objectGroupID);
+    return RPR_SUCCESS;
 }
 
 rpr_int rprShapeSetDisplacementMaterial(rpr_shape shape, rpr_material_node materialNode)
@@ -1172,6 +1171,12 @@ rpr_int rprLightSetTransform(rpr_light in_light, rpr_bool in_transpose, rpr_floa
     {
         m = m.transpose();
     }
+
+    RadeonRays::matrix rtol(-1.0f, 0.0f, 0.0f, 0.0f,
+                            0.0f, 1.0f, 0.0f, 0.0f,
+                            0.0f, 0.0f, 1.0f, 0.0f,
+                            0.0f, 0.0f, 0.0f, 1.0f);
+    m = rtol * m;
 
     light->SetTransform(m);
 
@@ -2087,7 +2092,7 @@ rpr_int rprFrameBufferGetInfo(rpr_framebuffer in_frame_buffer, rpr_framebuffer_i
     {
         return RPR_ERROR_INVALID_PARAMETER;
     }
-    int buff_size = sizeof(RadeonRays::float3) * buff->Width() * buff->Height();
+    std::size_t buff_size = sizeof(RadeonRays::float3) * buff->Width() * buff->Height();
     switch (in_info)
     {
     case RPR_FRAMEBUFFER_DATA:
@@ -2549,4 +2554,54 @@ rpr_int rprMaterialNodeSetInputBufferData_ext(rpr_material_node in_node, rpr_mat
     return name_it != kRPRInputStrings.end() ?
         rprMaterialNodeSetInputBufferData(in_node, name_it->second.c_str(), buffer)
         : RPR_ERROR_UNSUPPORTED;
+}
+
+rpr_int rprShapeSetLayerMask(rpr_shape shape, rpr_uint layerMask)
+{
+    UNIMLEMENTED_FUNCTION
+}
+
+rpr_int rprContextCreateHeteroVolume(rpr_context context, rpr_hetero_volume * out_heteroVolume, size_t gridSizeX, size_t gridSizeY, size_t gridSizeZ, void const * indicesList, size_t numberOfIndices, rpr_hetero_volume_indices_topology indicesListTopology, void const * gridData, size_t gridDataSizeByte, rpr_uint gridDataTopology___unused)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprImageSetGamma(rpr_image image, rpr_float type)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprImageSetMipmapEnabled(rpr_image image, rpr_bool enabled)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+rpr_int rprImageSetFilter(rpr_image image, rpr_image_filter_type type)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeSetFilter(rpr_hetero_volume heteroVolume, rpr_hetero_volume_filter filter)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeSetEmission(rpr_hetero_volume heteroVolume, rpr_float r, rpr_float g, rpr_float b)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeSetAlbedo(rpr_hetero_volume heteroVolume, rpr_float r, rpr_float g, rpr_float b)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprHeteroVolumeGetInfo(rpr_hetero_volume heteroVol, rpr_hetero_volume_parameter heteroVol_info, size_t size, void * data, size_t * size_ret)
+{
+    UNSUPPORTED_FUNCTION
+}
+
+RPR_API_ENTRY rpr_int rprBufferGetInfo(rpr_buffer buffer, rpr_buffer_info buffer_info, size_t size, void * data, size_t * size_ret)
+{
+    UNSUPPORTED_FUNCTION
 }

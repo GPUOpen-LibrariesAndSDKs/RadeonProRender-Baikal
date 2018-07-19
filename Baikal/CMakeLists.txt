@@ -50,10 +50,12 @@ set(UTILS_SOURCES
     Utils/tiny_obj_loader.h
     Utils/toFloat.h
     Utils/version.h
+    Utils/mkpath.cpp
+    Utils/mkpath.h
     Utils/cl_inputmap_generator.cpp
     Utils/cl_inputmap_generator.h
-    Utils/cl_mipmap.h
     Utils/cl_mipmap.cpp
+    Utils/cl_mipmap.h
     Utils/cl_program.cpp
     Utils/cl_program.h
     Utils/cl_program_manager.cpp
@@ -148,7 +150,15 @@ source_group("SceneGraph\\Collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
 source_group("XML" FILES ${XML_SOURCES})
 source_group("Kernels\\CL" FILES ${KERNELS_SOURCES})
 
-add_library(Baikal STATIC ${SOURCES})
+if (WIN32)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+elseif (UNIX)
+    add_definitions(-fvisibility=default)
+endif (WIN32)
+add_library(Baikal SHARED ${SOURCES})
+# We need to use this definition because CMAKE_EXPORT_ALL_SYMBOLS
+# actually doesn't export data symbols, only functions
+target_compile_definitions(Baikal PRIVATE BAIKAL_EXPORT_DATA_SYMBOLS)
 
 if (BAIKAL_ENABLE_DENOISER)
     target_compile_definitions(Baikal PUBLIC ENABLE_DENOISER)
@@ -158,9 +168,28 @@ if (BAIKAL_ENABLE_RAYMASK)
     target_compile_definitions(Baikal PUBLIC ENABLE_RAYMASK)
 endif (BAIKAL_ENABLE_RAYMASK)
 
+if (BAIKAL_EMBED_KERNELS)
+    set(KERNEL_HEADER "${Baikal_BINARY_DIR}/Baikal/embed_kernels.h")
+    set(STRINGIFY_SCRIPT "${CMAKE_SOURCE_DIR}/Tools/scripts/baikal_stringify.py")
+    target_compile_definitions(Baikal PRIVATE BAIKAL_EMBED_KERNELS)
+    add_custom_command(
+        OUTPUT ${KERNEL_HEADER}
+        COMMAND ${PYTHON_EXECUTABLE} ${STRINGIFY_SCRIPT} ../Baikal/Kernels/CL/ .cl opencl > ${KERNEL_HEADER}
+        DEPENDS ${KERNELS_SOURCES}
+        WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/Baikal
+        COMMENT "Generating Baikal kernel cache"
+        VERBATIM)
+    add_custom_target(BaikalKernelCache DEPENDS ${KERNEL_HEADER})
+    add_dependencies(Baikal BaikalKernelCache)
+    target_include_directories(Baikal PRIVATE ${Baikal_BINARY_DIR}/Baikal)
+endif (BAIKAL_EMBED_KERNELS)
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
 target_link_libraries(Baikal PUBLIC RadeonRays)
-
+if (WIN32)
+    target_compile_options(Baikal PUBLIC /WX)
+elseif (UNIX)
+    target_compile_options(Baikal PUBLIC -Wall -Werror)
+endif (WIN32)
     

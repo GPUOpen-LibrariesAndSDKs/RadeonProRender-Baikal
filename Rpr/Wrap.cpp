@@ -152,11 +152,6 @@ fr_int frCameraSetFocusDistance(fr_camera camera, fr_float fdist)
     return rprCameraSetFocusDistance(camera, fdist);
 }
 
-fr_int frImageSetOption(fr_image image, fr_image_option option)
-{
-    return rprImageSetOption(image, option);
-}
-
 fr_int frCameraSetTransform(fr_camera camera, fr_bool transpose, fr_float * transform)
 {
     return rprCameraSetTransform(camera, transpose, transform);

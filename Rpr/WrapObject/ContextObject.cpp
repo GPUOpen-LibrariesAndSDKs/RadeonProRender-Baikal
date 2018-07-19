@@ -93,13 +93,18 @@ namespace
     { RPR_CONTEXT_GPU6_NAME,{ "gpu6name", "Name of the GPU index 6 in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
     { RPR_CONTEXT_GPU7_NAME,{ "gpu7name", "Name of the GPU index 7 in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
     { RPR_CONTEXT_CPU_NAME,{ "cpuname", "Name of the CPU in context. Constant value.", RPR_PARAMETER_TYPE_STRING } },
+    { RPR_CONTEXT_RANDOM_SEED,{ "randseed", "Random seed", RPR_PARAMETER_TYPE_UINT } },
     };
 
     std::map<uint32_t, Baikal::Renderer::OutputType> kOutputTypeMap = { {RPR_AOV_COLOR, Baikal::Renderer::OutputType::kColor},
                                                                         {RPR_AOV_GEOMETRIC_NORMAL, Baikal::Renderer::OutputType::kWorldGeometricNormal},
                                                                         {RPR_AOV_SHADING_NORMAL, Baikal::Renderer::OutputType::kWorldShadingNormal},
                                                                         {RPR_AOV_UV, Baikal::Renderer::OutputType::kUv},
-                                                                        {RPR_AOV_WORLD_COORDINATE, Baikal::Renderer::OutputType::kWorldPosition}, 
+                                                                        {RPR_AOV_WORLD_COORDINATE, Baikal::Renderer::OutputType::kWorldPosition},
+                                                                        {RPR_AOV_OBJECT_ID, Baikal::Renderer::OutputType::kMeshID},
+                                                                        {RPR_AOV_OBJECT_GROUP_ID, Baikal::Renderer::OutputType::kGroupID},
+                                                                        {RPR_AOV_BACKGROUND, Baikal::Renderer::OutputType::kBackground},
+                                                                        {RPR_AOV_OPACITY, Baikal::Renderer::OutputType::kOpacity},
                                                                         };
 
 }// anonymous
@@ -109,24 +114,15 @@ ContextObject::ContextObject(rpr_creation_flags creation_flags)
 {
     rpr_int result = RPR_SUCCESS;
 
-    bool interop = creation_flags & RPR_CREATION_FLAGS_ENABLE_GL_INTEROP;
-    if (creation_flags & RPR_CREATION_FLAGS_ENABLE_GPU0)
+    try
     {
-        try
-        {
-            //TODO: check num_bounces 
-            ConfigManager::CreateConfigs(ConfigManager::kUseSingleGpu, interop, m_cfgs, 5);
-        }
-        catch (...)
-        {
-            // failed to create context with interop
-            result = RPR_ERROR_UNSUPPORTED;
-        }
+        //TODO: check num_bounces
+        ConfigManager::CreateConfigs(creation_flags, m_cfgs, 5);
     }
-    else
+    catch (...)
     {
-        result = RPR_ERROR_UNIMPLEMENTED;
-    }    
+        result = RPR_ERROR_UNSUPPORTED;
+    }
 
     if (result != RPR_SUCCESS)
     {
@@ -302,7 +298,7 @@ FramebufferObject* ContextObject::CreateFrameBuffer(rpr_framebuffer_format const
     //TODO:: implement for several devices
     if (m_cfgs.size() != 1)
     {
-        throw Exception(RPR_ERROR_INTERNAL_ERROR, "ContextObject: invalid config count.");
+        throw Exception(RPR_ERROR_UNIMPLEMENTED, "ContextObject: invalid config count.");
     }
     auto& c = m_cfgs[0];
     Baikal::Output* out = c.factory->CreateOutput(in_fb_desc->fb_width, in_fb_desc->fb_height).release();
@@ -320,13 +316,39 @@ FramebufferObject* ContextObject::CreateFrameBufferFromGLTexture(rpr_GLenum targ
     auto& c = m_cfgs[0];
     auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(c.renderer.get())->GetCopyKernel();
     FramebufferObject* result = new FramebufferObject(c.context, copykernel, target, miplevel, texture);
-    int w = result->Width();
-    int h = result->Height();
+    std::uint32_t w = static_cast<std::uint32_t>(result->Width());
+    std::uint32_t h = static_cast<std::uint32_t>(result->Height());
     Baikal::Output* out = c.factory->CreateOutput(w, h).release();
     result->SetOutput(out);
     return result;
 }
 
+void ContextObject::SetParameter(const std::string& input, rpr_uint value)
+{
+    auto it = std::find_if(kContextParameterDescriptions.begin(), kContextParameterDescriptions.end(),
+        [input](std::pair<uint32_t, ParameterDesc> desc) { return desc.second.name == input; });
+
+    if (it == kContextParameterDescriptions.end())
+    {
+        throw Exception(RPR_ERROR_INVALID_TAG, "ContextObject: invalid context input parameter.");
+    }
+    else if (it->second.type != RPR_PARAMETER_TYPE_UINT)
+    {
+        throw Exception(RPR_ERROR_INVALID_PARAMETER_TYPE, "ContextObject: invalid context input type.");
+    }
+
+    switch (it->first)
+    {
+    case RPR_CONTEXT_RANDOM_SEED:
+        for (auto& c : m_cfgs)
+        {
+            c.renderer->SetRandomSeed(value);
+        }
+        break;
+    default:
+        throw Exception(RPR_ERROR_UNIMPLEMENTED, "ContextObject: requested parameter is not implemented");
+    }
+}
 
 void ContextObject::SetParameter(const std::string& input, float x, float y, float z, float w)
 {

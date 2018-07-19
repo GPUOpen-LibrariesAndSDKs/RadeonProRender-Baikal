@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "Utils/clw_class.h"
 
 #include <string>
+#include <unordered_map>
 
 namespace Baikal
 {
@@ -38,18 +39,25 @@ namespace Baikal
     class ClwPostEffect : public PostEffect, protected ClwClass
     {
     public:
+#ifdef BAIKAL_EMBED_KERNELS
         // Constructor, receives CLW context
-        ClwPostEffect(const CLProgramManager *program_manager, CLWContext context, std::string const& file_name);
-        //ClwPostEffect(const CLProgramManager *program_manager, CLWContext context, const char* data, const char* includes[], std::size_t inc_num);
+        ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& name,
+            std::string const& source, std::unordered_map<char const*, char const*> const& headers);
+#else
+        ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& file_name);
+#endif
     };
-    
-    inline ClwPostEffect::ClwPostEffect(const CLProgramManager *program_manager, CLWContext context, std::string const& file_name)
+
+#ifdef BAIKAL_EMBED_KERNELS
+    inline ClwPostEffect::ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& name,
+        std::string const& source, std::unordered_map<char const*, char const*> const& headers)
+        : ClwClass(context, program_manager, name, source, headers)
+    {
+    }
+#else
+    inline ClwPostEffect::ClwPostEffect(CLWContext context, const CLProgramManager *program_manager, std::string const& file_name)
         : ClwClass(context, program_manager, file_name)
     {
     }
-
-/*    inline ClwPostEffect::ClwPostEffect(const CLProgramManager *program_manager, CLWContext context, const char* data, const char* includes[], std::size_t inc_num)
-        : ClwClass(context, program_manager, data, includes, inc_num)
-    {
-    }*/
+#endif
 }

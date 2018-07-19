@@ -42,7 +42,7 @@ namespace Baikal
         // the function only generates images and save result with correct offsets in texture_data
         void Build(
             ClwScene::Texture* texture,
-            std::uint32_t texture_num,
+            std::size_t texture_num,
             CLWBuffer<ClwScene::MipmapPyramid> mipmap_info,
             CLWBuffer<char> texture_data);
 

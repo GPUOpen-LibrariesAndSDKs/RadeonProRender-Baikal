@@ -318,7 +318,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
 
 /// Sample lattitue-longitude environment map using 3d vector
 inline
-float3 Texture_SampleEnvMap(float3 d, TEXTURE_ARG_LIST_IDX(texidx))
+float3 Texture_SampleEnvMap(float3 d, TEXTURE_ARG_LIST_IDX(texidx), bool mirror_x)
 {
     // Transform to spherical coords
     float r, phi, theta;
@@ -326,7 +326,7 @@ float3 Texture_SampleEnvMap(float3 d, TEXTURE_ARG_LIST_IDX(texidx))
 
     // Map to [0,1]x[0,1] range and reverse Y axis
     float2 uv;
-    uv.x = phi / (2*PI);
+    uv.x = (mirror_x) ? (1.f - phi / (2 * PI)) : phi / (2 * PI);
     uv.y = 1.f - theta / PI;
 
     // Sample the texture

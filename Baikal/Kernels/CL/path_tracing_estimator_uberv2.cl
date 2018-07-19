@@ -354,6 +354,12 @@ KERNEL void ShadeSurfaceUberV2(
         // Set surface interaction flags
         Path_SetFlags(&diffgeo, path);
 
+        // Opacity flag for opacity AOV
+        if (!Bxdf_IsTransparency(&diffgeo))
+        {
+            Path_SetOpacityFlag(path);
+        }
+
         // Terminate if emissive
         if (Bxdf_IsEmissive(&diffgeo))
         {
@@ -432,7 +438,7 @@ KERNEL void ShadeSurfaceUberV2(
             light_weight = Light_IsSingular(&scene.lights[light_idx]) ? 1.f : BalanceHeuristic(1, light_pdf * selection_pdf, 1, light_bxdf_pdf);
 
             // Apply MIS to account for both
-            if (NON_BLACK(le) && light_pdf > 0.0f && !Bxdf_IsSingular(&diffgeo))
+            if (NON_BLACK(le) && (light_pdf > 0.0f) && (selection_pdf > 0.0f) && !Bxdf_IsSingular(&diffgeo))
             {
                 wo = lightwo;
                 float ndotwo = fabs(dot(diffgeo.n, normalize(wo)));

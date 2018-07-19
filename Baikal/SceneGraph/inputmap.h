@@ -22,6 +22,8 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <set>
+#include "SceneGraph/texture.h"
 #include "scene_object.h"
 
 namespace Baikal

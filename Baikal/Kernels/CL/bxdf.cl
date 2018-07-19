@@ -22,6 +22,8 @@ THE SOFTWARE.
 #ifndef BXDF_CL
 #define BXDF_CL
 
+#include <../Baikal/Kernels/CL/bxdf_flags.cl>
+
 /// Schlick's approximation of Fresnel equtions
 float SchlickFresnel(float eta, float ndotw)
 {
@@ -38,56 +40,6 @@ float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
     float rparl = ((etat * ndotwi) - (etai * ndotwt)) / ((etat * ndotwi) + (etai * ndotwt));
     float rperp = ((etai * ndotwi) - (etat * ndotwt)) / ((etai * ndotwi) + (etat * ndotwt));
     return (rparl*rparl + rperp*rperp) * 0.5f;
-}
-
-#define DENOM_EPS 1e-8f
-#define ROUGHNESS_EPS 0.0001f
-
-enum BxdfFlags
-{
-    kBxdfFlagsSingular = (1 << 0),
-    kBxdfFlagsBrdf = (1 << 1),
-    kBxdfFlagsEmissive = (1 << 2),
-    kBxdfFlagsTransparency = (1 << 3),
-    kBxdfFlagsDiffuse = (1 << 4),
-
-    //Used to mask value from bxdf_flags
-    kBxdfFlagsAll = (kBxdfFlagsSingular | kBxdfFlagsBrdf | kBxdfFlagsEmissive | kBxdfFlagsTransparency | kBxdfFlagsDiffuse)
-};
-
-enum BxdfUberV2SampledComponent
-{
-    kBxdfUberV2SampleTransparency = 0,
-    kBxdfUberV2SampleCoating = 1,
-    kBxdfUberV2SampleReflection = 2,
-    kBxdfUberV2SampleRefraction = 3,
-    kBxdfUberV2SampleDiffuse = 4
-};
-
-/// Returns BxDF flags. Flags stored in first byte of bxdf_flags
-int Bxdf_GetFlags(DifferentialGeometry const* dg)
-{
-    return (dg->mat.flags & kBxdfFlagsAll);
-}
-
-/// Sets BxDF flags. Flags stored in first byte of bxdf_flags
-void Bxdf_SetFlags(DifferentialGeometry *dg, int flags)
-{
-    dg->mat.flags &= 0xffffff00; //Reset flags
-    dg->mat.flags |= flags; //Set new flags
-}
-
-/// Return BxDF sampled component. Sampled component stored in second byte of bxdf_flags
-int Bxdf_UberV2_GetSampledComponent(DifferentialGeometry const* dg)
-{
-    return (dg->mat.flags >> 8) & 0xff;
-}
-
-/// Sets BxDF sampled component. Sampled component stored in second byte of bxdf_flags
-void Bxdf_UberV2_SetSampledComponent(DifferentialGeometry *dg, int sampledComponent)
-{
-    dg->mat.flags &= 0xffff00ff; //Reset sampled component
-    dg->mat.flags |= (sampledComponent << 8); //Set new component
 }
 
 #include <../Baikal/Kernels/CL/utils.cl>

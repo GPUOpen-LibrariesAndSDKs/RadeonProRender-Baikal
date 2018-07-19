@@ -85,11 +85,11 @@ public:
     Baikal::Scene1::Ptr GetScene() { return m_scene; };
 private:
     Baikal::Scene1::Ptr m_scene;
-    CameraObject* m_current_camera;
+    CameraObject* m_current_camera = nullptr;
     std::vector<Baikal::AreaLight::Ptr> m_emmisive_lights;//area lights fro emissive shapes
     std::vector<ShapeObject*> m_shapes;
     std::vector<LightObject*> m_lights;
-    MaterialObject *m_background_image;
+    MaterialObject *m_background_image = nullptr;
 
     struct EnvironmentOverride
     {

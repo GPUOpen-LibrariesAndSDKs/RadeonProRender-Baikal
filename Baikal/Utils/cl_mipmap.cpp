@@ -20,9 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#include <algorithm>
 #include "cl_mipmap.h"
 #include "SceneGraph/texture.h"
+#include <algorithm>
 
 namespace Baikal
 {
@@ -214,6 +214,7 @@ namespace Baikal
             mipmap.level_info[i].height = dst_height;
             mipmap.level_info[i].pitch = dst_pitch;
             mipmap.level_info[i].offset = level_data_offset;
+
         }
 
         mipmap.level_num = level_num;
@@ -223,7 +224,7 @@ namespace Baikal
 
     void Mipmap::Build(
         ClwScene::Texture* texture,
-        std::uint32_t texture_num,
+        std::size_t texture_num,
         CLWBuffer<ClwScene::MipmapPyramid> mipmap_info,
         CLWBuffer<char> texture_data)
     {
@@ -238,7 +239,7 @@ namespace Baikal
         // flag to specify that at least one mipmap was generated
         bool mipmap_generated = false; 
 
-        for (auto i = 0u; i < texture_num; i++)
+        for (std::size_t i = 0; i < texture_num; i++)
         {
             if (texture[i].mipmap_gen_required)
             {

@@ -140,14 +140,19 @@ namespace Baikal
         // Set thin flag
         void SetThin(bool thin);
 
+        virtual bool IsActive(const Input &input) const
+        {
+            return true;
+        }
+
         size_t GetNumInputs() const;
-        Input GetInput(std::uint32_t idx) const;
+        Input GetInput(std::size_t idx) const;
+        Input& GetInput(const std::string& name, InputType type);
 
         Material(Material const&) = delete;
         Material& operator = (Material const&) = delete;
 
     protected:
-        Input& GetInput(const std::string& name, InputType type);
 
         Material();
 
@@ -186,21 +191,4 @@ namespace Baikal
     protected:
         VolumeMaterial();
     };
-
-/*    class MaterialAccessor
-    {
-    public:
-        MaterialAccessor(Material::Ptr material);
-
-        std::vector<std::string> GetTypeInfo() const;
-        void SetType(std::uint32_t type);
-        int GetType() const;
-
-        ~MaterialAccessor() = default;
-
-        MaterialAccessor(const MaterialAccessor&) = delete;
-        MaterialAccessor& operator = (const MaterialAccessor&) = delete;
-    private:
-        Material::Ptr m_material;
-    };*/
 }

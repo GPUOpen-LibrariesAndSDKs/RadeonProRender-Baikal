@@ -13,12 +13,24 @@ UberMaterialObject::UberMaterialObject() :
     MaterialObject(kUberV2)
 {
     m_mat = UberV2Material::Create();
+    m_mat->SetLayers(UberV2Material::Layers::kDiffuseLayer);
 }
 
 void UberMaterialObject::SetInputF(const std::string & input_name, const RadeonRays::float4 & val)
 {
-    auto inputMap = Baikal::InputMap_ConstantFloat3::Create(val);
-    m_mat->SetInputValue(input_name, inputMap);
+    // Optimization: if we create a new input, it will take additional time for kernel compilation,
+    // so we try to find existing input and set a new float value
+    auto& input = m_mat->GetInput(input_name, Baikal::Material::InputType::kInputMap);
+    if (input.value.input_map_value->m_type == Baikal::InputMap::InputMapType::kConstantFloat3)
+    {
+        auto float_map = std::static_pointer_cast<Baikal::InputMap_ConstantFloat3>(input.value.input_map_value);
+        float_map->SetValue(val);
+    }
+    else
+    {
+        auto input_map = Baikal::InputMap_ConstantFloat3::Create(val);
+        m_mat->SetInputValue(input_name, input_map);
+    }
 }
 
 void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val) 
@@ -35,7 +47,7 @@ void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val)
     }
     else if (input_name == "uberv2.refraction.thin_surface")
     {
-        m_mat->SetThin(val);
+        m_mat->SetThin(val != 0);
     }
     else if (input_name == "uberv2.emission.mode")
     {
@@ -43,7 +55,7 @@ void UberMaterialObject::SetInputU(const std::string& input_name, rpr_uint val)
     }
     else if (input_name == "uberv2.sss.multiscatter")
     {
-        m_mat->SetMultiscatter(val);
+        m_mat->SetMultiscatter(val != 0);
     }
     else
     {
@@ -93,7 +105,8 @@ void UberMaterialObject::SetInputTexture(const std::string & input_name, Texture
         }
         else
         {
-            m_mat->SetInputValue(input_name, input->GetTexture());
+            auto sampler = Baikal::InputMap_Sampler::Create(input->GetTexture());
+            m_mat->SetInputValue(input_name, sampler);
         }
     }
     catch (...)
