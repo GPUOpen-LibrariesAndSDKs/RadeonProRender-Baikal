@@ -241,6 +241,7 @@ namespace Baikal
     void AppClRender::Update(AppSettings& settings)
     {
         ++settings.samplecount;
+
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
             if (m_cfgs[i].type == ConfigManager::kPrimary)
@@ -534,6 +535,7 @@ namespace Baikal
         {
             m_renderthreads[i].join();
         }
+
     }
 
     void AppClRender::RunBenchmark(AppSettings& settings)

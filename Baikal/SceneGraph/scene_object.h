@@ -67,6 +67,7 @@ namespace Baikal
         SceneObject();
         
     private:
+        // Bit mask size, equals to bit count of std::uint32_t
         static const int kMaxDirtyBits = 32;
         mutable std::bitset<kMaxDirtyBits> m_dirty;
 

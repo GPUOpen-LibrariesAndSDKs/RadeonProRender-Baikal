@@ -68,9 +68,10 @@ namespace Baikal
             std::atomic<int> clear;
             std::atomic<int> stop;
             std::atomic<int> newdata;
-            std::mutex datamutex;
             int idx;
+            // This is used to reject non-actual data from a worker device
             std::uint32_t scene_state;
+            // Number of samples in the new data that has sent from a worker device
             std::uint32_t new_samples_count;
         };
 
