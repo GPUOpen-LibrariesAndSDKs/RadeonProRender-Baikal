@@ -139,11 +139,11 @@ void ConfigManager::CreateConfigs(
                 }
                 catch (CLWException& ex)
                 {
-                    // CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR means that
+                    // CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR (code -1000) means that
                     // CL and GL interop not on the same device.
                     // If we've got another error, throw it up, else simply
                     // continue execution and get to next 'if' block
-                    if (ex.errcode_ != CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR)
+                    if (ex.errcode_ != -1000)
                     {
                         throw;
                     }
