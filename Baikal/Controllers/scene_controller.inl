@@ -16,13 +16,21 @@
 
 namespace Baikal
 {
-    static std::uint32_t g_next_scene_controller_id = 0;
+    // Defined in scene_controller.cpp
+    std::uint32_t GetNextControllerId();
+    void ResetControllerId();
 
     template <typename CompiledScene>
-    inline
     SceneController<CompiledScene>::SceneController()
-        : m_id(g_next_scene_controller_id++)
-    {}
+        : m_id(GetNextControllerId())
+    {
+    }
+
+    template <typename CompiledScene>
+    void SceneController<CompiledScene>::ResetId()
+    {
+        ResetControllerId();
+    }
 
     template <typename CompiledScene>
     inline

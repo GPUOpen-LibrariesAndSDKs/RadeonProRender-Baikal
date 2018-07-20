@@ -32,6 +32,8 @@
 #include "gtest/gtest.h"
 #include "OpenImageIO/imageio.h"
 #include "SceneGraph/scene_object.h"
+#include "Controllers/scene_controller.h"
+#include "SceneGraph/clwscene.h"
 
 #include <vector>
 #include <memory>
@@ -74,8 +76,8 @@ public:
         m_reference_path.append("/");
         m_output_path.append("/");
 
-
         Baikal::SceneObject::ResetId();
+        Baikal::SceneController<Baikal::ClwScene>::ResetId();
 
         rpr_creation_flags flags = GetCreationFlags();
         ASSERT_EQ(rprCreateContext(RPR_API_VERSION, nullptr, 0, flags, nullptr, nullptr, &m_context), RPR_SUCCESS);

@@ -62,6 +62,9 @@ namespace Baikal
         CompiledScene& CompileScene(Scene1::Ptr scene) const;
 
         CompiledScene& GetCachedScene(Scene1::Ptr scene) const;
+
+        static void ResetId();
+
     protected:
         // Recompile the scene from scratch, i.e. not loading from cache.
         // All the buffers are recreated and reloaded.

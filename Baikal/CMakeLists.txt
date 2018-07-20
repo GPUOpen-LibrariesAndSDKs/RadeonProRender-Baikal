@@ -2,7 +2,8 @@ set(CONTROLLERS_SOURCES
     Controllers/clw_scene_controller.cpp
     Controllers/clw_scene_controller.h
     Controllers/scene_controller.h
-    Controllers/scene_controller.inl)
+    Controllers/scene_controller.inl
+    Controllers/scene_controller.cpp)
     
 set(ESTIMATORS_SOURCES 
     Estimators/estimator.h
