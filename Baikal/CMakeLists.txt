@@ -21,12 +21,15 @@ set(POSTEFFECT_SOURCES
     PostEffects/AreaMap33.h)
 
 SET(MLDENOISER_SOURCES
+    PostEffects/ML/model.h
+    PostEffects/ML/model.cpp
     PostEffects/ML/tensor.h
     PostEffects/ML/denoiser.h
     PostEffects/ML/denoiser.cpp
     PostEffects/ML/inference.h
     PostEffects/ML/inference_impl.h
-    PostEffects/ML/inference_impl.cpp)
+    PostEffects/ML/inference_impl.cpp
+    PostEffects/ML/thread_safe_queue.h)
 
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp

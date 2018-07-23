@@ -2,6 +2,9 @@
 
 #include "PostEffects/ML/tensor.h"
 
+#include <memory>
+#include <string>
+
 
 namespace Baikal
 {
@@ -15,7 +18,7 @@ namespace Baikal
             virtual Tensor GetInputTensor() = 0;
             virtual void PushInput(Tensor&& tensor) = 0;
             virtual Tensor PopOutput() = 0;
-            virtual ~Inference() = default;
+            virtual ~Inference() {};
         };
     }
 }
