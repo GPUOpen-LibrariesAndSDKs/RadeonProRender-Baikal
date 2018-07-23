@@ -30,13 +30,11 @@ namespace Baikal
     {
         // OpenCL stuff
         CLWBuffer<ray> rays[2];
-        CLWBuffer<aux_ray> x_auxiliary_rays[2];
-        CLWBuffer<aux_ray> y_auxiliary_rays[2];
+        CLWBuffer<aux_ray> aux_rays_x[2];
+        CLWBuffer<aux_ray> aux_rays_y[2];
         CLWBuffer<int> hits;
 
         CLWBuffer<ray> shadowrays;
-        CLWBuffer<aux_ray> x_auxiliary_shadow_rays;
-        CLWBuffer<aux_ray> y_auxiliary_shadow_rays;
         CLWBuffer<int> shadowhits;
 
         CLWBuffer<Intersection> intersections;
@@ -118,12 +116,13 @@ namespace Baikal
 
     void PathTracingEstimator::SetWorkBufferSize(std::size_t size)
     {
-        m_render_data->rays[0] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->rays[1] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->x_auxiliary_rays[0] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->x_auxiliary_rays[1] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->y_auxiliary_rays[0] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->y_auxiliary_rays[1] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+        for (std::size_t i = 0; i <= 1; ++i)
+        {
+            m_render_data->rays[i] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
+            m_render_data->aux_rays_x[i] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+            m_render_data->aux_rays_y[i] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+        }
+
         m_render_data->hits = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->intersections = GetContext().CreateBuffer<Intersection>(size, CL_MEM_READ_WRITE);
         m_render_data->shadowrays = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
@@ -172,12 +171,12 @@ namespace Baikal
 
     CLWBuffer<aux_ray> PathTracingEstimator::GetAuxRayXBuffer() const
     {
-        return m_render_data->x_auxiliary_rays[0];
+        return m_render_data->aux_rays_x[0];
     }
 
     CLWBuffer<aux_ray> PathTracingEstimator::GetAuxRayYBuffer() const
     {
-        return m_render_data->y_auxiliary_rays[0];
+        return m_render_data->aux_rays_y[0];
     }
 
     CLWBuffer<int> PathTracingEstimator::GetOutputIndexBuffer() const

@@ -109,10 +109,10 @@ void PerspectiveCamera_GenerateRays(
         float2 sample0 = 0.5f;
 #endif
 
+        float2 output_size = make_float2(output_width, output_height);
+
         // Calculate [0..1] image plane sample
-        float2 img_sample = make_float2(
-            (float)x / output_width + sample0.x / output_width,
-            (float)y / output_height + sample0.y / output_height);
+        float2 img_sample = make_float2((float)x + sample0.x, (float)y + sample0.y) / output_size;
 
         // Transform into [-dim/2, dim/2]
         float2 c_sample = (img_sample - 0.5f) * camera->dim;
@@ -136,37 +136,35 @@ void PerspectiveCamera_GenerateRays(
         Ray_SetExtra(my_ray, 1.f);
         Ray_SetMask(my_ray, VISIBILITY_MASK_PRIMARY);
 
-        float2 aux_img_sample = make_float2(
-            (float)(x + 1) / output_width + sample0.x / output_width,
-            (float)(y + 1) / output_height + sample0.y / output_height);
+        // Calculate auxiliary rays
+
+        float2 aux_img_sample = make_float2((float)(x + 1) + sample0.x, (float)(y + 1) + sample0.y) / output_size;
 
         // Transform into [-dim/2, dim/2]
         float2 aux_c_sample = (aux_img_sample - 0.5f) * camera->dim;
-
-        // Calculate auxiliary rays
 
         GLOBAL aux_ray* my_aux_ray_x = aux_rays_x + global_id;
 
         Aux_Ray_Init(my_aux_ray_x, my_ray->o.xyz,
             PerspectiveCamera_SampleToRayDirection(camera,
                 make_float2(aux_c_sample.x, c_sample.y)));
-
+/*
         if (x == output_width - 1)
         {
             Aux_Ray_Init(my_aux_ray_x, 0.0f, 0.0f);
         }
-
+*/
         GLOBAL aux_ray* my_aux_ray_y = aux_rays_y + global_id;
         // Calculate direction to image plane for auxiliary y ray
         Aux_Ray_Init(my_aux_ray_y, my_ray->o.xyz,
             PerspectiveCamera_SampleToRayDirection(camera,
                 make_float2(c_sample.x, aux_c_sample.y)));
-
+/*
         if (y == output_height - 1)
         {
             Aux_Ray_Init(my_aux_ray_y, 0.0f, 0.0f);
         }
-
+*/
     }
 }
 

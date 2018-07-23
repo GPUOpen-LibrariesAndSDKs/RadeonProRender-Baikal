@@ -22,13 +22,15 @@ THE SOFTWARE.
 
 #pragma once
 
+#include "half.h"
+
 namespace Baikal
 {
     struct aux_ray
     {
-        float origin[3];
-        float padding1;
-        float direction[3];
-        float padding2;
+        //half origin[4];
+        //half direction[4];
+        float origin[4];
+        float direction[4];
     };
 }

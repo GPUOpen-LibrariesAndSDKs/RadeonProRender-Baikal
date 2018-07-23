@@ -272,6 +272,8 @@ namespace Baikal
 
         auto argc = 0U;
         fill_kernel.SetArg(argc++, m_estimator->GetRayBuffer());
+        fill_kernel.SetArg(argc++, m_estimator->GetAuxRayXBuffer());
+        fill_kernel.SetArg(argc++, m_estimator->GetAuxRayYBuffer());
         fill_kernel.SetArg(argc++, m_estimator->GetFirstHitBuffer());
         fill_kernel.SetArg(argc++, m_estimator->GetOutputIndexBuffer());
         fill_kernel.SetArg(argc++, m_estimator->GetRayCountBuffer());

@@ -40,6 +40,9 @@ THE SOFTWARE.
 KERNEL void FillAOVsUberV2(
     // Ray batch
     GLOBAL ray const* restrict rays,
+    // Auxiliary rays for computing screen-space uv derivatives
+    GLOBAL aux_ray const* restrict aux_rays_x,
+    GLOBAL aux_ray const* restrict aux_rays_y,
     // Intersection data
     GLOBAL Intersection const* restrict isects,
     // Pixel indices
@@ -77,11 +80,11 @@ KERNEL void FillAOVsUberV2(
     // Sampler states
     GLOBAL uint* restrict random,
     // Sobol matrices
-    GLOBAL uint const* restrict sobol_mat, 
+    GLOBAL uint const* restrict sobol_mat,
     // Frame
     int frame,
     // World position flag
-    int world_position_enabled, 
+    int world_position_enabled,
     // World position AOV
     GLOBAL float4* restrict aov_world_position,
     // World normal flag
@@ -192,7 +195,7 @@ KERNEL void FillAOVsUberV2(
             float3 wi = -normalize(rays[global_id].d.xyz);
 
             Sampler sampler;
-#if SAMPLER == SOBOL 
+#if SAMPLER == SOBOL
             uint scramble = random[global_id] * 0x1fe3434f;
             Sampler_Init(&sampler, frame, SAMPLE_DIM_SURFACE_OFFSET, scramble);
 #elif SAMPLER == RANDOM
@@ -206,7 +209,7 @@ KERNEL void FillAOVsUberV2(
 
             // Fill surface data
             DifferentialGeometry diffgeo;
-            Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
+            Scene_FillDifferentialGeometry(&scene, &isect, aux_rays_x + global_id, aux_rays_y + global_id, &diffgeo);
 
             if (world_position_enabled)
             {
@@ -229,7 +232,7 @@ KERNEL void FillAOVsUberV2(
                 {
                     //Reverse normal and tangents in this case
                     //but not for BTDFs, since BTDFs rely
-                    //on normal direction in order to arrange   
+                    //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
                     diffgeo.dpdu = -diffgeo.dpdu;
@@ -274,7 +277,11 @@ KERNEL void FillAOVsUberV2(
                 const float3 kd = ((diffgeo.mat.layers & kDiffuseLayer) == kDiffuseLayer) ?
                     uber_shader_data.diffuse_color.xyz : (float3)(0.0f);
 
-                aov_albedo[idx].xyz += kd;
+                float2 derivX = make_float2(diffgeo.dudx, diffgeo.dvdx);
+                float2 derivY = make_float2(diffgeo.dudy, diffgeo.dvdy);
+                float delta_max_sqr = max(dot(derivX, derivX), dot(derivY, derivY));
+                float mip = 0.5 * log2(delta_max_sqr * 512.0f) / 8.0f;
+                aov_albedo[idx].xyz += mip;//kd;
                 aov_albedo[idx].w += 1.f;
             }
 
@@ -367,7 +374,7 @@ KERNEL void FillAOVsUberV2(
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
             }
-            
+
             if (mesh_id_enabled)
             {
                 Sampler shapeid_sampler;

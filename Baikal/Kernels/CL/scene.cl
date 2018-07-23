@@ -50,7 +50,7 @@ typedef struct
     int env_light_idx;
     // Number of emissive objects
     int num_lights;
-    // Light distribution 
+    // Light distribution
     GLOBAL int const* restrict light_distribution;
 } Scene;
 
@@ -200,18 +200,19 @@ INLINE int Scene_GetVolumeIndex(Scene const* scene, int shape_idx)
 // Compute screen-space derivative of uv map
 INLINE float2 Scene_ComputePartialDerivative(
                           // Auxiliary ray
-                          GLOBAL aux_ray const* ray,
+                          GLOBAL aux_ray const* my_ray,
                           // Differential geometry
                           DifferentialGeometry* diffgeo
                           )
 {
+    //float3 o = vload_half3(0, (GLOBAL half*)&my_ray->o);
+    //float3 d = vload_half3(0, (GLOBAL half*)&my_ray->d);
+    float3 o = my_ray->o;
+    float3 d = my_ray->d;
 
     // Find intersection point of auxiliary ray with the tangent plane
-    float t = dot(diffgeo->n, diffgeo->p - ray->o) / dot(diffgeo->n, ray->d);
-    float3 p = ray->o + ray->d * t;
-
-    // Delta position between intersection points of main and auxiliary ray
-    float3 delta_p = p - diffgeo->p;
+    float t = dot(diffgeo->n, diffgeo->p - o) / dot(diffgeo->n, d);
+    float3 p = o + d * t;
 
     // Next we need to find uv offset from the position offset
     // This can be found by solving the system:
@@ -227,43 +228,48 @@ INLINE float2 Scene_ComputePartialDerivative(
 
     // Calculate cross product of the derivatives (actually, this is the surface normal)
     // to choose non-degenerate equations
-    float3 derivative_det = diffgeo->n;
+    float3 derivative_det = fabs(diffgeo->n);
 
     // Linear system of equations created from partial derivatives
     float4 derivative_matrix;
 
-    // Choose not degenerated matrix rows 
+    // Delta position between intersection points of main and auxiliary ray
+    float2 delta_p;
+
+    // Choose not degenerated matrix rows
     if (derivative_det.x > max(derivative_det.y, derivative_det.z))
     {
-        derivative_matrix.x = diffgeo->dpdu.y;
-        derivative_matrix.y = diffgeo->dpdv.y;
-        derivative_matrix.z = diffgeo->dpdu.z;
-        derivative_matrix.w = diffgeo->dpdv.z;
+        derivative_matrix = make_float4(diffgeo->dpdu.y,
+                                        diffgeo->dpdv.y,
+                                        diffgeo->dpdu.z,
+                                        diffgeo->dpdv.z);
+        delta_p = p.yz - diffgeo->p.yz;
 
     }
     else if (derivative_det.y > max(derivative_det.x, derivative_det.z))
     {
-        derivative_matrix.x = diffgeo->dpdu.x;
-        derivative_matrix.y = diffgeo->dpdv.x;
-        derivative_matrix.z = diffgeo->dpdu.z;
-        derivative_matrix.w = diffgeo->dpdv.z;
+        derivative_matrix = make_float4(diffgeo->dpdu.x,
+                                        diffgeo->dpdv.x,
+                                        diffgeo->dpdu.z,
+                                        diffgeo->dpdv.z);
+        delta_p = p.xz - diffgeo->p.xz;
 
     }
     else
     {
-        derivative_matrix.x = diffgeo->dpdu.x;
-        derivative_matrix.y = diffgeo->dpdv.x;
-        derivative_matrix.z = diffgeo->dpdu.y;
-        derivative_matrix.w = diffgeo->dpdv.y;
+        derivative_matrix = make_float4(diffgeo->dpdu.x,
+                                        diffgeo->dpdv.x,
+                                        diffgeo->dpdu.y,
+                                        diffgeo->dpdv.y);
+        delta_p = p.xy - diffgeo->p.xy;
 
     }
 
     // Solve linear system using Cramer rule
     float matrix_det = derivative_matrix.x * derivative_matrix.w
-        - derivative_matrix.y * derivative_matrix.z;
+        - derivative_matrix.z * derivative_matrix.y;
 
-    float det1 = delta_p.x * derivative_matrix.w - delta_p.y * derivative_matrix.z;
-
+    float det1 = derivative_matrix.w * delta_p.x - derivative_matrix.z * delta_p.y;
     float det2 = derivative_matrix.x * delta_p.y - derivative_matrix.y * delta_p.x;
 
     return make_float2(det1, det2) / matrix_det;
@@ -275,10 +281,9 @@ void Scene_FillDifferentialGeometry(// Scene
                               Scene const* scene,
                               // RadeonRays intersection
                               Intersection const* isect,
-                              // auxiliary rays in x dimension
-                              GLOBAL aux_ray const* x_ray,
-                              // auxiliary rays in y dimension
-                              GLOBAL aux_ray const* y_ray,
+                              // auxiliary rays
+                              GLOBAL aux_ray const* aux_ray_x,
+                              GLOBAL aux_ray const* aux_ray_y,
                               // Differential geometry
                               DifferentialGeometry* diffgeo
                               )
@@ -327,27 +332,20 @@ void Scene_FillDifferentialGeometry(// Scene
         diffgeo->ng = -diffgeo->ng;
     }
 
-    /// Calculate tangent basis
-    /// From PBRT book
-    float du1 = uv0.x - uv2.x;
-    float du2 = uv1.x - uv2.x;
-    float dv1 = uv0.y - uv2.y;
-    float dv2 = uv1.y - uv2.y;
-    float3 dp1 = v0 - v2;
-    float3 dp2 = v1 - v2;
-    float det = du1 * dv2 - dv1 * du2;
+    // Calculate tangent basis
+    // From PBRT book
+    float2 duv02 = uv0 - uv2;
+    float2 duv12 = uv1 - uv2;
+    float3 dp02 = v0 - v2;
+    float3 dp12 = v1 - v2;
+    float det = duv02.x * duv12.y - duv02.y * duv12.x;
+    bool degenerate_uv = fabs(det) < 1e-08f;
 
-    if (0 && det != 0.f)
+    if (!degenerate_uv)
     {
         float invdet = 1.f / det;
-        diffgeo->dpdu = normalize( (dv2 * dp1 - dv1 * dp2) * invdet );
-        diffgeo->dpdv = normalize( (-du2 * dp1 + du1 * dp2) * invdet );
-        diffgeo->dpdu -= dot(diffgeo->n, diffgeo->dpdu) * diffgeo->n;
-        diffgeo->dpdu = normalize(diffgeo->dpdu);
-        
-        diffgeo->dpdv -= dot(diffgeo->n, diffgeo->dpdv) * diffgeo->n;
-        diffgeo->dpdv -= dot(diffgeo->dpdu, diffgeo->dpdv) * diffgeo->dpdu;
-        diffgeo->dpdv = normalize(diffgeo->dpdv);
+        diffgeo->dpdu = normalize(( duv12.y * dp02 - duv02.y * dp12) * invdet);
+        diffgeo->dpdv = normalize((-duv12.x * dp02 + duv02.x * dp12) * invdet);
     }
     else
     {
@@ -357,18 +355,18 @@ void Scene_FillDifferentialGeometry(// Scene
 
 
     // Calculate intersection of the aux rays with the tangent plane
-    if (x_ray == NULL || y_ray == NULL)
+    if (aux_ray_x == NULL || aux_ray_y == NULL)
     {
         diffgeo->dudx = diffgeo->dudy = diffgeo->dvdx = diffgeo->dvdy = 0.f;
     }
     else
     {
         // Calculate differentials
-        float2 differential_x = Scene_ComputePartialDerivative(x_ray, diffgeo);
-        float2 differential_y = Scene_ComputePartialDerivative(y_ray, diffgeo);
+        float2 differential_x = Scene_ComputePartialDerivative(aux_ray_x, diffgeo);
+        float2 differential_y = Scene_ComputePartialDerivative(aux_ray_y, diffgeo);
         diffgeo->dudx = differential_x.x;
-        diffgeo->dudy = differential_x.y;
-        diffgeo->dvdx = differential_y.x;
+        diffgeo->dvdx = differential_x.y;
+        diffgeo->dudy = differential_y.x;
         diffgeo->dvdy = differential_y.y;
     }
 
@@ -384,7 +382,7 @@ INLINE void DifferentialGeometry_CalculateTangentTransforms(DifferentialGeometry
     diffgeo->world_to_tangent.m1.w = -dot(diffgeo->n, diffgeo->p);
     diffgeo->world_to_tangent.m2.w = -dot(diffgeo->dpdv, diffgeo->p);
 
-    diffgeo->tangent_to_world = matrix_from_cols3(diffgeo->world_to_tangent.m0.xyz, 
+    diffgeo->tangent_to_world = matrix_from_cols3(diffgeo->world_to_tangent.m0.xyz,
         diffgeo->world_to_tangent.m1.xyz, diffgeo->world_to_tangent.m2.xyz);
 
     diffgeo->tangent_to_world.m0.w = diffgeo->p.x;
