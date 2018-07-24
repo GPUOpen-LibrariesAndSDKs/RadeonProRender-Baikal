@@ -732,3 +732,8 @@ fr_int frContextCreateFramebufferFromGLTexture2D(fr_context context, fr_GLenum t
     return rprContextCreateFramebufferFromGLTexture2D(context, target, miplevel, texture, out_fb);
 }
 
+fr_int frLightSetGroupId(fr_light light, fr_uint groupId)
+{
+    return rprLightSetGroupId(light, groupId);
+}
+
