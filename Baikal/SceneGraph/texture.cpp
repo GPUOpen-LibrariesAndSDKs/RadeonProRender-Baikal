@@ -7,13 +7,13 @@ namespace Baikal
     RadeonRays::float3 Texture::ComputeAverageValue() const
     {
         auto avg = RadeonRays::float3();
+        auto num_elements = m_mip_sizes[0].x * m_mip_sizes[0].y * m_mip_sizes[0].z;
 
-        switch (m_format) {
+        switch (m_format)
+        {
         case Format::kRgba8:
         {
             auto data = reinterpret_cast<std::uint8_t*>(m_data.get());
-            auto num_elements = m_levels[0].x * m_levels[0].y * m_levels[0].z;
-
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -23,13 +23,11 @@ namespace Baikal
                 avg += RadeonRays::float3(r, g, b);
             }
 
-            avg *= (1.f / num_elements);
             break;
         }
         case Format::kRgba16:
         {
             auto data = reinterpret_cast<std::uint16_t*>(m_data.get());
-            auto num_elements = m_levels[0].x * m_levels[0].y * m_levels[0].z;
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -45,13 +43,11 @@ namespace Baikal
                 avg += RadeonRays::float3(hr, hg, hb);
             }
 
-            avg *= (1.f / num_elements);
             break;
         }
         case Format::kRgba32:
         {
             auto data = reinterpret_cast<float*>(m_data.get());
-            auto num_elements = m_levels[0].x * m_levels[0].y * m_levels[0].z;
 
             for (auto i = 0; i < num_elements; ++i)
             {
@@ -62,12 +58,13 @@ namespace Baikal
                 avg += RadeonRays::float3(r, g, b);
             }
 
-            avg *= (1.f / num_elements);
             break;
         }
         default:
-            break;
+            throw std::runtime_error("Texture::ComputeAverageValue(): unsupported format");
         }
+
+        avg *= (1.f / num_elements);
 
         return avg;
     }
@@ -102,18 +99,20 @@ namespace Baikal
 
     Texture::Texture(
         char* data,
-        const std::vector<RadeonRays::int3> &levels,
+        std::vector<RadeonRays::int3> const& mip_sizes,
         Format format)
         : m_data(data)
         , m_format(format)
-        , m_generate_mipmap(false)
+        , m_needs_mip_generation(false)
     {
-        if (levels.empty())
-            throw std::logic_error("Texture::Texture(...): texture 'levels' is empty");
+        if (mip_sizes.empty())
+        {
+            throw std::logic_error("Texture::Texture(...): mip_sizes is empty");
+        }
 
-        m_levels = levels;
+        m_mip_sizes = mip_sizes;
 
-        std::transform(m_levels.begin(), m_levels.end(), m_levels.begin(),
+        std::transform(m_mip_sizes.begin(), m_mip_sizes.end(), m_mip_sizes.begin(),
             [](RadeonRays::int3 size)
             {
                 size.z = std::max(1, size.z);
@@ -128,34 +127,36 @@ namespace Baikal
         bool generate_mipmap)
         : m_data(data)
         , m_format(format)
-        , m_generate_mipmap(generate_mipmap)
+        , m_needs_mip_generation(generate_mipmap)
     {
-        m_levels.push_back(
+        m_mip_sizes.push_back(
         {
             size.x,
             size.y,
             std::max(1, size.z)
         });
 
-        if (generate_mipmap)
+        if (m_needs_mip_generation)
         {
-            int width = (int)std::max(1.f, (float)std::ceil(m_levels[0].x / 2.0));
-            int height = (int)std::max(1.f, (float)std::ceil(m_levels[0].y / 2.0));
+            int width  = (int)std::max(1.f, (float)std::ceil(m_mip_sizes[0].x / 2.0));
+            int height = (int)std::max(1.f, (float)std::ceil(m_mip_sizes[0].y / 2.0));
+            int depth  = (int)std::max(1.f, (float)std::ceil(m_mip_sizes[0].z / 2.0));
 
             while ((width != 1) || (height != 1))
             {
-                m_levels.push_back(
+                m_mip_sizes.push_back(
                 {
                     width,
                     height,
-                    1
+                    depth,
                 });
 
-                width = (int)std::max(1.f, (float)std::ceil(width / 2.0));
+                width  = (int)std::max(1.f, (float)std::ceil(width  / 2.0));
                 height = (int)std::max(1.f, (float)std::ceil(height / 2.0));
+                depth  = (int)std::max(1.f, (float)std::ceil(depth  / 2.0));
             }
 
-            m_levels.push_back({ 1, 1, 1});
+            m_mip_sizes.push_back({1, 1, 1});
         }
     }
 
@@ -163,7 +164,8 @@ namespace Baikal
     {
         std::uint32_t component_size = 1;
 
-        switch (format) {
+        switch (format)
+        {
         case Format::kRgba8:
             component_size = 1;
             break;
@@ -174,7 +176,7 @@ namespace Baikal
             component_size = 4;
             break;
         default:
-            throw std::runtime_error("Texture::Texture(...): unsupported format");
+            throw std::runtime_error("Texture::GetPixelSize(...): unsupported format");
         }
 
         return 4 * component_size;

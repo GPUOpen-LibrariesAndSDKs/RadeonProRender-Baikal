@@ -26,9 +26,6 @@ THE SOFTWARE.
 #define TEXTURED_INPUT_HAS_TEXTURE(x) ((x).int_value.value[3] != -1)
 #define TEXTURED_INPUT_GET_COLOR(x) ((x).float_value.value.xyz)
 
-// maximun number of mimmap pyramid levels
-#define MAX_LEVEL_NUM (14)
-
 // Matrix
 typedef struct
 {
@@ -228,40 +225,25 @@ enum TextureFormat
 typedef
 struct _MipLevel
 {
-    int width;
-    int height;
-    int pitch;
-    int offset;
-} MipLevel;
-
-/// mipmap description
-typedef
-struct _MipmapPyramid
-{
-    int level_num;
-    MipLevel level_info[MAX_LEVEL_NUM];
-    // unused field for alignment
-    int alignment;
-} MipmapPyramid;
-
-/// Texture description
-typedef
-struct _Texture
-{
-    // Width, height and depth
+    // Width, height, depth
     int w;
     int h;
     int d;
     // Offset in texture data array
     int dataoffset;
+} MipLevel;
+
+/// Texture description
+typedef
+struct _Texture
+{
+    // mipmap info
+    int mip_offset;
+    int mip_count;
     // Format
     int fmt;
-    int extra;
-    // mipmap info
-    int mipmap_enabled;
-    int mipmap_gen_required; // specify that baikal should generate on its own
-    int mipmap_index;
     // unused field for alignment
+    // TODO: use this flag as 'needs mipmap generation'
     int alignment;
 } Texture;
 

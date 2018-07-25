@@ -3,8 +3,8 @@ set(CONTROLLERS_SOURCES
     Controllers/clw_scene_controller.h
     Controllers/scene_controller.h
     Controllers/scene_controller.inl)
-    
-set(ESTIMATORS_SOURCES 
+
+set(ESTIMATORS_SOURCES
     Estimators/estimator.h
     Estimators/path_tracing_estimator.cpp
     Estimators/path_tracing_estimator.h)
@@ -12,7 +12,7 @@ set(ESTIMATORS_SOURCES
 set(OUTPUT_SOURCES
     Output/clwoutput.h
     Output/output.h)
-    
+
 set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
     PostEffects/post_effect.h
@@ -20,7 +20,7 @@ set(POSTEFFECT_SOURCES
     PostEffects/wavelet_denoiser.h
     PostEffects/AreaMap33.h
     )
-    
+
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp
     Renderers/adaptive_renderer.h
@@ -54,8 +54,8 @@ set(UTILS_SOURCES
     Utils/mkpath.h
     Utils/cl_inputmap_generator.cpp
     Utils/cl_inputmap_generator.h
-    Utils/cl_mipmap.cpp
-    Utils/cl_mipmap.h
+    Utils/cl_mipmap_generator.cpp
+    Utils/cl_mipmap_generator.h
     Utils/cl_program.cpp
     Utils/cl_program.h
     Utils/cl_program_manager.cpp
@@ -85,11 +85,11 @@ set(SCENEGRAPH_SOURCES
     SceneGraph/uberv2material.h
     SceneGraph/inputmap.h
     SceneGraph/inputmaps.h)
-    
+
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
     SceneGraph/Collector/collector.h)
-       
+
 set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
@@ -137,7 +137,7 @@ set(SOURCES
     ${XML_SOURCES}
     ${KERNELS_SOURCES}
     )
-    
+
 source_group("Controllers" FILES ${CONTROLLERS_SOURCES})
 source_group("Estimators" FILES ${ESTIMATORS_SOURCES})
 source_group("Output" FILES ${OUTPUT_SOURCES})
@@ -192,4 +192,4 @@ if (WIN32)
 elseif (UNIX)
     target_compile_options(Baikal PUBLIC -Wall -Werror)
 endif (WIN32)
-    
+

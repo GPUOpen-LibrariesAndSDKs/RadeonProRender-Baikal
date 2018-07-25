@@ -393,7 +393,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.material_attributes);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
-        shadekernel.SetArg(argc++, scene.mipmap);
+        shadekernel.SetArg(argc++, scene.mip_levels);
         shadekernel.SetArg(argc++, scene.envmapidx);
         shadekernel.SetArg(argc++, scene.lights);
         shadekernel.SetArg(argc++, scene.light_distributions);
@@ -446,7 +446,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.material_attributes);
         shadekernel.SetArg(argc++, scene.textures);
         shadekernel.SetArg(argc++, scene.texturedata);
-        shadekernel.SetArg(argc++, scene.mipmap);
+        shadekernel.SetArg(argc++, scene.mip_levels);
         shadekernel.SetArg(argc++, scene.envmapidx);
         shadekernel.SetArg(argc++, scene.lights);
         shadekernel.SetArg(argc++, scene.light_distributions);
@@ -492,7 +492,7 @@ namespace Baikal
         sample_kernel.SetArg(argc++, scene.volumes);
         sample_kernel.SetArg(argc++, scene.textures);
         sample_kernel.SetArg(argc++, scene.texturedata);
-        sample_kernel.SetArg(argc++, scene.mipmap);
+        sample_kernel.SetArg(argc++, scene.mip_levels);
         sample_kernel.SetArg(argc++, rand_uint());
         sample_kernel.SetArg(argc++, m_render_data->random);
         sample_kernel.SetArg(argc++, m_render_data->sobolmat);
@@ -532,7 +532,7 @@ namespace Baikal
         misskernel.SetArg(argc++, scene.envmapidx);
         misskernel.SetArg(argc++, scene.textures);
         misskernel.SetArg(argc++, scene.texturedata);
-        misskernel.SetArg(argc++, scene.mipmap);
+        misskernel.SetArg(argc++, scene.mip_levels);
         misskernel.SetArg(argc++, m_render_data->paths);
         misskernel.SetArg(argc++, scene.volumes);
         misskernel.SetArg(argc++, output);
@@ -722,7 +722,7 @@ namespace Baikal
         misskernel.SetArg(argc++, scene.envmapidx);
         misskernel.SetArg(argc++, scene.textures);
         misskernel.SetArg(argc++, scene.texturedata);
-        misskernel.SetArg(argc++, scene.mipmap);
+        misskernel.SetArg(argc++, scene.mip_levels);
         misskernel.SetArg(argc++, m_render_data->paths);
         misskernel.SetArg(argc++, scene.volumes);
         misskernel.SetArg(argc++, output);

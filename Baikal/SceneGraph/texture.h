@@ -23,7 +23,7 @@
  /**
   \file texture.h
   \author Dmitry Kozlov
-  \version 1.0
+  \version 1.1
   \brief Contains declaration of a texture class.
   */
 #pragma once
@@ -31,10 +31,11 @@
 #include "math/float3.h"
 #include "math/float2.h"
 #include "math/int3.h"
+#include "scene_object.h"
 #include <memory>
 #include <string>
+#include <cassert>
 
-#include "scene_object.h"
 
 namespace Baikal
 {
@@ -70,13 +71,22 @@ namespace Baikal
         void SetData(char* data, const std::vector<RadeonRays::int3> &level_sizes, Format format);
 
         // Get texture dimensions
-        RadeonRays::int3 GetSize() const;
+        RadeonRays::int3 GetSize(std::size_t mip_level = 0) const;
+        // Number of mip levels
+        std::size_t GetMipLevelCount() const;
+        // Checks that generation of the mipmap is required
+        bool NeedsMipGeneration() const;
+
         // Get texture raw data
         char const* GetData() const;
+
         // Get texture format
         Format GetFormat() const;
+
         // Get data size in bytes
         std::size_t GetSizeInBytes() const;
+        // Get size in bytes of specified level
+        std::size_t GetLevelSizeInBytes(std::size_t mip_level) const;
 
         // Average normalized value
         RadeonRays::float3 ComputeAverageValue() const;
@@ -85,19 +95,9 @@ namespace Baikal
         Texture(Texture const&) = delete;
         Texture& operator = (Texture const&) = delete;
 
-        // returns specs of each mipmap level for this texture
-        std::vector<RadeonRays::int3> GetLevelsInfo() const
-        { return m_levels; }
-
-        // marks that generation of the mipmap is required
-        bool MipmapGenerationReq() const
-        { return m_generate_mipmap; }
-
-        // marks that texture has mipmap support
-        bool MipmapEnabled() const;
-
         // helper function, returns pixel (texel) size depends on format
         static int GetPixelSize(Texture::Format format);
+
     protected:
         // Constructor
         Texture();
@@ -118,19 +118,19 @@ namespace Baikal
         std::unique_ptr<char[]> m_data;
         // Format
         Format m_format;
+        // flag to determine that mipmap generation is required
+        bool m_needs_mip_generation;
         // stores texture level dims, if mipmap enabled holds all pyramid level sizes
         // in other ways stores only one image dim for original texture
-        std::vector<RadeonRays::int3> m_levels;
-        // flag to determine that mipmap generation is required
-        bool m_generate_mipmap;
+        std::vector<RadeonRays::int3> m_mip_sizes;
     };
 
     inline Texture::Texture()
         : m_data(new char[16])
         , m_format(Format::kRgba8)
-        , m_generate_mipmap(false)
+        , m_needs_mip_generation(false)
     {
-        m_levels.push_back({ 2, 2, 1 });
+        m_mip_sizes.push_back({ 2, 2, 1 });
 
         // Create checkerboard by default
         m_data[0] = m_data[1] = m_data[2] = m_data[3] = (char)0xFF;
@@ -139,37 +139,46 @@ namespace Baikal
         m_data[12] = m_data[13] = m_data[14] = m_data[15] = (char)0x00;
     }
 
-    inline bool Texture::MipmapEnabled() const
-    { return m_generate_mipmap || (m_levels.size() > 1); }
-
     inline void Texture::SetData(char* data, const RadeonRays::int3 &size, Format format)
     {
         SetData(data, std::vector<RadeonRays::int3>{ size }, format);
     }
 
-    inline void Texture::SetData(char* data, const std::vector<RadeonRays::int3> &level_sizes, Format format)
+    inline void Texture::SetData(char* data, std::vector<RadeonRays::int3> const& mip_sizes, Format format)
     {
-        if (level_sizes.empty())
+        if (mip_sizes.empty())
         {
             throw std::logic_error(
                 "Texture::SetData(...): 'level_sizes' isn't containg any level info");
         }
 
         m_data.reset(data);
-        m_levels = level_sizes;
+        m_mip_sizes = mip_sizes;
 
-        if (m_levels[0].z == 0)
+        std::transform(m_mip_sizes.begin(), m_mip_sizes.end(), m_mip_sizes.begin(),
+            [](RadeonRays::int3 size)
         {
-            m_levels[0].z = 1;
-        }
+            size.z = std::max(1, size.z);
+            return size;
+        });
 
         m_format = format;
         SetDirty(true);
     }
 
-    inline RadeonRays::int3 Texture::GetSize() const
+    inline RadeonRays::int3 Texture::GetSize(std::size_t mip_level) const
     {
-        return m_levels[0];
+        return m_mip_sizes[mip_level];
+    }
+
+    inline std::size_t Texture::GetMipLevelCount() const
+    {
+        return m_mip_sizes.size();
+    }
+
+    inline bool Texture::NeedsMipGeneration() const
+    {
+        return m_needs_mip_generation;
     }
 
     inline char const* Texture::GetData() const
@@ -184,13 +193,24 @@ namespace Baikal
 
     inline std::size_t Texture::GetSizeInBytes() const
     {
-        auto pixel_size = GetPixelSize(m_format);
-        int texture_size = 0;
-        for (const auto & level : m_levels)
+        assert(!m_mip_sizes.empty());
+
+        std::size_t texture_size = 0;
+
+        for (std::size_t i = 0; i < GetMipLevelCount(); ++i)
         {
-            texture_size += pixel_size * level.x * level.y * level.z;
+            texture_size += GetLevelSizeInBytes(i);
         }
 
         return texture_size;
+    }
+
+    inline std::size_t Texture::GetLevelSizeInBytes(std::size_t mip_level) const
+    {
+        auto pixel_size = GetPixelSize(m_format);
+
+        auto const& level_size = m_mip_sizes[mip_level];
+
+        return pixel_size * level_size.x * level_size.y * level_size.z;
     }
 }

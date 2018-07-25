@@ -29,47 +29,43 @@ THE SOFTWARE.
 
 namespace Baikal
 {
-    class Mipmap : protected ClwClass
+    class CLMipmapGenerator : protected ClwClass
     {
     public:
-        using Ptr = std::shared_ptr<Mipmap>;
+        using Ptr = std::shared_ptr<CLMipmapGenerator>;
 
         static Ptr Create(CLWContext context, const CLProgramManager *program_manager);
 
         // generates images in mipmap levels
         // note: texture already should contain correct mipmap indexes
-        // the function only generates images and save result with correct offsets in texture_data
-        void Build(
-            ClwScene::Texture* texture,
-            std::size_t texture_num,
-            CLWBuffer<ClwScene::MipmapPyramid> mipmap_info,
-            CLWBuffer<char> texture_data);
+        // the function only generates images and save result with correct offsets in texturedata
+        void BuildMipPyramid(
+            Texture::Ptr texture,
+            std::size_t texture_index,
+            CLWBuffer<ClwScene::Texture> textures,
+            CLWBuffer<ClwScene::MipLevel> mip_levels,
+            CLWBuffer<char> texturedata);
 
     protected:
-        Mipmap(CLWContext context, const CLProgramManager *program_manager);
+        CLMipmapGenerator(CLWContext context, const CLProgramManager *program_manager);
 
     private:
+        void Downsample(
+            Texture::Ptr texture,
+            std::size_t texture_index,
+            std::size_t mip_level,
+            CLWBuffer<ClwScene::Texture> textures,
+            CLWBuffer<ClwScene::MipLevel> mip_levels,
+            CLWBuffer<char> texturedata);
 
-        void BuildMipPyramid(const ClwScene::Texture& texture, CLWBuffer<char> texture_data);
+        void ComputeWeights(CLWBuffer<RadeonRays::float4> weights, bool is_rounding_necessary);
 
-        void Downscale(
-            CLWBuffer<char> texture_data, int format,
-            std::uint32_t dst_offset, std::uint32_t dst_width,
-            std::uint32_t dst_pitch, std::uint32_t dst_height,
-            std::uint32_t src_offset, std::uint32_t src_width,
-            std::uint32_t src_pitch, std::uint32_t src_height);
+        CLWKernel GetDownsampleXKernel(Texture::Format format);
+        CLWKernel GetDownsampleYKernel(Texture::Format format);
 
-        void ComputeWeights(CLWBuffer<RadeonRays::float4> weights, int size, bool is_rounding_necessary);
-
-        static int PixelBytes(int format);
-
-        // OpenCL context
-        CLWContext m_context;
         // buffer for temporary image scaled in x dimension
         CLWBuffer<char> m_tmp_buffer;
         // buffers for weights
         CLWBuffer<RadeonRays::float4> m_x_weights, m_y_weights;
-        // cpu buffer to store mip levels info
-        std::vector<ClwScene::MipmapPyramid> m_mipmap_info;
     };
 }

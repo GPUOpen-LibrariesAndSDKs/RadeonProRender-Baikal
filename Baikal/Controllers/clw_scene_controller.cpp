@@ -26,11 +26,6 @@ using namespace RadeonRays;
 
 namespace Baikal
 {
-    static std::size_t align16(std::size_t value)
-    {
-        return (value + 0xF) / 0x10 * 0x10;
-    }
-
     static CameraType GetCameraType(Camera& camera)
     {
         auto perspective = dynamic_cast<PerspectiveCamera*>(&camera);
@@ -56,7 +51,7 @@ namespace Baikal
     , m_api(api)
     , m_default_material(UberV2Material::Create())
     , m_program_manager(program_manager)
-    , m_mipmap(Mipmap::Create(context, program_manager))
+    , m_mipmap_generator(CLMipmapGenerator::Create(context, program_manager))
     {
         auto acc_type = "fatbvh";
         auto builder_type = "sah";
@@ -842,95 +837,126 @@ namespace Baikal
     {
         // Get new buffer size
         std::size_t tex_buffer_size = tex_collector.GetNumItems();
-        std::size_t tex_data_buffer_size = 0;
-        std::size_t mipmap_buffer_size = 0;
 
         if (tex_buffer_size == 0)
         {
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(1, CL_MEM_READ_ONLY);
             out.texturedata = m_context.CreateBuffer<char>(1, CL_MEM_READ_ONLY);
-            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(1, CL_MEM_READ_ONLY);
+            out.mip_levels = m_context.CreateBuffer<ClwScene::MipLevel>(1, CL_MEM_READ_ONLY);
             return;
         }
 
-        // Recreate material buffer if it needs resize
+        // Recreate texture description buffer if it needs resize
         if (tex_buffer_size > out.textures.GetElementCount())
         {
-            // Create material buffer
+            // Create texture description buffer
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(tex_buffer_size, CL_MEM_READ_ONLY);
         }
 
         ClwScene::Texture* textures = nullptr;
 
-        std::size_t num_textures_written = 0;
-
-        // Map GPU materials buffer
+        // Map GPU texture buffer
         m_context.MapBuffer(0, out.textures, CL_MAP_WRITE, &textures).Wait();
 
-        // Update material bundle first to be able to track differences
+        // Update texture bundle first to be able to track differences
         out.texture_bundle.reset(tex_collector.CreateBundle());
 
         // Create texture iterator
         std::unique_ptr<Iterator> tex_iter(tex_collector.CreateIterator());
 
+        std::size_t num_textures_written = 0;
+        std::size_t mip_levels_buffer_size = 0;
+
         // Iterate and serialize
-        int mip_index_counter = -1;
         for (; tex_iter->IsValid(); tex_iter->Next())
         {
             auto tex = tex_iter->ItemAs<Texture>();
 
-            int mip_index = tex->MipmapEnabled() ?
-                (++mip_index_counter) : (-1);
-
-            (textures + num_textures_written)->dataoffset = (int)tex_data_buffer_size;
-
-            WriteTexture(*tex, tex_data_buffer_size, textures + num_textures_written, mip_index);
+            WriteTexture(*tex, textures + num_textures_written, (int)mip_levels_buffer_size);
 
             ++num_textures_written;
 
-            tex_data_buffer_size += align16(tex->GetSizeInBytes());
+            mip_levels_buffer_size += tex->GetMipLevelCount();
         }
 
-        // if there is textures with mipmap levels
-        if (out.mipmap.GetElementCount() < mip_index_counter + 1)
-        {
-            // Create material buffer
-            out.mipmap = m_context.CreateBuffer<ClwScene::MipmapPyramid>(mip_index_counter + 1, CL_MEM_READ_ONLY);
-        }
-
-        // Unmap material buffer
+        // Unmap texture buffer
         m_context.UnmapBuffer(0, out.textures, textures);
 
-        // Recreate material buffer if it needs resize
-        if (tex_data_buffer_size > out.texturedata.GetElementCount())
+        // Recreate mip level buffer if it needs resize
+        if (mip_levels_buffer_size > out.mip_levels.GetElementCount())
         {
-            // Create material buffer
-            out.texturedata = m_context.CreateBuffer<char>(tex_data_buffer_size, CL_MEM_READ_ONLY);
+            // Create mip level buffer
+            out.mip_levels = m_context.CreateBuffer<ClwScene::MipLevel>(mip_levels_buffer_size, CL_MEM_READ_ONLY);
         }
 
-        char* data = nullptr;
-        std::size_t num_bytes_written = 0;
+        ClwScene::MipLevel* mip_levels = nullptr;
+        // Map GPU mip levels buffer
+        m_context.MapBuffer(0, out.mip_levels, CL_MAP_WRITE, &mip_levels).Wait();
 
-        tex_iter->Reset();
+        std::size_t num_mip_levels_written = 0;
+        std::size_t texturedata_buffer_size = 0;
 
-        // Map GPU materials buffer
-        m_context.MapBuffer(0, out.texturedata, CL_MAP_WRITE, &data).Wait();
-
-        // Write texture data for all textures
-        for (; tex_iter->IsValid(); tex_iter->Next())
+        // Iterate and serialize
+        for (tex_iter->Reset(); tex_iter->IsValid(); tex_iter->Next())
         {
             auto tex = tex_iter->ItemAs<Texture>();
 
-            WriteTextureData(*tex, data + num_bytes_written);
-
-            num_bytes_written += align16(tex->GetSizeInBytes());
+            for (std::size_t i = 0; i < tex->GetMipLevelCount(); ++i)
+            {
+                WriteMipLevel(*tex, mip_levels + num_mip_levels_written, i, (int)texturedata_buffer_size);
+                ++num_mip_levels_written;
+                // TODO: align to 16 bytes
+                texturedata_buffer_size += tex->GetLevelSizeInBytes(i);
+            }
         }
 
-        // Unmap material buffer
-        m_context.UnmapBuffer(0, out.texturedata, data);
+        // Unmap mip levels buffer
+        m_context.UnmapBuffer(0, out.mip_levels, mip_levels);
 
-        // build mipmap for all marked textures
-        m_mipmap->Build(textures, num_textures_written, out.mipmap, out.texturedata);
+        // Recreate texture data buffer if it needs resize
+        if (texturedata_buffer_size > out.texturedata.GetElementCount())
+        {
+            // Create texture data buffer
+            // We need CL_MEM_READ_WRITE to allow CLMipMapGenerator kernels to write data in this buffer
+            out.texturedata = m_context.CreateBuffer<char>(texturedata_buffer_size, CL_MEM_READ_WRITE);
+        }
+
+        char* texturedata = nullptr;
+        std::size_t num_bytes_written = 0;
+
+        // Map GPU texture data buffer
+        m_context.MapBuffer(0, out.texturedata, CL_MAP_WRITE, &texturedata).Wait();
+
+        // Write texture data for all textures
+        for (tex_iter->Reset(); tex_iter->IsValid(); tex_iter->Next())
+        {
+            auto tex = tex_iter->ItemAs<Texture>();
+
+            WriteTextureData(*tex, texturedata + num_bytes_written);
+
+            // TODO: align each mip level to 16 bytes
+            num_bytes_written += tex->GetSizeInBytes();
+
+        }
+
+        // Unmap texture data buffer
+        m_context.UnmapBuffer(0, out.texturedata, texturedata);
+
+        // Generate missing mipmaps
+        std::size_t texture_index = 0;
+        for (tex_iter->Reset(); tex_iter->IsValid(); tex_iter->Next())
+        {
+            auto tex = tex_iter->ItemAs<Texture>();
+
+            // TODO: check if mip_levels buffer has been resized?
+            if (tex->NeedsMipGeneration())
+            {
+                m_mipmap_generator->BuildMipPyramid(tex, texture_index, out.textures, out.mip_levels, out.texturedata);
+            }
+
+            ++texture_index;
+        }
+
     }
 
 #ifndef NDEBUG
@@ -1234,34 +1260,31 @@ namespace Baikal
         }
     }
 
-    void ClwSceneController::WriteTexture(Texture const& texture, std::size_t data_offset, void* texture_data, int mipmap_index) const
+    void ClwSceneController::WriteTexture(Texture const& texture, void* data, int mip_levels_offset) const
     {
-        auto clw_texture = reinterpret_cast<ClwScene::Texture*>(texture_data);
+        auto clw_texture = reinterpret_cast<ClwScene::Texture*>(data);
 
-        auto dim = texture.GetSize();
-
-        clw_texture->w = dim.x;
-        clw_texture->h = dim.y;
-        clw_texture->d = dim.z;
+        clw_texture->mip_offset = mip_levels_offset;
+        clw_texture->mip_count = (int)texture.GetMipLevelCount();
         clw_texture->fmt = GetTextureFormat(texture);
-        clw_texture->dataoffset = static_cast<int>(data_offset);
-        // mark that texture has mipmap support
-        clw_texture->mipmap_enabled =
-            (texture.GetLevelsInfo().size() > 1) ? (1) : (0);
-        clw_texture->mipmap_index = mipmap_index;
-        clw_texture->mipmap_gen_required = texture.MipmapGenerationReq() ? (1) : (0);
+    }
+
+    void ClwSceneController::WriteMipLevel(Texture const& texture, void* data, std::size_t level, int texturedata_offset) const
+    {
+        auto clw_mip_level = reinterpret_cast<ClwScene::MipLevel*>(data);
+
+        auto const& mip_level_size = texture.GetSize(level);
+        clw_mip_level->w = mip_level_size.x;
+        clw_mip_level->h = mip_level_size.y;
+        clw_mip_level->d = mip_level_size.z;
+        clw_mip_level->dataoffset = texturedata_offset;
+
     }
 
     void ClwSceneController::WriteTextureData(Texture const& texture, void* data) const
     {
         auto begin = texture.GetData();
-
-        // if texture marked as Baikal generation mipmapm
-        // than we should copy only first image, and all levels otherwise
-        auto offset = texture.MipmapGenerationReq() ?
-            (Texture::GetPixelSize(texture.GetFormat()) * texture.GetSize().x * texture.GetSize().y) : (texture.GetSizeInBytes());
-
-        auto end = begin + offset;
+        auto end = texture.NeedsMipGeneration() ? begin + texture.GetLevelSizeInBytes(0) : begin + texture.GetSizeInBytes();
         std::copy(begin, end, static_cast<char*>(data));
     }
 

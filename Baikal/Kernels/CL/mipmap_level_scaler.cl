@@ -25,16 +25,61 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/utils.cl>
+#include <../Baikal/Kernels/CL/texture.cl>
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-#define DST_BUFFER_ARG_LIST GLOBAL uchar* restrict dst_buf, \
-    /* in bytes */ const int dst_offset, /* in pixels */const int dst_width, \
-    /* in pixels */const int dst_height, /* in bytes */ const int dst_pitch
-    
-#define SRC_BUFFER_ARG_LIST GLOBAL uchar* restrict src_buf, \
-    /* in bytes */ const int src_offset, /* in pixels */const int src_width, \
-    /* in pixels */const int src_height, /* in bytes */ const int src_pitch
+KERNEL
+void ComputeWeights_NoRounding(
+    GLOBAL float3* restrict weights,
+    // size of weight vector
+    const int size)
+{
+    int id = get_global_id(0);
+
+    if (id < size)
+    {
+        weights[id].x = .0f;
+        weights[id].y = .5f;
+        weights[id].z = .5f;
+    }
+}
+
+KERNEL
+void ComputeWeights_RoundingUp(
+    GLOBAL float3* restrict weights,
+    // size of weight vector
+    const int size)
+{
+    int id = get_global_id(0);
+
+    float denominator = 2.f * size - 1.f;
+
+    // first weight
+    if (id == 0)
+    {
+        weights[id].x = .0f;
+        weights[id].y = ((float)size) / denominator;
+        weights[id].z = ((float)size - 1.f) / denominator;
+        return;
+    }
+
+    // last weight
+    if (id == size - 1)
+    {
+        weights[id].x = ((float)size - 1.f) / denominator;
+        weights[id].y = ((float)size) / denominator;
+        weights[id].z = .0f;
+        return;
+    }
+
+    if (id < size - 1)
+    {
+        weights[id].x = ((float)size - (float)id - 1.f) / denominator;
+        weights[id].y = ((float)size) / denominator;
+        weights[id].z = ((float)id) / denominator;
+    }
+}
 
 // computes type conversion to float/float4 and multiplication
 inline float ComputeMult_uchar(
@@ -123,22 +168,37 @@ inline void SetValue_half4(
 }
 
 // level scaler kernels scheme
+#define TEXEL_SIZE_uchar 1
+#define TEXEL_SIZE_half  2
+#define TEXEL_SIZE_float 4
+
+#define TEXEL_SIZE_uchar4 4
+#define TEXEL_SIZE_half4  8
+#define TEXEL_SIZE_float4 16
 
 #define SCALE_X_PRODUCER(type)\
     KERNEL\
     void ScaleX_##type(\
+        int texture_index,\
+        int mip_level_index,\
         GLOBAL float3 const* restrict weights,\
-        DST_BUFFER_ARG_LIST,\
-        SRC_BUFFER_ARG_LIST)\
+        TEXTURE_ARG_LIST,\
+        GLOBAL uchar const* restrict tmp_buffer\
+    )\
     {\
         int id = get_global_id(0);\
-        int dst_x = id % dst_width;\
-        int dst_y = (id - dst_x) / dst_width;\
+        \
+        GLOBAL Texture const* texture = textures + texture_index;\
+        MipLevel src_mip_level = mip_levels[texture->mip_offset + mip_level_index];\
+        MipLevel dst_mip_level = mip_levels[texture->mip_offset + mip_level_index + 1];\
+        \
+        int dst_x = id % dst_mip_level.w;\
+        int dst_y = id / dst_mip_level.w;\
         int src_x = 2 * dst_x;\
         int src_y = dst_y;\
         \
-        GLOBAL type * dst_row = (GLOBAL type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
-        GLOBAL type * src_row = (GLOBAL type*) (src_buf + src_offset + src_y * src_pitch);\
+        GLOBAL type * dst_row = (GLOBAL type*) (tmp_buffer + dst_y * dst_mip_level.w * TEXEL_SIZE_##type);\
+        GLOBAL type * src_row = (GLOBAL type*) (texturedata + src_mip_level.dataoffset + src_y * src_mip_level.w * TEXEL_SIZE_##type);\
         \
         if (dst_x == 0)\
         {\
@@ -148,7 +208,7 @@ inline void SetValue_half4(
             return;\
         }\
         \
-        if (dst_x == dst_width - 1)\
+        if (dst_x == dst_mip_level.w - 1)\
         {\
             SetValue_##type(dst_row, dst_x, (\
                         ComputeMult_##type(src_row, src_x - 1, weights[dst_x].x) +\
@@ -156,34 +216,40 @@ inline void SetValue_half4(
             return;\
         }\
         \
-        if (id < dst_width * dst_height)\
+        if (id < dst_mip_level.w * src_mip_level.h)\
         {\
             SetValue_##type(dst_row, dst_x, (\
                         ComputeMult_##type(src_row, src_x - 1, weights[dst_x].x) +\
                         ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
                         ComputeMult_##type(src_row, src_x + 1, weights[dst_x].z)));\
         }\
-    }\
-
-
+    }
 
 #define SCALE_Y_PRODUCER(type)\
     KERNEL\
     void ScaleY_##type(\
+        int texture_index,\
+        int mip_level_index,\
         GLOBAL float3 const* restrict weights,\
-        DST_BUFFER_ARG_LIST,\
-        SRC_BUFFER_ARG_LIST)\
+        TEXTURE_ARG_LIST,\
+        GLOBAL uchar const* restrict tmp_buffer\
+    )\
     {\
         int id = get_global_id(0);\
-        int dst_x = id % dst_width;\
-        int dst_y = (int)((id - dst_x) / dst_width);\
+        \
+        GLOBAL Texture const* texture = textures + texture_index;\
+        MipLevel src_mip_level = mip_levels[texture->mip_offset + mip_level_index];\
+        MipLevel dst_mip_level = mip_levels[texture->mip_offset + mip_level_index + 1];\
+        \
+        int dst_x = id % dst_mip_level.w;\
+        int dst_y = id / dst_mip_level.w;\
         int src_x = dst_x;\
         int src_y = 2 * dst_y;\
         \
-        GLOBAL type * dst_row = (GLOBAL type*) (dst_buf + dst_offset + dst_y * dst_pitch);\
-        GLOBAL type * top_src_row = (GLOBAL type*) (src_buf + src_offset + (src_y - 1) * src_pitch);\
-        GLOBAL type * src_row = (GLOBAL type*) (src_buf + src_offset + src_y * src_pitch);\
-        GLOBAL type * bottom_src_row = (GLOBAL type*) (src_buf + src_offset + (src_y + 1) * src_pitch);\
+        GLOBAL type * dst_row        = (GLOBAL type*) (texturedata + dst_mip_level.dataoffset + dst_y * dst_mip_level.w * TEXEL_SIZE_##type);\
+        GLOBAL type * top_src_row    = (GLOBAL type*) (tmp_buffer + (src_y - 1) * dst_mip_level.w * TEXEL_SIZE_##type);\
+        GLOBAL type * src_row        = (GLOBAL type*) (tmp_buffer + src_y       * dst_mip_level.w * TEXEL_SIZE_##type);\
+        GLOBAL type * bottom_src_row = (GLOBAL type*) (tmp_buffer + (src_y + 1) * dst_mip_level.w * TEXEL_SIZE_##type);\
         \
         if (dst_y == 0)\
         {\
@@ -193,7 +259,7 @@ inline void SetValue_half4(
             return;\
         }\
         \
-        if (dst_y == dst_height - 1)\
+        if (dst_y == dst_mip_level.h - 1)\
         {\
             SetValue_##type(dst_row, dst_x, (\
                         ComputeMult_##type(top_src_row, src_x, weights[dst_y].x) +\
@@ -201,66 +267,14 @@ inline void SetValue_half4(
             return;\
         }\
         \
-        if (id < dst_width * dst_height)\
+        if (id < dst_mip_level.w * dst_mip_level.h)\
         {\
             SetValue_##type(dst_row, dst_x, (\
                         ComputeMult_##type(top_src_row, src_x, weights[dst_y].x) +\
                         ComputeMult_##type(src_row, src_x, weights[dst_y].y) +\
                         ComputeMult_##type(bottom_src_row, src_x, weights[dst_y].z)));\
         }\
-    }\
-
-__kernel
-void ComputeWeights_NoRounding(
-    GLOBAL float3* restrict weights,
-    // size of weight vector
-    const int size)
-{
-    int id = get_global_id(0);
-
-    if (id < size)
-    {
-        weights[id].x = .0f;
-        weights[id].y = .5f;
-        weights[id].z = .5f;
     }
-}
-
-__kernel
-void ComputeWeights_RoundingUp(
-    GLOBAL float3* restrict weights,
-    // size of weight vector
-    const int size)
-{
-    int id = get_global_id(0);
-
-    float denominator = 2.f * size - 1.f;
-
-    // first weight
-    if (id == 0)
-    {
-        weights[id].x = .0f;
-        weights[id].y = ((float)size) / denominator;
-        weights[id].z = ((float)size - 1.f) / denominator;
-        return;
-    }
-
-    // last weight
-    if (id == size - 1)
-    {
-        weights[id].x = ((float)size - 1.f) / denominator;
-        weights[id].y = ((float)size) / denominator;
-        weights[id].z = .0f;
-        return;
-    }
-
-    if (id < size - 1)
-    {
-        weights[id].x = ((float)size - (float)id - 1.f) / denominator;
-        weights[id].y = ((float)size) / denominator;
-        weights[id].z = ((float)id) / denominator;
-    }
-}
 
 // produce functions part
 

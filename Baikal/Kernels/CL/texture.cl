@@ -29,11 +29,11 @@ THE SOFTWARE.
 
 
 /// To simplify a bit
-#define TEXTURE_ARG_LIST __global Texture const* textures, __global char const* texturedata, __global MipmapPyramid const* mipmap
-#define TEXTURE_ARG_LIST_IDX(x) int x, __global Texture const* textures, __global char const* texturedata, __global MipmapPyramid const* mipmap
+#define TEXTURE_ARG_LIST __global Texture const* textures, __global MipLevel const* mip_levels, __global char const* texturedata
+#define TEXTURE_ARG_LIST_IDX(x) int x, __global Texture const* textures, __global MipLevel const* mip_levels, __global char const* texturedata
 #define TEXTURE_ARGS textures, texturedata, mipmap
 #define TEXTURE_ARGS_IDX(x) x, textures, texturedata, mipmap
-
+/*
 inline float4 ReadValue(__global char const* data, int fmt, float2 const uv, int width, int height)
 {
     // Calculate integer coordinates
@@ -53,7 +53,7 @@ inline float4 ReadValue(__global char const* data, int fmt, float2 const uv, int
         case RGBA32:
         {
             __global float4 const* data_f = (__global float4 const*)data;
-            
+
             // Get 4 values for linear filtering
             float4 val00 = *(data_f + width * y0 + x0);
             float4 val01 = *(data_f + width * y0 + x1);
@@ -220,7 +220,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
                     float4 bottom_val1 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x0];
                     float4 bottom_val2 = bottom_level_data[y0 * mip_pyramid.level_info[int_level].pitch + x1];
                     float4 bottom_val3 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x1];
-                    
+
                     float4 bottom_val = make_float4(
                         (1 - dx) * (1 - dy) * (bottom_val0.x + bottom_val1.x + bottom_val2.x + bottom_val3.x),
                         (1 - dx) * dy * (bottom_val0.y + bottom_val1.y + bottom_val2.y + bottom_val3.y),
@@ -231,7 +231,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
                     float4 top_val1 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x0];
                     float4 top_val2 = top_level_data[y0 * mip_pyramid.level_info[int_level + 1].pitch + x1];
                     float4 top_val3 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x1];
-                    
+
                     float4 top_val =  make_float4(
                         (1 - dx) * (1 - dy) * (top_val0.x + top_val1.x + top_val2.x + top_val3.x),
                         (1 - dx) * dy * (top_val0.y + top_val1.y + top_val2.y + top_val3.y),
@@ -253,7 +253,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
                     float4 bottom_val1 = vload_half4(y1 * mip_pyramid.level_info[int_level].pitch + x0, (__global half*)bottom_level_data);
                     float4 bottom_val2 = vload_half4(y0 * mip_pyramid.level_info[int_level].pitch + x1, (__global half*)bottom_level_data);
                     float4 bottom_val3 = vload_half4(y1 * mip_pyramid.level_info[int_level].pitch + x1, (__global half*)bottom_level_data);
-                    
+
                     float4 bottom_val = make_float4(
                         (1 - dx) * (1 - dy) * (bottom_val0.x + bottom_val1.x + bottom_val2.x + bottom_val3.x),
                         (1 - dx) * dy * (bottom_val0.y + bottom_val1.y + bottom_val2.y + bottom_val3.y),
@@ -264,7 +264,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
                    float4 top_val1 = vload_half4(y1 * mip_pyramid.level_info[int_level + 1].pitch + x0, (__global half*)bottom_level_data);
                    float4 top_val2 = vload_half4(y0 * mip_pyramid.level_info[int_level + 1].pitch + x1, (__global half*)bottom_level_data);
                    float4 top_val3 = vload_half4(y1 * mip_pyramid.level_info[int_level + 1].pitch + x1, (__global half*)bottom_level_data);
-                    
+
                     float4 top_val =  make_float4(
                         (1 - dx) * (1 - dy) * (top_val0.x + top_val1.x + top_val2.x + top_val3.x),
                         (1 - dx) * dy * (top_val0.y + top_val1.y + top_val2.y + top_val3.y),
@@ -286,7 +286,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
                     uchar4 bottom_val1 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x0];
                     uchar4 bottom_val2 = bottom_level_data[y0 * mip_pyramid.level_info[int_level].pitch + x1];
                     uchar4 bottom_val3 = bottom_level_data[y1 * mip_pyramid.level_info[int_level].pitch + x1];
-                    
+
                     float4 bottom_val = make_float4(
                         (1 - dx) * (1 - dy) * ((float)bottom_val0.x + (float)bottom_val1.x + (float)bottom_val2.x + (float)bottom_val3.x) / 255.f,
                         (1 - dx) * dy * ((float)bottom_val0.y + (float)bottom_val1.y + (float)bottom_val2.y +(float)bottom_val3.y) / 255.f,
@@ -297,7 +297,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
                     uchar4 top_val1 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x0];
                     uchar4 top_val2 = top_level_data[y0 * mip_pyramid.level_info[int_level + 1].pitch + x1];
                     uchar4 top_val3 = top_level_data[y1 * mip_pyramid.level_info[int_level + 1].pitch + x1];
-                    
+
                     float4 top_val =  make_float4(
                         (1 - dx) * (1 - dy) * ((float)top_val0.x + (float)top_val1.x + (float)top_val2.x + (float)top_val3.x) / 255.f,
                         (1 - dx) * dy * ((float)top_val0.y + (float)top_val1.y + (float)top_val2.y + (float)top_val3.y) / 255.f,
@@ -587,7 +587,7 @@ float3 Texture_SampleBump(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
     }
     }
 }
-
+*/
 
 
 #endif // TEXTURE_CL

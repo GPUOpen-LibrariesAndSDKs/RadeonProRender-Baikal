@@ -281,7 +281,7 @@ KERNEL void FillAOVsUberV2(
                 float2 derivY = make_float2(diffgeo.dudy, diffgeo.dvdy);
                 float delta_max_sqr = max(dot(derivX, derivX), dot(derivY, derivY));
                 float mip = 0.5 * log2(delta_max_sqr * 512.0f) / 8.0f;
-                aov_albedo[idx].xyz += mip;//kd;
+                aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
             }
 
