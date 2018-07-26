@@ -23,6 +23,7 @@ THE SOFTWARE.
 
 #include "basic.h"
 #include "../BaikalIO/image_io.h"
+#include <algorithm>
 
 using namespace Baikal;
 
@@ -116,7 +117,11 @@ Texture::Ptr CreateTexture(
     // add size of the laset level
     int size_in_bytes = total_width * total_height * TexelSize(texture.fmt);
     std::unique_ptr<char> mipmap_image(new char[size_in_bytes]);
-    memset(mipmap_image.get(), 0, size_in_bytes);
+
+    {
+        int* image_int = reinterpret_cast<int*>(mipmap_image.get());
+        std::fill(image_int, image_int + size_in_bytes / sizeof(int), 0x0000FF00);
+    }
 
     DrawMipmap(
         mipmap_image.get(),
@@ -244,12 +249,12 @@ TEST_F(MipmapTest, Mipmap_32bit)
     auto texturedata_size = clw_scene.texturedata.GetElementCount();
 
     std::unique_ptr<ClwScene::Texture[]> textures(new ClwScene::Texture[textures_num]);
-    std::unique_ptr<char[]> texturedata(new char[texturedata_size]);
     std::unique_ptr<ClwScene::MipLevel[]> mipmaps(new ClwScene::MipLevel[mipmap_num]);
+    std::unique_ptr<char[]> texturedata(new char[texturedata_size]);
 
     m_context->ReadBuffer<ClwScene::Texture>(0, clw_scene.textures, textures.get(), textures_num).Wait();
-    m_context->ReadBuffer<char>(0, clw_scene.texturedata, texturedata.get(), texturedata_size).Wait();
     m_context->ReadBuffer<ClwScene::MipLevel>(0, clw_scene.mip_levels, mipmaps.get(), mipmap_num).Wait();
+    m_context->ReadBuffer<char>(0, clw_scene.texturedata, texturedata.get(), texturedata_size).Wait();
 
     for (int i = 0; i < textures_num; i++)
     {
@@ -269,7 +274,7 @@ TEST_F(MipmapTest, Mipmap_32bit)
         std::string file_name = test_name();
         file_name.append("_");
         file_name.append(std::to_string(i));
-        file_name.append(".jpg");
+        file_name.append(".png");
         path.append(file_name);
 
         image_io->SaveImage(path, sg_texture);

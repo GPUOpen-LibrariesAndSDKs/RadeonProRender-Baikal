@@ -841,8 +841,8 @@ namespace Baikal
         if (tex_buffer_size == 0)
         {
             out.textures = m_context.CreateBuffer<ClwScene::Texture>(1, CL_MEM_READ_ONLY);
-            out.texturedata = m_context.CreateBuffer<char>(1, CL_MEM_READ_ONLY);
             out.mip_levels = m_context.CreateBuffer<ClwScene::MipLevel>(1, CL_MEM_READ_ONLY);
+            out.texturedata = m_context.CreateBuffer<char>(1, CL_MEM_READ_ONLY);
             return;
         }
 

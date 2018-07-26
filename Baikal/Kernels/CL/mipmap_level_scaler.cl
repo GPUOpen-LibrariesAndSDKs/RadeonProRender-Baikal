@@ -1,5 +1,5 @@
 /**********************************************************************
-Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ THE SOFTWARE.
 KERNEL
 void ComputeWeights_NoRounding(
     GLOBAL float3* restrict weights,
-    // size of weight vector
+    // Size of weight buffer
     const int size)
 {
     int id = get_global_id(0);
@@ -48,14 +48,14 @@ void ComputeWeights_NoRounding(
 KERNEL
 void ComputeWeights_RoundingUp(
     GLOBAL float3* restrict weights,
-    // size of weight vector
+    // Size of weight buffer
     const int size)
 {
     int id = get_global_id(0);
 
     float denominator = 2.f * size - 1.f;
 
-    // first weight
+    // First weight
     if (id == 0)
     {
         weights[id].x = .0f;
@@ -64,7 +64,7 @@ void ComputeWeights_RoundingUp(
         return;
     }
 
-    // last weight
+    // Last weight
     if (id == size - 1)
     {
         weights[id].x = ((float)size - 1.f) / denominator;
@@ -81,12 +81,18 @@ void ComputeWeights_RoundingUp(
     }
 }
 
-// computes type conversion to float/float4 and multiplication
+// Computes type conversion to uchar/float/half and multiplication
 inline float ComputeMult_uchar(
     GLOBAL uchar* buf, int index, float weight)
 {
     GLOBAL uchar *val = buf + index;
     return weight * ((float)(*val));
+}
+
+inline float ComputeMult_half(
+    GLOBAL half* buf, int index, float weight)
+{
+    return weight * vload_half(index, buf);
 }
 
 inline float ComputeMult_float(
@@ -96,12 +102,7 @@ inline float ComputeMult_float(
     return weight * (*val);
 }
 
-inline float ComputeMult_half(
-    GLOBAL half* buf, int index, float weight)
-{
-    return weight * vload_half(index, buf);
-}
-
+// Computes type conversion to uchar4/half4/float4 and multiplication
 inline float4 ComputeMult_uchar4(
     GLOBAL uchar4* buf, int index, float weight)
 {
@@ -113,29 +114,23 @@ inline float4 ComputeMult_uchar4(
         (float)(*val).w);
 }
 
-inline float4 ComputeMult_float4(
-    GLOBAL float4* buf, int index, float weight)
-{
-    return weight * (*(buf + index));
-}
-
 inline float4 ComputeMult_half4(
     GLOBAL half4* buf, int index, float weight)
 {
     return weight * vload_half4(index, (GLOBAL half*)buf);
 }
 
-// convert float/float4 type to user and store it in buffer by index
+inline float4 ComputeMult_float4(
+    GLOBAL float4* buf, int index, float weight)
+{
+    return weight * (*(buf + index));
+}
+
+// Convert uchar/half/float type to user and store it in buffer by index
 inline void SetValue_uchar(
     GLOBAL uchar* buf, int index, float value)
 {
     buf[index] = (uchar)value;
-}
-
-inline void SetValue_float(
-    GLOBAL half* buf, int index, float value)
-{
-    vstore_half(value, index, buf);
 }
 
 inline void SetValue_half(
@@ -144,6 +139,13 @@ inline void SetValue_half(
     buf[index] = value;
 }
 
+inline void SetValue_float(
+    GLOBAL half* buf, int index, float value)
+{
+    vstore_half(value, index, buf);
+}
+
+// Convert uchar4/half4/float4 type to user and store it in buffer by index
 inline void SetValue_uchar4(
     GLOBAL uchar4* buf, int index, float4 value)
 {
@@ -155,26 +157,19 @@ inline void SetValue_uchar4(
     buf[index] = uchar_val;
 }
 
-inline void SetValue_float4(
-    GLOBAL float4* buf, int index, float4 value)
-{
-    buf[index] = value;
-}
-
 inline void SetValue_half4(
     GLOBAL half4* buf, int index, float4 value)
 {
     vstore_half4(value, index, (GLOBAL half*)buf);
 }
 
-// level scaler kernels scheme
-#define TEXEL_SIZE_uchar 1
-#define TEXEL_SIZE_half  2
-#define TEXEL_SIZE_float 4
+inline void SetValue_float4(
+    GLOBAL float4* buf, int index, float4 value)
+{
+    buf[index] = value;
+}
 
-#define TEXEL_SIZE_uchar4 4
-#define TEXEL_SIZE_half4  8
-#define TEXEL_SIZE_float4 16
+// Level scaler kernels scheme
 
 #define SCALE_X_PRODUCER(type)\
     KERNEL\
@@ -197,31 +192,14 @@ inline void SetValue_half4(
         int src_x = 2 * dst_x;\
         int src_y = dst_y;\
         \
-        GLOBAL type * dst_row = (GLOBAL type*) (tmp_buffer + dst_y * dst_mip_level.w * TEXEL_SIZE_##type);\
-        GLOBAL type * src_row = (GLOBAL type*) (texturedata + src_mip_level.dataoffset + src_y * src_mip_level.w * TEXEL_SIZE_##type);\
-        \
-        if (dst_x == 0)\
-        {\
-            SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
-                        ComputeMult_##type(src_row, src_x + 1, weights[dst_x].z)));\
-            return;\
-        }\
-        \
-        if (dst_x == dst_mip_level.w - 1)\
-        {\
-            SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(src_row, src_x - 1, weights[dst_x].x) +\
-                        ComputeMult_##type(src_row, src_x, weights[dst_x].y)));\
-            return;\
-        }\
-        \
+        GLOBAL type * dst_row = (GLOBAL type*) (tmp_buffer) + dst_y * dst_mip_level.w;\
+        GLOBAL type * src_row = (GLOBAL type*) (texturedata + src_mip_level.dataoffset) + src_y * src_mip_level.w;\
         if (id < dst_mip_level.w * src_mip_level.h)\
         {\
             SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(src_row, src_x - 1, weights[dst_x].x) +\
+                        ComputeMult_##type(src_row, (src_x - 1) % src_mip_level.w, weights[dst_x].x) +\
                         ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
-                        ComputeMult_##type(src_row, src_x + 1, weights[dst_x].z)));\
+                        ComputeMult_##type(src_row, (src_x + 1) % src_mip_level.w, weights[dst_x].z)));\
         }\
     }
 
@@ -246,26 +224,10 @@ inline void SetValue_half4(
         int src_x = dst_x;\
         int src_y = 2 * dst_y;\
         \
-        GLOBAL type * dst_row        = (GLOBAL type*) (texturedata + dst_mip_level.dataoffset + dst_y * dst_mip_level.w * TEXEL_SIZE_##type);\
-        GLOBAL type * top_src_row    = (GLOBAL type*) (tmp_buffer + (src_y - 1) * dst_mip_level.w * TEXEL_SIZE_##type);\
-        GLOBAL type * src_row        = (GLOBAL type*) (tmp_buffer + src_y       * dst_mip_level.w * TEXEL_SIZE_##type);\
-        GLOBAL type * bottom_src_row = (GLOBAL type*) (tmp_buffer + (src_y + 1) * dst_mip_level.w * TEXEL_SIZE_##type);\
-        \
-        if (dst_y == 0)\
-        {\
-            SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(src_row, src_x, weights[dst_y].y) +\
-                        ComputeMult_##type(bottom_src_row, src_x, weights[dst_y].z)));\
-            return;\
-        }\
-        \
-        if (dst_y == dst_mip_level.h - 1)\
-        {\
-            SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(top_src_row, src_x, weights[dst_y].x) +\
-                        ComputeMult_##type(src_row, src_x, weights[dst_y].y)));\
-            return;\
-        }\
+        GLOBAL type * dst_row        = (GLOBAL type*) (texturedata + dst_mip_level.dataoffset) + dst_y * dst_mip_level.w;\
+        GLOBAL type * top_src_row    = (GLOBAL type*) (tmp_buffer) + (src_y - 1) % src_mip_level.h * dst_mip_level.w;\
+        GLOBAL type * src_row        = (GLOBAL type*) (tmp_buffer) + src_y                         * dst_mip_level.w;\
+        GLOBAL type * bottom_src_row = (GLOBAL type*) (tmp_buffer) + (src_y + 1) % src_mip_level.h * dst_mip_level.w;\
         \
         if (id < dst_mip_level.w * dst_mip_level.h)\
         {\
@@ -276,24 +238,22 @@ inline void SetValue_half4(
         }\
     }
 
-// produce functions part
-
-// produce ScaleX 1 chanel functions
+// Produce ScaleX 1-channel functions
 SCALE_X_PRODUCER(uchar)
 SCALE_X_PRODUCER(half)
 SCALE_X_PRODUCER(float)
 
-// produce ScaleY 1 chanel functions
+// Produce ScaleY 1-channel functions
 SCALE_Y_PRODUCER(uchar)
 SCALE_Y_PRODUCER(half)
 SCALE_Y_PRODUCER(float)
 
-// produce ScaleX 4 chanel functions
+// Produce ScaleX 4-channel functions
 SCALE_X_PRODUCER(uchar4)
 SCALE_X_PRODUCER(half4)
 SCALE_X_PRODUCER(float4)
 
-// produce ScaleY 4 chanel functions
+// Produce ScaleY 4-channel functions
 SCALE_Y_PRODUCER(uchar4)
 SCALE_Y_PRODUCER(half4)
 SCALE_Y_PRODUCER(float4)

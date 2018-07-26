@@ -93,7 +93,6 @@ namespace Baikal
         CLWBuffer<ClwScene::MipLevel> mip_levels,
         CLWBuffer<char> texturedata)
     {
-        std::cout << "Downsample " << mip_level << " level of texture " << texture_index << std::endl;
         auto src_size = texture->GetSize(mip_level);
         auto dst_size = texture->GetSize(mip_level + 1);
         auto texel_size = Texture::GetPixelSize(texture->GetFormat());
