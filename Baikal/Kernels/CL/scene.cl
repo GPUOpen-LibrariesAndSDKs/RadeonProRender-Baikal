@@ -266,11 +266,10 @@ INLINE float2 Scene_ComputePartialDerivative(
     }
 
     // Solve linear system using Cramer rule
-    float matrix_det = derivative_matrix.x * derivative_matrix.w
-        - derivative_matrix.z * derivative_matrix.y;
+    float matrix_det = derivative_matrix.x * derivative_matrix.w - derivative_matrix.y * derivative_matrix.z;
 
-    float det1 = derivative_matrix.w * delta_p.x - derivative_matrix.z * delta_p.y;
-    float det2 = derivative_matrix.x * delta_p.y - derivative_matrix.y * delta_p.x;
+    float det1 = derivative_matrix.w * delta_p.x - derivative_matrix.y * delta_p.y;
+    float det2 = derivative_matrix.x * delta_p.y - derivative_matrix.z * delta_p.x;
 
     return make_float2(det1, det2) / matrix_det;
 
@@ -336,16 +335,17 @@ void Scene_FillDifferentialGeometry(// Scene
     // From PBRT book
     float2 duv02 = uv0 - uv2;
     float2 duv12 = uv1 - uv2;
-    float3 dp02 = v0 - v2;
-    float3 dp12 = v1 - v2;
+    float3 dp02  = v0 - v2;
+    float3 dp12  = v1 - v2;
     float det = duv02.x * duv12.y - duv02.y * duv12.x;
     bool degenerate_uv = fabs(det) < 1e-08f;
 
     if (!degenerate_uv)
     {
         float invdet = 1.f / det;
-        diffgeo->dpdu = normalize(( duv12.y * dp02 - duv02.y * dp12) * invdet);
-        diffgeo->dpdv = normalize((-duv12.x * dp02 + duv02.x * dp12) * invdet);
+        // NOTE: This values don't need to be normalized!
+        diffgeo->dpdu = (duv12.y * dp02 - duv02.y * dp12) * invdet;
+        diffgeo->dpdv = (-duv12.x * dp02 + duv02.x * dp12) * invdet;
     }
     else
     {
@@ -357,17 +357,13 @@ void Scene_FillDifferentialGeometry(// Scene
     // Calculate intersection of the aux rays with the tangent plane
     if (aux_ray_x == NULL || aux_ray_y == NULL)
     {
-        diffgeo->dudx = diffgeo->dudy = diffgeo->dvdx = diffgeo->dvdy = 0.f;
+        diffgeo->duvdx = diffgeo->duvdy = 0.0f;
     }
     else
     {
         // Calculate differentials
-        float2 differential_x = Scene_ComputePartialDerivative(aux_ray_x, diffgeo);
-        float2 differential_y = Scene_ComputePartialDerivative(aux_ray_y, diffgeo);
-        diffgeo->dudx = differential_x.x;
-        diffgeo->dvdx = differential_x.y;
-        diffgeo->dudy = differential_y.x;
-        diffgeo->dvdy = differential_y.y;
+        diffgeo->duvdx = Scene_ComputePartialDerivative(aux_ray_x, diffgeo);
+        diffgeo->duvdy = Scene_ComputePartialDerivative(aux_ray_y, diffgeo);
     }
 
 }

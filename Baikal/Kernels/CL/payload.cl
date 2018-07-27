@@ -258,14 +258,12 @@ typedef struct _DifferentialGeometry
     float3 ng;
     // UVs
     float2 uv;
-    // Derivatives
+    // Position derivatives with respect to texcoords
     float3 dpdu;
     float3 dpdv;
-    // Screen derivatives
-    float dudx;
-    float dudy;
-    float dvdx;
-    float dvdy;
+    // UV derivatives with respect to screen coords
+    float2 duvdx;
+    float2 duvdy;
 
     matrix4x4 world_to_tangent;
     matrix4x4 tangent_to_world;

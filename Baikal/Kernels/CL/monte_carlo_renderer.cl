@@ -138,7 +138,7 @@ void PerspectiveCamera_GenerateRays(
 
         // Calculate auxiliary rays
 
-        float2 aux_img_sample = make_float2((float)(x + 1) + sample0.x, (float)(y + 1) + sample0.y) / output_size;
+        float2 aux_img_sample = img_sample + make_float2(1.0f, 1.0f) / output_size;
 
         // Transform into [-dim/2, dim/2]
         float2 aux_c_sample = (aux_img_sample - 0.5f) * camera->dim;
@@ -148,23 +148,13 @@ void PerspectiveCamera_GenerateRays(
         Aux_Ray_Init(my_aux_ray_x, my_ray->o.xyz,
             PerspectiveCamera_SampleToRayDirection(camera,
                 make_float2(aux_c_sample.x, c_sample.y)));
-/*
-        if (x == output_width - 1)
-        {
-            Aux_Ray_Init(my_aux_ray_x, 0.0f, 0.0f);
-        }
-*/
+
         GLOBAL aux_ray* my_aux_ray_y = aux_rays_y + global_id;
-        // Calculate direction to image plane for auxiliary y ray
+
         Aux_Ray_Init(my_aux_ray_y, my_ray->o.xyz,
             PerspectiveCamera_SampleToRayDirection(camera,
                 make_float2(c_sample.x, aux_c_sample.y)));
-/*
-        if (y == output_height - 1)
-        {
-            Aux_Ray_Init(my_aux_ray_y, 0.0f, 0.0f);
-        }
-*/
+
     }
 }
 
@@ -1055,7 +1045,7 @@ KERNEL void ShadeBackgroundImage(
         {
             float2 uv = make_float2(x, y);
 
-            v.xyz = Texture_UVSample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
+            v.xyz = Texture_Sample2DNoMip(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
         }
 
         ADD_FLOAT4(&output[output_index], v);

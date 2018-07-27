@@ -277,10 +277,6 @@ KERNEL void FillAOVsUberV2(
                 const float3 kd = ((diffgeo.mat.layers & kDiffuseLayer) == kDiffuseLayer) ?
                     uber_shader_data.diffuse_color.xyz : (float3)(0.0f);
 
-                float2 derivX = make_float2(diffgeo.dudx, diffgeo.dvdx);
-                float2 derivY = make_float2(diffgeo.dudy, diffgeo.dvdy);
-                float delta_max_sqr = max(dot(derivX, derivX), dot(derivY, derivY));
-                float mip = 0.5 * log2(delta_max_sqr * 512.0f) / 8.0f;
                 aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
             }
