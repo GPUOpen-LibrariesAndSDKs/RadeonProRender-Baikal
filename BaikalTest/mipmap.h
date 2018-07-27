@@ -207,7 +207,7 @@ TEST_F(MipmapTest, Mipmap_8bit)
         std::string file_name = test_name();
         file_name.append("_");
         file_name.append(std::to_string(i));
-        file_name.append(".jpg");
+        file_name.append(".bmp");
         path.append(file_name);
 
         image_io->SaveImage(path, sg_texture);

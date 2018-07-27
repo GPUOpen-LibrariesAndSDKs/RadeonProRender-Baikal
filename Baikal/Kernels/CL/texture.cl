@@ -133,18 +133,16 @@ inline
 float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
 {
     // Handle UV wrap
-    // TODO: need UV mode support
-    float2 uv = diffgeo->uv - floor(diffgeo->uv);
+    float2 uv = diffgeo->uv;
 
     // Reverse Y:
     // it is needed as textures are loaded with Y axis going top to down
     // and our axis goes from down to top
-    uv.y = 1.f - uv.y;
 
     GLOBAL MipLevel const* texture_levels = mip_levels + textures[texidx].mip_offset;
 
-    float2 dx_vtc        = make_float2(diffgeo->dudx, diffgeo->dvdx) * 32.0f;
-    float2 dy_vtc        = make_float2(diffgeo->dudy, diffgeo->dvdy) * 32.0f;
+    float2 dx_vtc        = make_float2(diffgeo->dudx, diffgeo->dvdx) * texture_levels[0].w * 0.5f;
+    float2 dy_vtc        = make_float2(diffgeo->dudy, diffgeo->dvdy) * texture_levels[0].h * 0.5f;
     float  delta_max_sqr = max(dot(dx_vtc, dx_vtc), dot(dy_vtc, dy_vtc));
     float  mipmap_level  = clamp(0.5f * log2(delta_max_sqr), 0.0f, textures[texidx].mip_count - 1.0f);
     //return mipmap_level / 8.0f;
@@ -154,23 +152,34 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
     int w1 = texture_levels[mip_index + 1].w;
     int h1 = texture_levels[mip_index + 1].h;
 
-    // Calculate integer coordinates
-    int x00 = clamp((int)floor(uv.x * w0), 0, w0 - 1);
-    int y00 = clamp((int)floor(uv.y * h0), 0, h0 - 1);
-    int x10 = clamp((int)floor(uv.x * w1), 0, w1 - 1);
-    int y10 = clamp((int)floor(uv.y * h1), 0, h1 - 1);
+    // Coordinates in texture space
+    // Level (n)
+    float x0 = uv.x * w0 - 0.5f;
+    float y0 = uv.y * h0 - 0.5f;
+    // Level (n + 1)
+    float x1 = uv.x * w1 - 0.5f;
+    float y1 = uv.y * h1 - 0.5f;
+    // Integer coordinates (with offsets for bilinear filtering)
+    // TODO: need UV mode support
+    // Level (n)
+    int xi00 = (int)floor(x0) % w0;
+    int yi00 = (h0 - 1) - (int)floor(y0) % h0;
+    int xi01 = (int)floor(x0 + 1) % w0;
+    int yi01 = (h0 - 1) - (int)floor(y0 + 1) % h0;
+    // Level (n + 1)
+    int xi10 = (int)floor(x1) % w1;
+    int yi10 = (h1 - 1) - (int)floor(y1) % h1;
+    int xi11 = (int)floor(x1 + 1) % w1;
+    int yi11 = (h1 - 1) - (int)floor(y1 + 1) % h1;
+    // Weights for bilinear interpolation
+    // Level (n)
+    float wx0 = x0 - floor(x0);
+    float wy0 = y0 - floor(y0);
+    // Level (n + 1)
+    float wx1 = x1 - floor(x1);
+    float wy1 = y1 - floor(y1);
 
-    int x01 = (x00 + 1) % w0;
-    int y01 = (y00 + 1) % h0;
-    int x11 = (x10 + 1) % w1;
-    int y11 = (y10 + 1) % h1;
-
-    // Calculate weights for linear filtering
-    float wx0 = uv.x * w0 - floor(uv.x * w0);
-    float wy0 = uv.y * h0 - floor(uv.y * h0);
-    float wx1 = uv.x * w1 - floor(uv.x * w1);
-    float wy1 = uv.y * h1 - floor(uv.y * h1);
-
+    // Weights for mip levels interpolation
     float w01 = mipmap_level - floor(mipmap_level);
 
     switch (textures[texidx].fmt)
@@ -180,17 +189,17 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
             __global float4 const* mydataf0 = (__global float4 const*)(texturedata + texture_levels[mip_index].dataoffset);
             __global float4 const* mydataf1 = (__global float4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
 
-            float4 val000 = *(mydataf0 + w0 * y00 + x00);
-            float4 val001 = *(mydataf0 + w0 * y00 + x01);
-            float4 val010 = *(mydataf0 + w0 * y01 + x00);
-            float4 val011 = *(mydataf0 + w0 * y01 + x01);
+            float4 val000 = *(mydataf0 + w0 * yi00 + xi00);
+            float4 val001 = *(mydataf0 + w0 * yi00 + xi01);
+            float4 val010 = *(mydataf0 + w0 * yi01 + xi00);
+            float4 val011 = *(mydataf0 + w0 * yi01 + xi01);
 
-            float4 val100 = *(mydataf1 + w1 * y10 + x10);
-            float4 val101 = *(mydataf1 + w1 * y10 + x11);
-            float4 val110 = *(mydataf1 + w1 * y11 + x10);
-            float4 val111 = *(mydataf1 + w1 * y11 + x11);
+            float4 val100 = *(mydataf1 + w1 * yi10 + xi10);
+            float4 val101 = *(mydataf1 + w1 * yi10 + xi11);
+            float4 val110 = *(mydataf1 + w1 * yi11 + xi10);
+            float4 val111 = *(mydataf1 + w1 * yi11 + xi11);
 
-            // Filter and return the result
+            // Perform trilinear filtering and return the result
             return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
                         lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
                         w01);
@@ -201,15 +210,15 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
             __global uchar4 const* mydatac1 = (__global uchar4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
 
             // Get 4 values and convert to float
-            uchar4 valu000 = *(mydatac0 + w0 * y00 + x00);
-            uchar4 valu001 = *(mydatac0 + w0 * y00 + x01);
-            uchar4 valu010 = *(mydatac0 + w0 * y01 + x00);
-            uchar4 valu011 = *(mydatac0 + w0 * y01 + x01);
+            uchar4 valu000 = *(mydatac0 + w0 * yi00 + xi00);
+            uchar4 valu001 = *(mydatac0 + w0 * yi00 + xi01);
+            uchar4 valu010 = *(mydatac0 + w0 * yi01 + xi00);
+            uchar4 valu011 = *(mydatac0 + w0 * yi01 + xi01);
 
-            uchar4 valu100 = *(mydatac1 + w1 * y10 + x10);
-            uchar4 valu101 = *(mydatac1 + w1 * y10 + x11);
-            uchar4 valu110 = *(mydatac1 + w1 * y11 + x10);
-            uchar4 valu111 = *(mydatac1 + w1 * y11 + x11);
+            uchar4 valu100 = *(mydatac1 + w1 * yi10 + xi10);
+            uchar4 valu101 = *(mydatac1 + w1 * yi10 + xi11);
+            uchar4 valu110 = *(mydatac1 + w1 * yi11 + xi10);
+            uchar4 valu111 = *(mydatac1 + w1 * yi11 + xi11);
 
             float4 val000 = make_float4((float)valu000.x / 255.f, (float)valu000.y / 255.f, (float)valu000.z / 255.f, (float)valu000.w / 255.f);
             float4 val001 = make_float4((float)valu001.x / 255.f, (float)valu001.y / 255.f, (float)valu001.z / 255.f, (float)valu001.w / 255.f);
@@ -221,7 +230,7 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
             float4 val110 = make_float4((float)valu110.x / 255.f, (float)valu110.y / 255.f, (float)valu110.z / 255.f, (float)valu110.w / 255.f);
             float4 val111 = make_float4((float)valu111.x / 255.f, (float)valu111.y / 255.f, (float)valu111.z / 255.f, (float)valu111.w / 255.f);
 
-            // Filter and return the result
+            // Perform trilinear filtering and return the result
             return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
                         lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
                         w01);
