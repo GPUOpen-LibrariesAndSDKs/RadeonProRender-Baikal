@@ -212,6 +212,7 @@ INLINE float2 Scene_ComputePartialDerivative(
 
     // Find intersection point of auxiliary ray with the tangent plane
     float t = dot(diffgeo->n, diffgeo->p - o) / dot(diffgeo->n, d);
+
     float3 p = o + d * t;
 
     // Next we need to find uv offset from the position offset

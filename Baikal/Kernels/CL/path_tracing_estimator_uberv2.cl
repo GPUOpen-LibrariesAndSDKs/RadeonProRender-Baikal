@@ -165,11 +165,11 @@ KERNEL void ShadeVolumeUberV2(
         // since EvaluateVolume has put it there
         dg.p = o - wi * Intersection_GetDistance(isects + hit_idx);
         // Get light sample intencity
-        int bxdf_flags = Path_GetBxdfFlags(path); 
+        int bxdf_flags = Path_GetBxdfFlags(path);
         float3 le = Light_Sample(light_idx, &scene, &dg, TEXTURE_ARGS, Sampler_Sample2D(&sampler, SAMPLER_ARGS), bxdf_flags, kLightInteractionVolume, &wo, &pdf);
 
         // Generate shadow ray
-        float shadow_ray_length = length(wo); 
+        float shadow_ray_length = length(wo);
         Ray_Init(shadow_rays + global_id, dg.p, normalize(wo), shadow_ray_length, 0.f, 0xFFFFFFFF);
         Ray_SetExtra(shadow_rays + global_id, make_float2(1.f, 0.f));
 
@@ -185,21 +185,21 @@ KERNEL void ShadeVolumeUberV2(
         float3 r = 0.f;
         float g = volumes[volume_idx].g;
         // This is the estimate coming from a light source
-        // TODO: remove hardcoded phase func and sigma 
-        r += tr * le  * PhaseFunctionHG(wi, normalize(wo), g) / pdf / selection_pdf; 
+        // TODO: remove hardcoded phase func and sigma
+        r += tr * le  * PhaseFunctionHG(wi, normalize(wo), g) / pdf / selection_pdf;
         r += tr * emission;
 
-        // Only if we have some radiance compute the visibility ray  
-        if (NON_BLACK(tr) && NON_BLACK(r) && pdf > 0.f) 
+        // Only if we have some radiance compute the visibility ray
+        if (NON_BLACK(tr) && NON_BLACK(r) && pdf > 0.f)
         {
             // Put lightsample result
             light_samples[global_id] = REASONABLE_RADIANCE(r * Path_GetThroughput(path));
         }
         else
-        { 
+        {
             // Nothing to compute
             light_samples[global_id] = 0.f;
-            // Otherwise make it incative to save intersector cycles (hopefully) 
+            // Otherwise make it incative to save intersector cycles (hopefully)
             Ray_SetInactive(shadow_rays + global_id);
         }
 
@@ -228,6 +228,8 @@ KERNEL void ShadeVolumeUberV2(
 KERNEL void ShadeSurfaceUberV2(
     // Ray batch
     GLOBAL ray const* restrict rays,
+    GLOBAL aux_ray const* restrict aux_rays_x,
+    GLOBAL aux_ray const* restrict aux_rays_y,
     // Intersection data
     GLOBAL Intersection const* restrict isects,
     // Hit indices
@@ -336,7 +338,7 @@ KERNEL void ShadeSurfaceUberV2(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
+        Scene_FillDifferentialGeometry(&scene, &isect, aux_rays_x + hit_idx, aux_rays_y + hit_idx, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
@@ -562,7 +564,7 @@ KERNEL void ApplyVolumeTransmissionUberV2(
     {
         int pixel_idx = pixel_indices[global_id];
 
-        // Ray might be inactive, in this case we just 
+        // Ray might be inactive, in this case we just
         // fail an intersection test, nothing has been added for this ray.
         if (Ray_IsActive(&shadow_rays[global_id]))
         {
@@ -586,11 +588,11 @@ KERNEL void ApplyVolumeTransmissionUberV2(
             GLOBAL Path* path = &paths[pixel_idx];
             int path_volume_idx = Path_GetVolumeIdx(path);
 
-            // Here we do not have any intersections, 
+            // Here we do not have any intersections,
             // so we mark the test passed.
             // OPTIMIZATION: this ray is going to be tested again
             // on the next iteration, we can make it inactive, but
-            // in this case inactive rays need special handling and 
+            // in this case inactive rays need special handling and
             // we can't fail the test for them like condition above does.
             if (isects[global_id].shapeid < 0)
             {
@@ -619,14 +621,14 @@ KERNEL void ApplyVolumeTransmissionUberV2(
                 return;
             }
 
-            // Here we know volume intersection occured and we need to 
+            // Here we know volume intersection occured and we need to
             // interpolate normal to figure out if we are entering or exiting volume
             float3 n;
             Scene_InterpolateNormalsFromIntersection(&scene, &isect, &n);
 
             ray shadow_ray = shadow_rays[global_id];
             float shadow_ray_throughput = Ray_GetExtra(&shadow_rays[global_id]).x;
-            // Now we determine if we are exiting or entering. On exit 
+            // Now we determine if we are exiting or entering. On exit
             // we need to apply transmittance and emission, on enter we simply update the ray origin.
             if (dot(shadow_ray.d.xyz, n) > 0.f)
             {

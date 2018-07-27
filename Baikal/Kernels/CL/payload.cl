@@ -274,7 +274,7 @@ typedef struct _DifferentialGeometry
     // Triangle area
     float  area;
     int transfer_mode;
-    int padding[2];
+
 } DifferentialGeometry;
 
 #endif // PAYLOAD_CL

@@ -44,7 +44,6 @@ float3 PerspectiveCamera_SampleToRayDirection(
         + sample.x * camera->right + sample.y * camera->up);
 }
 
-
 // Pinhole camera implementation.
 // This kernel is being used if aperture value = 0.
 KERNEL

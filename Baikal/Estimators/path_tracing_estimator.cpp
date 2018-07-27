@@ -380,6 +380,8 @@ namespace Baikal
         // Set kernel parameters
         int argc = 0;
         shadekernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_x[pass & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_y[pass & 0x1]);
         shadekernel.SetArg(argc++, m_render_data->intersections);
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
