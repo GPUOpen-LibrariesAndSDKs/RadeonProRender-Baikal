@@ -344,16 +344,15 @@ void Scene_FillDifferentialGeometry(// Scene
     if (!degenerate_uv)
     {
         float invdet = 1.f / det;
-        // NOTE: This values don't need to be normalized!
+        // NOTE: This values is being normalised a few lines later
+        // We use dpdu and dpdv to compute screen space uv derivatives
         diffgeo->dpdu = (duv12.y * dp02 - duv02.y * dp12) * invdet;
         diffgeo->dpdv = (-duv12.x * dp02 + duv02.x * dp12) * invdet;
     }
     else
     {
-        diffgeo->dpdu = normalize(GetOrthoVector(diffgeo->n));
-        diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
+        diffgeo->dpdu = diffgeo->dpdv = 0.0f;
     }
-
 
     // Calculate intersection of the aux rays with the tangent plane
     if (aux_ray_x == NULL || aux_ray_y == NULL)
@@ -367,6 +366,21 @@ void Scene_FillDifferentialGeometry(// Scene
         diffgeo->duvdy = Scene_ComputePartialDerivative(aux_ray_y, diffgeo);
     }
 
+    // HACK: this values actually are tangent and bitangent
+    diffgeo->dpdu = normalize(GetOrthoVector(diffgeo->n));
+    diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
+
+    // TODO: orient tangent and bitangent along uv?
+/*
+    diffgeo->dpdu -= dot(diffgeo->n, diffgeo->dpdu) * diffgeo->n;
+    diffgeo->dpdu = normalize(diffgeo->dpdu);
+    diffgeo->dpdv = cross(diffgeo->dpdu, diffgeo->n);
+
+    if (dot(cross(diffgeo->n, diffgeo->dpdu), diffgeo->dpdv) < 0.0f)
+    {
+        diffgeo->dpdu *= -1.0f;
+    }
+*/
 }
 
 
