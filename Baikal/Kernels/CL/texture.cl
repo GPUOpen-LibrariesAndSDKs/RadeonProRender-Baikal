@@ -179,84 +179,84 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
 
     switch (textures[texidx].fmt)
     {
-        case RGBA32:
-        {
-            __global float4 const* mydataf0 = (__global float4 const*)(texturedata + texture_levels[mip_index].dataoffset);
-            __global float4 const* mydataf1 = (__global float4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+    case RGBA32:
+    {
+        __global float4 const* mydataf0 = (__global float4 const*)(texturedata + texture_levels[mip_index].dataoffset);
+        __global float4 const* mydataf1 = (__global float4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
 
-            float4 val000 = *(mydataf0 + w0 * yi00 + xi00);
-            float4 val001 = *(mydataf0 + w0 * yi00 + xi01);
-            float4 val010 = *(mydataf0 + w0 * yi01 + xi00);
-            float4 val011 = *(mydataf0 + w0 * yi01 + xi01);
+        float4 val000 = *(mydataf0 + w0 * yi00 + xi00);
+        float4 val001 = *(mydataf0 + w0 * yi00 + xi01);
+        float4 val010 = *(mydataf0 + w0 * yi01 + xi00);
+        float4 val011 = *(mydataf0 + w0 * yi01 + xi01);
 
-            float4 val100 = *(mydataf1 + w1 * yi10 + xi10);
-            float4 val101 = *(mydataf1 + w1 * yi10 + xi11);
-            float4 val110 = *(mydataf1 + w1 * yi11 + xi10);
-            float4 val111 = *(mydataf1 + w1 * yi11 + xi11);
+        float4 val100 = *(mydataf1 + w1 * yi10 + xi10);
+        float4 val101 = *(mydataf1 + w1 * yi10 + xi11);
+        float4 val110 = *(mydataf1 + w1 * yi11 + xi10);
+        float4 val111 = *(mydataf1 + w1 * yi11 + xi11);
 
-            // Perform trilinear filtering and return the result
-            return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
-                        lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
-                        w01);
-        }
+        // Perform trilinear filtering and return the result
+        return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
+                    lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
+                    w01);
+    }
 
-        case RGBA16:
-        {
-            __global half const* mydatah0 = (__global half const*)(texturedata + texture_levels[mip_index].dataoffset);
-            __global half const* mydatah1 = (__global half const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+    case RGBA16:
+    {
+        __global half const* mydatah0 = (__global half const*)(texturedata + texture_levels[mip_index].dataoffset);
+        __global half const* mydatah1 = (__global half const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
 
-            float4 val000 = vload_half4(w0 * yi00 + xi00, mydatah0);
-            float4 val001 = vload_half4(w0 * yi00 + xi01, mydatah0);
-            float4 val010 = vload_half4(w0 * yi01 + xi00, mydatah0);
-            float4 val011 = vload_half4(w0 * yi01 + xi01, mydatah0);
+        float4 val000 = vload_half4(w0 * yi00 + xi00, mydatah0);
+        float4 val001 = vload_half4(w0 * yi00 + xi01, mydatah0);
+        float4 val010 = vload_half4(w0 * yi01 + xi00, mydatah0);
+        float4 val011 = vload_half4(w0 * yi01 + xi01, mydatah0);
 
-            float4 val100 = vload_half4(w1 * yi10 + xi10, mydatah1);
-            float4 val101 = vload_half4(w1 * yi10 + xi11, mydatah1);
-            float4 val110 = vload_half4(w1 * yi11 + xi10, mydatah1);
-            float4 val111 = vload_half4(w1 * yi11 + xi11, mydatah1);
+        float4 val100 = vload_half4(w1 * yi10 + xi10, mydatah1);
+        float4 val101 = vload_half4(w1 * yi10 + xi11, mydatah1);
+        float4 val110 = vload_half4(w1 * yi11 + xi10, mydatah1);
+        float4 val111 = vload_half4(w1 * yi11 + xi11, mydatah1);
 
-            // Perform trilinear filtering and return the result
-            return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
-                        lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
-                        w01);
-        }
+        // Perform trilinear filtering and return the result
+        return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
+                    lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
+                    w01);
+    }
 
-        case RGBA8:
-        {
-            __global uchar4 const* mydatac0 = (__global uchar4 const*)(texturedata + texture_levels[mip_index].dataoffset);
-            __global uchar4 const* mydatac1 = (__global uchar4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+    case RGBA8:
+    {
+        __global uchar4 const* mydatac0 = (__global uchar4 const*)(texturedata + texture_levels[mip_index].dataoffset);
+        __global uchar4 const* mydatac1 = (__global uchar4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
 
-            // Get 4 values and convert to float
-            uchar4 valu000 = *(mydatac0 + w0 * yi00 + xi00);
-            uchar4 valu001 = *(mydatac0 + w0 * yi00 + xi01);
-            uchar4 valu010 = *(mydatac0 + w0 * yi01 + xi00);
-            uchar4 valu011 = *(mydatac0 + w0 * yi01 + xi01);
+        // Get 4 values and convert to float
+        uchar4 valu000 = *(mydatac0 + w0 * yi00 + xi00);
+        uchar4 valu001 = *(mydatac0 + w0 * yi00 + xi01);
+        uchar4 valu010 = *(mydatac0 + w0 * yi01 + xi00);
+        uchar4 valu011 = *(mydatac0 + w0 * yi01 + xi01);
 
-            uchar4 valu100 = *(mydatac1 + w1 * yi10 + xi10);
-            uchar4 valu101 = *(mydatac1 + w1 * yi10 + xi11);
-            uchar4 valu110 = *(mydatac1 + w1 * yi11 + xi10);
-            uchar4 valu111 = *(mydatac1 + w1 * yi11 + xi11);
+        uchar4 valu100 = *(mydatac1 + w1 * yi10 + xi10);
+        uchar4 valu101 = *(mydatac1 + w1 * yi10 + xi11);
+        uchar4 valu110 = *(mydatac1 + w1 * yi11 + xi10);
+        uchar4 valu111 = *(mydatac1 + w1 * yi11 + xi11);
 
-            float4 val000 = make_float4((float)valu000.x / 255.f, (float)valu000.y / 255.f, (float)valu000.z / 255.f, (float)valu000.w / 255.f);
-            float4 val001 = make_float4((float)valu001.x / 255.f, (float)valu001.y / 255.f, (float)valu001.z / 255.f, (float)valu001.w / 255.f);
-            float4 val010 = make_float4((float)valu010.x / 255.f, (float)valu010.y / 255.f, (float)valu010.z / 255.f, (float)valu010.w / 255.f);
-            float4 val011 = make_float4((float)valu011.x / 255.f, (float)valu011.y / 255.f, (float)valu011.z / 255.f, (float)valu011.w / 255.f);
+        float4 val000 = make_float4((float)valu000.x / 255.f, (float)valu000.y / 255.f, (float)valu000.z / 255.f, (float)valu000.w / 255.f);
+        float4 val001 = make_float4((float)valu001.x / 255.f, (float)valu001.y / 255.f, (float)valu001.z / 255.f, (float)valu001.w / 255.f);
+        float4 val010 = make_float4((float)valu010.x / 255.f, (float)valu010.y / 255.f, (float)valu010.z / 255.f, (float)valu010.w / 255.f);
+        float4 val011 = make_float4((float)valu011.x / 255.f, (float)valu011.y / 255.f, (float)valu011.z / 255.f, (float)valu011.w / 255.f);
 
-            float4 val100 = make_float4((float)valu100.x / 255.f, (float)valu100.y / 255.f, (float)valu100.z / 255.f, (float)valu100.w / 255.f);
-            float4 val101 = make_float4((float)valu101.x / 255.f, (float)valu101.y / 255.f, (float)valu101.z / 255.f, (float)valu101.w / 255.f);
-            float4 val110 = make_float4((float)valu110.x / 255.f, (float)valu110.y / 255.f, (float)valu110.z / 255.f, (float)valu110.w / 255.f);
-            float4 val111 = make_float4((float)valu111.x / 255.f, (float)valu111.y / 255.f, (float)valu111.z / 255.f, (float)valu111.w / 255.f);
+        float4 val100 = make_float4((float)valu100.x / 255.f, (float)valu100.y / 255.f, (float)valu100.z / 255.f, (float)valu100.w / 255.f);
+        float4 val101 = make_float4((float)valu101.x / 255.f, (float)valu101.y / 255.f, (float)valu101.z / 255.f, (float)valu101.w / 255.f);
+        float4 val110 = make_float4((float)valu110.x / 255.f, (float)valu110.y / 255.f, (float)valu110.z / 255.f, (float)valu110.w / 255.f);
+        float4 val111 = make_float4((float)valu111.x / 255.f, (float)valu111.y / 255.f, (float)valu111.z / 255.f, (float)valu111.w / 255.f);
 
-            // Perform trilinear filtering and return the result
-            return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
-                        lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
-                        w01);
-        }
+        // Perform trilinear filtering and return the result
+        return lerp(lerp(lerp(val000, val001, wx0), lerp(val010, val011, wx0), wy0),
+                    lerp(lerp(val100, val101, wx1), lerp(val110, val111, wx1), wy1),
+                    w01);
+    }
 
-        default:
-        {
-            return make_float4(0.f, 0.f, 0.f, 0.f);
-        }
+    default:
+    {
+        return make_float4(0.f, 0.f, 0.f, 0.f);
+    }
     }
 
 }
@@ -364,13 +364,13 @@ float Texture_GetValue1f(
     // Return fixed color otherwise
     return v;
 }
-
-inline float3 TextureData_SampleNormalFromBump_uchar4(__global uchar4 const* mydatac, int width, int height, int t0, int s0)
+*/
+inline float3 TextureData_SampleNormalFromBump_uchar4(__global uchar4 const* mydatac, int width, int height, int s0, int t0)
 {
-    int t0minus = clamp(t0 - 1, 0, height - 1);
-    int t0plus = clamp(t0 + 1, 0, height - 1);
-    int s0minus = clamp(s0 - 1, 0, width - 1);
-    int s0plus = clamp(s0 + 1, 0, width - 1);
+    int s0minus = (s0 - 1) % width;
+    int s0plus  = (s0 + 1) % width;
+    int t0minus = (t0 - 1) % height;
+    int t0plus  = (t0 + 1) % height;
 
     const uchar utex00 = (*(mydatac + width * t0minus + s0minus)).x;
     const uchar utex10 = (*(mydatac + width * t0minus + (s0))).x;
@@ -401,12 +401,12 @@ inline float3 TextureData_SampleNormalFromBump_uchar4(__global uchar4 const* myd
     return n;
 }
 
-inline float3 TextureData_SampleNormalFromBump_half4(__global half const* mydatah, int width, int height, int t0, int s0)
+inline float3 TextureData_SampleNormalFromBump_half4(__global half const* mydatah, int width, int height, int s0, int t0)
 {
-    int t0minus = clamp(t0 - 1, 0, height - 1);
-    int t0plus = clamp(t0 + 1, 0, height - 1);
-    int s0minus = clamp(s0 - 1, 0, width - 1);
-    int s0plus = clamp(s0 + 1, 0, width - 1);
+    int s0minus = (s0 - 1) % width;
+    int s0plus  = (s0 + 1) % width;
+    int t0minus = (t0 - 1) % height;
+    int t0plus  = (t0 + 1) % height;
 
     const float tex00 = vload_half4(width * t0minus + s0minus, mydatah).x;
     const float tex10 = vload_half4(width * t0minus + (s0), mydatah).x;
@@ -426,12 +426,12 @@ inline float3 TextureData_SampleNormalFromBump_half4(__global half const* mydata
     return n;
 }
 
-inline float3 TextureData_SampleNormalFromBump_float4(__global float4 const* mydataf, int width, int height, int t0, int s0)
+inline float3 TextureData_SampleNormalFromBump_float4(__global float4 const* mydataf, int width, int height, int s0, int t0)
 {
-    int t0minus = clamp(t0 - 1, 0, height - 1);
-    int t0plus = clamp(t0 + 1, 0, height - 1);
-    int s0minus = clamp(s0 - 1, 0, width - 1);
-    int s0plus = clamp(s0 + 1, 0, width - 1);
+    int s0minus = (s0 - 1) % width;
+    int s0plus  = (s0 + 1) % width;
+    int t0minus = (t0 - 1) % height;
+    int t0plus  = (t0 + 1) % height;
 
     const float tex00 = (*(mydataf + width * t0minus + s0minus)).x;
     const float tex10 = (*(mydataf + width * t0minus + (s0))).x;
@@ -451,47 +451,45 @@ inline float3 TextureData_SampleNormalFromBump_float4(__global float4 const* myd
     return n;
 }
 
-/// Sample 2D texture
+/// Sample bump texture (not using mipmapping)
 inline
-float3 Texture_SampleBump(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
+float3 Texture_SampleBumpNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 {
-    // Get width and height
-    int width = textures[texidx].w;
-    int height = textures[texidx].h;
+    MipLevel texture_level = mip_levels[textures[texidx].mip_offset];
 
-    // Find the origin of the data in the pool
-    __global char const* mydata = texturedata + textures[texidx].dataoffset;
+    // Get width, height of levels
+    int w = texture_level.w;
+    int h = texture_level.h;
 
-    // Handle UV wrap
-    // TODO: need UV mode support
-    uv -= floor(uv);
+    // Scale uv coordinates
+    // Level (n)
+    float x = uv.x * w - 0.5f;
+    float y = uv.y * h - 0.5f;
 
-    // Reverse Y:
-    // it is needed as textures are loaded with Y axis going top to down
-    // and our axis goes from down to top
-    uv.y = 1.f - uv.y;
+    // Get texture space integer coordinates (with offsets for bilinear filtering)
+    // >>> TODO: Need to implement UV mode support
+    // Also reverse Y coordinate, it is needed as textures are loaded with Y axis
+    // going top to down and our axis goes from down to top
+    // Level (n)
+    int xi0 = (int)floor(x) % w;
+    int yi0 = (h - 1) - (int)floor(y) % h;
+    int xi1 = (int)floor(x + 1) % w;
+    int yi1 = (h - 1) - (int)floor(y + 1) % h;
 
-    // Calculate integer coordinates
-    int s0 = clamp((int)floor(uv.x * width), 0, width - 1);
-    int t0 = clamp((int)floor(uv.y * height), 0, height - 1);
-
-    int s1 = clamp(s0 + 1, 0, width - 1);
-    int t1 = clamp(t0 + 1, 0, height - 1);
-
-    // Calculate weights for linear filtering
-    float wx = uv.x * width - floor(uv.x * width);
-    float wy = uv.y * height - floor(uv.y * height);
+    // Weights for bilinear interpolation
+    float wx = x - floor(x);
+    float wy = y - floor(y);
 
     switch (textures[texidx].fmt)
     {
     case RGBA32:
     {
-        __global float3 const* mydataf = (__global float3 const*)mydata;
+        __global float4 const* mydataf = (__global float4 const*)(texturedata + texture_level.dataoffset);
 
-        float3 n00 = TextureData_SampleNormalFromBump_float4(mydataf, width, height, t0, s0);
-        float3 n01 = TextureData_SampleNormalFromBump_float4(mydataf, width, height, t0, s1);
-        float3 n10 = TextureData_SampleNormalFromBump_float4(mydataf, width, height, t1, s0);
-        float3 n11 = TextureData_SampleNormalFromBump_float4(mydataf, width, height, t1, s1);
+        float3 n00 = TextureData_SampleNormalFromBump_float4(mydataf, w, h, xi0, yi0);
+        float3 n01 = TextureData_SampleNormalFromBump_float4(mydataf, w, h, xi1, yi0);
+        float3 n10 = TextureData_SampleNormalFromBump_float4(mydataf, w, h, xi0, yi1);
+        float3 n11 = TextureData_SampleNormalFromBump_float4(mydataf, w, h, xi1, yi1);
 
         float3 n = lerp3(lerp3(n00, n01, wx), lerp3(n10, n11, wx), wy);
 
@@ -500,12 +498,12 @@ float3 Texture_SampleBump(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     case RGBA16:
     {
-        __global half const* mydatah = (__global half const*)mydata;
+        __global half const* mydatah = (__global half const*)(texturedata + texture_level.dataoffset);
 
-        float3 n00 = TextureData_SampleNormalFromBump_half4(mydatah, width, height, t0, s0);
-        float3 n01 = TextureData_SampleNormalFromBump_half4(mydatah, width, height, t0, s1);
-        float3 n10 = TextureData_SampleNormalFromBump_half4(mydatah, width, height, t1, s0);
-        float3 n11 = TextureData_SampleNormalFromBump_half4(mydatah, width, height, t1, s1);
+        float3 n00 = TextureData_SampleNormalFromBump_half4(mydatah, w, h, xi0, yi0);
+        float3 n01 = TextureData_SampleNormalFromBump_half4(mydatah, w, h, xi1, yi0);
+        float3 n10 = TextureData_SampleNormalFromBump_half4(mydatah, w, h, xi0, yi1);
+        float3 n11 = TextureData_SampleNormalFromBump_half4(mydatah, w, h, xi1, yi1);
 
         float3 n = lerp3(lerp3(n00, n01, wx), lerp3(n10, n11, wx), wy);
 
@@ -514,12 +512,12 @@ float3 Texture_SampleBump(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     case RGBA8:
     {
-        __global uchar4 const* mydatac = (__global uchar4 const*)mydata;
+        __global uchar4 const* mydatac = (__global uchar4 const*)(texturedata + texture_level.dataoffset);
 
-        float3 n00 = TextureData_SampleNormalFromBump_uchar4(mydatac, width, height, t0, s0);
-        float3 n01 = TextureData_SampleNormalFromBump_uchar4(mydatac, width, height, t0, s1);
-        float3 n10 = TextureData_SampleNormalFromBump_uchar4(mydatac, width, height, t1, s0);
-        float3 n11 = TextureData_SampleNormalFromBump_uchar4(mydatac, width, height, t1, s1);
+        float3 n00 = TextureData_SampleNormalFromBump_uchar4(mydatac, w, h, xi0, yi0);
+        float3 n01 = TextureData_SampleNormalFromBump_uchar4(mydatac, w, h, xi1, yi0);
+        float3 n10 = TextureData_SampleNormalFromBump_uchar4(mydatac, w, h, xi0, yi1);
+        float3 n11 = TextureData_SampleNormalFromBump_uchar4(mydatac, w, h, xi1, yi1);
 
         float3 n = lerp3(lerp3(n00, n01, wx), lerp3(n10, n11, wx), wy);
 
@@ -531,6 +529,143 @@ float3 Texture_SampleBump(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
         return make_float3(0.f, 0.f, 0.f);
     }
     }
-}*/
+}
+
+/// Sample bump texture
+inline
+float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
+{
+    // If texture has no mipmaps
+    // TODO: add check duvdx, duvdy == 0
+    if (textures[texidx].mip_count == 1)
+    {
+        return Texture_SampleBumpNoMip(diffgeo->uv, TEXTURE_ARGS_IDX(texidx));
+    }
+
+    GLOBAL MipLevel const* texture_levels = mip_levels + textures[texidx].mip_offset;
+
+    // Transform derivatives to texture space
+    float2 dtexdx        = diffgeo->duvdx * texture_levels[0].w;
+    float2 dtexdy        = diffgeo->duvdy * texture_levels[0].h;
+    float  delta_max_sqr = max(dot(dtexdx, dtexdx), dot(dtexdy, dtexdy));
+    float  mipmap_level  = clamp(0.5f * log2(delta_max_sqr), 0.0f, textures[texidx].mip_count - 2.0f);
+
+    int mip_index = (int)floor(mipmap_level);
+
+    // Get width, height of levels
+    int w0 = texture_levels[mip_index].w;
+    int h0 = texture_levels[mip_index].h;
+    int w1 = texture_levels[mip_index + 1].w;
+    int h1 = texture_levels[mip_index + 1].h;
+
+    float2 uv = diffgeo->uv;
+    // Scale uv coordinates
+    // Level (n)
+    float x0 = uv.x * w0 - 0.5f;
+    float y0 = uv.y * h0 - 0.5f;
+    // Level (n + 1)
+    float x1 = uv.x * w1 - 0.5f;
+    float y1 = uv.y * h1 - 0.5f;
+
+    // Get texture space integer coordinates (with offsets for bilinear filtering)
+    // >>> TODO: Need to implement UV mode support
+    // Also reverse Y coordinate, it is needed as textures are loaded with Y axis
+    // going top to down and our axis goes from down to top
+    // Level (n)
+    int xi00 = (int)floor(x0) % w0;
+    int yi00 = (h0 - 1) - (int)floor(y0) % h0;
+    int xi01 = (int)floor(x0 + 1) % w0;
+    int yi01 = (h0 - 1) - (int)floor(y0 + 1) % h0;
+    // Level (n + 1)
+    int xi10 = (int)floor(x1) % w1;
+    int yi10 = (h1 - 1) - (int)floor(y1) % h1;
+    int xi11 = (int)floor(x1 + 1) % w1;
+    int yi11 = (h1 - 1) - (int)floor(y1 + 1) % h1;
+
+    // Weights for bilinear interpolation
+    // Level (n)
+    float wx0 = x0 - floor(x0);
+    float wy0 = y0 - floor(y0);
+    // Level (n + 1)
+    float wx1 = x1 - floor(x1);
+    float wy1 = y1 - floor(y1);
+
+    // Weights for interpolation between neighbor mip levels
+    float w01 = mipmap_level - floor(mipmap_level);
+
+    switch (textures[texidx].fmt)
+    {
+    case RGBA32:
+    {
+        __global float4 const* mydataf0 = (__global float4 const*)(texturedata + texture_levels[mip_index].dataoffset);
+        __global float4 const* mydataf1 = (__global float4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+
+        float3 n000 = TextureData_SampleNormalFromBump_float4(mydataf0, w0, h0, xi00, yi00);
+        float3 n001 = TextureData_SampleNormalFromBump_float4(mydataf0, w0, h0, xi01, yi00);
+        float3 n010 = TextureData_SampleNormalFromBump_float4(mydataf0, w0, h0, xi00, yi01);
+        float3 n011 = TextureData_SampleNormalFromBump_float4(mydataf0, w0, h0, xi01, yi01);
+
+        float3 n100 = TextureData_SampleNormalFromBump_float4(mydataf1, w1, h1, xi10, yi10);
+        float3 n101 = TextureData_SampleNormalFromBump_float4(mydataf1, w1, h1, xi11, yi10);
+        float3 n110 = TextureData_SampleNormalFromBump_float4(mydataf1, w1, h1, xi10, yi11);
+        float3 n111 = TextureData_SampleNormalFromBump_float4(mydataf1, w1, h1, xi11, yi11);
+
+        float3 n = lerp3(lerp3(lerp3(n000, n001, wx0), lerp3(n010, n011, wx0), wy0),
+                   lerp3(lerp3(n100, n101, wx1), lerp3(n110, n111, wx1), wy1),
+                   w01);
+
+        return 0.5f * normalize(n) + make_float3(0.5f, 0.5f, 0.5f);
+    }
+
+    case RGBA16:
+    {
+        __global half const* mydatah0 = (__global half const*)(texturedata + texture_levels[mip_index].dataoffset);
+        __global half const* mydatah1 = (__global half const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+
+        float3 n000 = TextureData_SampleNormalFromBump_half4(mydatah0, w0, h0, xi00, yi00);
+        float3 n001 = TextureData_SampleNormalFromBump_half4(mydatah0, w0, h0, xi01, yi00);
+        float3 n010 = TextureData_SampleNormalFromBump_half4(mydatah0, w0, h0, xi00, yi01);
+        float3 n011 = TextureData_SampleNormalFromBump_half4(mydatah0, w0, h0, xi01, yi01);
+
+        float3 n100 = TextureData_SampleNormalFromBump_half4(mydatah1, w1, h1, xi10, yi10);
+        float3 n101 = TextureData_SampleNormalFromBump_half4(mydatah1, w1, h1, xi11, yi10);
+        float3 n110 = TextureData_SampleNormalFromBump_half4(mydatah1, w1, h1, xi10, yi11);
+        float3 n111 = TextureData_SampleNormalFromBump_half4(mydatah1, w1, h1, xi11, yi11);
+
+        float3 n = lerp3(lerp3(lerp3(n000, n001, wx0), lerp3(n010, n011, wx0), wy0),
+                   lerp3(lerp3(n100, n101, wx1), lerp3(n110, n111, wx1), wy1),
+                   w01);
+
+        return 0.5f * normalize(n) + make_float3(0.5f, 0.5f, 0.5f);
+    }
+
+    case RGBA8:
+    {
+        __global uchar4 const* mydatac0 = (__global uchar4 const*)(texturedata + texture_levels[mip_index].dataoffset);
+        __global uchar4 const* mydatac1 = (__global uchar4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+
+        float3 n000 = TextureData_SampleNormalFromBump_uchar4(mydatac0, w0, h0, xi00, yi00);
+        float3 n001 = TextureData_SampleNormalFromBump_uchar4(mydatac0, w0, h0, xi01, yi00);
+        float3 n010 = TextureData_SampleNormalFromBump_uchar4(mydatac0, w0, h0, xi00, yi01);
+        float3 n011 = TextureData_SampleNormalFromBump_uchar4(mydatac0, w0, h0, xi01, yi01);
+
+        float3 n100 = TextureData_SampleNormalFromBump_uchar4(mydatac1, w1, h1, xi10, yi10);
+        float3 n101 = TextureData_SampleNormalFromBump_uchar4(mydatac1, w1, h1, xi11, yi10);
+        float3 n110 = TextureData_SampleNormalFromBump_uchar4(mydatac1, w1, h1, xi10, yi11);
+        float3 n111 = TextureData_SampleNormalFromBump_uchar4(mydatac1, w1, h1, xi11, yi11);
+
+        float3 n = lerp3(lerp3(lerp3(n000, n001, wx0), lerp3(n010, n011, wx0), wy0),
+                   lerp3(lerp3(n100, n101, wx1), lerp3(n110, n111, wx1), wy1),
+                   w01);
+
+        return 0.5f * normalize(n) + make_float3(0.5f, 0.5f, 0.5f);
+    }
+
+    default:
+    {
+        return make_float3(0.f, 0.f, 0.f);
+    }
+    }
+}
 
 #endif // TEXTURE_CL

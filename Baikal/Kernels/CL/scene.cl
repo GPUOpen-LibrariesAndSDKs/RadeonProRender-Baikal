@@ -332,7 +332,7 @@ void Scene_FillDifferentialGeometry(// Scene
         diffgeo->ng = -diffgeo->ng;
     }
 
-    // Calculate tangent basis
+    // Calculate parametric partial derivatives of the surface
     // From PBRT book
     float2 duv02 = uv0 - uv2;
     float2 duv12 = uv1 - uv2;
@@ -367,11 +367,12 @@ void Scene_FillDifferentialGeometry(// Scene
     }
 
     // HACK: this values actually are tangent and bitangent
+#if 1
     diffgeo->dpdu = normalize(GetOrthoVector(diffgeo->n));
     diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
-
+#else
     // TODO: orient tangent and bitangent along uv?
-/*
+
     diffgeo->dpdu -= dot(diffgeo->n, diffgeo->dpdu) * diffgeo->n;
     diffgeo->dpdu = normalize(diffgeo->dpdu);
     diffgeo->dpdv = cross(diffgeo->dpdu, diffgeo->n);
@@ -380,7 +381,7 @@ void Scene_FillDifferentialGeometry(// Scene
     {
         diffgeo->dpdu *= -1.0f;
     }
-*/
+#endif
 }
 
 
