@@ -34,6 +34,12 @@ THE SOFTWARE.
 #define TEXTURE_ARGS textures, mip_levels, texturedata
 #define TEXTURE_ARGS_IDX(x) x, textures, mip_levels, texturedata
 
+inline
+int WrapTexel(float coord, float modulus)
+{
+    return (coord / modulus - floor(coord / modulus)) * modulus;
+}
+
 /// Sample 2D texture
 inline
 float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
@@ -52,10 +58,10 @@ float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
     // >>> TODO: Need to implement UV mode support
     // Also reverse Y coordinate, it is needed as textures are loaded with Y axis
     // going top to down and our axis goes from down to top
-    int xi0 = (int)floor(x) % w;
-    int yi0 = (h - 1) - (int)floor(y) % h;
-    int xi1 = (int)floor(x + 1) % w;
-    int yi1 = (h - 1) - (int)floor(y + 1) % h;
+    int xi0 = WrapTexel(x, w);
+    int yi0 = (h - 1) - WrapTexel(y, h);
+    int xi1 = WrapTexel(x + 1, w);
+    int yi1 = (h - 1) - WrapTexel(y + 1, h);
 
     // Weights for bilinear interpolation
     float wx = x - floor(x);
@@ -156,15 +162,15 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
     // Also reverse Y coordinate, it is needed as textures are loaded with Y axis
     // going top to down and our axis goes from down to top
     // Level (n)
-    int xi00 = (int)floor(x0) % w0;
-    int yi00 = (h0 - 1) - (int)floor(y0) % h0;
-    int xi01 = (int)floor(x0 + 1) % w0;
-    int yi01 = (h0 - 1) - (int)floor(y0 + 1) % h0;
+    int xi00 = WrapTexel(x0, w0);
+    int yi00 = (h0 - 1) - WrapTexel(y0, h0);
+    int xi01 = WrapTexel(x0 + 1, w0);
+    int yi01 = (h0 - 1) - WrapTexel(y0 + 1, h0);
     // Level (n + 1)
-    int xi10 = (int)floor(x1) % w1;
-    int yi10 = (h1 - 1) - (int)floor(y1) % h1;
-    int xi11 = (int)floor(x1 + 1) % w1;
-    int yi11 = (h1 - 1) - (int)floor(y1 + 1) % h1;
+    int xi10 = WrapTexel(x1, w1);
+    int yi10 = (h1 - 1) - WrapTexel(y1, h1);
+    int xi11 = WrapTexel(x1 + 1, w1);
+    int yi11 = (h1 - 1) - WrapTexel(y1 + 1, h1);
 
     // Weights for bilinear interpolation
     // Level (n)
@@ -471,10 +477,10 @@ float3 Texture_SampleBumpNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
     // Also reverse Y coordinate, it is needed as textures are loaded with Y axis
     // going top to down and our axis goes from down to top
     // Level (n)
-    int xi0 = (int)floor(x) % w;
-    int yi0 = (h - 1) - (int)floor(y) % h;
-    int xi1 = (int)floor(x + 1) % w;
-    int yi1 = (h - 1) - (int)floor(y + 1) % h;
+    int xi0 = WrapTexel(x, w);
+    int yi0 = (h - 1) - WrapTexel(y, h);
+    int xi1 = WrapTexel(x + 1, w);
+    int yi1 = (h - 1) - WrapTexel(y + 1, h);
 
     // Weights for bilinear interpolation
     float wx = x - floor(x);
@@ -572,15 +578,15 @@ float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_
     // Also reverse Y coordinate, it is needed as textures are loaded with Y axis
     // going top to down and our axis goes from down to top
     // Level (n)
-    int xi00 = (int)floor(x0) % w0;
-    int yi00 = (h0 - 1) - (int)floor(y0) % h0;
-    int xi01 = (int)floor(x0 + 1) % w0;
-    int yi01 = (h0 - 1) - (int)floor(y0 + 1) % h0;
+    int xi00 = WrapTexel(x0, w0);
+    int yi00 = (h0 - 1) - WrapTexel(y0, h0);
+    int xi01 = WrapTexel(x0 + 1, w0);
+    int yi01 = (h0 - 1) - WrapTexel(y0 + 1, h0);
     // Level (n + 1)
-    int xi10 = (int)floor(x1) % w1;
-    int yi10 = (h1 - 1) - (int)floor(y1) % h1;
-    int xi11 = (int)floor(x1 + 1) % w1;
-    int yi11 = (h1 - 1) - (int)floor(y1 + 1) % h1;
+    int xi10 = WrapTexel(x1, w1);
+    int yi10 = (h1 - 1) - WrapTexel(y1, h1);
+    int xi11 = WrapTexel(x1 + 1, w1);
+    int yi11 = (h1 - 1) - WrapTexel(y1 + 1, h1);
 
     // Weights for bilinear interpolation
     // Level (n)
