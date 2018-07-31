@@ -211,6 +211,8 @@ KERNEL void FillAOVsUberV2(
             DifferentialGeometry diffgeo;
             Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
+            DifferentialGeometry_CalculateScreenSpaceUVDerivatives(&diffgeo, aux_rays_x + global_id, aux_rays_y + global_id);
+
             if (world_position_enabled)
             {
                 aov_world_position[idx].xyz += diffgeo.p;

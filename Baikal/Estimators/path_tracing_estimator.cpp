@@ -410,6 +410,8 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->lightsamples);
         shadekernel.SetArg(argc++, m_render_data->paths);
         shadekernel.SetArg(argc++, m_render_data->rays[(pass + 1) & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_x[(pass + 1) & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_y[(pass + 1) & 0x1]);
         shadekernel.SetArg(argc++, output);
         shadekernel.SetArg(argc++, scene.input_map_data);
 

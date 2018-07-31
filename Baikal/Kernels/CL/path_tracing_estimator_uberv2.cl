@@ -282,6 +282,8 @@ KERNEL void ShadeSurfaceUberV2(
     GLOBAL Path* restrict paths,
     // Indirect rays
     GLOBAL ray* restrict indirect_rays,
+    GLOBAL aux_ray const* restrict indirect_aux_rays_x,
+    GLOBAL aux_ray const* restrict indirect_aux_rays_y,
     // Radiance
     GLOBAL float3* restrict output,
     GLOBAL InputMapData const* restrict input_map_values
@@ -339,6 +341,11 @@ KERNEL void ShadeSurfaceUberV2(
         // Fill surface data
         DifferentialGeometry diffgeo;
         Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
+
+        if (!Path_IsGlossy(path))
+        {
+            DifferentialGeometry_CalculateScreenSpaceUVDerivatives(&diffgeo, aux_rays_x + hit_idx, aux_rays_y + hit_idx);
+        }
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
@@ -429,6 +436,20 @@ KERNEL void ShadeSurfaceUberV2(
         // Sample bxdf
         const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
         float3 bxdf = UberV2_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf, &uber_shader_data);
+
+        if (!Bxdf_IsSingular(&diffgeo))
+        {
+            Path_SetGlossyFlag(path);
+        }
+        else
+        {
+            if ((diffgeo.mat.flags & kBxdfFlagsBrdf) == kBxdfFlagsBrdf)
+            {
+                Aux_Ray_SpecularReflect(aux_rays_x + hit_idx, aux_rays_y + hit_idx,
+                    indirect_aux_rays_x + global_id, indirect_aux_rays_y + global_id,
+                    &diffgeo, wi, bxdfwo);
+            }
+        }
 
         // If we have light to sample we can hopefully do mis
         if (light_idx > -1)

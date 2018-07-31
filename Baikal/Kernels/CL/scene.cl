@@ -88,6 +88,21 @@ INLINE void Scene_GetTriangleUVs(Scene const* scene, int shape_idx, int prim_idx
     *uv2 = scene->uvs[shape.startvtx + i2];
 }
 
+INLINE void Scene_GetTriangleNormals(Scene const* scene, int shape_idx, int prim_idx, float3* n0, float3* n1, float3* n2)
+{
+    // Extract shape data
+    Shape shape = scene->shapes[shape_idx];
+
+    // Fetch indices starting from startidx and offset by prim_idx
+    int i0 = scene->indices[shape.startidx + 3 * prim_idx];
+    int i1 = scene->indices[shape.startidx + 3 * prim_idx + 1];
+    int i2 = scene->indices[shape.startidx + 3 * prim_idx + 2];
+
+    // Fetch positions and transform to world space
+    *n0 = matrix_mul_vector3(shape.transform, scene->normals[shape.startvtx + i0]);
+    *n1 = matrix_mul_vector3(shape.transform, scene->normals[shape.startvtx + i1]);
+    *n2 = matrix_mul_vector3(shape.transform, scene->normals[shape.startvtx + i2]);
+}
 
 // Interpolate position, normal and uv
 INLINE void Scene_InterpolateAttributes(Scene const* scene, int shape_idx, int prim_idx, float2 barycentrics, float3* p, float3* n, float2* uv, float* area)
@@ -250,25 +265,34 @@ void Scene_FillDifferentialGeometry(// Scene
         diffgeo->ng = -diffgeo->ng;
     }
 
-    // Calculate parametric partial derivatives of the surface
+    // Calculate position and normal derivatives of the surface with respect to texcoord
     // From PBRT book
     float2 duv02 = uv0 - uv2;
     float2 duv12 = uv1 - uv2;
-    float3 dp02  = v0 - v2;
-    float3 dp12  = v1 - v2;
-    float det = duv02.x * duv12.y - duv02.y * duv12.x;
-    bool degenerate_uv = fabs(det) < 1e-08f;
+    float  det = duv02.x * duv12.y - duv02.y * duv12.x;
+    bool   degenerate_uv = fabs(det) < 1e-08f;
+
+    float3 n0, n1, n2;
+    Scene_GetTriangleNormals(scene, shape_idx, prim_idx, &n0, &n1, &n2);
 
     if (!degenerate_uv)
     {
         float invdet = 1.f / det;
 
-        diffgeo->dpdu = (duv12.y * dp02 - duv02.y * dp12) * invdet;
+        float3 dp02  = v0 - v2;
+        float3 dp12  = v1 - v2;
+        diffgeo->dpdu = ( duv12.y * dp02 - duv02.y * dp12) * invdet;
         diffgeo->dpdv = (-duv12.x * dp02 + duv02.x * dp12) * invdet;
+
+        float3 dn02 = n0 - n2;
+        float3 dn12 = n1 - n2;
+        diffgeo->dndu = ( duv12.y * dn02 - duv02.y * dn12) * invdet;
+        diffgeo->dndv = (-duv12.x * dn02 + duv02.x * dn12) * invdet;
     }
     else
     {
         diffgeo->dpdu = diffgeo->dpdv = 0.0f;
+        diffgeo->dndu = diffgeo->dndv = 0.0f;
     }
 
     // Initialize screen space uv derivatives
@@ -290,6 +314,7 @@ void Scene_FillDifferentialGeometry(// Scene
     }
 */
 
+
 }
 
 // Calculate tangent transform matrices inside differential geometry
@@ -310,11 +335,13 @@ INLINE void DifferentialGeometry_CalculateTangentTransforms(DifferentialGeometry
 }
 
 // Compute screen-space derivative of uv coords
-INLINE float2 DifferentialGeometry_CalculatePartialDerivative(
+INLINE void DifferentialGeometry_CalculatePartialDerivatives(
                           // Auxiliary ray
                           GLOBAL aux_ray const* my_ray,
                           // Differential geometry
-                          DifferentialGeometry* diffgeo
+                          DifferentialGeometry* diffgeo,
+                          float3* position_derivative,
+                          float2* uv_derivative
                           )
 {
     //float3 o = vload_half3(0, (GLOBAL half*)&my_ray->o);
@@ -384,7 +411,8 @@ INLINE float2 DifferentialGeometry_CalculatePartialDerivative(
     float det1 = derivative_matrix.w * delta_p.x - derivative_matrix.y * delta_p.y;
     float det2 = derivative_matrix.x * delta_p.y - derivative_matrix.z * delta_p.x;
 
-    return make_float2(det1, det2) / matrix_det;
+    *position_derivative = p - diffgeo->p;
+    *uv_derivative = make_float2(det1, det2) / matrix_det;
 
 }
 
@@ -396,15 +424,11 @@ INLINE void DifferentialGeometry_CalculateScreenSpaceUVDerivatives(
                                                 GLOBAL aux_ray const* aux_ray_y
                                                 )
 {
-    if (aux_ray_x == NULL || aux_ray_y == NULL)
-    {
-        diffgeo->duvdx = diffgeo->duvdy = 0.0f;
-    }
-    else
+    if (aux_ray_x != NULL && aux_ray_y != NULL)
     {
         // Calculate differentials
-        diffgeo->duvdx = DifferentialGeometry_CalculatePartialDerivative(aux_ray_x, diffgeo);
-        diffgeo->duvdy = DifferentialGeometry_CalculatePartialDerivative(aux_ray_y, diffgeo);
+        DifferentialGeometry_CalculatePartialDerivatives(aux_ray_x, diffgeo, &diffgeo->dpdx, &diffgeo->duvdx);
+        DifferentialGeometry_CalculatePartialDerivatives(aux_ray_y, diffgeo, &diffgeo->dpdy, &diffgeo->duvdy);
     }
 
 }

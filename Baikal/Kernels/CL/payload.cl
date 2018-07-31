@@ -263,9 +263,15 @@ typedef struct _DifferentialGeometry
     // Position derivatives with respect to texcoords
     float3 dpdu;
     float3 dpdv;
+    // Position derivatives with respect to screen coords
+    float3 dpdx;
+    float3 dpdy;
     // UV derivatives with respect to screen coords
     float2 duvdx;
     float2 duvdy;
+    // Normal derivatives with respect to texcoords
+    float3 dndu;
+    float3 dndv;
 
     matrix4x4 world_to_tangent;
     matrix4x4 tangent_to_world;
