@@ -209,7 +209,7 @@ KERNEL void FillAOVsUberV2(
 
             // Fill surface data
             DifferentialGeometry diffgeo;
-            Scene_FillDifferentialGeometry(&scene, &isect, aux_rays_x + global_id, aux_rays_y + global_id, &diffgeo);
+            Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
             if (world_position_enabled)
             {
@@ -235,8 +235,8 @@ KERNEL void FillAOVsUberV2(
                     //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
-                    diffgeo.dpdu = -diffgeo.dpdu;
-                    diffgeo.dpdv = -diffgeo.dpdv;
+                    diffgeo.tangent = -diffgeo.tangent;
+                    diffgeo.bitangent = -diffgeo.bitangent;
                 }
                 UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
@@ -299,14 +299,14 @@ KERNEL void FillAOVsUberV2(
                     //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
-                    diffgeo.dpdu = -diffgeo.dpdu;
-                    diffgeo.dpdv = -diffgeo.dpdv;
+                    diffgeo.tangent = -diffgeo.tangent;
+                    diffgeo.bitangent = -diffgeo.bitangent;
                 }
 
                 UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
-                aov_world_tangent[idx].xyz += diffgeo.dpdu;
+                aov_world_tangent[idx].xyz += diffgeo.tangent;
                 aov_world_tangent[idx].w += 1.f;
             }
 
@@ -328,14 +328,14 @@ KERNEL void FillAOVsUberV2(
                     //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
-                    diffgeo.dpdu = -diffgeo.dpdu;
-                    diffgeo.dpdv = -diffgeo.dpdv;
+                    diffgeo.tangent = -diffgeo.tangent;
+                    diffgeo.bitangent = -diffgeo.bitangent;
                 }
 
                 UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
-                aov_world_bitangent[idx].xyz += diffgeo.dpdv;
+                aov_world_bitangent[idx].xyz += diffgeo.bitangent;
                 aov_world_bitangent[idx].w += 1.f;
             }
 

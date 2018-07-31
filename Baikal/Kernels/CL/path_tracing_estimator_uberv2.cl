@@ -338,7 +338,7 @@ KERNEL void ShadeSurfaceUberV2(
 
         // Fill surface data
         DifferentialGeometry diffgeo;
-        Scene_FillDifferentialGeometry(&scene, &isect, aux_rays_x + hit_idx, aux_rays_y + hit_idx, &diffgeo);
+        Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
 
         // Check if we are hitting from the inside
         float ngdotwi = dot(diffgeo.ng, wi);
@@ -403,8 +403,8 @@ KERNEL void ShadeSurfaceUberV2(
             //on normal direction in order to arrange
             //indices of refraction
             diffgeo.n = -diffgeo.n;
-            diffgeo.dpdu = -diffgeo.dpdu;
-            diffgeo.dpdv = -diffgeo.dpdv;
+            diffgeo.tangent = -diffgeo.tangent;
+            diffgeo.bitangent = -diffgeo.bitangent;
             s = -s;
         }
 

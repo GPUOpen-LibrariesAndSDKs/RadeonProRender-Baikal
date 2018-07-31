@@ -69,55 +69,55 @@ float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     switch (textures[texidx].fmt)
     {
-        case RGBA32:
-        {
-            __global float4 const* mydataf = (__global float4 const*)(texturedata + texture_levels[0].dataoffset);
+    case RGBA32:
+    {
+        __global float4 const* mydataf = (__global float4 const*)(texturedata + texture_levels[0].dataoffset);
 
-            float4 val00 = *(mydataf + w * yi0 + xi0);
-            float4 val01 = *(mydataf + w * yi0 + xi1);
-            float4 val10 = *(mydataf + w * yi1 + xi0);
-            float4 val11 = *(mydataf + w * yi1 + xi1);
+        float4 val00 = *(mydataf + w * yi0 + xi0);
+        float4 val01 = *(mydataf + w * yi0 + xi1);
+        float4 val10 = *(mydataf + w * yi1 + xi0);
+        float4 val11 = *(mydataf + w * yi1 + xi1);
 
-            // Perform trilinear filtering and return the result
-            return lerp(lerp(val00, val01, wx), lerp(val10, val11, wx), wy);
-        }
+        // Perform trilinear filtering and return the result
+        return lerp(lerp(val00, val01, wx), lerp(val10, val11, wx), wy);
+    }
 
-        case RGBA16:
-        {
-            __global half const* mydatah = (__global half const*)(texturedata + texture_levels[0].dataoffset);
+    case RGBA16:
+    {
+        __global half const* mydatah = (__global half const*)(texturedata + texture_levels[0].dataoffset);
 
-            float4 val00 = vload_half4(w * yi0 + xi0, mydatah);
-            float4 val01 = vload_half4(w * yi0 + xi1, mydatah);
-            float4 val10 = vload_half4(w * yi1 + xi0, mydatah);
-            float4 val11 = vload_half4(w * yi1 + xi1, mydatah);
+        float4 val00 = vload_half4(w * yi0 + xi0, mydatah);
+        float4 val01 = vload_half4(w * yi0 + xi1, mydatah);
+        float4 val10 = vload_half4(w * yi1 + xi0, mydatah);
+        float4 val11 = vload_half4(w * yi1 + xi1, mydatah);
 
-            // Perform trilinear filtering and return the result
-            return lerp(lerp(val00, val01, wx), lerp(val10, val11, wx), wy);
-        }
+        // Perform trilinear filtering and return the result
+        return lerp(lerp(val00, val01, wx), lerp(val10, val11, wx), wy);
+    }
 
-        case RGBA8:
-        {
-            __global uchar4 const* mydatac = (__global uchar4 const*)(texturedata + texture_levels[0].dataoffset);
+    case RGBA8:
+    {
+        __global uchar4 const* mydatac = (__global uchar4 const*)(texturedata + texture_levels[0].dataoffset);
 
-            // Get 4 values and convert to float
-            uchar4 valu00 = *(mydatac + w * yi0 + xi0);
-            uchar4 valu01 = *(mydatac + w * yi0 + xi1);
-            uchar4 valu10 = *(mydatac + w * yi1 + xi0);
-            uchar4 valu11 = *(mydatac + w * yi1 + xi1);
+        // Get 4 values and convert to float
+        uchar4 valu00 = *(mydatac + w * yi0 + xi0);
+        uchar4 valu01 = *(mydatac + w * yi0 + xi1);
+        uchar4 valu10 = *(mydatac + w * yi1 + xi0);
+        uchar4 valu11 = *(mydatac + w * yi1 + xi1);
 
-            float4 val00 = make_float4((float)valu00.x / 255.f, (float)valu00.y / 255.f, (float)valu00.z / 255.f, (float)valu00.w / 255.f);
-            float4 val01 = make_float4((float)valu01.x / 255.f, (float)valu01.y / 255.f, (float)valu01.z / 255.f, (float)valu01.w / 255.f);
-            float4 val10 = make_float4((float)valu10.x / 255.f, (float)valu10.y / 255.f, (float)valu10.z / 255.f, (float)valu10.w / 255.f);
-            float4 val11 = make_float4((float)valu11.x / 255.f, (float)valu11.y / 255.f, (float)valu11.z / 255.f, (float)valu11.w / 255.f);
+        float4 val00 = make_float4((float)valu00.x / 255.f, (float)valu00.y / 255.f, (float)valu00.z / 255.f, (float)valu00.w / 255.f);
+        float4 val01 = make_float4((float)valu01.x / 255.f, (float)valu01.y / 255.f, (float)valu01.z / 255.f, (float)valu01.w / 255.f);
+        float4 val10 = make_float4((float)valu10.x / 255.f, (float)valu10.y / 255.f, (float)valu10.z / 255.f, (float)valu10.w / 255.f);
+        float4 val11 = make_float4((float)valu11.x / 255.f, (float)valu11.y / 255.f, (float)valu11.z / 255.f, (float)valu11.w / 255.f);
 
-            // Perform trilinear filtering and return the result
-            return lerp(lerp(val00, val01, wx), lerp(val10, val11, wx), wy);
-        }
+        // Perform trilinear filtering and return the result
+        return lerp(lerp(val00, val01, wx), lerp(val10, val11, wx), wy);
+    }
 
-        default:
-        {
-            return make_float4(0.f, 0.f, 0.f, 0.f);
-        }
+    default:
+    {
+        return make_float4(0.f, 0.f, 0.f, 0.f);
+    }
     }
 }
 
@@ -125,9 +125,8 @@ float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 inline
 float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
 {
-    // If texture has no mipmaps
-    // TODO: add check duvdx, duvdy == 0
-    if (textures[texidx].mip_count == 1)
+    // If texture has no mipmaps or derivatives are zero
+    if (textures[texidx].mip_count == 1 || dot(diffgeo->duvdx, diffgeo->duvdx) == 0.0f && dot(diffgeo->duvdy, diffgeo->duvdy) == 0.0f)
     {
         return Texture_Sample2DNoMip(diffgeo->uv, TEXTURE_ARGS_IDX(texidx));
     }
@@ -373,10 +372,10 @@ float Texture_GetValue1f(
 */
 inline float3 TextureData_SampleNormalFromBump_uchar4(__global uchar4 const* mydatac, int width, int height, int s0, int t0)
 {
-    int s0minus = (s0 - 1) % width;
-    int s0plus  = (s0 + 1) % width;
-    int t0minus = (t0 - 1) % height;
-    int t0plus  = (t0 + 1) % height;
+    int s0minus = WrapTexel(s0 - 1, width);
+    int s0plus  = WrapTexel(s0 + 1, width);
+    int t0minus = WrapTexel(t0 - 1, height);
+    int t0plus  = WrapTexel(t0 + 1, height);
 
     const uchar utex00 = (*(mydatac + width * t0minus + s0minus)).x;
     const uchar utex10 = (*(mydatac + width * t0minus + (s0))).x;
@@ -409,10 +408,10 @@ inline float3 TextureData_SampleNormalFromBump_uchar4(__global uchar4 const* myd
 
 inline float3 TextureData_SampleNormalFromBump_half4(__global half const* mydatah, int width, int height, int s0, int t0)
 {
-    int s0minus = (s0 - 1) % width;
-    int s0plus  = (s0 + 1) % width;
-    int t0minus = (t0 - 1) % height;
-    int t0plus  = (t0 + 1) % height;
+    int s0minus = WrapTexel(s0 - 1, width);
+    int s0plus  = WrapTexel(s0 + 1, width);
+    int t0minus = WrapTexel(t0 - 1, height);
+    int t0plus  = WrapTexel(t0 + 1, height);
 
     const float tex00 = vload_half4(width * t0minus + s0minus, mydatah).x;
     const float tex10 = vload_half4(width * t0minus + (s0), mydatah).x;
@@ -434,10 +433,10 @@ inline float3 TextureData_SampleNormalFromBump_half4(__global half const* mydata
 
 inline float3 TextureData_SampleNormalFromBump_float4(__global float4 const* mydataf, int width, int height, int s0, int t0)
 {
-    int s0minus = (s0 - 1) % width;
-    int s0plus  = (s0 + 1) % width;
-    int t0minus = (t0 - 1) % height;
-    int t0plus  = (t0 + 1) % height;
+    int s0minus = WrapTexel(s0 - 1, width);
+    int s0plus  = WrapTexel(s0 + 1, width);
+    int t0minus = WrapTexel(t0 - 1, height);
+    int t0plus  = WrapTexel(t0 + 1, height);
 
     const float tex00 = (*(mydataf + width * t0minus + s0minus)).x;
     const float tex10 = (*(mydataf + width * t0minus + (s0))).x;
@@ -541,9 +540,8 @@ float3 Texture_SampleBumpNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 inline
 float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
 {
-    // If texture has no mipmaps
-    // TODO: add check duvdx, duvdy == 0
-    if (textures[texidx].mip_count == 1)
+    // If texture has no mipmaps or derivatives are zero
+    if (textures[texidx].mip_count == 1 || dot(diffgeo->duvdx, diffgeo->duvdx) == 0.0f && dot(diffgeo->duvdy, diffgeo->duvdy) == 0.0f)
     {
         return Texture_SampleBumpNoMip(diffgeo->uv, TEXTURE_ARGS_IDX(texidx));
     }

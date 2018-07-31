@@ -252,8 +252,10 @@ typedef struct _DifferentialGeometry
 {
     // World space position
     float3 p;
-    // Shading normal
+    // Shading normal, tangent, bitangent
     float3 n;
+    float3 tangent;
+    float3 bitangent;
     // Geo normal
     float3 ng;
     // UVs

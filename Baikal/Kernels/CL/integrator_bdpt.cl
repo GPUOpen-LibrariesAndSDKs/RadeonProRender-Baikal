@@ -279,7 +279,7 @@ KERNEL void SampleSurface(
 
             // Fill surface data
             DifferentialGeometry diffgeo;
-            Scene_FillDifferentialGeometry(&scene, &isect, NULL, NULL, &diffgeo);
+            Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
             diffgeo.transfer_mode = transfer_mode; 
 
             // Check if we are hitting from the inside
@@ -292,8 +292,8 @@ KERNEL void SampleSurface(
                 // on normal direction in order to arrange
                 // indices of refraction
                 diffgeo.n = -diffgeo.n;
-                diffgeo.dpdu = -diffgeo.dpdu;
-                diffgeo.dpdv = -diffgeo.dpdv;
+                diffgeo.tangent = -diffgeo.tangent;
+                diffgeo.bitangent = -diffgeo.bitangent;
             }
 
             float ndotwi = dot(diffgeo.n, wi);
@@ -316,8 +316,8 @@ KERNEL void SampleSurface(
                 //on normal direction in order to arrange
                 //indices of refraction
                 diffgeo.n = -diffgeo.n;
-                diffgeo.dpdu = -diffgeo.dpdu;
-                diffgeo.dpdv = -diffgeo.dpdv;
+                diffgeo.tangent = -diffgeo.tangent;
+                diffgeo.bitangent = -diffgeo.bitangent;
             }
 
             // Check if we need to apply normal map
@@ -448,8 +448,8 @@ KERNEL void SampleSurface(
             diffgeo.n = my_eye_vertex->shading_normal;
             diffgeo.ng = my_eye_vertex->geometric_normal;
             diffgeo.uv = my_eye_vertex->uv;
-            diffgeo.dpdu = GetOrthoVector(diffgeo.n);
-            diffgeo.dpdv = cross(diffgeo.n, diffgeo.dpdu);
+            diffgeo.tangent = GetOrthoVector(diffgeo.n);
+            diffgeo.bitangent = cross(diffgeo.n, diffgeo.tangent);
             diffgeo.mat = materials[my_eye_vertex->material_index];
             diffgeo.mat.fresnel = 1.f;
             DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
@@ -619,8 +619,8 @@ KERNEL void SampleSurface(
         eye_dg.n = my_eye_vertex->shading_normal;
         eye_dg.ng = my_eye_vertex->geometric_normal;
         eye_dg.uv = my_eye_vertex->uv;
-        eye_dg.dpdu = GetOrthoVector(eye_dg.n);
-        eye_dg.dpdv = cross(eye_dg.n, eye_dg.dpdu);
+        eye_dg.tangent = GetOrthoVector(eye_dg.n);
+        eye_dg.bitangent = cross(eye_dg.n, eye_dg.tangent);
         eye_dg.mat = materials[my_eye_vertex->material_index];
         eye_dg.mat.fresnel = 1.f;
         DifferentialGeometry_CalculateTangentTransforms(&eye_dg);
@@ -630,8 +630,8 @@ KERNEL void SampleSurface(
         light_dg.n = my_light_vertex->shading_normal;
         light_dg.ng = my_light_vertex->geometric_normal;
         light_dg.uv = my_light_vertex->uv;
-        light_dg.dpdu = GetOrthoVector(light_dg.n);
-        light_dg.dpdv = cross(light_dg.dpdu, light_dg.n);
+        light_dg.tangent = GetOrthoVector(light_dg.n);
+        light_dg.bitangent = cross(light_dg.tangent, light_dg.n);
         light_dg.mat = materials[my_light_vertex->material_index];
         light_dg.mat.fresnel = 1.f;
         DifferentialGeometry_CalculateTangentTransforms(&light_dg);
@@ -989,8 +989,8 @@ KERNEL void ConnectCaustics(
     eye_dg.n = camera->forward;
     eye_dg.ng = camera->forward;
     eye_dg.uv = 0.f;
-    eye_dg.dpdu = GetOrthoVector(eye_dg.n);
-    eye_dg.dpdv = cross(eye_dg.n, eye_dg.dpdu);
+    eye_dg.tangent = GetOrthoVector(eye_dg.n);
+    eye_dg.bitangent = cross(eye_dg.n, eye_dg.tangent);
     DifferentialGeometry_CalculateTangentTransforms(&eye_dg);
 
     DifferentialGeometry light_dg;
@@ -998,8 +998,8 @@ KERNEL void ConnectCaustics(
     light_dg.n = my_light_vertex->shading_normal;
     light_dg.ng = my_light_vertex->geometric_normal;
     light_dg.uv = my_light_vertex->uv;
-    light_dg.dpdu = GetOrthoVector(light_dg.n);
-    light_dg.dpdv = cross(light_dg.dpdu, light_dg.n);
+    light_dg.tangent = GetOrthoVector(light_dg.n);
+    light_dg.bitangent = cross(light_dg.tangent, light_dg.n);
     light_dg.mat = materials[my_light_vertex->material_index];
     light_dg.mat.fresnel = 1.f;
     DifferentialGeometry_CalculateTangentTransforms(&light_dg);

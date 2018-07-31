@@ -197,8 +197,120 @@ INLINE int Scene_GetVolumeIndex(Scene const* scene, int shape_idx)
     return shape.volume_idx;
 }
 
-// Compute screen-space derivative of uv map
-INLINE float2 Scene_ComputePartialDerivative(
+/// Fill DifferentialGeometry structure based on intersection info from RadeonRays
+void Scene_FillDifferentialGeometry(// Scene
+                              Scene const* scene,
+                              // RadeonRays intersection
+                              Intersection const* isect,
+                              // Differential geometry
+                              DifferentialGeometry* diffgeo
+                              )
+{
+    // Determine shape and polygon
+    int shape_idx = isect->shapeid - 1;
+    int prim_idx = isect->primid;
+
+    // Get barycentrics
+    float2 barycentrics = isect->uvwt.xy;
+
+    // Extract shape data
+    Shape shape = scene->shapes[shape_idx];
+
+    // Interpolate attributes
+    float3 p;
+    float3 n;
+    float2 uv;
+    float area;
+    Scene_InterpolateAttributes(scene, shape_idx, prim_idx, barycentrics, &p, &n, &uv, &area);
+    // Triangle area (for area lighting)
+    diffgeo->area = area;
+
+    // Calculate barycentric position and normal
+    diffgeo->n = n;
+    diffgeo->p = p;
+    diffgeo->uv = uv;
+
+    // Get vertices
+    float3 v0, v1, v2;
+    Scene_GetTriangleVertices(scene, shape_idx, prim_idx, &v0, &v1, &v2);
+
+    // Calculate true normal
+    diffgeo->ng = normalize(cross(v1 - v0, v2 - v0));
+
+    // Get material at shading point
+    diffgeo->mat = shape.material;
+
+    // Get UVs
+    float2 uv0, uv1, uv2;
+    Scene_GetTriangleUVs(scene, shape_idx, prim_idx, &uv0, &uv1, &uv2);
+
+    // Reverse geometric normal if shading normal points to different side
+    if (dot(diffgeo->ng, diffgeo->n) < 0.f)
+    {
+        diffgeo->ng = -diffgeo->ng;
+    }
+
+    // Calculate parametric partial derivatives of the surface
+    // From PBRT book
+    float2 duv02 = uv0 - uv2;
+    float2 duv12 = uv1 - uv2;
+    float3 dp02  = v0 - v2;
+    float3 dp12  = v1 - v2;
+    float det = duv02.x * duv12.y - duv02.y * duv12.x;
+    bool degenerate_uv = fabs(det) < 1e-08f;
+
+    if (!degenerate_uv)
+    {
+        float invdet = 1.f / det;
+
+        diffgeo->dpdu = (duv12.y * dp02 - duv02.y * dp12) * invdet;
+        diffgeo->dpdv = (-duv12.x * dp02 + duv02.x * dp12) * invdet;
+    }
+    else
+    {
+        diffgeo->dpdu = diffgeo->dpdv = 0.0f;
+    }
+
+    // Initialize screen space uv derivatives
+    diffgeo->duvdx = diffgeo->duvdy = 0.0f;
+
+    // Compute tangent and bitangent vectors
+    diffgeo->tangent = diffgeo->dpdu;
+    // Gram–Schmidt orthogonalization
+    diffgeo->tangent -= dot(diffgeo->n, diffgeo->tangent) * diffgeo->n;
+    diffgeo->tangent = normalize(diffgeo->tangent);
+    // Bitangent vector need to be orthogonal to tangent, since we use
+    // the advantage of an orthogonal matrix that is easily invertible
+    diffgeo->bitangent = normalize(cross(diffgeo->tangent, diffgeo->n));
+/*
+    // Check handedness when uv are mirrored
+    if (dot(cross(diffgeo->n, diffgeo->tangent), diffgeo->bitangent) < 0.0f)
+    {
+        diffgeo->tangent *= -1.0f;
+    }
+*/
+
+}
+
+// Calculate tangent transform matrices inside differential geometry
+INLINE void DifferentialGeometry_CalculateTangentTransforms(DifferentialGeometry* diffgeo)
+{
+    diffgeo->world_to_tangent = matrix_from_rows3(diffgeo->tangent, diffgeo->n, diffgeo->bitangent);
+
+    diffgeo->world_to_tangent.m0.w = -dot(diffgeo->tangent, diffgeo->p);
+    diffgeo->world_to_tangent.m1.w = -dot(diffgeo->n, diffgeo->p);
+    diffgeo->world_to_tangent.m2.w = -dot(diffgeo->bitangent, diffgeo->p);
+
+    diffgeo->tangent_to_world = matrix_from_cols3(diffgeo->world_to_tangent.m0.xyz,
+        diffgeo->world_to_tangent.m1.xyz, diffgeo->world_to_tangent.m2.xyz);
+
+    diffgeo->tangent_to_world.m0.w = diffgeo->p.x;
+    diffgeo->tangent_to_world.m1.w = diffgeo->p.y;
+    diffgeo->tangent_to_world.m2.w = diffgeo->p.z;
+}
+
+// Compute screen-space derivative of uv coords
+INLINE float2 DifferentialGeometry_CalculatePartialDerivative(
                           // Auxiliary ray
                           GLOBAL aux_ray const* my_ray,
                           // Differential geometry
@@ -210,7 +322,7 @@ INLINE float2 Scene_ComputePartialDerivative(
     float3 o = my_ray->o;
     float3 d = my_ray->d;
 
-    // Find intersection point of auxiliary ray with the tangent plane
+    // Find intersection point of auxiliary ray with the dpdu plane
     float t = dot(diffgeo->n, diffgeo->p - o) / dot(diffgeo->n, d);
 
     float3 p = o + d * t;
@@ -276,85 +388,14 @@ INLINE float2 Scene_ComputePartialDerivative(
 
 }
 
-/// Fill DifferentialGeometry structure based on intersection info from RadeonRays
-void Scene_FillDifferentialGeometry(// Scene
-                              Scene const* scene,
-                              // RadeonRays intersection
-                              Intersection const* isect,
-                              // auxiliary rays
-                              GLOBAL aux_ray const* aux_ray_x,
-                              GLOBAL aux_ray const* aux_ray_y,
-                              // Differential geometry
-                              DifferentialGeometry* diffgeo
-                              )
+INLINE void DifferentialGeometry_CalculateScreenSpaceUVDerivatives(
+                                                // Differential geometry
+                                                DifferentialGeometry* diffgeo,
+                                                // auxiliary rays
+                                                GLOBAL aux_ray const* aux_ray_x,
+                                                GLOBAL aux_ray const* aux_ray_y
+                                                )
 {
-    // Determine shape and polygon
-    int shape_idx = isect->shapeid - 1;
-    int prim_idx = isect->primid;
-
-    // Get barycentrics
-    float2 barycentrics = isect->uvwt.xy;
-
-    // Extract shape data
-    Shape shape = scene->shapes[shape_idx];
-
-    // Interpolate attributes
-    float3 p;
-    float3 n;
-    float2 uv;
-    float area;
-    Scene_InterpolateAttributes(scene, shape_idx, prim_idx, barycentrics, &p, &n, &uv, &area);
-    // Triangle area (for area lighting)
-    diffgeo->area = area;
-
-    // Calculate barycentric position and normal
-    diffgeo->n = n;
-    diffgeo->p = p;
-    diffgeo->uv = uv;
-
-    // Get vertices
-    float3 v0, v1, v2;
-    Scene_GetTriangleVertices(scene, shape_idx, prim_idx, &v0, &v1, &v2);
-
-    // Calculate true normal
-    diffgeo->ng = normalize(cross(v1 - v0, v2 - v0));
-
-    // Get material at shading point
-    diffgeo->mat = shape.material;
-
-    // Get UVs
-    float2 uv0, uv1, uv2;
-    Scene_GetTriangleUVs(scene, shape_idx, prim_idx, &uv0, &uv1, &uv2);
-
-    // Reverse geometric normal if shading normal points to different side
-    if (dot(diffgeo->ng, diffgeo->n) < 0.f)
-    {
-        diffgeo->ng = -diffgeo->ng;
-    }
-
-    // Calculate parametric partial derivatives of the surface
-    // From PBRT book
-    float2 duv02 = uv0 - uv2;
-    float2 duv12 = uv1 - uv2;
-    float3 dp02  = v0 - v2;
-    float3 dp12  = v1 - v2;
-    float det = duv02.x * duv12.y - duv02.y * duv12.x;
-    bool degenerate_uv = fabs(det) < 1e-08f;
-
-    if (!degenerate_uv)
-    {
-        float invdet = 1.f / det;
-        // NOTE: This values is being normalised a few lines later
-        // We use dpdu and dpdv to compute screen space uv derivatives
-        diffgeo->dpdu = (duv12.y * dp02 - duv02.y * dp12) * invdet;
-        diffgeo->dpdv = (-duv12.x * dp02 + duv02.x * dp12) * invdet;
-    }
-    else
-    {
-        diffgeo->dpdu = diffgeo->dpdv = 0.0f;
-    }
-
-    // Calculate intersection of the aux rays with the tangent plane
     if (aux_ray_x == NULL || aux_ray_y == NULL)
     {
         diffgeo->duvdx = diffgeo->duvdy = 0.0f;
@@ -362,44 +403,10 @@ void Scene_FillDifferentialGeometry(// Scene
     else
     {
         // Calculate differentials
-        diffgeo->duvdx = Scene_ComputePartialDerivative(aux_ray_x, diffgeo);
-        diffgeo->duvdy = Scene_ComputePartialDerivative(aux_ray_y, diffgeo);
+        diffgeo->duvdx = DifferentialGeometry_CalculatePartialDerivative(aux_ray_x, diffgeo);
+        diffgeo->duvdy = DifferentialGeometry_CalculatePartialDerivative(aux_ray_y, diffgeo);
     }
 
-    // HACK: this values actually are tangent and bitangent
-#if 1
-    diffgeo->dpdu = normalize(GetOrthoVector(diffgeo->n));
-    diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
-#else
-    // TODO: orient tangent and bitangent along uv?
-
-    diffgeo->dpdu -= dot(diffgeo->n, diffgeo->dpdu) * diffgeo->n;
-    diffgeo->dpdu = normalize(diffgeo->dpdu);
-    diffgeo->dpdv = cross(diffgeo->dpdu, diffgeo->n);
-
-    if (dot(cross(diffgeo->n, diffgeo->dpdu), diffgeo->dpdv) < 0.0f)
-    {
-        diffgeo->dpdu *= -1.0f;
-    }
-#endif
-}
-
-
-// Calculate tangent transform matrices inside differential geometry
-INLINE void DifferentialGeometry_CalculateTangentTransforms(DifferentialGeometry* diffgeo)
-{
-    diffgeo->world_to_tangent = matrix_from_rows3(diffgeo->dpdu, diffgeo->n, diffgeo->dpdv);
-
-    diffgeo->world_to_tangent.m0.w = -dot(diffgeo->dpdu, diffgeo->p);
-    diffgeo->world_to_tangent.m1.w = -dot(diffgeo->n, diffgeo->p);
-    diffgeo->world_to_tangent.m2.w = -dot(diffgeo->dpdv, diffgeo->p);
-
-    diffgeo->tangent_to_world = matrix_from_cols3(diffgeo->world_to_tangent.m0.xyz,
-        diffgeo->world_to_tangent.m1.xyz, diffgeo->world_to_tangent.m2.xyz);
-
-    diffgeo->tangent_to_world.m0.w = diffgeo->p.x;
-    diffgeo->tangent_to_world.m1.w = diffgeo->p.y;
-    diffgeo->tangent_to_world.m2.w = diffgeo->p.z;
 }
 
 #define POWER_SAMPLING
