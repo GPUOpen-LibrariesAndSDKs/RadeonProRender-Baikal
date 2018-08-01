@@ -243,7 +243,6 @@ struct _Texture
     // Format
     int fmt;
     // unused field for alignment
-    // TODO: use this flag as 'needs mipmap generation'
     int alignment;
 } Texture;
 

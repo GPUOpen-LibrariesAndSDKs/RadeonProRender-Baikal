@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
+
 #ifndef MIPMAP_LEVEL_SCALER_CL
 #define MIPMAP_LEVEL_SCALER_CL
 
@@ -170,7 +171,6 @@ inline void SetValue_float4(
 }
 
 // Level scaler kernels scheme
-
 #define SCALE_X_PRODUCER(type)\
     KERNEL\
     void ScaleX_##type(\
@@ -197,9 +197,9 @@ inline void SetValue_float4(
         if (id < dst_mip_level.w * src_mip_level.h)\
         {\
             SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(src_row, (src_x - 1) % src_mip_level.w, weights[dst_x].x) +\
+                        ComputeMult_##type(src_row, WrapTexel(src_x - 1, src_mip_level.w), weights[dst_x].x) +\
                         ComputeMult_##type(src_row, src_x, weights[dst_x].y) +\
-                        ComputeMult_##type(src_row, (src_x + 1) % src_mip_level.w, weights[dst_x].z)));\
+                        ComputeMult_##type(src_row, WrapTexel(src_x + 1, src_mip_level.w), weights[dst_x].z)));\
         }\
     }
 
@@ -225,15 +225,15 @@ inline void SetValue_float4(
         int src_y = 2 * dst_y;\
         \
         GLOBAL type * dst_row        = (GLOBAL type*) (texturedata + dst_mip_level.dataoffset) + dst_y * dst_mip_level.w;\
-        GLOBAL type * top_src_row    = (GLOBAL type*) (tmp_buffer) + (src_y - 1) % src_mip_level.h * dst_mip_level.w;\
-        GLOBAL type * src_row        = (GLOBAL type*) (tmp_buffer) + src_y                         * dst_mip_level.w;\
-        GLOBAL type * bottom_src_row = (GLOBAL type*) (tmp_buffer) + (src_y + 1) % src_mip_level.h * dst_mip_level.w;\
+        GLOBAL type * top_src_row    = (GLOBAL type*) (tmp_buffer) + WrapTexel(src_y - 1, src_mip_level.h) * dst_mip_level.w;\
+        GLOBAL type * src_row        = (GLOBAL type*) (tmp_buffer) + src_y                                 * dst_mip_level.w;\
+        GLOBAL type * bottom_src_row = (GLOBAL type*) (tmp_buffer) + WrapTexel(src_y + 1, src_mip_level.h) * dst_mip_level.w;\
         \
         if (id < dst_mip_level.w * dst_mip_level.h)\
         {\
             SetValue_##type(dst_row, dst_x, (\
-                        ComputeMult_##type(top_src_row, src_x, weights[dst_y].x) +\
-                        ComputeMult_##type(src_row, src_x, weights[dst_y].y) +\
+                        ComputeMult_##type(top_src_row,    src_x, weights[dst_y].x) +\
+                        ComputeMult_##type(src_row,        src_x, weights[dst_y].y) +\
                         ComputeMult_##type(bottom_src_row, src_x, weights[dst_y].z)));\
         }\
     }

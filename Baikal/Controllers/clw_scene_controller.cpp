@@ -905,7 +905,7 @@ namespace Baikal
             {
                 WriteMipLevel(*tex, mip_levels + num_mip_levels_written, i, (int)texturedata_buffer_size);
                 ++num_mip_levels_written;
-                // TODO: align to 16 bytes
+
                 texturedata_buffer_size += tex->GetLevelSizeInBytes(i);
             }
         }
@@ -934,7 +934,6 @@ namespace Baikal
 
             WriteTextureData(*tex, texturedata + num_bytes_written);
 
-            // TODO: align each mip level to 16 bytes
             num_bytes_written += tex->GetSizeInBytes();
 
         }
@@ -948,7 +947,6 @@ namespace Baikal
         {
             auto tex = tex_iter->ItemAs<Texture>();
 
-            // TODO: check if mip_levels buffer has been resized?
             if (tex->NeedsMipGeneration())
             {
                 m_mipmap_generator->BuildMipPyramid(tex, texture_index, out.textures, out.mip_levels, out.texturedata);

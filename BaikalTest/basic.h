@@ -113,7 +113,7 @@ public:
 
         auto platform = platforms[platform_index];
         auto device = platform.GetDevice(device_index);
-        
+
         ASSERT_NO_THROW(m_context = std::make_unique<CLWContext>(CLWContext::Create(device)));
         ASSERT_NO_THROW(m_factory = std::make_unique<Baikal::ClwRenderFactory>(*m_context, "cache"));
         ASSERT_NO_THROW(m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer));

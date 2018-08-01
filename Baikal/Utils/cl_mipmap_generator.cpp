@@ -1,5 +1,5 @@
 /**********************************************************************
-Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -106,7 +106,6 @@ namespace Baikal
         }
 
         // Downsample in x direction
-        if (src_size.x != 1)
         {
             bool is_rounding_necessary = (src_size.x % 2 != 0);
 
@@ -133,20 +132,8 @@ namespace Baikal
                 GetContext().Launch1D(0, ((work_size + 63) / 64) * 64, 64, downsample_kernel).Wait();
             }
         }
-        else
-        {
-            throw std::runtime_error("CLMipmapGenerator::Downsample(...): src_size.x == 1!");
-            //GetContext().CopyBuffer<char>(
-            //    0,
-            //    texturedata,
-            //    m_tmp_buffer,
-            //    src_offset,
-            //    0,
-            //    src_pitch * src_height).Wait();
-        }
 
         // downscale in y direction
-        if (src_size.y != 1)
         {
             bool is_rounding_necessary = (src_size.y % 2 != 0);
 

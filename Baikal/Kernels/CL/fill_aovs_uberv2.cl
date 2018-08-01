@@ -175,7 +175,7 @@ KERNEL void FillAOVsUberV2(
                 float x = (float)(idx % width) / (float)width;
                 float y = (float)(idx / width) / (float)height;
                 float2 uv = make_float2(x, y);
-                //aov_background[idx].xyz += Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
+                aov_background[idx].xyz += Texture_Sample2DNoMip(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
             }
             else if (env_light_idx != -1)
             {

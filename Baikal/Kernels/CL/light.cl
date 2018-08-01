@@ -231,11 +231,10 @@ float3 AreaLight_GetLe(// Emissive object
         float3 d = p - dg->p;
         *wo = d;
 
-
         int material_offset = scene->shapes[shapeidx].material.offset;
 
         const float3 ke = GetUberV2EmissionColor(material_offset, dg, scene->input_map_values, scene->material_attributes, TEXTURE_ARGS).xyz;
-        
+
         return ke;
     }
     else
@@ -282,7 +281,6 @@ float3 AreaLight_Sample(// Emissive object
     *wo = p - dg->p;
 
     int material_offset = scene->shapes[shapeidx].material.offset;
-
 
     const float3 ke = GetUberV2EmissionColor(material_offset, dg, scene->input_map_values, scene->material_attributes, TEXTURE_ARGS).xyz;
     float3 v = -normalize(*wo);
@@ -565,7 +563,7 @@ float3 SpotLight_Sample(// Emissive object
 {
     *wo = light->p - dg->p;
     float ddotwo = dot(-normalize(*wo), light->d);
-    
+
     if (ddotwo > light->oa)
     {
         float3 intensity = light->intensity / dot(*wo, *wo);

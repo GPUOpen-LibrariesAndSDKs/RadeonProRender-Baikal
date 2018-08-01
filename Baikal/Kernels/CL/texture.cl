@@ -44,11 +44,11 @@ int WrapTexel(float coord, float modulus)
 inline
 float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 {
-    GLOBAL MipLevel const* texture_levels = mip_levels + textures[texidx].mip_offset;
+    MipLevel texture_level = mip_levels[textures[texidx].mip_offset];
 
     // Get width, height of levels
-    int w = texture_levels[0].w;
-    int h = texture_levels[0].h;
+    int w = texture_level.w;
+    int h = texture_level.h;
 
     // Scale uv coordinates
     float x = uv.x * w - 0.5f;
@@ -67,11 +67,13 @@ float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
     float wx = x - floor(x);
     float wy = y - floor(y);
 
+    __global char const* mydata = texturedata + texture_level.dataoffset;
+
     switch (textures[texidx].fmt)
     {
     case RGBA32:
     {
-        __global float4 const* mydataf = (__global float4 const*)(texturedata + texture_levels[0].dataoffset);
+        __global float4 const* mydataf = (__global float4 const*)mydata;
 
         float4 val00 = *(mydataf + w * yi0 + xi0);
         float4 val01 = *(mydataf + w * yi0 + xi1);
@@ -84,7 +86,7 @@ float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     case RGBA16:
     {
-        __global half const* mydatah = (__global half const*)(texturedata + texture_levels[0].dataoffset);
+        __global half const* mydatah = (__global half const*)mydata;
 
         float4 val00 = vload_half4(w * yi0 + xi0, mydatah);
         float4 val01 = vload_half4(w * yi0 + xi1, mydatah);
@@ -97,7 +99,7 @@ float4 Texture_Sample2DNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     case RGBA8:
     {
-        __global uchar4 const* mydatac = (__global uchar4 const*)(texturedata + texture_levels[0].dataoffset);
+        __global uchar4 const* mydatac = (__global uchar4 const*)mydata;
 
         // Get 4 values and convert to float
         uchar4 valu00 = *(mydatac + w * yi0 + xi0);
@@ -126,7 +128,7 @@ inline
 float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
 {
     // If texture has no mipmaps or derivatives are zero
-    if (textures[texidx].mip_count == 1 || dot(diffgeo->duvdx, diffgeo->duvdx) == 0.0f && dot(diffgeo->duvdy, diffgeo->duvdy) == 0.0f)
+    if (textures[texidx].mip_count == 1 || dot(diffgeo->duvdx, diffgeo->duvdx) * dot(diffgeo->duvdy, diffgeo->duvdy) == 0.0f)
     {
         return Texture_Sample2DNoMip(diffgeo->uv, TEXTURE_ARGS_IDX(texidx));
     }
@@ -182,12 +184,15 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
     // Weights for interpolation between neighbor mip levels
     float w01 = mipmap_level - floor(mipmap_level);
 
+    __global char const* mydata0 = texturedata + texture_levels[mip_index].dataoffset;
+    __global char const* mydata1 = texturedata + texture_levels[mip_index + 1].dataoffset;
+
     switch (textures[texidx].fmt)
     {
     case RGBA32:
     {
-        __global float4 const* mydataf0 = (__global float4 const*)(texturedata + texture_levels[mip_index].dataoffset);
-        __global float4 const* mydataf1 = (__global float4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+        __global float4 const* mydataf0 = (__global float4 const*)mydata0;
+        __global float4 const* mydataf1 = (__global float4 const*)mydata1;
 
         float4 val000 = *(mydataf0 + w0 * yi00 + xi00);
         float4 val001 = *(mydataf0 + w0 * yi00 + xi01);
@@ -207,8 +212,8 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
 
     case RGBA16:
     {
-        __global half const* mydatah0 = (__global half const*)(texturedata + texture_levels[mip_index].dataoffset);
-        __global half const* mydatah1 = (__global half const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+        __global half const* mydatah0 = (__global half const*)mydata0;
+        __global half const* mydatah1 = (__global half const*)mydata1;
 
         float4 val000 = vload_half4(w0 * yi00 + xi00, mydatah0);
         float4 val001 = vload_half4(w0 * yi00 + xi01, mydatah0);
@@ -228,8 +233,8 @@ float4 Texture_Sample2D(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_ID
 
     case RGBA8:
     {
-        __global uchar4 const* mydatac0 = (__global uchar4 const*)(texturedata + texture_levels[mip_index].dataoffset);
-        __global uchar4 const* mydatac1 = (__global uchar4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+        __global uchar4 const* mydatac0 = (__global uchar4 const*)mydata0;
+        __global uchar4 const* mydatac1 = (__global uchar4 const*)mydata1;
 
         // Get 4 values and convert to float
         uchar4 valu000 = *(mydatac0 + w0 * yi00 + xi00);
@@ -282,94 +287,7 @@ float3 Texture_SampleEnvMap(float3 d, TEXTURE_ARG_LIST_IDX(texidx), bool mirror_
     // Sample the texture
     return Texture_Sample2DNoMip(uv, TEXTURE_ARGS_IDX(texidx)).xyz;
 }
-/*
-inline
-float3 Texture_UV_GetValue3f(
-                // Value
-                float3 v,
-                // uv coordinates
-                float2 uv,
-                // Texture args
-                TEXTURE_ARG_LIST_IDX(texidx)
-                )
-{
-    // If texture present sample from texture
-    if (texidx != -1)
-    {
-        // Sample texture
-        return native_powr(Texture_Sample2DNoMip(uv, TEXTURE_ARGS_IDX(texidx)).xyz, 2.2f);
-    }
 
-    // Return fixed color otherwise
-    return v;
-}
-
-/// Get data from parameter value or texture
-inline
-float3 Texture_GetValue3f(
-                // Value
-                float3 v,
-                // Differential geometry
-                DifferentialGeometry const *diffgeo,
-                // Texture args
-                TEXTURE_ARG_LIST_IDX(texidx)
-                )
-{
-    // If texture present sample from texture
-    if (texidx != -1)
-    {
-        // Sample texture
-        return native_powr(Texture_Sample2D(diffgeo, TEXTURE_ARGS_IDX(texidx)).xyz, 2.2f);
-    }
-
-    // Return fixed color otherwise
-    return v;
-}
-
-/// Get data from parameter value or texture
-inline
-float4 Texture_GetValue4f(
-                // Value
-                float4 v,
-                // Differential geometry
-                DifferentialGeometry const *diffgeo,
-                // Texture args
-                TEXTURE_ARG_LIST_IDX(texidx)
-                )
-{
-    // If texture present sample from texture
-    if (texidx != -1)
-    {
-        // Sample texture
-        return native_powr(Texture_Sample2D(diffgeo, TEXTURE_ARGS_IDX(texidx)), 2.2f);
-    }
-
-    // Return fixed color otherwise
-    return v;
-}
-
-/// Get data from parameter value or texture
-inline
-float Texture_GetValue1f(
-                        // Value
-                        float v,
-                        // Differential geometry
-                        DifferentialGeometry const *diffgeo,
-                        // Texture args
-                        TEXTURE_ARG_LIST_IDX(texidx)
-                        )
-{
-    // If texture present sample from texture
-    if (texidx != -1)
-    {
-        // Sample texture
-        return Texture_Sample2D(diffgeo, TEXTURE_ARGS_IDX(texidx)).x;
-    }
-
-    // Return fixed color otherwise
-    return v;
-}
-*/
 inline float3 TextureData_SampleNormalFromBump_uchar4(__global uchar4 const* mydatac, int width, int height, int s0, int t0)
 {
     int s0minus = WrapTexel(s0 - 1, width);
@@ -485,11 +403,13 @@ float3 Texture_SampleBumpNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
     float wx = x - floor(x);
     float wy = y - floor(y);
 
+    __global char const* mydata = texturedata + texture_level.dataoffset;
+
     switch (textures[texidx].fmt)
     {
     case RGBA32:
     {
-        __global float4 const* mydataf = (__global float4 const*)(texturedata + texture_level.dataoffset);
+        __global float4 const* mydataf = (__global float4 const*)mydata;
 
         float3 n00 = TextureData_SampleNormalFromBump_float4(mydataf, w, h, xi0, yi0);
         float3 n01 = TextureData_SampleNormalFromBump_float4(mydataf, w, h, xi1, yi0);
@@ -503,7 +423,7 @@ float3 Texture_SampleBumpNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     case RGBA16:
     {
-        __global half const* mydatah = (__global half const*)(texturedata + texture_level.dataoffset);
+        __global half const* mydatah = (__global half const*)mydata;
 
         float3 n00 = TextureData_SampleNormalFromBump_half4(mydatah, w, h, xi0, yi0);
         float3 n01 = TextureData_SampleNormalFromBump_half4(mydatah, w, h, xi1, yi0);
@@ -517,7 +437,7 @@ float3 Texture_SampleBumpNoMip(float2 uv, TEXTURE_ARG_LIST_IDX(texidx))
 
     case RGBA8:
     {
-        __global uchar4 const* mydatac = (__global uchar4 const*)(texturedata + texture_level.dataoffset);
+        __global uchar4 const* mydatac = (__global uchar4 const*)mydata;
 
         float3 n00 = TextureData_SampleNormalFromBump_uchar4(mydatac, w, h, xi0, yi0);
         float3 n01 = TextureData_SampleNormalFromBump_uchar4(mydatac, w, h, xi1, yi0);
@@ -541,7 +461,7 @@ inline
 float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_IDX(texidx))
 {
     // If texture has no mipmaps or derivatives are zero
-    if (textures[texidx].mip_count == 1 || dot(diffgeo->duvdx, diffgeo->duvdx) == 0.0f && dot(diffgeo->duvdy, diffgeo->duvdy) == 0.0f)
+    if (textures[texidx].mip_count == 1 || dot(diffgeo->duvdx, diffgeo->duvdx) * dot(diffgeo->duvdy, diffgeo->duvdy) == 0.0f)
     {
         return Texture_SampleBumpNoMip(diffgeo->uv, TEXTURE_ARGS_IDX(texidx));
     }
@@ -597,12 +517,15 @@ float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_
     // Weights for interpolation between neighbor mip levels
     float w01 = mipmap_level - floor(mipmap_level);
 
+    __global char const* mydata0 = texturedata + texture_levels[mip_index].dataoffset;
+    __global char const* mydata1 = texturedata + texture_levels[mip_index + 1].dataoffset;
+
     switch (textures[texidx].fmt)
     {
     case RGBA32:
     {
-        __global float4 const* mydataf0 = (__global float4 const*)(texturedata + texture_levels[mip_index].dataoffset);
-        __global float4 const* mydataf1 = (__global float4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+        __global float4 const* mydataf0 = (__global float4 const*)mydata0;
+        __global float4 const* mydataf1 = (__global float4 const*)mydata1;
 
         float3 n000 = TextureData_SampleNormalFromBump_float4(mydataf0, w0, h0, xi00, yi00);
         float3 n001 = TextureData_SampleNormalFromBump_float4(mydataf0, w0, h0, xi01, yi00);
@@ -623,8 +546,8 @@ float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_
 
     case RGBA16:
     {
-        __global half const* mydatah0 = (__global half const*)(texturedata + texture_levels[mip_index].dataoffset);
-        __global half const* mydatah1 = (__global half const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+        __global half const* mydatah0 = (__global half const*)mydata0;
+        __global half const* mydatah1 = (__global half const*)mydata1;
 
         float3 n000 = TextureData_SampleNormalFromBump_half4(mydatah0, w0, h0, xi00, yi00);
         float3 n001 = TextureData_SampleNormalFromBump_half4(mydatah0, w0, h0, xi01, yi00);
@@ -645,8 +568,8 @@ float3 Texture_SampleBump(DifferentialGeometry const *diffgeo, TEXTURE_ARG_LIST_
 
     case RGBA8:
     {
-        __global uchar4 const* mydatac0 = (__global uchar4 const*)(texturedata + texture_levels[mip_index].dataoffset);
-        __global uchar4 const* mydatac1 = (__global uchar4 const*)(texturedata + texture_levels[mip_index + 1].dataoffset);
+        __global uchar4 const* mydatac0 = (__global uchar4 const*)mydata0;
+        __global uchar4 const* mydatac1 = (__global uchar4 const*)mydata1;
 
         float3 n000 = TextureData_SampleNormalFromBump_uchar4(mydatac0, w0, h0, xi00, yi00);
         float3 n001 = TextureData_SampleNormalFromBump_uchar4(mydatac0, w0, h0, xi01, yi00);

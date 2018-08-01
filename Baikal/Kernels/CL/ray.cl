@@ -41,12 +41,12 @@ typedef struct
 // Auxiliary rays descriptor
 typedef struct
 {
-    // xyz - origin
     //half3 o;
-    // xyz - direction
     //half3 d;
 
+    // Origin
     float3 o;
+    // Direction
     float3 d;
 } aux_ray;
 

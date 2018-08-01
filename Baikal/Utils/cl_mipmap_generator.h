@@ -1,5 +1,5 @@
 /**********************************************************************
-Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,9 +36,8 @@ namespace Baikal
 
         static Ptr Create(CLWContext context, const CLProgramManager *program_manager);
 
-        // generates images in mipmap levels
-        // note: texture already should contain correct mipmap indexes
-        // the function only generates images and save result with correct offsets in texturedata
+        // Generates images in mipmap levels
+        // The function saves result in reserved areas of texturedata buffer
         void BuildMipPyramid(
             Texture::Ptr texture,
             std::size_t texture_index,
@@ -63,9 +62,9 @@ namespace Baikal
         CLWKernel GetDownsampleXKernel(Texture::Format format);
         CLWKernel GetDownsampleYKernel(Texture::Format format);
 
-        // buffer for temporary image scaled in x dimension
+        // Buffer for temporary image scaled in x dimension
         CLWBuffer<char> m_tmp_buffer;
-        // buffers for weights
+        // Weight buffers
         CLWBuffer<RadeonRays::float4> m_x_weights, m_y_weights;
     };
 }
