@@ -282,8 +282,8 @@ KERNEL void ShadeSurfaceUberV2(
     GLOBAL Path* restrict paths,
     // Indirect rays
     GLOBAL ray* restrict indirect_rays,
-    GLOBAL aux_ray const* restrict indirect_aux_rays_x,
-    GLOBAL aux_ray const* restrict indirect_aux_rays_y,
+    GLOBAL aux_ray* restrict indirect_aux_rays_x,
+    GLOBAL aux_ray* restrict indirect_aux_rays_y,
     // Radiance
     GLOBAL float3* restrict output,
     GLOBAL InputMapData const* restrict input_map_values
@@ -448,6 +448,17 @@ KERNEL void ShadeSurfaceUberV2(
                 Aux_Ray_SpecularReflect(aux_rays_x + hit_idx, aux_rays_y + hit_idx,
                     indirect_aux_rays_x + global_id, indirect_aux_rays_y + global_id,
                     &diffgeo, wi, bxdfwo);
+            }
+            else if (Bxdf_IsRefraction(&diffgeo))
+            {
+                Aux_Ray_SpecularRefract(aux_rays_x + hit_idx, aux_rays_y + hit_idx,
+                    indirect_aux_rays_x + global_id, indirect_aux_rays_y + global_id,
+                    &diffgeo, wi, bxdfwo, uber_shader_data.refraction_ior);
+            }
+            else
+            {
+                indirect_aux_rays_x[global_id] = aux_rays_x[hit_idx];
+                indirect_aux_rays_y[global_id] = aux_rays_y[hit_idx];
             }
         }
 

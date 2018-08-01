@@ -128,4 +128,42 @@ INLINE void Aux_Ray_SpecularReflect(
     Aux_Ray_Init(out_ray_y, diffgeo->p + diffgeo->dpdy, wi - dwody + 2.0f * (dot(wo, diffgeo->n) * dndy + dDNdy * diffgeo->n));
 }
 
+INLINE void Aux_Ray_SpecularRefract(
+                // Input aux rays
+                GLOBAL aux_ray* in_ray_x, GLOBAL aux_ray* in_ray_y,
+                // Output reflected aux rays
+                GLOBAL aux_ray* out_ray_x, GLOBAL aux_ray* out_ray_y,
+                // Differential geometry in the point of reflection
+                DifferentialGeometry* diffgeo,
+                // Input, output ray direction
+                float3 wo, float3 wi,
+                // Index of refraction
+                float ior)
+{
+    float eta = ior;
+    float3 w = -wo;
+    if (dot(wo, diffgeo->n) < 0.0f)
+    {
+        eta = 1.0f / eta;
+    }
+
+    float3 dndx = diffgeo->dndu * diffgeo->duvdx.x +
+                  diffgeo->dndv * diffgeo->duvdx.y;
+    float3 dndy = diffgeo->dndu * diffgeo->duvdy.x +
+                  diffgeo->dndv * diffgeo->duvdy.y;
+
+    float3 dwodx = -in_ray_x->d - wo;
+    float3 dwody = -in_ray_y->d - wo;
+
+    float dDNdx = dot(dwodx, diffgeo->n) + dot(wo, dndx);
+    float dDNdy = dot(dwody, diffgeo->n) + dot(wo, dndy);
+
+    float mu = eta * dot(w, diffgeo->n) - dot(wi, diffgeo->n);
+    float dmudx = (eta - (eta * eta * dot(w, diffgeo->n)) / dot(wi, diffgeo->n)) * dDNdx;
+    float dmudy = (eta - (eta * eta * dot(w, diffgeo->n)) / dot(wi, diffgeo->n)) * dDNdy;
+
+    Aux_Ray_Init(out_ray_x, diffgeo->p + diffgeo->dpdx, wi + eta * dwodx - (mu * dndx + dmudx * diffgeo->n));
+    Aux_Ray_Init(out_ray_y, diffgeo->p + diffgeo->dpdy, wi + eta * dwody - (mu * dndy + dmudy * diffgeo->n));
+}
+
 #endif
