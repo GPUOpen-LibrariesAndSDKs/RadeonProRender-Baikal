@@ -149,7 +149,7 @@ public:
 
         auto image_io = ImageIo::CreateImageIo();
 
-        for (int i = 0, mip_index = 0; i < textures_num; i++)
+        for (std::size_t i = 0, mip_index = 0; i < textures_num; i++)
         {
             auto texture = textures[i];
             if (texture.mip_count <= 1)
