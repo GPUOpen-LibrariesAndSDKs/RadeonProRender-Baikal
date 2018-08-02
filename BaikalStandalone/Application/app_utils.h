@@ -26,6 +26,7 @@
 
 #include "radeon_rays.h"
 #include "Utils/config_manager.h"
+#include "Utils/cmd_parser.h"
 #include "Baikal/Renderers/renderer.h"
 #include "Baikal/Estimators/estimator.h"
 
@@ -65,12 +66,6 @@ namespace Baikal
         float camera_focal_length;
         CameraType camera_type;
 
-        //file with camera positions
-        std::string camera_set;
-        //range of camera set
-        int camera_set_min;
-        int camera_set_max;
-
         //folder to store camera position output
         std::string camera_out_folder;
 
@@ -106,13 +101,13 @@ namespace Baikal
     {
     public:
 
-        AppCliParser();
-        AppSettings Parse(int argc, char * argv[]);
+        AppCliParser(int argc, char * argv[]);
+        AppSettings Parse();
+
     private:
-        char* GetCmdOption(char ** begin, char ** end, const std::string & option);
-        bool CmdOptionExists(char** begin, char** end, const std::string& option);
+
         void ShowHelp();
 
-
+        CmdParser m_cmd_parser;
     };
 }

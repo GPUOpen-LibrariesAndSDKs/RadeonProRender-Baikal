@@ -1,4 +1,4 @@
-# Summary
+﻿# Summary
 
 Baikal initiative has been started as a sample application demonstrating the usage of AMD® RadeonRays intersection engine, but evolved into a fully functional rendering engine aimed at graphics researchers, educational institutions and open-source enthusiasts in general.
 
@@ -129,6 +129,23 @@ You can download additional test scenes from [RadeonProRender-Tests](https://git
 `../build/bin/BaikalStandalone -p /path/to/extracted/folder/Classroom/ -f classroom.obj`
 
 The path can be absolute or relative to `BaikalStandalone`.
+
+## Run BaikalDataGenerator
+ - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/build/bin/:${LD_LIBRARY_PATH}`
+ - `cd BaikalStandalone`
+ - `../build/bin/BaikalStandalone`
+
+Mandatory command line args:
+- `-light_file` full path to config file with light description
+- `-camera_file` full path to config file with camera states description
+- `-spp_file` full path to config file with necessary sampling per pixel enumeration
+- `-scene_file` full path to scene
+- `-output_dir` directory to store generated dataset
+- `-width` generated ouput width
+- `-height` generated ouput height
+
+Possible command line args:
+- `-gamma` enables gamma corection for 3 chanel color output. '-gamma 1' means that gamma correction is enabled, otherwise disabled
 
 ## Run unit tests
 - `export LD_LIBRARY_PATH=<RadeonProRender-Baikal path>/build/bin/:${LD_LIBRARY_PATH}`

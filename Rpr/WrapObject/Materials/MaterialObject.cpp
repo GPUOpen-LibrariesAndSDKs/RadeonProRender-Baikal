@@ -148,7 +148,7 @@ namespace
                                                     RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFLECTION,
                                                     RPR_MATERIAL_NODE_MICROFACET_ANISOTROPIC_REFRACTION,
                                                     RPR_MATERIAL_NODE_TWOSIDED,
-                                                    RPR_MATERIAL_NODE_UV_PROJECT,};
+                                                    RPR_MATERIAL_NODE_UV_PROCEDURAL,};
 }
 
 
@@ -172,7 +172,7 @@ MaterialObject* MaterialObject::CreateMaterial(rpr_material_node_type in_type)
     case RPR_MATERIAL_NODE_BLEND_VALUE:
     case RPR_MATERIAL_NODE_VOLUME:
     case RPR_MATERIAL_NODE_INPUT_LOOKUP:
-    case RPR_MATERIAL_NODE_UV_PROJECT:
+    case RPR_MATERIAL_NODE_UV_PROCEDURAL:
 
     {
         return new UnsupportedMaterialObject(type);

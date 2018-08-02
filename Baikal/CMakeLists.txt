@@ -62,6 +62,8 @@ set(UTILS_SOURCES
     Utils/cl_program_manager.h
     Utils/cl_uberv2_generator.h
     Utils/cl_uberv2_generator.cpp
+    Utils/cmd_parser.h
+    Utils/cmd_parser.cpp
 )
 
 set(SCENEGRAPH_SOURCES

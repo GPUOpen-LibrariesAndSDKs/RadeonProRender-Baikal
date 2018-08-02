@@ -145,6 +145,8 @@ namespace Baikal
                 fmt);
         }
 
+        texture->SetName(filename);
+
         return texture;
     }
 
