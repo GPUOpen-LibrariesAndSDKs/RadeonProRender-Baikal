@@ -219,14 +219,14 @@ TEST_F(MipmapTest, Mipmap_Generation32bit)
 TEST_F(MipmapTest, Mipmap_PrimaryRayLookup)
 {
     m_camera->LookAt(
-        RadeonRays::float3(0.f, 1.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, -10.f),
         RadeonRays::float3(0.f, 2.f, 0.f),
         RadeonRays::float3(0.f, 1.f, 0.f));
 
     ClearOutput();
 
     auto image_io = ImageIo::CreateImageIo();
-    auto texture = image_io->LoadImage("../Resources/Textures/checkerboard.png", true);
+    auto texture = image_io->LoadImage("../Resources/Textures/debug_miplevel.dds", true);
 
     auto material = Baikal::UberV2Material::Create();
     material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
@@ -250,7 +250,100 @@ TEST_F(MipmapTest, Mipmap_PrimaryRayLookup)
 
         {
             std::ostringstream oss;
-            oss << test_name() << "_mip" << ".png";
+            oss << test_name() << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+
+}
+
+TEST_F(MipmapTest, Mipmap_ReflectionLookup)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    ClearOutput();
+
+    auto image_io = ImageIo::CreateImageIo();
+    auto texture = image_io->LoadImage("../Resources/Textures/debug_miplevel.dds", true);
+
+    auto diffuse_material = Baikal::UberV2Material::Create();
+    diffuse_material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+    auto material_texture = Baikal::InputMap_Pow::Create(
+        Baikal::InputMap_Sampler::Create(texture),
+        Baikal::InputMap_ConstantFloat::Create(2.2f));
+    diffuse_material->SetInputValue("uberv2.diffuse.color", material_texture);
+
+    auto reflection_material = Baikal::UberV2Material::Create();
+    reflection_material->SetLayers(Baikal::UberV2Material::Layers::kReflectionLayer);
+    reflection_material->SetInputValue("uberv2.reflection.roughness", Baikal::InputMap_ConstantFloat::Create(0.0f));
+
+    ApplyMaterialToObject("sphere", reflection_material);
+    ApplyMaterialToObject("quad", diffuse_material);
+
+    {
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << ".png";
+            SaveOutput(oss.str());
+            ASSERT_TRUE(CompareToReference(oss.str()));
+        }
+    }
+
+}
+
+TEST_F(MipmapTest, Mipmap_RefractionLookup)
+{
+    m_camera->LookAt(
+        RadeonRays::float3(0.f, 2.f, -10.f),
+        RadeonRays::float3(0.f, 2.f, 0.f),
+        RadeonRays::float3(0.f, 1.f, 0.f));
+
+    ClearOutput();
+
+    auto image_io = ImageIo::CreateImageIo();
+    auto texture = image_io->LoadImage("../Resources/Textures/debug_miplevel.dds", true);
+
+    auto diffuse_material = Baikal::UberV2Material::Create();
+    diffuse_material->SetLayers(Baikal::UberV2Material::Layers::kDiffuseLayer);
+    auto material_texture = Baikal::InputMap_Pow::Create(
+        Baikal::InputMap_Sampler::Create(texture),
+        Baikal::InputMap_ConstantFloat::Create(2.2f));
+    diffuse_material->SetInputValue("uberv2.diffuse.color", material_texture);
+
+    auto reflection_material = Baikal::UberV2Material::Create();
+    reflection_material->SetLayers(Baikal::UberV2Material::Layers::kRefractionLayer);
+    reflection_material->SetInputValue("uberv2.refraction.roughness", Baikal::InputMap_ConstantFloat::Create(0.0f));
+    reflection_material->SetInputValue("uberv2.refraction.ior", Baikal::InputMap_ConstantFloat::Create(5.f));
+
+    ApplyMaterialToObject("sphere", reflection_material);
+    ApplyMaterialToObject("quad", diffuse_material);
+
+    {
+        ASSERT_NO_THROW(m_controller->CompileScene(m_scene));
+
+        auto& scene = m_controller->GetCachedScene(m_scene);
+
+        for (auto i = 0u; i < kNumIterations; ++i)
+        {
+            ASSERT_NO_THROW(m_renderer->Render(scene));
+        }
+
+        {
+            std::ostringstream oss;
+            oss << test_name() << ".png";
             SaveOutput(oss.str());
             ASSERT_TRUE(CompareToReference(oss.str()));
         }
