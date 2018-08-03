@@ -74,6 +74,7 @@ public:
         m_output_path.append("/");
 
         Baikal::SceneObject::ResetId();
+        Baikal::SceneController<Baikal::ClwScene>::ResetId();
 
         // Prefer GPU devices if nothing has been specified
         if (platform_index == -1)
