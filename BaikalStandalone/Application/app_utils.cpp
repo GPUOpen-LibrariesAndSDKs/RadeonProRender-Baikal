@@ -102,7 +102,7 @@ namespace Baikal
                 throw std::runtime_error("Unsupported camera type");
         }
 
-        s.interop = m_cmd_parser.OptionExists("-ifn");
+        s.interop = m_cmd_parser.GetOption("-interop", s.interop);
 
         s.cspeed = m_cmd_parser.GetOption("-cs", s.cspeed);
 
