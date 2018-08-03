@@ -352,20 +352,18 @@ KERNEL void FillAOVsUberV2(
                 UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
                 GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
+		int sampled_component = Bxdf_UberV2_GetSampledComponent(&diffgeo);
+
                 float gloss = 0.f;
-                if ((diffgeo.mat.layers & kCoatingLayer) == kCoatingLayer)
+                if (sampled_component == kBxdfUberV2SampleCoating)
                 {
                     gloss = 1.0f;
                 }
-                else if ((diffgeo.mat.layers & kReflectionLayer) == kReflectionLayer)
+                else if (sampled_component == kBxdfUberV2SampleReflection)
                 {
                     gloss = 1.0f - uber_shader_data.reflection_roughness;
-                    if ((diffgeo.mat.layers & kRefractionLayer) == kRefractionLayer)
-                    {
-                        gloss = max(gloss, 1.0f - uber_shader_data.refraction_roughness);
-                    }
                 }
-                else if ((diffgeo.mat.layers & kRefractionLayer) == kRefractionLayer)
+                else if (sampled_component == kBxdfUberV2SampleRefraction)
                 {
                     gloss = 1.0f - uber_shader_data.refraction_roughness;
                 }
