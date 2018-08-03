@@ -68,6 +68,7 @@ public:
     // 'gamma_correction_enabled' - flag to enable/disable gamma correction
     void GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
                          LightsIterator light_begin, LightsIterator light_end,
+                         const std::filesystem::path& lights_dir,
                          SppIterator spp_begin, SppIterator spp_end,
                          const std::filesystem::path& output_dir,
                          bool gamma_correction_enabled = false);
@@ -77,7 +78,8 @@ public:
 private:
     void UpdateCameraSettings(CameraIterator cam_state);
 
-    void SetLightConfig(LightsIterator begin, LightsIterator end);
+    void SetLightConfig(LightsIterator begin, LightsIterator end,
+                        const std::filesystem::path& lights_dir);
 
     void SaveOutput(const OutputInfo& info,
                     const std::string& name,

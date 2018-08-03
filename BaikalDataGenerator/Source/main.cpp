@@ -32,6 +32,7 @@ void Run(const DGenConfig& config)
 
     render.GenerateDataset(config_loader.CamStatesBegin(), config_loader.CamStatesEnd(),
                            config_loader.LightsBegin(), config_loader.LightsEnd(),
+                           config_loader.LightsDir(),
                            config_loader.SppBegin(), config_loader.SppEnd(),
                            config.output_dir,
                            config.gamma_correction);

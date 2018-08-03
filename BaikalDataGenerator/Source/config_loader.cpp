@@ -67,7 +67,7 @@ void ConfigLoader::ValidateConfig(const DGenConfig& config) const
 
     if (!std::filesystem::is_directory(config.output_dir))
     {
-        THROW_EX((config.output_dir.string() + " should be directory").c_str())
+        THROW_EX(config.output_dir.string() + " should be directory")
     }
 }
 
@@ -127,6 +127,8 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
 
 void ConfigLoader::LoadLightConfig(const std::filesystem::path& file_name)
 {
+    m_ligths_dir = file_name.parent_path();
+
     tinyxml2::XMLDocument doc;
     doc.LoadFile(file_name.string().c_str());
     auto root = doc.FirstChildElement("light_list");
@@ -196,7 +198,7 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open lights set file.")
+        THROW_EX("Failed to open SPP file: " + file_name.string())
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("spp");
@@ -230,6 +232,11 @@ LightsIterator ConfigLoader::LightsBegin() const
 LightsIterator ConfigLoader::LightsEnd() const
 {
     return m_light_settings.end();
+}
+
+const std::filesystem::path& ConfigLoader::LightsDir() const
+{
+    return m_ligths_dir;
 }
 
 SppIterator ConfigLoader::SppBegin() const
