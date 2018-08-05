@@ -21,9 +21,19 @@ THE SOFTWARE.
 ********************************************************************/
 
 #pragma once
-
 #include <filesystem>
 #include <string>
+
+// Visual Studio 2015 work-around ... 
+// std::filesystem was incorporated into C++-17 (which is obviously after VS
+// 2015 was released). However, Microsoft implemented the draft standard in
+// the std::exerimental namespace. To avoid nasty ripple effects when the
+// compiler is updated, make it look like the standard here
+namespace std
+{
+    namespace filesystem = experimental::filesystem::v1;
+}
+
 
 struct DGenConfig
 {
