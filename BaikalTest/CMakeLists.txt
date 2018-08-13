@@ -43,12 +43,3 @@ else ()
 endif ()
 
 add_dependencies(BaikalTest ResourcesDir BaikalKernelsDir BaikalTestImagesDir)
-
-if (WIN32)
-    add_custom_command(TARGET BaikalTest POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            ${BAIKAL_TESTS_DLLS}
-            "$<TARGET_FILE_DIR:BaikalTest>"
-    )
-endif ()
-

@@ -84,21 +84,9 @@ endif (BAIKAL_ENABLE_MATERIAL_CONVERTER)
 set (BAIKAL_DLLS
     "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
     "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
+    "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
+    "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
 )
-
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    list(APPEND BAIKAL_DLLS
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-    )
-    set (IO_DLLS
-         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll")
-else ()
-    list(APPEND BAIKAL_DLLS
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
-    )
-    set (IO_DLLS
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll")
-endif ()
 
 add_custom_target(ResourcesDir)
 add_custom_target(BaikalKernelsDir)
@@ -146,8 +134,6 @@ if (BAIKAL_ENABLE_DATAGENERATOR)
 endif (BAIKAL_ENABLE_DATAGENERATOR)
 
 if (BAIKAL_ENABLE_TESTS)
-    set(BAIKAL_TESTS_DLLS ${BAIKAL_DLLS})
-
     add_subdirectory(Gtest)
     add_subdirectory(BaikalTest)
     if (BAIKAL_ENABLE_RPR)

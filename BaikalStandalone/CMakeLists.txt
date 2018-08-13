@@ -91,14 +91,6 @@ endif ()
 
 add_dependencies(BaikalStandalone ResourcesDir BaikalKernelsDir BaikalStandaloneKernelsDir)
 
-if (WIN32)
-    add_custom_command(TARGET BaikalStandalone POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${BAIKALSTANDALONE_DLLS}
-            "$<TARGET_FILE_DIR:BaikalStandalone>"
-    )
-endif ()
-
 if (BAIKAL_ENABLE_DATAGENERATOR)
     if (MSVC)
         add_definitions(/DGENERATE_DATASET)
