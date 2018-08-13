@@ -89,7 +89,7 @@ else ()
     )
 endif ()
 
-add_dependencies(BaikalStandalone ResourcesDir BaikalKernelsDir BaikalStandaloneKernelsDir)
+add_dependencies(BaikalStandaloneKernelsDir BaikalStandalone)
 
 if (BAIKAL_ENABLE_DATAGENERATOR)
     if (MSVC)

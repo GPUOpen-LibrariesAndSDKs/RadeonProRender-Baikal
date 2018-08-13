@@ -89,7 +89,6 @@ set (BAIKAL_DLLS
 )
 
 add_custom_target(ResourcesDir)
-add_custom_target(BaikalKernelsDir)
 
 set(RESOURCES_DIR Resources)
 FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${RESOURCES_DIR} RESOURCES_SRC)

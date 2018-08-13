@@ -42,4 +42,4 @@ else ()
     )
 endif ()
 
-add_dependencies(BaikalTest ResourcesDir BaikalKernelsDir BaikalTestImagesDir)
+add_dependencies(BaikalTestImagesDir BaikalTest)
