@@ -108,9 +108,9 @@ namespace Baikal
         void WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const;
         // Write out single texture header at data pointer.
         // Header requires texture data offset, so it is passed in.
-        void WriteTexture(Texture const& texture, void* data, int mip_levels_offset) const;
+        void WriteTexture(Texture const& texture, void* data, std::size_t mip_levels_offset) const;
         // Write out texture mip levels description headers at data pointer.
-        void WriteMipLevel(Texture const& texture, void* data, std::size_t level, int texturedata_offset) const;
+        void WriteMipLevel(Texture const& texture, void* data, std::size_t level, std::size_t texturedata_offset) const;
         // Write out texture data at data pointer.
         void WriteTextureData(Texture const& texture, void* data) const;
         // Write single volume at data pointer

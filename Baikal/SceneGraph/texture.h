@@ -155,13 +155,6 @@ namespace Baikal
         m_data.reset(data);
         m_mip_sizes = mip_sizes;
 
-        std::transform(m_mip_sizes.begin(), m_mip_sizes.end(), m_mip_sizes.begin(),
-            [](RadeonRays::int3 size)
-        {
-            size.z = std::max(1, size.z);
-            return size;
-        });
-
         m_format = format;
         SetDirty(true);
     }

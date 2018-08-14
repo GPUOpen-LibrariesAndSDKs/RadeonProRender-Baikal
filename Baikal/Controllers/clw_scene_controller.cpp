@@ -872,7 +872,7 @@ namespace Baikal
         {
             auto tex = tex_iter->ItemAs<Texture>();
 
-            WriteTexture(*tex, textures + num_textures_written, (int)mip_levels_buffer_size);
+            WriteTexture(*tex, textures + num_textures_written, mip_levels_buffer_size);
 
             ++num_textures_written;
 
@@ -903,7 +903,7 @@ namespace Baikal
 
             for (std::size_t i = 0; i < tex->GetMipLevelCount(); ++i)
             {
-                WriteMipLevel(*tex, mip_levels + num_mip_levels_written, i, (int)texturedata_buffer_size);
+                WriteMipLevel(*tex, mip_levels + num_mip_levels_written, i, texturedata_buffer_size);
                 ++num_mip_levels_written;
 
                 texturedata_buffer_size += tex->GetLevelSizeInBytes(i);
@@ -1258,16 +1258,16 @@ namespace Baikal
         }
     }
 
-    void ClwSceneController::WriteTexture(Texture const& texture, void* data, int mip_levels_offset) const
+    void ClwSceneController::WriteTexture(Texture const& texture, void* data, std::size_t mip_levels_offset) const
     {
         auto clw_texture = reinterpret_cast<ClwScene::Texture*>(data);
 
-        clw_texture->mip_offset = mip_levels_offset;
-        clw_texture->mip_count = (int)texture.GetMipLevelCount();
+        clw_texture->mip_offset = static_cast<int>(mip_levels_offset);
+        clw_texture->mip_count = static_cast<int>(texture.GetMipLevelCount());
         clw_texture->fmt = GetTextureFormat(texture);
     }
 
-    void ClwSceneController::WriteMipLevel(Texture const& texture, void* data, std::size_t level, int texturedata_offset) const
+    void ClwSceneController::WriteMipLevel(Texture const& texture, void* data, std::size_t level, std::size_t texturedata_offset) const
     {
         auto clw_mip_level = reinterpret_cast<ClwScene::MipLevel*>(data);
 
@@ -1275,7 +1275,7 @@ namespace Baikal
         clw_mip_level->w = mip_level_size.x;
         clw_mip_level->h = mip_level_size.y;
         clw_mip_level->d = mip_level_size.z;
-        clw_mip_level->dataoffset = texturedata_offset;
+        clw_mip_level->dataoffset = static_cast<int>(texturedata_offset);
 
     }
 

@@ -267,6 +267,24 @@ void Scene_FillDifferentialGeometry(// Scene
 
     // Calculate position and normal derivatives of the surface with respect to texcoord
     // From PBRT book
+
+    /*
+        NOTE:
+        In the previous version, dpdu and dpdv vectors in the
+        structure DifferentialGeometry treated as tangent
+        and bitangent vectors in the kernels.
+        Actually, there is a difference: dpdu/dpdv have to be
+        oriented along increasing of uv coordinates, may be not
+        orthogonal and their length may be not equal to one.
+        We use these values for computation of screen space uv
+        derivatives.
+        On the other hand, normal, tangent and bitangent vectors
+        should be orthonormal, because we can easily get inversion of
+        tangent to world space transformation matrix simply by
+        transposing it.
+        So now we distinguish dpdu/dpdv and tangent/bitangent vectors.
+    */
+
     float2 duv02 = uv0 - uv2;
     float2 duv12 = uv1 - uv2;
     float  det = duv02.x * duv12.y - duv02.y * duv12.x;
@@ -424,7 +442,7 @@ INLINE void DifferentialGeometry_CalculateScreenSpaceUVDerivatives(
                                                 GLOBAL aux_ray const* aux_ray_y
                                                 )
 {
-    if (aux_ray_x != NULL && aux_ray_y != NULL)
+    if (aux_ray_x && aux_ray_y)
     {
         // Calculate differentials
         DifferentialGeometry_CalculatePartialDerivatives(aux_ray_x, diffgeo, &diffgeo->dpdx, &diffgeo->duvdx);

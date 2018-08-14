@@ -73,7 +73,7 @@ namespace Baikal
             {
                 spec.width,
                 spec.height,
-                spec.depth
+                std::max(1, spec.depth)
             });
 
             level_counter++;

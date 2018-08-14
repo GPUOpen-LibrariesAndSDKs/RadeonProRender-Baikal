@@ -107,13 +107,12 @@ namespace Baikal
 
         // Downsample in x direction
         {
-            bool is_rounding_necessary = (src_size.x % 2 != 0);
-
             if (static_cast<int>(m_x_weights.GetElementCount()) < dst_size.x)
             {
                 m_x_weights = GetContext().CreateBuffer<float4>(dst_size.x, CL_MEM_READ_WRITE);
             }
 
+            bool is_rounding_necessary = (src_size.x % 2 != 0);
             ComputeWeights(m_x_weights, is_rounding_necessary);
 
             {
@@ -135,13 +134,12 @@ namespace Baikal
 
         // downscale in y direction
         {
-            bool is_rounding_necessary = (src_size.y % 2 != 0);
-
             if (static_cast<int>(m_y_weights.GetElementCount()) < dst_size.y)
             {
                 m_y_weights = GetContext().CreateBuffer<RadeonRays::float4>(dst_size.y, CL_MEM_READ_WRITE);
             }
 
+            bool is_rounding_necessary = (src_size.y % 2 != 0);
             ComputeWeights(m_y_weights, is_rounding_necessary);
 
             {

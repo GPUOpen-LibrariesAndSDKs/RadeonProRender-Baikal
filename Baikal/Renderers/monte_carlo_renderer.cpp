@@ -326,11 +326,11 @@ namespace Baikal
     {
         switch (type) {
             case CameraType::kPerspective:
-                return "PerspectiveCamera_GenerateRays";
+                return "PerspectiveCamera_GeneratePaths";
             case CameraType::kPhysicalPerspective:
-                return "PerspectiveCameraDof_GenerateRays";
+                return "PerspectiveCameraDof_GeneratePaths";
             case CameraType::kOrthographic:
-                return "OrthographicCamera_GenerateRays";
+                return "OrthographicCamera_GeneratePaths";
             default:
                 assert(false);
                 return "none";

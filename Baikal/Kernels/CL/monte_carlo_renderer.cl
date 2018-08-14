@@ -37,7 +37,7 @@ THE SOFTWARE.
 // Pinhole camera implementation.
 // This kernel is being used if aperture value = 0.
 KERNEL
-void PerspectiveCamera_GenerateRays(
+void PerspectiveCamera_GeneratePaths(
     // Camera
     GLOBAL Camera const* restrict camera,
     // Image resolution
@@ -149,7 +149,7 @@ void PerspectiveCamera_GenerateRays(
 
 // Physical camera implemenation.
 // This kernel is being used if aperture > 0.
-KERNEL void PerspectiveCameraDof_GenerateRays(
+KERNEL void PerspectiveCameraDof_GeneratePaths(
     // Camera
     GLOBAL Camera const* restrict camera,
     // Image resolution
@@ -826,7 +826,7 @@ KERNEL void EstimateVariance(
 }
 
 KERNEL
-void OrthographicCamera_GenerateRays(
+void OrthographicCamera_GeneratePaths(
     // Camera
     GLOBAL Camera const* restrict camera,
     // Image resolution

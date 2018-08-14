@@ -38,12 +38,13 @@ using namespace Baikal;
 ImageMaterialObject::ImageMaterialObject(rpr_image_format const in_format, rpr_image_desc const * in_image_desc, void const * in_data)
     : MaterialObject(Type::kImage)
 {
+    assert(in_image_desc->image_depth > 0);
     //tex size
-    int2 tex_size(in_image_desc->image_width, in_image_desc->image_height);
+    int3 tex_size(in_image_desc->image_width, in_image_desc->image_height, in_image_desc->image_depth);
 
     //texture takes ownership of its data array
     //so need to copy input data
-    int pixels_count = tex_size.x * tex_size.y;
+    int pixels_count = tex_size.x * tex_size.y * tex_size.z;
 
     //bytes per pixel
     int pixel_bytes = in_format.num_components;
