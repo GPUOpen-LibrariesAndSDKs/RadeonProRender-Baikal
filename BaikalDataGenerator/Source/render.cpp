@@ -376,7 +376,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
     }
 
 
-    int cam_index = 1;
+    int cam_index = 0;
     for (const auto& cam_state : cam_states)
     {
         // create camera if it wasn't  done earlier
