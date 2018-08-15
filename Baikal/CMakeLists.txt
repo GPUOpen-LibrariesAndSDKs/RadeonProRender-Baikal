@@ -212,16 +212,12 @@ set(BAIKAL_KERNELS_DIR Baikal/Kernels)
 file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_SRC)
 file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_DST)
 
-add_custom_target(BaikalKernelsDir ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Baikal
-)
-
 if (WIN32)
-    add_custom_command(TARGET BaikalKernelsDir POST_BUILD
+    add_custom_target(BaikalKernelsDir ALL
         COMMAND IF NOT EXIST ${BAIKAL_KERNELS_DST} mklink /D ${BAIKAL_KERNELS_DST} ${BAIKAL_KERNELS_SRC}
     )
 else ()
-    add_custom_command(TARGET BaikalKernelsDir POST_BUILD
+    add_custom_target(BaikalKernelsDir ALL
         COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKAL_KERNELS_SRC} ${BAIKAL_KERNELS_DST}
     )
 endif ()
@@ -234,3 +230,6 @@ if (WIN32)
 else ()
     install(TARGETS Baikal LIBRARY DESTINATION lib)
 endif ()
+
+file(TO_CMAKE_PATH ${BAIKAL_KERNELS_SRC} BAIKAL_KERNELS_SRC_CMAKE)
+install(DIRECTORY ${BAIKAL_KERNELS_SRC_CMAKE} DESTINATION Baikal)

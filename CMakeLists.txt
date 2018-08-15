@@ -126,3 +126,22 @@ else ()
         COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESOURCES_SRC} ${RESOURCES_DST}
     )
 endif ()
+
+# Install Resources folder
+file(TO_CMAKE_PATH ${RESOURCES_SRC} RESOURCES_SRC_CMAKE)
+install(DIRECTORY ${RESOURCES_SRC_CMAKE} DESTINATION .)
+
+# TODO: the following should be added to CMakeLists.txt of RadeonRays
+#if (WIN32)
+#    install(TARGETS RadeonRays RUNTIME DESTINATION bin)
+#else ()
+#    install(TARGETS RadeonRays LIBRARY DESTINATION lib)
+#endif ()
+
+# TODO: the following should be removed after the above being add to CMakeLists.txt of RadeonRays
+if (WIN32)
+    install(FILES $<TARGET_FILE_DIR:BaikalStandalone>/RadeonRays.dll DESTINATION bin)
+else ()
+    file(GLOB_RECURSE RADEONRAYS_SO ${CMAKE_BINARY_DIR}/libRadeonRays.*)
+    install(FILES ${RADEONRAYS_SO} DESTINATION lib)
+endif ()
