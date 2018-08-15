@@ -66,10 +66,10 @@ public:
     // 'start_cam_id' - the number starting from will be named generated samples
     void GenerateDataset(const std::vector<CameraInfo>& cam_states,
                          const std::vector<LightInfo>& lights,
-                         const std::vector<int>& spp,
+                         const std::vector<unsigned>& spp,
                          const std::filesystem::path& output_dir,
                          bool gamma_correction_enabled = true,
-                         int start_cam_id = 0);
+                         std::uint32_t start_cam_id = 0);
 
     ~Render();
 

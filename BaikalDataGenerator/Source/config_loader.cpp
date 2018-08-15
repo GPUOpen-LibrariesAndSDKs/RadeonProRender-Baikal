@@ -226,7 +226,7 @@ std::vector<LightInfo> ConfigLoader::Lights() const
     return m_light_settings;
 }
 
-std::vector<int> ConfigLoader::Spp() const
+std::vector<unsigned> ConfigLoader::Spp() const
 {
     return m_spp;
 }

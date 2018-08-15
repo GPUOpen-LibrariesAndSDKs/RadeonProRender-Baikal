@@ -319,9 +319,7 @@ void Render::SetLightConfig(const std::vector<LightInfo>& lights)
 
             auto image_io(ImageIo::CreateImageIo());
 
-            // check that texture file is exist
-            auto canon = std::filesystem::canonical(std::filesystem::relative(light.texture));
-            auto rel = std::filesystem::relative(light.texture);
+            // check that texture file is exists
             auto texure_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
             if (!std::filesystem::exists(texure_path))
             {
@@ -346,10 +344,10 @@ void Render::SetLightConfig(const std::vector<LightInfo>& lights)
 
 void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                              const std::vector<LightInfo>& light_states,
-                             const std::vector<int>& spp,
+                             const std::vector<unsigned>& spp,
                              const std::filesystem::path& output_dir,
                              bool gamma_correction_enabled,
-                             int start_cam_id)
+                             std::uint32_t start_cam_id)
 {
     using namespace RadeonRays;
 
@@ -361,12 +359,12 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
     // check if number of samples to render wasn't specified
     if (spp.empty())
     {
-        return;
+        THROW_EX("spp collection is empty");
     }
 
     SetLightConfig(light_states);
 
-    std::vector<int> sorted_spp(spp.begin(), spp.end());
+    auto sorted_spp = spp;
     std::sort(sorted_spp.begin(), sorted_spp.end());
 
     sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
@@ -393,8 +391,8 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                                             static_cast<float>(m_width);
             float sensor_height = sensor_width * inverserd_aspect_ration;
 
-            m_camera->SetSensorSize(RadeonRays::float2(0.036f, sensor_height));
-            m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
+            m_camera->SetSensorSize(float2(0.036f, sensor_height));
+            m_camera->SetDepthRange(float2(0.0f, 100000.f));
 
             m_scene->SetCamera(m_camera);
         }
@@ -403,7 +401,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
 
         for (const auto& output: m_outputs)
         {
-            output->Clear(RadeonRays::float3());
+            output->Clear(float3());
         }
 
         // recompile scene cause of changing camera pos and settings
@@ -412,7 +410,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
 
         auto spp_iter = sorted_spp.begin();
 
-        for (auto i = 1; i <= sorted_spp.back(); i++)
+        for (auto i = 1u; i <= sorted_spp.back(); i++)
         {
             m_renderer->Render(scene);
 

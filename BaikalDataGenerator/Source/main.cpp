@@ -34,18 +34,19 @@ void Run(const DGenConfig& config)
     {
         if (static_cast<size_t>(config.split_num) > config_loader.CamStates().size())
         {
-            throw std::runtime_error("'split_num' option value is bigger than camera states number");
+            THROW_EX("'split_num' option value is bigger than camera states number");
         }
 
         if (config.split_idx >= config.split_num)
         {
-            throw std::runtime_error("'split_idx' can not be bigger than split_num");
+            THROW_EX("'split_idx' must be less than split_num");
         }
 
         auto camera_states = config_loader.CamStates();
         auto dataset_size = camera_states.size() / config.split_num;
         auto begin_cam = camera_states.begin() + config.split_idx * dataset_size;
 
+        // remaining cameras will be added into the last dataset
         auto end_cam = (config.split_idx < config.split_num - 1) ?
             (begin_cam  + dataset_size) : camera_states.end();
 
@@ -54,7 +55,7 @@ void Run(const DGenConfig& config)
                                config_loader.Spp(),
                                config.output_dir,
                                config.gamma_correction,
-                               config.restart_idx);
+                               config.offset_idx);
     }
     else
     {
