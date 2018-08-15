@@ -63,11 +63,13 @@ public:
     // 'spp' - spp collection
     // 'output_dir' - output directory to save dataset
     // 'gamma_correction_enabled' - flag to enable/disable gamma correction
+    // 'start_cam_id' - the number starting from will be named generated samples
     void GenerateDataset(const std::vector<CameraInfo>& cam_states,
                          const std::vector<LightInfo>& lights,
                          const std::vector<int>& spp,
                          const std::filesystem::path& output_dir,
-                         bool gamma_correction_enabled = true);
+                         bool gamma_correction_enabled = true,
+                         int start_cam_id = 0);
 
     ~Render();
 

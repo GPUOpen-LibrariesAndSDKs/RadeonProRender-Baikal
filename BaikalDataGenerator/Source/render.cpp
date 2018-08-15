@@ -348,7 +348,8 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                              const std::vector<LightInfo>& light_states,
                              const std::vector<int>& spp,
                              const std::filesystem::path& output_dir,
-                             bool gamma_correction_enabled)
+                             bool gamma_correction_enabled,
+                             int start_cam_id)
 {
     using namespace RadeonRays;
 
@@ -376,7 +377,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
     }
 
 
-    int cam_index = 0;
+    int cam_index = start_cam_id;
     for (const auto& cam_state : cam_states)
     {
         // create camera if it wasn't  done earlier

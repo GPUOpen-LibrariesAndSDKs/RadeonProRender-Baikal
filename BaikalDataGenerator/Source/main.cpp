@@ -30,11 +30,40 @@ void Run(const DGenConfig& config)
 
     Render render(config.scene_file, config.width, config.height);
 
-    render.GenerateDataset(config_loader.CamStates(),
-                           config_loader.Lights(),
-                           config_loader.Spp(),
-                           config.output_dir,
-                           config.gamma_correction);
+    if (config.split_num != 0)
+    {
+        if (static_cast<size_t>(config.split_num) > config_loader.CamStates().size())
+        {
+            throw std::runtime_error("'split_num' option value is bigger than camera states number");
+        }
+
+        if (config.split_idx >= config.split_num)
+        {
+            throw std::runtime_error("'split_idx' can not be bigger than split_num");
+        }
+
+        auto camera_states = config_loader.CamStates();
+        auto dataset_size = camera_states.size() / config.split_num;
+        auto begin_cam = camera_states.begin() + config.split_idx * dataset_size;
+
+        auto end_cam = (config.split_idx < config.split_num - 1) ?
+            (begin_cam  + dataset_size) : camera_states.end();
+
+        render.GenerateDataset({ begin_cam, end_cam },
+                               config_loader.Lights(),
+                               config_loader.Spp(),
+                               config.output_dir,
+                               config.gamma_correction,
+                               config.restart_idx);
+    }
+    else
+    {
+        render.GenerateDataset(config_loader.CamStates(),
+                               config_loader.Lights(),
+                               config_loader.Spp(),
+                               config.output_dir,
+                               config.gamma_correction);
+    }
 }
 
 int main(int argc, char *argv[])
