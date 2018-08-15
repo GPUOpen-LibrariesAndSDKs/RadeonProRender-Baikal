@@ -89,10 +89,10 @@ set_target_properties(BaikalStandalone
 # Add symbolic link from binary to BaikalStandalone/Kernels directory
 set(BAIKALSTANDALONE_KERNELS_DIR BaikalStandalone/Kernels)
 file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_SRC)
-file(TO_NATIVE_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_DST)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_DST)
 
 add_custom_target(BaikalStandaloneKernelsDir ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/BaikalStandalone
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/BaikalStandalone
 )
 
 if (WIN32)

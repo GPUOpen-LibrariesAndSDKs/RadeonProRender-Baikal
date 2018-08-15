@@ -115,18 +115,14 @@ endif ()
 # Add symbolic link from binary to Resources directory
 set(RESOURCES_DIR Resources)
 file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${RESOURCES_DIR} RESOURCES_SRC)
-file(TO_NATIVE_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${RESOURCES_DIR} RESOURCES_DST)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${RESOURCES_DIR} RESOURCES_DST)
 
 if (WIN32)
     add_custom_target(ResourcesDir ALL
         COMMAND IF NOT EXIST ${RESOURCES_DST} mklink /D ${RESOURCES_DST} ${RESOURCES_SRC}
-        DEPENDS ${RESOURCES_DST}
     )
 else ()
     add_custom_target(ResourcesDir ALL
         COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESOURCES_SRC} ${RESOURCES_DST}
-        DEPENDS ${RESOURCES_DST}
     )
 endif ()
-
-message(STATUS "Cmake generator: " ${CMAKE_GENERATOR})

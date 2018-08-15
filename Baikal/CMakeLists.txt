@@ -210,22 +210,19 @@ endif (WIN32)
 # Add symbolic link from binary to Baikal/Kernels directory
 set(BAIKAL_KERNELS_DIR Baikal/Kernels)
 file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_SRC)
-file(TO_NATIVE_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_DST)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_DST)
 
 add_custom_target(BaikalKernelsDir ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Baikal
-    DEPENDS ${BAIKAL_KERNELS_DST}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Baikal
 )
 
 if (WIN32)
     add_custom_command(TARGET BaikalKernelsDir POST_BUILD
         COMMAND IF NOT EXIST ${BAIKAL_KERNELS_DST} mklink /D ${BAIKAL_KERNELS_DST} ${BAIKAL_KERNELS_SRC}
-        DEPENDS ${BAIKAL_KERNELS_DST}
     )
 else ()
     add_custom_command(TARGET BaikalKernelsDir POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKAL_KERNELS_SRC} ${BAIKAL_KERNELS_DST}
-        DEPENDS ${BAIKAL_KERNELS_DST}
     )
 endif ()
 
