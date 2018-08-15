@@ -43,6 +43,9 @@ struct DGenConfig
     std::filesystem::path spp_file;
     std::filesystem::path output_dir;
     std::uint32_t width, height;
+    std::uint32_t split_num = 0;
+    std::uint32_t split_idx = 0;
+    std::uint32_t restart_idx = 0;
     bool gamma_correction;
 };
 

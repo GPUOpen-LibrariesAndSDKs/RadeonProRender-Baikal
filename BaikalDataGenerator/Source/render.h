@@ -58,26 +58,23 @@ public:
            std::uint32_t output_height);
 
     // This function generates dataset for network training
-    // 'cam_begin' - begin iterator on camera states collection
-    // 'cam_end' - end iterator camera states collection
-    // 'light_begin' - begin iterator on lights collection
-    // 'light_end' - end iterator on lights collection
-    // 'spp_begin' - begin iterator on spp collection
-    // 'spp_end' - end iterator on spp collection
+    // 'cam_states' - camera states collection
+    // 'lights' - lights collection
+    // 'spp' - spp collection
     // 'output_dir' - output directory to save dataset
     // 'gamma_correction_enabled' - flag to enable/disable gamma correction
-    void GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
-                         LightsIterator light_begin, LightsIterator light_end,
-                         SppIterator spp_begin, SppIterator spp_end,
+    void GenerateDataset(const std::vector<CameraInfo>& cam_states,
+                         const std::vector<LightInfo>& lights,
+                         const std::vector<int>& spp,
                          const std::filesystem::path& output_dir,
-                         bool gamma_correction_enabled = false);
+                         bool gamma_correction_enabled = true);
 
     ~Render();
 
 private:
-    void UpdateCameraSettings(CameraIterator cam_state);
+    void UpdateCameraSettings(const CameraInfo& cam_state);
 
-    void SetLightConfig(LightsIterator begin, LightsIterator end);
+    void SetLightConfig(const std::vector<LightInfo>& lights);
 
     void SaveOutput(const OutputInfo& info,
                     const std::string& name,

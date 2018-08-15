@@ -30,9 +30,9 @@ void Run(const DGenConfig& config)
 
     Render render(config.scene_file, config.width, config.height);
 
-    render.GenerateDataset(config_loader.CamStatesBegin(), config_loader.CamStatesEnd(),
-                           config_loader.LightsBegin(), config_loader.LightsEnd(),
-                           config_loader.SppBegin(), config_loader.SppEnd(),
+    render.GenerateDataset(config_loader.CamStates(),
+                           config_loader.Lights(),
+                           config_loader.Spp(),
                            config.output_dir,
                            config.gamma_correction);
 }
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     }
     catch (std::exception& ex)
     {
-        std::cout << ex.what();
+        std::cout << ex.what() << std::endl;
         return -1;
     }
 }

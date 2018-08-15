@@ -216,33 +216,17 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
     }
 }
 
-CameraIterator ConfigLoader::CamStatesBegin() const
+std::vector<CameraInfo> ConfigLoader::CamStates() const
 {
-    return m_camera_states.begin();
+    return m_camera_states;
 }
 
-
-CameraIterator ConfigLoader::CamStatesEnd() const
+std::vector<LightInfo> ConfigLoader::Lights() const
 {
-    return m_camera_states.end();
+    return m_light_settings;
 }
 
-LightsIterator ConfigLoader::LightsBegin() const
+std::vector<int> ConfigLoader::Spp() const
 {
-    return m_light_settings.begin();
-}
-
-LightsIterator ConfigLoader::LightsEnd() const
-{
-    return m_light_settings.end();
-}
-
-SppIterator ConfigLoader::SppBegin() const
-{
-    return m_spp.begin();
-}
-
-SppIterator ConfigLoader::SppEnd() const
-{
-    return m_spp.end();
+    return m_spp;
 }

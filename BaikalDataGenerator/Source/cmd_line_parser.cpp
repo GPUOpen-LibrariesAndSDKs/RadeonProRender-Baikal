@@ -58,6 +58,12 @@ DGenConfig CmdLineParser::Parse() const
 
     config.height = m_cmd_parser.GetOption<std::uint32_t>("-height");
 
+    config.split_num = m_cmd_parser.GetOption<std::uint32_t>("-split_num", config.split_num);
+
+    config.split_idx = m_cmd_parser.GetOption<std::uint32_t>("-split_idx", config.split_idx);
+
+    config.restart_idx = m_cmd_parser.GetOption<std::uint32_t>("-restart_idx", config.restart_idx);
+
     config.gamma_correction = (m_cmd_parser.GetOption<int>("-gamma", 0) == 1);
 
     return config;

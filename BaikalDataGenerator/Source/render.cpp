@@ -180,32 +180,32 @@ Render::Render(const std::filesystem::path& scene_file,
     }
 }
 
-void Render::UpdateCameraSettings(CameraIterator cam_state)
+void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 {
-    if (cam_state->aperture != m_camera->GetAperture())
+    if (cam_state.aperture != m_camera->GetAperture())
     {
-        m_camera->SetAperture(cam_state->aperture);
+        m_camera->SetAperture(cam_state.aperture);
     }
 
-    if (cam_state->focal_length != m_camera->GetFocalLength())
+    if (cam_state.focal_length != m_camera->GetFocalLength())
     {
-        m_camera->SetFocalLength(cam_state->focal_length);
+        m_camera->SetFocalLength(cam_state.focal_length);
     }
 
-    if (cam_state->focus_distance != m_camera->GetFocusDistance())
+    if (cam_state.focus_distance != m_camera->GetFocusDistance())
     {
-        m_camera->SetFocusDistance(cam_state->focus_distance);
+        m_camera->SetFocusDistance(cam_state.focus_distance);
     }
 
     auto cur_pos = m_camera->GetPosition();
     auto at = m_camera->GetForwardVector();
     auto up = m_camera->GetUpVector();
 
-    if (!RoughCompare(cur_pos, cam_state->pos) ||
-        !RoughCompare(at, cam_state->at) ||
-        !RoughCompare(up, cam_state->up))
+    if (!RoughCompare(cur_pos, cam_state.pos) ||
+        !RoughCompare(at, cam_state.at) ||
+        !RoughCompare(up, cam_state.up))
     {
-        m_camera->LookAt(cam_state->pos, cam_state->at, cam_state->up);
+        m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
     }
 }
 
@@ -290,27 +290,27 @@ void Render::SaveOutput(const OutputInfo& info,
             sizeof(float) * image_data.size());
 }
 
-void Render::SetLightConfig(LightsIterator begin, LightsIterator end)
+void Render::SetLightConfig(const std::vector<LightInfo>& lights)
 {
-    for (auto light = begin; light != end; ++light)
+    for (const auto& light : lights)
     {
         Light::Ptr light_instance;
 
-        if (light->type == "point")
+        if (light.type == "point")
         {
             light_instance = PointLight::Create();
         }
-        else if (light->type == "direct")
+        else if (light.type == "direct")
         {
             light_instance = DirectionalLight::Create();
         }
-        else if (light->type == "spot")
+        else if (light.type == "spot")
         {
             light_instance = SpotLight::Create();
             SpotLight::Ptr spot = std::dynamic_pointer_cast<SpotLight>(light_instance);
-            spot->SetConeShape(light->cs);
+            spot->SetConeShape(light.cs);
         }
-        else if (light->type == "ibl")
+        else if (light.type == "ibl")
         {
             light_instance = ImageBasedLight::Create();
 
@@ -318,33 +318,35 @@ void Render::SetLightConfig(LightsIterator begin, LightsIterator end)
                 ImageBasedLight>(light_instance);
 
             auto image_io(ImageIo::CreateImageIo());
-            // check that texture file is exist
-            auto texure_path = std::filesystem::path(light->texture);
 
+            // check that texture file is exist
+            auto canon = std::filesystem::canonical(std::filesystem::relative(light.texture));
+            auto rel = std::filesystem::relative(light.texture);
+            auto texure_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
             if (!std::filesystem::exists(texure_path))
             {
                 THROW_EX("textrue image doesn't exist on specified path")
             }
 
-            Texture::Ptr tex = image_io->LoadImage(light->texture);
+            Texture::Ptr tex = image_io->LoadImage(texure_path.string());
             ibl->SetTexture(tex);
-            ibl->SetMultiplier(light->mul);
+            ibl->SetMultiplier(light.mul);
         }
         else
         {
             THROW_EX("unsupported light type")
         }
 
-        light_instance->SetPosition(light->pos);
-        light_instance->SetDirection(light->dir);
-        light_instance->SetEmittedRadiance(light->rad);
+        light_instance->SetPosition(light.pos);
+        light_instance->SetDirection(light.dir);
+        light_instance->SetEmittedRadiance(light.rad);
         m_scene->AttachLight(light_instance);
     }
 }
 
-void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
-                             LightsIterator light_begin, LightsIterator light_end,
-                             SppIterator spp_begin, SppIterator spp_end,
+void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
+                             const std::vector<LightInfo>& light_states,
+                             const std::vector<int>& spp,
                              const std::filesystem::path& output_dir,
                              bool gamma_correction_enabled)
 {
@@ -356,14 +358,14 @@ void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
     }
 
     // check if number of samples to render wasn't specified
-    if (spp_begin == spp_end)
+    if (spp.empty())
     {
         return;
     }
 
-    SetLightConfig(light_begin, light_end);
+    SetLightConfig(light_states);
 
-    std::vector<int> sorted_spp(spp_begin, spp_end);
+    std::vector<int> sorted_spp(spp.begin(), spp.end());
     std::sort(sorted_spp.begin(), sorted_spp.end());
 
     sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
@@ -375,14 +377,14 @@ void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
 
 
     int cam_index = 1;
-    for (auto cam_state = cam_begin; cam_state != cam_end; ++cam_state)
+    for (const auto& cam_state : cam_states)
     {
         // create camera if it wasn't  done earlier
         if (!m_camera)
         {
-            m_camera = Baikal::PerspectiveCamera::Create(cam_state->at,
-                                                         cam_state->pos,
-                                                         cam_state->up);
+            m_camera = Baikal::PerspectiveCamera::Create(cam_state.at,
+                                                         cam_state.pos,
+                                                         cam_state.up);
 
             // default sensor width
             float sensor_width = 0.036f;

@@ -35,14 +35,9 @@ class ConfigLoader
 public:
     explicit ConfigLoader(const DGenConfig& config);
 
-    CameraIterator CamStatesBegin() const;
-    CameraIterator CamStatesEnd() const;
-
-    LightsIterator LightsBegin() const;
-    LightsIterator LightsEnd() const;
-
-    SppIterator SppBegin() const;
-    SppIterator SppEnd() const;
+    std::vector<CameraInfo> CamStates() const;
+    std::vector<LightInfo> Lights() const;
+    std::vector<int> Spp() const;
 
 private:
 
