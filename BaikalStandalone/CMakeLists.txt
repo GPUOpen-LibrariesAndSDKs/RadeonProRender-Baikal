@@ -14,7 +14,8 @@ set(APPLICATION_SOURCES
     Application/graph_scheme.h
     Application/graph_scheme.cpp
     Application/material_explorer.h
-    Application/material_explorer.cpp)
+    Application/material_explorer.cpp
+)
 
 set(IMGUI_SORUCES
     ImGUI/imconfig.h
@@ -27,39 +28,49 @@ set(IMGUI_SORUCES
     ImGUI/imgui_internal.h
     ImGUI/stb_rect_pack.h
     ImGUI/stb_textedit.h
-    ImGUI/stb_truetype.h)
+    ImGUI/stb_truetype.h
+)
 
-set(MAIN_SOURCES main.cpp)
+set(MAIN_SOURCES
+    main.cpp
+)
+
 set(UTILS_SOURCES
     Utils/config_manager.cpp
     Utils/config_manager.h
     Utils/shader_manager.cpp
-    Utils/shader_manager.h)
+    Utils/shader_manager.h
+)
 
 set(KERNEL_SOURCES
     Kernels/GLSL/simple.fsh
-    Kernels/GLSL/simple.vsh)
+    Kernels/GLSL/simple.vsh
+)
 
 set(SOURCES
     ${APPLICATION_SOURCES}
     ${IMGUI_SORUCES}
     ${MAIN_SOURCES}
     ${UTILS_SOURCES}
-    ${KERNEL_SOURCES})
+    ${KERNEL_SOURCES}
+)
 
 source_group("Application" FILES ${APPLICATION_SOURCES})
 source_group("ImGUI" FILES ${IMGUI_SORUCES})
 source_group("Utils" FILES ${UTILS_SOURCES})
 source_group("Kernels\\GLSL" FILES ${KERNEL_SOURCES})
-    
+
 add_executable(BaikalStandalone ${SOURCES})
 target_compile_features(BaikalStandalone PRIVATE cxx_std_14)
-#Add project root since BaikalStandalone directly includes Baikal/* files
+
+# Add project root since BaikalStandalone directly includes Baikal/* files
 target_include_directories(BaikalStandalone
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE .)
+
 target_link_libraries(BaikalStandalone PRIVATE Baikal BaikalIO glfw3::glfw3 OpenGL::GL GLEW::GLEW)
 
+# Compile definitions
 if (BAIKAL_ENABLE_DENOISER)
     target_compile_definitions(BaikalStandalone PUBLIC ENABLE_DENOISER)
 endif(BAIKAL_ENABLE_DENOISER)
@@ -68,14 +79,21 @@ if (BAIKAL_ENABLE_GLTF)
     target_link_libraries(BaikalStandalone PRIVATE RadeonProRender RprSupport)
 endif (BAIKAL_ENABLE_GLTF)
 
+if (BAIKAL_ENABLE_DATAGENERATOR)
+    target_compile_definitions(BaikalStandalone PUBLIC GENERATE_DATASET)
+endif (BAIKAL_ENABLE_DATAGENERATOR)
+
 set_target_properties(BaikalStandalone
-    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalStandalone)
+    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalStandalone FOLDER Baikal)
 
-add_custom_target(BaikalStandaloneKernelsDir)
-
+# Add symbolic link from binary to BaikalStandalone/Kernels directory
 set(BAIKALSTANDALONE_KERNELS_DIR BaikalStandalone/Kernels)
-FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_SRC)
-FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_DST)
+file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_SRC)
+file(TO_NATIVE_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${BAIKALSTANDALONE_KERNELS_DIR} BAIKALSTANDALONE_KERNELS_DST)
+
+add_custom_target(BaikalStandaloneKernelsDir ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/BaikalStandalone
+)
 
 if (WIN32)
     add_custom_command(TARGET BaikalStandaloneKernelsDir POST_BUILD
@@ -89,16 +107,9 @@ else ()
     )
 endif ()
 
-add_dependencies(BaikalStandaloneKernelsDir BaikalStandalone)
+add_dependencies(BaikalStandalone BaikalStandaloneKernelsDir ResourcesDir Copy3rdParty)
 
-if (BAIKAL_ENABLE_DATAGENERATOR)
-    if (MSVC)
-        add_definitions(/DGENERATE_DATASET)
-    else()
-        add_definitions(-DGENERATE_DATASET)
-    endif()
-endif (BAIKAL_ENABLE_DATAGENERATOR)
-
+# Install target
 install(TARGETS BaikalStandalone RUNTIME DESTINATION bin)
 if (WIN32)
     install(FILES ${BAIKALSTANDALONE_DLLS} DESTINATION bin)
@@ -121,4 +132,3 @@ else ()
     file(GLOB_RECURSE RADEONRAYS_SO ${CMAKE_BINARY_DIR}/libRadeonRays.*)
     install(FILES ${RADEONRAYS_SO} DESTINATION lib)
 endif ()
-
