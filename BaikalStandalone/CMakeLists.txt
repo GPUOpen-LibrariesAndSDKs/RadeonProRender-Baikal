@@ -105,9 +105,5 @@ add_dependencies(BaikalStandalone BaikalStandaloneKernelsDir ResourcesDir Copy3r
 
 # Install target
 install(TARGETS BaikalStandalone RUNTIME DESTINATION bin)
-if (WIN32)
-    install(FILES ${BAIKALSTANDALONE_DLLS} DESTINATION bin)
-endif ()
-
 file(TO_CMAKE_PATH ${BAIKALSTANDALONE_KERNELS_SRC} BAIKALSTANDALONE_KERNELS_SRC_CMAKE)
 install(DIRECTORY ${BAIKALSTANDALONE_KERNELS_SRC_CMAKE} DESTINATION BaikalStandalone)

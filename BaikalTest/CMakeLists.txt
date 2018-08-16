@@ -43,3 +43,8 @@ else ()
 endif ()
 
 add_dependencies(BaikalTest BaikalTestImagesDir ResourcesDir)
+
+# Install target
+install(TARGETS BaikalTest RUNTIME DESTINATION bin)
+install(DIRECTORY DESTINATION ${BAIKALTEST_REFERENCEIMAGES_DIR})
+install(DIRECTORY DESTINATION ${BAIKALTEST_OUTPUTIMAGES_DIR})
