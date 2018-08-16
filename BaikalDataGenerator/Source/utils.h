@@ -45,7 +45,7 @@ struct DGenConfig
     std::uint32_t width, height;
     std::uint32_t split_num = 0;
     std::uint32_t split_idx = 0;
-    std::uint32_t restart_idx = 0;
+    std::uint32_t offset_idx = 0;
     bool gamma_correction;
 };
 
