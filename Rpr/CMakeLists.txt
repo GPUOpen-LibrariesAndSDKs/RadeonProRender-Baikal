@@ -53,4 +53,9 @@ target_compile_features(RadeonProRender64 PRIVATE cxx_std_14)
 target_include_directories(RadeonProRender64 PUBLIC ${Baikal_SOURCE_DIR}/Rpr)
 target_link_libraries(RadeonProRender64 PUBLIC Baikal BaikalIO OpenGL::GL GLEW::GLEW)
 
-    
+# Install target
+if (WIN32)
+    install(TARGETS RadeonProRender64 RUNTIME DESTINATION bin)
+else ()
+    install(TARGETS RadeonProRender64 LIBRARY DESTINATION lib)
+endif ()
