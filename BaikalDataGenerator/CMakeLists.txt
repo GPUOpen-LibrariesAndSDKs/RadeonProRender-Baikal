@@ -13,15 +13,15 @@ set(SOURCES
     ${DATAGENERATOR_SOURCES})
 
 source_group("Source" FILES ${DATAGENERATOR_SOURCES})
-
+    
 add_executable(BaikalDataGenerator ${SOURCES})
 target_compile_features(BaikalDataGenerator PRIVATE cxx_std_17)
 
-# Add project root since BaikalStandalone directly includes Baikal/* files
+#Add project root since BaikalStandalone directly includes Baikal/* files
 target_include_directories(BaikalDataGenerator
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE .)
-
+    
 target_link_libraries(BaikalDataGenerator PRIVATE Baikal BaikalIO)
 
 set_target_properties(BaikalDataGenerator

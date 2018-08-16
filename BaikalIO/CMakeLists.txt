@@ -9,7 +9,7 @@ set(SOURCES
     scene_io.h
     scene_test_io.cpp
     scene_obj_io.cpp
-)
+    )
 
 if (BAIKAL_ENABLE_FBX)
     list(APPEND SOURCES scene_fbx_io.cpp)

@@ -1,5 +1,5 @@
 set(SOURCES RprSupport.cpp)
-
+    
 add_library(RprSupport64 SHARED ${SOURCES})
 target_compile_definitions(RprSupport64 PRIVATE RPR_EXPORT_API)
 target_compile_features(RprSupport64 PRIVATE cxx_std_14)

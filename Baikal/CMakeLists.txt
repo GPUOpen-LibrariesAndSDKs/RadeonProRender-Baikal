@@ -4,8 +4,8 @@ set(CONTROLLERS_SOURCES
     Controllers/scene_controller.h
     Controllers/scene_controller.inl
     Controllers/scene_controller.cpp)
-
-set(ESTIMATORS_SOURCES
+    
+set(ESTIMATORS_SOURCES 
     Estimators/estimator.h
     Estimators/path_tracing_estimator.cpp
     Estimators/path_tracing_estimator.h)
@@ -13,15 +13,15 @@ set(ESTIMATORS_SOURCES
 set(OUTPUT_SOURCES
     Output/clwoutput.h
     Output/output.h)
-
+    
 set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
     PostEffects/post_effect.h
     PostEffects/bilateral_denoiser.h
     PostEffects/wavelet_denoiser.h
     PostEffects/AreaMap33.h
-)
-
+    )
+    
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp
     Renderers/adaptive_renderer.h
@@ -85,11 +85,11 @@ set(SCENEGRAPH_SOURCES
     SceneGraph/uberv2material.h
     SceneGraph/inputmap.h
     SceneGraph/inputmaps.h)
-
+    
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
     SceneGraph/Collector/collector.h)
-
+       
 set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
@@ -120,7 +120,7 @@ set(KERNELS_SOURCES
     Kernels/CL/wavelet_denoise.cl
     Kernels/CL/path_tracing_estimator_uberv2.cl
     Kernels/CL/fill_aovs_uberv2.cl
-)
+    )
 
 set(SOURCES
     ${CONTROLLERS_SOURCES}
@@ -135,8 +135,8 @@ set(SOURCES
     ${SCENEGRAPH_IO_SOURCES}
     ${XML_SOURCES}
     ${KERNELS_SOURCES}
-)
-
+    )
+    
 source_group("Controllers" FILES ${CONTROLLERS_SOURCES})
 source_group("Estimators" FILES ${ESTIMATORS_SOURCES})
 source_group("Output" FILES ${OUTPUT_SOURCES})
