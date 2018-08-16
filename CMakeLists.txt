@@ -110,6 +110,9 @@ if (WIN32)
     add_custom_target(Copy3rdParty ALL
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${THIRDPARTY_DLLS} "$<TARGET_FILE_DIR:Baikal>"
     )
+else ()
+    # Empty dummy target
+    add_custom_target(Copy3rdParty)
 endif ()
 
 # Add symbolic link from binary to Resources directory
@@ -140,8 +143,7 @@ install(DIRECTORY ${RESOURCES_SRC_CMAKE} DESTINATION .)
 
 # TODO: the following should be removed after the above being add to CMakeLists.txt of RadeonRays
 if (WIN32)
-    install(FILES $<TARGET_FILE_DIR:BaikalStandalone>/RadeonRays.dll DESTINATION bin)
+    install(FILES $<TARGET_FILE:RadeonRays> DESTINATION bin)
 else ()
-    file(GLOB_RECURSE RADEONRAYS_SO ${CMAKE_BINARY_DIR}/libRadeonRays.*)
-    install(FILES ${RADEONRAYS_SO} DESTINATION lib)
+    install(FILES $<TARGET_FILE:RadeonRays> DESTINATION lib)
 endif ()
