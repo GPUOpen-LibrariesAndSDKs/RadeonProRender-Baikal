@@ -3,19 +3,16 @@ set(CONTROLLERS_SOURCES
     Controllers/clw_scene_controller.h
     Controllers/scene_controller.h
     Controllers/scene_controller.inl
-    Controllers/scene_controller.cpp
-)
+    Controllers/scene_controller.cpp)
 
 set(ESTIMATORS_SOURCES
     Estimators/estimator.h
     Estimators/path_tracing_estimator.cpp
-    Estimators/path_tracing_estimator.h
-)
+    Estimators/path_tracing_estimator.h)
 
 set(OUTPUT_SOURCES
     Output/clwoutput.h
-    Output/output.h
-)
+    Output/output.h)
 
 set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
@@ -30,14 +27,12 @@ set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.h
     Renderers/monte_carlo_renderer.cpp
     Renderers/monte_carlo_renderer.h
-    Renderers/renderer.h
-)
+    Renderers/renderer.h)
 
 set(RENDERFACTORY_SOURCES
     RenderFactory/clw_render_factory.cpp
     RenderFactory/clw_render_factory.h
-    RenderFactory/render_factory.h
-)
+    RenderFactory/render_factory.h)
 
 set(UTILS_SOURCES
     Utils/clw_class.h
@@ -89,18 +84,15 @@ set(SCENEGRAPH_SOURCES
     SceneGraph/uberv2material.cpp
     SceneGraph/uberv2material.h
     SceneGraph/inputmap.h
-    SceneGraph/inputmaps.h
-)
+    SceneGraph/inputmaps.h)
 
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
-    SceneGraph/Collector/collector.h
-)
+    SceneGraph/Collector/collector.h)
 
 set(XML_SOURCES
     XML/tinyxml2.cpp
-    XML/tinyxml2.h
-)
+    XML/tinyxml2.h)
 
 set(KERNELS_SOURCES
     Kernels/CL/bxdf.cl

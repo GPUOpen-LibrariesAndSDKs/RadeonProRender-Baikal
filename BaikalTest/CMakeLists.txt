@@ -8,8 +8,7 @@ set(SOURCES
     main.cpp
     material.h
     test_scenes.h
-    uberv2.h
-)
+    uberv2.h)
 
 add_executable(BaikalTest ${SOURCES})
 target_compile_features(BaikalTest PRIVATE cxx_std_14)

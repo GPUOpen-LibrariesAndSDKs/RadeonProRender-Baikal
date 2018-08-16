@@ -18,7 +18,7 @@ if (BAIKAL_ENABLE_GLTF AND NOT BAIKAL_ENABLE_RPR)
     message(FATAL_ERROR "glTF support requires RPR but it's disabled")
 endif (BAIKAL_ENABLE_GLTF AND NOT BAIKAL_ENABLE_RPR)
 
-# Global settings
+#global settings
 if (WIN32)
     add_definitions(/MP -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS)
 elseif (UNIX)

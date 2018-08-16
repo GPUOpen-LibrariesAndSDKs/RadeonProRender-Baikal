@@ -7,12 +7,10 @@ set(DATAGENERATOR_SOURCES
     Source/utils.h
     Source/config_loader.h
     Source/config_loader.cpp
-    Source/input_info.h
-)
+    Source/input_info.h)
 
 set(SOURCES
-    ${DATAGENERATOR_SOURCES}
-)
+    ${DATAGENERATOR_SOURCES})
 
 source_group("Source" FILES ${DATAGENERATOR_SOURCES})
 
