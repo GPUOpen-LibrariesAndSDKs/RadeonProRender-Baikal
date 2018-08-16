@@ -129,7 +129,7 @@ namespace Baikal
         // Intersection API
         RadeonRays::IntersectionApi* m_api;
         // Default material
-        Material::Ptr m_default_material;
+        static Material::Ptr s_default_material;
         // CL Program manager
         const CLProgramManager *m_program_manager;
         // Material to device material map

@@ -51,10 +51,11 @@ namespace Baikal
     }
 
 
+    Material::Ptr ClwSceneController::s_default_material = UberV2Material::Create();
+
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
     : m_context(context)
     , m_api(api)
-    , m_default_material(UberV2Material::Create())
     , m_program_manager(program_manager)
     {
         auto acc_type = "fatbvh";
@@ -72,7 +73,7 @@ namespace Baikal
 
     Material::Ptr ClwSceneController::GetDefaultMaterial() const
     {
-        return m_default_material;
+        return s_default_material;
     }
 
     ClwSceneController::~ClwSceneController()
@@ -1275,7 +1276,7 @@ namespace Baikal
 
     int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const
     {
-        auto m = material ? material : m_default_material;
+        auto m = material ? material : s_default_material;
         return ResolveMaterialPtr(m);
     }
 
@@ -1392,7 +1393,7 @@ namespace Baikal
 
     int ClwSceneController::GetMaterialLayers(Material::Ptr material) const
     {
-        auto m = material ? material : m_default_material;
+        auto m = material ? material : s_default_material;
         return std::static_pointer_cast<UberV2Material>(m)->GetLayers();
     }
 

@@ -103,6 +103,9 @@ inline void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& dat
 }
 
 
+std::unordered_map<std::string, std::shared_ptr<std::mutex>> CLProgram::s_binary_cache_names;
+std::mutex CLProgram::s_binary_cache_map_mutex;
+
 CLProgram::CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context,
                      const std::string &program_name, const std::string &cache_path) :
     m_program_manager(program_manager),
@@ -246,8 +249,24 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
         cached_program_path.append(".bin");
 
         std::vector<std::uint8_t> binary;
-        if (LoadBinaries(cached_program_path, binary))
+
+        std::unique_lock<std::mutex> map_lock(s_binary_cache_map_mutex);
+        auto iter = s_binary_cache_names.find(filename);
+        if (iter == s_binary_cache_names.end())
+            iter = s_binary_cache_names.insert({ filename, std::make_shared<std::mutex>() }).first;
+        auto cache_mutex = iter->second;
+        assert(cache_mutex != nullptr);
+        map_lock.unlock();
+
+        // Other workers with the same binary cache requirement will be blocked here
+        std::unique_lock<std::mutex> cache_lock(*cache_mutex);
+        bool loaded = LoadBinaries(cached_program_path, binary);
+
+        if (loaded)
         {
+            // Binary cache existed, other workers can read it
+            cache_lock.unlock();
+
             // Create from binary
             std::size_t size = binary.size();
             auto binaries = &binary[0];
@@ -262,6 +281,9 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
             // Save binaries
             result.GetBinaries(0, binary);
             SaveBinaries(cached_program_path, binary);
+
+            // Block other workers until binary cache generated
+            cache_lock.unlock();
         }
     }
 
