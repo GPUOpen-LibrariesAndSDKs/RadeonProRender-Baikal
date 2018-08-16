@@ -41,9 +41,6 @@ typedef struct
 // Auxiliary rays descriptor
 typedef struct
 {
-    //half3 o;
-    //half3 d;
-
     // Origin
     float3 o;
     // Direction
@@ -97,8 +94,6 @@ INLINE void Ray_Init(GLOBAL ray* r, float3 o, float3 d, float maxt, float time, 
 
 INLINE void Aux_Ray_Init(GLOBAL aux_ray* r, float3 o, float3 d)
 {
-    //vstore_half3(o, 0, (GLOBAL half*)&r->o);
-    //vstore_half3(d, 0, (GLOBAL half*)&r->d);
     r->o = o;
     r->d = d;
 }

@@ -1,11 +1,11 @@
 #ifndef DISNEY_CL
 #define DISNEY_CL
 
+#include <../Baikal/Kernels/CL/common.cl>
 #include <../Baikal/Kernels/CL/utils.cl>
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
 
-#define DENOM_EPS 1e-8f
 #define ROUGHNESS_EPS 0.0001f
 
 #define WHITE make_float3(1.f, 1.f, 1.f)

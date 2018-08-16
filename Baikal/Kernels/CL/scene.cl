@@ -288,7 +288,7 @@ void Scene_FillDifferentialGeometry(// Scene
     float2 duv02 = uv0 - uv2;
     float2 duv12 = uv1 - uv2;
     float  det = duv02.x * duv12.y - duv02.y * duv12.x;
-    bool   degenerate_uv = fabs(det) < 1e-08f;
+    bool   degenerate_uv = fabs(det) < DENOM_EPS;
 
     float3 n0, n1, n2;
     Scene_GetTriangleNormals(scene, shape_idx, prim_idx, &n0, &n1, &n2);
@@ -306,32 +306,34 @@ void Scene_FillDifferentialGeometry(// Scene
         float3 dn12 = n1 - n2;
         diffgeo->dndu = ( duv12.y * dn02 - duv02.y * dn12) * invdet;
         diffgeo->dndv = (-duv12.x * dn02 + duv02.x * dn12) * invdet;
+
+        // Compute tangent and bitangent vectors
+        diffgeo->tangent = diffgeo->dpdu;
+        // Gram–Schmidt orthogonalization
+        diffgeo->tangent -= dot(diffgeo->n, diffgeo->tangent) * diffgeo->n;
+        diffgeo->tangent = normalize(diffgeo->tangent);
+        // Bitangent vector need to be orthogonal to tangent, since we use
+        // the advantage of an orthogonal matrix that is easily invertible
+        diffgeo->bitangent = normalize(cross(diffgeo->tangent, diffgeo->n));
+
+        // Check handedness when uv are mirrored
+        if (dot(cross(diffgeo->n, diffgeo->tangent), diffgeo->bitangent) < 0.0f)
+        {
+            diffgeo->tangent *= -1.0f;
+        }
+
     }
     else
     {
         diffgeo->dpdu = diffgeo->dpdv = 0.0f;
         diffgeo->dndu = diffgeo->dndv = 0.0f;
+        diffgeo->tangent = normalize(GetOrthoVector(diffgeo->n));
+        diffgeo->bitangent = normalize(cross(diffgeo->n, diffgeo->tangent));
     }
 
     // Initialize screen space uv derivatives
-    diffgeo->duvdx = diffgeo->duvdy = 0.0f;
-
-    // Compute tangent and bitangent vectors
-    diffgeo->tangent = diffgeo->dpdu;
-    // Gram–Schmidt orthogonalization
-    diffgeo->tangent -= dot(diffgeo->n, diffgeo->tangent) * diffgeo->n;
-    diffgeo->tangent = normalize(diffgeo->tangent);
-    // Bitangent vector need to be orthogonal to tangent, since we use
-    // the advantage of an orthogonal matrix that is easily invertible
-    diffgeo->bitangent = normalize(cross(diffgeo->tangent, diffgeo->n));
-/*
-    // Check handedness when uv are mirrored
-    if (dot(cross(diffgeo->n, diffgeo->tangent), diffgeo->bitangent) < 0.0f)
-    {
-        diffgeo->tangent *= -1.0f;
-    }
-*/
-
+    diffgeo->duvdx = 0.0f;
+    diffgeo->duvdy = 0.0f;
 
 }
 
@@ -362,8 +364,6 @@ INLINE void DifferentialGeometry_CalculatePartialDerivatives(
                           float2* uv_derivative
                           )
 {
-    //float3 o = vload_half3(0, (GLOBAL half*)&my_ray->o);
-    //float3 d = vload_half3(0, (GLOBAL half*)&my_ray->d);
     float3 o = my_ray->o;
     float3 d = my_ray->d;
 
@@ -430,7 +430,7 @@ INLINE void DifferentialGeometry_CalculatePartialDerivatives(
     float det2 = derivative_matrix.x * delta_p.y - derivative_matrix.z * delta_p.x;
 
     *position_derivative = p - diffgeo->p;
-    *uv_derivative = make_float2(det1, det2) / matrix_det;
+    *uv_derivative = fabs(matrix_det) > DENOM_EPS ? make_float2(det1, det2) / matrix_det : 0.0f;
 
 }
 

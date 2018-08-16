@@ -42,6 +42,8 @@ THE SOFTWARE.
 #define REASONABLE_RADIANCE(x) (clamp((x), 0.f, CRAZY_HIGH_RADIANCE))
 #define NON_BLACK(x) (length(x) > 0.f)
 
+#define DENOM_EPS 1e-8f
+
 #define MULTISCATTER
 
 #define RANDOM 1

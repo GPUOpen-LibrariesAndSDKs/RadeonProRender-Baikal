@@ -437,6 +437,8 @@ KERNEL void ShadeSurfaceUberV2(
         const float2 sample = Sampler_Sample2D(&sampler, SAMPLER_ARGS);
         float3 bxdf = UberV2_Sample(&diffgeo, wi, TEXTURE_ARGS, sample, &bxdfwo, &bxdf_pdf, &uber_shader_data);
 
+        // Compute secondary auxiliary rays for singular reflected/refracted rays
+        // Glossy reflections/refractions don't need texture antialiasing
         if (!Bxdf_IsSingular(&diffgeo))
         {
             Path_SetGlossyFlag(path);
