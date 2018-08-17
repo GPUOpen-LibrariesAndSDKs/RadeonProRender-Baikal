@@ -115,6 +115,11 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
         cam_info.up.y = elem->FloatAttribute("upy");
         cam_info.up.z = elem->FloatAttribute("upz");
 
+        if (cam_info.up.sqnorm() == 0.f)
+        {
+            cam_info.up = RadeonRays::float3(0.f, 1.f, 0.f);
+        }
+
         //other values
         cam_info.focal_length = elem->FloatAttribute("focal_length");
         cam_info.focus_distance = elem->FloatAttribute("focus_dist");

@@ -62,6 +62,9 @@ namespace Baikal
         CompiledScene& CompileScene(Scene1::Ptr scene) const;
 
         CompiledScene& GetCachedScene(Scene1::Ptr scene) const;
+
+        static void ResetId();
+
     protected:
         // Recompile the scene from scratch, i.e. not loading from cache.
         // All the buffers are recreated and reloaded.
@@ -110,6 +113,9 @@ namespace Baikal
         mutable Collector m_texture_collector;
         mutable Collector m_input_maps_collector;
         mutable Collector m_input_map_leafs_collector;
+
+        // Scene controller id
+        std::uint32_t m_id;
     };
 }
 

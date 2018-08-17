@@ -31,6 +31,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <bitset>
 
 namespace Baikal
 {
@@ -58,13 +59,17 @@ namespace Baikal
         { return m_id; }
 
         static void ResetId();
+        static void SetSceneControllerId(std::uint32_t controller_id);
+        static void ResetSceneControllerId();
 
     protected:
         // Constructor
         SceneObject();
         
     private:
-        mutable bool m_dirty;
+        // Bit mask size, equals to bit count of std::uint32_t
+        static const int kMaxDirtyBits = 32;
+        mutable std::bitset<kMaxDirtyBits> m_dirty;
 
         std::string m_name;
         std::uint32_t m_id;
@@ -74,17 +79,7 @@ namespace Baikal
     inline SceneObject::~SceneObject()
     {
     }
-    
-    inline bool SceneObject::IsDirty() const
-    {
-        return m_dirty;
-    }
-    
-    inline void SceneObject::SetDirty(bool dirty) const
-    {
-        m_dirty = dirty;
-    }
-    
+
     inline std::string SceneObject::GetName() const
     {
         return m_name;

@@ -7,6 +7,7 @@
 #include <list>
 #include <cassert>
 #include <set>
+#include <mutex>
 
 namespace Baikal
 {
@@ -24,6 +25,7 @@ namespace Baikal
         EnvironmentOverride m_environment_override;
 
         DirtyFlags m_dirty_flags;
+        std::mutex m_scene_mutex;
     };
 
     Scene1::Scene1()
@@ -216,6 +218,18 @@ namespace Baikal
     const Scene1::EnvironmentOverride& Scene1::GetEnvironmentOverride() const
     {
         return m_impl->m_environment_override;
+    }
+
+    void Scene1::Acquire(std::uint32_t controller_id)
+    {
+        m_impl->m_scene_mutex.lock();
+        SceneObject::SetSceneControllerId(controller_id);
+    }
+
+    void Scene1::Release()
+    {
+        SceneObject::ResetSceneControllerId();
+        m_impl->m_scene_mutex.unlock();
     }
 
     namespace {

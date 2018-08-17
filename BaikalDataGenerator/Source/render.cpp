@@ -115,6 +115,9 @@ Render::Render(const std::filesystem::path& scene_file,
                 break;
             }
         }
+
+        if (device_found)
+            break;
     }
 
     if (!device_found)

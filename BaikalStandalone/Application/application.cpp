@@ -529,14 +529,12 @@ namespace Baikal
         if (m_settings.num_samples == -1 || m_settings.samplecount <  m_settings.num_samples)
         {
             m_cl->Render(m_settings.samplecount);
-            ++m_settings.samplecount;
+
         }
         else if (m_settings.samplecount == m_settings.num_samples)
         {
             m_cl->SaveFrameBuffer(m_settings);
             std::cout << "Target sample count reached\n";
-            ++m_settings.samplecount;
-            //exit(0);
         }
 
         m_cl->Update(m_settings);
@@ -810,10 +808,16 @@ namespace Baikal
             ImGui::Text("Mouse+RMB to look around");
             ImGui::Text("F1 to hide/show GUI");
             ImGui::Separator();
-            ImGui::Text("Device vendor: %s", m_cl->GetDevice(0).GetVendor().c_str());
-            ImGui::Text("Device name: %s", m_cl->GetDevice(0).GetName().c_str());
-            ImGui::Text("OpenCL: %s", m_cl->GetDevice(0).GetVersion().c_str());
-            ImGui::Separator();
+
+            auto const& configs = m_cl->GetConfigs();
+            for (auto const& cfg : configs)
+            {
+                ImGui::Text("Device vendor: %s", cfg.context.GetDevice(0).GetVendor().c_str());
+                ImGui::Text("Device name: %s", cfg.context.GetDevice(0).GetName().c_str());
+                ImGui::Text("OpenCL: %s", cfg.context.GetDevice(0).GetVersion().c_str());
+                ImGui::Separator();
+            }
+
             ImGui::Text("Resolution: %dx%d ", m_settings.width, m_settings.height);
             ImGui::Text("Scene: %s", m_settings.modelname.c_str());
             ImGui::Text("Unique triangles: %d", m_num_triangles);

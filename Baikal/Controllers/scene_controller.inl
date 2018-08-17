@@ -16,9 +16,21 @@
 
 namespace Baikal
 {
+    // Defined in scene_controller.cpp
+    std::uint32_t GetNextControllerId();
+    void ResetControllerId();
+
     template <typename CompiledScene>
-    inline
-    SceneController<CompiledScene>::SceneController() {}
+    SceneController<CompiledScene>::SceneController()
+        : m_id(GetNextControllerId())
+    {
+    }
+
+    template <typename CompiledScene>
+    void SceneController<CompiledScene>::ResetId()
+    {
+        ResetControllerId();
+    }
 
     template <typename CompiledScene>
     inline
@@ -38,6 +50,9 @@ namespace Baikal
     CompiledScene& SceneController<CompiledScene>::CompileScene(
         Scene1::Ptr scene
     ) const {
+
+        scene->Acquire(m_id);
+
         // The overall approach is:
         // 1) Check if materials have changed, update collector if yes
         // 2) Check if textures have changed, update collector if yes
@@ -304,6 +319,7 @@ namespace Baikal
             });
 
             // Return the scene
+            scene->Release();
             return res.first->second;
         }
         else
@@ -511,6 +527,7 @@ namespace Baikal
             });
 
             // Return the scene
+            scene->Release();
             return out;
         }
     }

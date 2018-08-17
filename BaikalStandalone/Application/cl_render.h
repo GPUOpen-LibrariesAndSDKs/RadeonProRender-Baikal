@@ -47,6 +47,7 @@ namespace Baikal
         struct OutputData
         {
             std::unique_ptr<Baikal::Output> output;
+            std::unique_ptr<Baikal::Output> dummy_output;
 
 #ifdef ENABLE_DENOISER
             std::unique_ptr<Baikal::Output> output_position;
@@ -67,8 +68,11 @@ namespace Baikal
             std::atomic<int> clear;
             std::atomic<int> stop;
             std::atomic<int> newdata;
-            std::mutex datamutex;
             int idx;
+            // This is used to reject non-actual data from a worker device
+            std::uint32_t scene_state;
+            // Number of samples in the new data that has sent from a worker device
+            std::uint32_t new_samples_count;
         };
 
     public:
@@ -90,7 +94,7 @@ namespace Baikal
 
         inline Baikal::Camera::Ptr GetCamera() { return m_camera; };
         inline Baikal::Scene1::Ptr GetScene() { return m_scene; };
-        inline CLWDevice GetDevice(int i) { return m_cfgs[m_primary].context.GetDevice(i); };
+        inline const std::vector<ConfigManager::Config>& GetConfigs() const { return m_cfgs; };
         inline Renderer::OutputType GetOutputType() { return m_output_type; };
 
         void SetNumBounces(int num_bounces);
@@ -119,7 +123,6 @@ namespace Baikal
         std::promise<int> m_promise;
         bool m_shape_id_requested = false;
         OutputData m_shape_id_data;
-        OutputData m_dummy_output_data;
         RadeonRays::float2 m_shape_id_pos;
         std::vector<ConfigManager::Config> m_cfgs;
         std::vector<OutputData> m_outputs;
