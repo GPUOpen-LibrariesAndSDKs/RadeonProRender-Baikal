@@ -46,7 +46,6 @@ float FresnelDielectric(float etai, float etat, float ndotwi, float ndotwt)
 #include <../Baikal/Kernels/CL/texture.cl>
 #include <../Baikal/Kernels/CL/payload.cl>
 #include <../Baikal/Kernels/CL/bxdf_uberv2.cl>
-
 /// Emissive BRDF sampling
 float3 Emissive_GetLe(
     // Geometry

@@ -272,6 +272,8 @@ namespace Baikal
 
         auto argc = 0U;
         fill_kernel.SetArg(argc++, m_estimator->GetRayBuffer());
+        fill_kernel.SetArg(argc++, m_estimator->GetAuxRayXBuffer());
+        fill_kernel.SetArg(argc++, m_estimator->GetAuxRayYBuffer());
         fill_kernel.SetArg(argc++, m_estimator->GetFirstHitBuffer());
         fill_kernel.SetArg(argc++, m_estimator->GetOutputIndexBuffer());
         fill_kernel.SetArg(argc++, m_estimator->GetRayCountBuffer());
@@ -283,6 +285,7 @@ namespace Baikal
         fill_kernel.SetArg(argc++, scene.shapes_additional);
         fill_kernel.SetArg(argc++, scene.material_attributes);
         fill_kernel.SetArg(argc++, scene.textures);
+        fill_kernel.SetArg(argc++, scene.mip_levels);
         fill_kernel.SetArg(argc++, scene.texturedata);
         fill_kernel.SetArg(argc++, scene.envmapidx);
         fill_kernel.SetArg(argc++, scene.background_idx);
@@ -355,6 +358,8 @@ namespace Baikal
         genkernel.SetArg(argc++, (int)rand_uint());
         genkernel.SetArg(argc++, m_sample_counter);
         genkernel.SetArg(argc++, m_estimator->GetRayBuffer());
+        genkernel.SetArg(argc++, m_estimator->GetAuxRayXBuffer());
+        genkernel.SetArg(argc++, m_estimator->GetAuxRayYBuffer());
         genkernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kRandomSeed));
         genkernel.SetArg(argc++, m_estimator->GetRandomBuffer(Estimator::RandomBufferType::kSobolLUT));
 
@@ -415,6 +420,7 @@ namespace Baikal
         misskernel.SetArg(argc++, w);
         misskernel.SetArg(argc++, h);
         misskernel.SetArg(argc++, scene.textures);
+        misskernel.SetArg(argc++, scene.mip_levels);
         misskernel.SetArg(argc++, scene.texturedata);
         misskernel.SetArg(argc++, output);
 

@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "Utils/sobol.h"
+#include "Utils/aux_ray.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
 #include "embed_kernels.h"
@@ -29,6 +30,8 @@ namespace Baikal
     {
         // OpenCL stuff
         CLWBuffer<ray> rays[2];
+        CLWBuffer<aux_ray> aux_rays_x[2];
+        CLWBuffer<aux_ray> aux_rays_y[2];
         CLWBuffer<int> hits;
 
         CLWBuffer<ray> shadowrays;
@@ -113,8 +116,13 @@ namespace Baikal
 
     void PathTracingEstimator::SetWorkBufferSize(std::size_t size)
     {
-        m_render_data->rays[0] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
-        m_render_data->rays[1] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
+        for (std::size_t i = 0; i <= 1; ++i)
+        {
+            m_render_data->rays[i] = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
+            m_render_data->aux_rays_x[i] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+            m_render_data->aux_rays_y[i] = GetContext().CreateBuffer<aux_ray>(size, CL_MEM_READ_WRITE);
+        }
+
         m_render_data->hits = GetContext().CreateBuffer<int>(size, CL_MEM_READ_WRITE);
         m_render_data->intersections = GetContext().CreateBuffer<Intersection>(size, CL_MEM_READ_WRITE);
         m_render_data->shadowrays = GetContext().CreateBuffer<ray>(size, CL_MEM_READ_WRITE);
@@ -159,6 +167,16 @@ namespace Baikal
     CLWBuffer<ray> PathTracingEstimator::GetRayBuffer() const
     {
         return m_render_data->rays[0];
+    }
+
+    CLWBuffer<aux_ray> PathTracingEstimator::GetAuxRayXBuffer() const
+    {
+        return m_render_data->aux_rays_x[0];
+    }
+
+    CLWBuffer<aux_ray> PathTracingEstimator::GetAuxRayYBuffer() const
+    {
+        return m_render_data->aux_rays_y[0];
     }
 
     CLWBuffer<int> PathTracingEstimator::GetOutputIndexBuffer() const
@@ -362,6 +380,8 @@ namespace Baikal
         // Set kernel parameters
         int argc = 0;
         shadekernel.SetArg(argc++, m_render_data->rays[pass & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_x[pass & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_y[pass & 0x1]);
         shadekernel.SetArg(argc++, m_render_data->intersections);
         shadekernel.SetArg(argc++, m_render_data->compacted_indices);
         shadekernel.SetArg(argc++, m_render_data->pixelindices[pass & 0x1]);
@@ -374,6 +394,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.shapes);
         shadekernel.SetArg(argc++, scene.material_attributes);
         shadekernel.SetArg(argc++, scene.textures);
+        shadekernel.SetArg(argc++, scene.mip_levels);
         shadekernel.SetArg(argc++, scene.texturedata);
         shadekernel.SetArg(argc++, scene.envmapidx);
         shadekernel.SetArg(argc++, scene.lights);
@@ -389,6 +410,8 @@ namespace Baikal
         shadekernel.SetArg(argc++, m_render_data->lightsamples);
         shadekernel.SetArg(argc++, m_render_data->paths);
         shadekernel.SetArg(argc++, m_render_data->rays[(pass + 1) & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_x[(pass + 1) & 0x1]);
+        shadekernel.SetArg(argc++, m_render_data->aux_rays_y[(pass + 1) & 0x1]);
         shadekernel.SetArg(argc++, output);
         shadekernel.SetArg(argc++, scene.input_map_data);
 
@@ -426,6 +449,7 @@ namespace Baikal
         shadekernel.SetArg(argc++, scene.shapes);
         shadekernel.SetArg(argc++, scene.material_attributes);
         shadekernel.SetArg(argc++, scene.textures);
+        shadekernel.SetArg(argc++, scene.mip_levels);
         shadekernel.SetArg(argc++, scene.texturedata);
         shadekernel.SetArg(argc++, scene.envmapidx);
         shadekernel.SetArg(argc++, scene.lights);
@@ -471,6 +495,7 @@ namespace Baikal
         sample_kernel.SetArg(argc++, m_render_data->hitcount);
         sample_kernel.SetArg(argc++, scene.volumes);
         sample_kernel.SetArg(argc++, scene.textures);
+        sample_kernel.SetArg(argc++, scene.mip_levels);
         sample_kernel.SetArg(argc++, scene.texturedata);
         sample_kernel.SetArg(argc++, rand_uint());
         sample_kernel.SetArg(argc++, m_render_data->random);
@@ -510,6 +535,7 @@ namespace Baikal
         misskernel.SetArg(argc++, scene.lights);
         misskernel.SetArg(argc++, scene.envmapidx);
         misskernel.SetArg(argc++, scene.textures);
+        misskernel.SetArg(argc++, scene.mip_levels);
         misskernel.SetArg(argc++, scene.texturedata);
         misskernel.SetArg(argc++, m_render_data->paths);
         misskernel.SetArg(argc++, scene.volumes);
@@ -699,6 +725,7 @@ namespace Baikal
         misskernel.SetArg(argc++, scene.num_lights);
         misskernel.SetArg(argc++, scene.envmapidx);
         misskernel.SetArg(argc++, scene.textures);
+        misskernel.SetArg(argc++, scene.mip_levels);
         misskernel.SetArg(argc++, scene.texturedata);
         misskernel.SetArg(argc++, m_render_data->paths);
         misskernel.SetArg(argc++, scene.volumes);

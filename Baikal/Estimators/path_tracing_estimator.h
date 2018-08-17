@@ -81,6 +81,30 @@ namespace Baikal
         CLWBuffer<ray> GetRayBuffer() const override;
 
         /**
+        \brief Get ray buffer handle.
+
+        Clients generate auxiliary ray in x dimension workload directly into internal memory of an estimator to
+        save memory bandwidth. This method allows to get CLW handle of a buffer and fill it up
+        on the client side.
+
+        IMPORTANT: SetWorkBufferSize should be called prior to calling this method.
+        Returned buffer size is exacly the size set via SetWorkBufferSize.
+        */
+        CLWBuffer<aux_ray> GetAuxRayXBuffer() const override;
+
+        /**
+        \brief Get ray buffer handle.
+
+        Clients generate auxiliary ray in y dimension workload directly into internal memory of an estimator to
+        save memory bandwidth. This method allows to get CLW handle of a buffer and fill it up
+        on the client side.
+
+        IMPORTANT: SetWorkBufferSize should be called prior to calling this method.
+        Returned buffer size is exacly the size set via SetWorkBufferSize.
+        */
+        CLWBuffer<aux_ray> GetAuxRayYBuffer() const override;
+
+        /**
         \brief Get output index buffer handle.
 
         Clients generate ray workload directly into internal memory of an estimator to

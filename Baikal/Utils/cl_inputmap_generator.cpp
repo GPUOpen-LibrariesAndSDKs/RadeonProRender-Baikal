@@ -117,14 +117,14 @@ void CLInputMapGenerator::GenerateInputSource(std::shared_ptr<Baikal::InputMap> 
         {
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
-            m_read_functions += "Texture_Sample2D(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx))\n";
+            m_read_functions += "Texture_Sample2D(dg, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx))\n";
             break;
         }
         case InputMap::InputMapType::kSamplerBumpmap:
         {
             int32_t index = input_map_leaf_collector.GetItemIndex(input);
 
-            m_read_functions += "(float4)(Texture_SampleBump(dg->uv, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx)), 1.0f)\n";
+            m_read_functions += "(float4)(Texture_SampleBump(dg, TEXTURE_ARGS_IDX(input_map_values[" + std::to_string(index) + "].int_values.idx)), 1.0f)\n";
             break;
         }
         // Two inputs

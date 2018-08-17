@@ -76,7 +76,7 @@ namespace Baikal
             try
             {
                 LogInfo("Loading ", name, "\n");
-                auto texture = io.LoadImage(fname);
+                auto texture = io.LoadImage(fname, true);
                 texture->SetName(name);
                 m_texture_cache[name] = texture;
                 return texture;

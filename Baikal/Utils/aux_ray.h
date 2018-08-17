@@ -1,5 +1,5 @@
 /**********************************************************************
-Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
-#include "gtest/gtest.h"
 
-#include "CLW.h"
+#pragma once
 
-#include "internal.h"
-#include "basic.h"
-#include "camera.h"
-#include "light.h"
-#include "material.h"
-#include "aov.h"
-#include "test_scenes.h"
-#include "mipmap.h"
-
-#include "uberv2.h"
-#include "input_maps.h"
-
-int g_argc;
-char** g_argv;
-
-int main(int argc, char** argv)
+namespace Baikal
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    g_argc = argc;
-    g_argv = argv;
-    return RUN_ALL_TESTS();
+    struct aux_ray
+    {
+        float origin[4];
+        float direction[4];
+    };
 }

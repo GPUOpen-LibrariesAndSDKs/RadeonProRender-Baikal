@@ -215,22 +215,35 @@ enum TextureFormat
     UNKNOWN,
     RGBA8,
     RGBA16,
-    RGBA32
+    RGBA32,
+    GRAY8,
+    GRAY16,
+    GRAY32
 };
 
-/// Texture description
+/// mipmap level description
 typedef
-struct _Texture
+struct _MipLevel
 {
-    // Width, height and depth
+    // Width, height, depth
     int w;
     int h;
     int d;
     // Offset in texture data array
     int dataoffset;
+} MipLevel;
+
+/// Texture description
+typedef
+struct _Texture
+{
+    // mipmap info
+    int mip_offset;
+    int mip_count;
     // Format
     int fmt;
-    int extra;
+    // unused field for alignment
+    int alignment;
 } Texture;
 
 // Hit data
@@ -238,33 +251,37 @@ typedef struct _DifferentialGeometry
 {
     // World space position
     float3 p;
-    // Shading normal
+    // Shading normal, tangent, bitangent
     float3 n;
+    float3 tangent;
+    float3 bitangent;
     // Geo normal
     float3 ng;
     // UVs
     float2 uv;
-    // Derivatives
+    // Position derivatives with respect to texcoords
     float3 dpdu;
     float3 dpdv;
+    // Position derivatives with respect to screen coords
+    float3 dpdx;
+    float3 dpdy;
+    // UV derivatives with respect to screen coords
+    float2 duvdx;
+    float2 duvdy;
+    // Normal derivatives with respect to texcoords
+    float3 dndu;
+    float3 dndv;
 
     matrix4x4 world_to_tangent;
     matrix4x4 tangent_to_world;
 
     // Material
     Material mat;
+
+    // Triangle area
     float  area;
     int transfer_mode;
-    int padding[2];
+
 } DifferentialGeometry;
-
-
-
-
-
-
-
-
-
 
 #endif // PAYLOAD_CL

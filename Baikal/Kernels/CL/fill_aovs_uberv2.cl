@@ -40,6 +40,9 @@ THE SOFTWARE.
 KERNEL void FillAOVsUberV2(
     // Ray batch
     GLOBAL ray const* restrict rays,
+    // Auxiliary rays for computing screen-space uv derivatives
+    GLOBAL aux_ray const* restrict aux_rays_x,
+    GLOBAL aux_ray const* restrict aux_rays_y,
     // Intersection data
     GLOBAL Intersection const* restrict isects,
     // Pixel indices
@@ -79,11 +82,11 @@ KERNEL void FillAOVsUberV2(
     // Sampler states
     GLOBAL uint* restrict random,
     // Sobol matrices
-    GLOBAL uint const* restrict sobol_mat, 
+    GLOBAL uint const* restrict sobol_mat,
     // Frame
     int frame,
     // World position flag
-    int world_position_enabled, 
+    int world_position_enabled,
     // World position AOV
     GLOBAL float4* restrict aov_world_position,
     // World normal flag
@@ -178,7 +181,7 @@ KERNEL void FillAOVsUberV2(
                 float x = (float)(idx % width) / (float)width;
                 float y = (float)(idx / width) / (float)height;
                 float2 uv = make_float2(x, y);
-                aov_background[idx].xyz += Texture_Sample2D(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
+                aov_background[idx].xyz += Texture_Sample2DNoMip(uv, TEXTURE_ARGS_IDX(background_idx)).xyz;
             }
             else if (env_light_idx != -1)
             {
@@ -198,7 +201,7 @@ KERNEL void FillAOVsUberV2(
             float3 wi = -normalize(rays[global_id].d.xyz);
 
             Sampler sampler;
-#if SAMPLER == SOBOL 
+#if SAMPLER == SOBOL
             uint scramble = random[global_id] * 0x1fe3434f;
             Sampler_Init(&sampler, frame, SAMPLE_DIM_SURFACE_OFFSET, scramble);
 #elif SAMPLER == RANDOM
@@ -213,6 +216,8 @@ KERNEL void FillAOVsUberV2(
             // Fill surface data
             DifferentialGeometry diffgeo;
             Scene_FillDifferentialGeometry(&scene, &isect, &diffgeo);
+
+            DifferentialGeometry_CalculateScreenSpaceUVDerivatives(&diffgeo, aux_rays_x + global_id, aux_rays_y + global_id);
 
             if (world_position_enabled)
             {
@@ -235,11 +240,11 @@ KERNEL void FillAOVsUberV2(
                 {
                     //Reverse normal and tangents in this case
                     //but not for BTDFs, since BTDFs rely
-                    //on normal direction in order to arrange   
+                    //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
-                    diffgeo.dpdu = -diffgeo.dpdu;
-                    diffgeo.dpdv = -diffgeo.dpdv;
+                    diffgeo.tangent = -diffgeo.tangent;
+                    diffgeo.bitangent = -diffgeo.bitangent;
                 }
                 UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
@@ -302,14 +307,14 @@ KERNEL void FillAOVsUberV2(
                     //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
-                    diffgeo.dpdu = -diffgeo.dpdu;
-                    diffgeo.dpdv = -diffgeo.dpdv;
+                    diffgeo.tangent = -diffgeo.tangent;
+                    diffgeo.bitangent = -diffgeo.bitangent;
                 }
 
                 UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
-                aov_world_tangent[idx].xyz += diffgeo.dpdu;
+                aov_world_tangent[idx].xyz += diffgeo.tangent;
                 aov_world_tangent[idx].w += 1.f;
             }
 
@@ -331,14 +336,14 @@ KERNEL void FillAOVsUberV2(
                     //on normal direction in order to arrange
                     //indices of refraction
                     diffgeo.n = -diffgeo.n;
-                    diffgeo.dpdu = -diffgeo.dpdu;
-                    diffgeo.dpdv = -diffgeo.dpdv;
+                    diffgeo.tangent = -diffgeo.tangent;
+                    diffgeo.bitangent = -diffgeo.bitangent;
                 }
 
                 UberV2_ApplyShadingNormal(&diffgeo, &uber_shader_data);
                 DifferentialGeometry_CalculateTangentTransforms(&diffgeo);
 
-                aov_world_bitangent[idx].xyz += diffgeo.dpdv;
+                aov_world_bitangent[idx].xyz += diffgeo.bitangent;
                 aov_world_bitangent[idx].w += 1.f;
             }
 
@@ -371,7 +376,7 @@ KERNEL void FillAOVsUberV2(
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
             }
-            
+
             if (mesh_id_enabled)
             {
                 Sampler shapeid_sampler;

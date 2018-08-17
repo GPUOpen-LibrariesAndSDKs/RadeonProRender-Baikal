@@ -35,6 +35,8 @@
 
 #include "radeon_rays_cl.h"
 
+#include "Utils/cl_mipmap_generator.h"
+
 namespace Baikal
 {
     class Scene1;
@@ -65,10 +67,6 @@ namespace Baikal
         // Get underlying intersection API.
         RadeonRays::IntersectionApi* GetIntersectionApi() { return  m_api; }
 
-    protected:
-        // Clear intersector and load meshes into it.
-        void ReloadIntersector(Scene1 const& scene, ClwScene& inout) const;
-
     public:
         // Update camera data only.
         void UpdateCamera(Scene1 const& scene, Collector& mat_collector, Collector& tex_collector, Collector& vol_collector, ClwScene& out) const override;
@@ -95,9 +93,13 @@ namespace Baikal
         // If scene attributes changed
         void UpdateSceneAttributes(Scene1 const& scene, Collector& tex_collector, ClwScene& out) const override;
 
+    private:
         // Update intersection API
         void UpdateIntersector(Scene1 const& scene, ClwScene& out) const;
         void UpdateIntersectorTransforms(Scene1 const& scene, ClwScene& out) const;
+        // Clear intersector and load meshes into it.
+        void ReloadIntersector(Scene1 const& scene, ClwScene& inout) const;
+
         // Write out single material at data pointer.
         // Collectors are required to convert texture and material pointers into indices.
         void WriteMaterial(Material const& material, Collector& mat_collector, Collector& tex_collector, std::vector<std::int32_t> &material_data) const;
@@ -106,7 +108,9 @@ namespace Baikal
         void WriteLight(Scene1 const& scene, Light const& light, Collector& tex_collector, void* data) const;
         // Write out single texture header at data pointer.
         // Header requires texture data offset, so it is passed in.
-        void WriteTexture(Texture const& texture, std::size_t data_offset, void* data) const;
+        void WriteTexture(Texture const& texture, void* data, std::size_t mip_levels_offset) const;
+        // Write out texture mip levels description headers at data pointer.
+        void WriteMipLevel(Texture const& texture, void* data, std::size_t level, std::size_t texturedata_offset) const;
         // Write out texture data at data pointer.
         void WriteTextureData(Texture const& texture, void* data) const;
         // Write single volume at data pointer
@@ -134,5 +138,7 @@ namespace Baikal
         const CLProgramManager *m_program_manager;
         // Material to device material map
         mutable std::unordered_map<std::uint32_t, std::int32_t> m_materialid_to_offset;
+        // Mipmap generator
+        CLMipmapGenerator::Ptr m_mipmap_generator;
     };
 }

@@ -114,16 +114,18 @@ public:
 
         auto platform = platforms[platform_index];
         auto device = platform.GetDevice(device_index);
-        auto context = CLWContext::Create(device);
 
-        ASSERT_NO_THROW(m_factory = std::make_unique<Baikal::ClwRenderFactory>(context, "cache"));
+        ASSERT_NO_THROW(m_context = std::make_unique<CLWContext>(CLWContext::Create(device)));
+        ASSERT_NO_THROW(m_factory = std::make_unique<Baikal::ClwRenderFactory>(*m_context, "cache"));
         ASSERT_NO_THROW(m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer));
         ASSERT_NO_THROW(m_controller = m_factory->CreateSceneController());
         ASSERT_NO_THROW(m_output = m_factory->CreateOutput(kOutputWidth, kOutputHeight));
         m_output->Clear(RadeonRays::float3(0.0f));
         ASSERT_NO_THROW(m_renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_output.get()));
 
+
         ASSERT_NO_THROW(LoadTestScene());
+
         ASSERT_NO_THROW(SetupCamera());
 
         ASSERT_NO_THROW(m_renderer->SetRandomSeed(0));
@@ -302,6 +304,7 @@ public:
         return std::find(begin, end, option) != end;
     }
 
+    std::unique_ptr<CLWContext> m_context;
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::unique_ptr<Baikal::RenderFactory<Baikal::ClwScene>> m_factory;
@@ -339,7 +342,3 @@ TEST_F(BasicTest, RenderTestScene)
     SaveOutput(test_name() + ".png");
     ASSERT_TRUE(CompareToReference(test_name() + ".png"));
 }
-
-
-
-

@@ -24,6 +24,7 @@ THE SOFTWARE.
 #include "radeon_rays.h"
 #include "SceneGraph/clwscene.h"
 #include "Utils/clw_class.h"
+#include "Utils/aux_ray.h"
 
 #include "CLW.h"
 
@@ -115,6 +116,30 @@ namespace Baikal
         Returned buffer size is exacly the size set via SetWorkBufferSize.
         */
         virtual CLWBuffer<ray> GetRayBuffer() const = 0;
+
+        /**
+        \brief Get ray buffer handle.
+
+        Clients generate auxiliary ray in x dimension workload directly into internal memory of an estimator to
+        save memory bandwidth. This method allows to get CLW handle of a buffer and fill it up
+        on the client side.
+
+        IMPORTANT: SetWorkBufferSize should be called prior to calling this method.
+        Returned buffer size is exacly the size set via SetWorkBufferSize.
+        */
+        virtual CLWBuffer<aux_ray> GetAuxRayXBuffer() const = 0;
+
+        /**
+        \brief Get ray buffer handle.
+
+        Clients generate auxiliary ray in y dimension workload directly into internal memory of an estimator to
+        save memory bandwidth. This method allows to get CLW handle of a buffer and fill it up
+        on the client side.
+
+        IMPORTANT: SetWorkBufferSize should be called prior to calling this method.
+        Returned buffer size is exacly the size set via SetWorkBufferSize.
+        */
+        virtual CLWBuffer<aux_ray> GetAuxRayYBuffer() const = 0;
 
         /**
         \brief Get output index buffer handle.

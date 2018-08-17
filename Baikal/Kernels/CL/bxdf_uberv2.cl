@@ -70,9 +70,9 @@ void UberV2_ApplyShadingNormal(
 
     if ((layers & kShadingNormalLayer) == kShadingNormalLayer)
     {
-        dg->n = normalize(shader_data->shading_normal.z * dg->n + shader_data->shading_normal.x * dg->dpdu + shader_data->shading_normal.y * dg->dpdv);
-        dg->dpdv = normalize(cross(dg->n, dg->dpdu));
-        dg->dpdu = normalize(cross(dg->dpdv, dg->n));
+        dg->n = normalize(shader_data->shading_normal.z * dg->n + shader_data->shading_normal.x * dg->tangent + shader_data->shading_normal.y * dg->bitangent);
+        dg->bitangent = normalize(cross(dg->n, dg->tangent));
+        dg->tangent = normalize(cross(dg->bitangent, dg->n));
     }
 }
 

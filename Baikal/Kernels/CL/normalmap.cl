@@ -31,13 +31,13 @@ void DifferentialGeometry_ApplyNormalMap(DifferentialGeometry* diffgeo, TEXTURE_
     int nmapidx = diffgeo->mat.nmapidx;
     if (nmapidx != -1)
     {
-        // Now n, dpdu, dpdv is orthonormal basis
-        float3 mappednormal = 2.f * Texture_Sample2D(diffgeo->uv, TEXTURE_ARGS_IDX(nmapidx)).xyz - make_float3(1.f, 1.f, 1.f);
+        // Now n, tangent, bitangent is orthonormal basis
+        float3 mappednormal = 2.f * Texture_Sample2D(diffgeo, TEXTURE_ARGS_IDX(nmapidx)).xyz - make_float3(1.f, 1.f, 1.f);
 
         // Return mapped version
-        diffgeo->n = normalize(mappednormal.z *  diffgeo->n + mappednormal.x * diffgeo->dpdu + mappednormal.y * diffgeo->dpdv);
-        diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
-        diffgeo->dpdu = normalize(cross(diffgeo->dpdv, diffgeo->n));
+        diffgeo->n = normalize(mappednormal.z *  diffgeo->n + mappednormal.x * diffgeo->tangent + mappednormal.y * diffgeo->bitangent);
+        diffgeo->bitangent = normalize(cross(diffgeo->n, diffgeo->tangent));
+        diffgeo->tangent = normalize(cross(diffgeo->bitangent, diffgeo->n));
     }
 }
 
@@ -46,13 +46,13 @@ void DifferentialGeometry_ApplyBumpMap(DifferentialGeometry* diffgeo, TEXTURE_AR
     int nmapidx = diffgeo->mat.nmapidx;
     if (nmapidx != -1)
     {
-        // Now n, dpdu, dpdv is orthonormal basis
+        // Now n, tangent, bitangent is orthonormal basis
         float3 mappednormal = 2.f * Texture_SampleBump(diffgeo->uv, TEXTURE_ARGS_IDX(nmapidx)) - make_float3(1.f, 1.f, 1.f);
 
         // Return mapped version
-        diffgeo->n = normalize(mappednormal.z * diffgeo->n + mappednormal.x * diffgeo->dpdu + mappednormal.y * diffgeo->dpdv);
-        diffgeo->dpdv = normalize(cross(diffgeo->n, diffgeo->dpdu));
-        diffgeo->dpdu = normalize(cross(diffgeo->dpdv, diffgeo->n));
+        diffgeo->n = normalize(mappednormal.z * diffgeo->n + mappednormal.x * diffgeo->tangent + mappednormal.y * diffgeo->bitangent);
+        diffgeo->bitangent = normalize(cross(diffgeo->n, diffgeo->tangent));
+        diffgeo->tangent = normalize(cross(diffgeo->bitangent, diffgeo->n));
     }
 }
 
