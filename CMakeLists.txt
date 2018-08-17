@@ -103,7 +103,7 @@ if (WIN32)
     set (THIRDPARTY_DLLS
         "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
     )
 
