@@ -14,8 +14,7 @@ set(APPLICATION_SOURCES
     Application/graph_scheme.h
     Application/graph_scheme.cpp
     Application/material_explorer.h
-    Application/material_explorer.cpp
-)
+    Application/material_explorer.cpp)
 
 set(IMGUI_SORUCES
     ImGUI/imconfig.h
@@ -28,32 +27,27 @@ set(IMGUI_SORUCES
     ImGUI/imgui_internal.h
     ImGUI/stb_rect_pack.h
     ImGUI/stb_textedit.h
-    ImGUI/stb_truetype.h
-)
+    ImGUI/stb_truetype.h)
 
 set(MAIN_SOURCES
-    main.cpp
-)
+    main.cpp)
 
 set(UTILS_SOURCES
     Utils/config_manager.cpp
     Utils/config_manager.h
     Utils/shader_manager.cpp
-    Utils/shader_manager.h
-)
+    Utils/shader_manager.h)
 
 set(KERNEL_SOURCES
     Kernels/GLSL/simple.fsh
-    Kernels/GLSL/simple.vsh
-)
+    Kernels/GLSL/simple.vsh)
 
 set(SOURCES
     ${APPLICATION_SOURCES}
     ${IMGUI_SORUCES}
     ${MAIN_SOURCES}
     ${UTILS_SOURCES}
-    ${KERNEL_SOURCES}
-)
+    ${KERNEL_SOURCES})
 
 source_group("Application" FILES ${APPLICATION_SOURCES})
 source_group("ImGUI" FILES ${IMGUI_SORUCES})

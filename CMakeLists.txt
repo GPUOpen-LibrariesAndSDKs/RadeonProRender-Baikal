@@ -38,7 +38,7 @@ if (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_RPR)
     find_package(OpenGL REQUIRED)
 endif (BAIKAL_ENABLE_STANDALONE OR BAIKAL_ENABLE_RPR)
 
-# Configure RadeonRays build
+#Configure RadeonRays build
 set(RR_EMBED_KERNELS ON CACHE BOOL "Embed CL kernels into binary module")
 set(RR_ALLOW_CPU_DEVICES OFF CACHE BOOL "Allows CPU Devices")
 set(RR_USE_OPENCL ON CACHE BOOL "Use OpenCL for GPU hit testing")
