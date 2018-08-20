@@ -43,23 +43,6 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
-namespace
-{
-    std::uint32_t constexpr kNumIterations = 4096;
-
-    bool RoughCompare(float x, float y, float epsilon = std::numeric_limits<float>::epsilon())
-    {
-    return std::abs(x - y) < epsilon;
-    }
-
-    bool RoughCompare(float3 const& l, float3 const& r, float epsilon = std::numeric_limits<float>::epsilon())
-    {
-        return RoughCompare(l.x, r.x, epsilon) &&
-               RoughCompare(l.y, r.y, epsilon) &&
-               RoughCompare(l.z, r.z, epsilon);
-    }
-}
-
 struct OutputInfo
 {
     Renderer::OutputType type;
@@ -198,16 +181,7 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
         m_camera->SetFocusDistance(cam_state.focus_distance);
     }
 
-    auto cur_pos = m_camera->GetPosition();
-    auto at = m_camera->GetForwardVector();
-    auto up = m_camera->GetUpVector();
-
-    if (!RoughCompare(cur_pos, cam_state.pos) ||
-        !RoughCompare(at, cam_state.at) ||
-        !RoughCompare(up, cam_state.up))
-    {
-        m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
-    }
+    m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
 }
 
 void Render::SaveOutput(const OutputInfo& info,
