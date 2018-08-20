@@ -283,13 +283,13 @@ void Render::SetLightConfig(const std::vector<LightInfo>& lights)
             auto image_io(ImageIo::CreateImageIo());
 
             // check that texture file is exists
-            auto texure_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
-            if (!std::filesystem::exists(texure_path))
+            auto texture_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
+            if (!std::filesystem::exists(texture_path))
             {
                 THROW_EX("texture image doesn't exist on specified path")
             }
 
-            Texture::Ptr tex = image_io->LoadImage(texure_path.string());
+            Texture::Ptr tex = image_io->LoadImage(texture_path.string());
             ibl->SetTexture(tex);
             ibl->SetMultiplier(light.mul);
         }

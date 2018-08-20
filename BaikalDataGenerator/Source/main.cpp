@@ -30,7 +30,7 @@ void Run(const DGenConfig& config)
 
     Render render(config.scene_file, config.width, config.height);
 
-    if ((config.split_num > 0) && (config.split_num > config_loader.CamStates().size()))
+    if ((config.split_num == 0) || (config.split_num > config_loader.CamStates().size()))
     {
         THROW_EX("'split_num' should be positive and less than camera states number");
     }
