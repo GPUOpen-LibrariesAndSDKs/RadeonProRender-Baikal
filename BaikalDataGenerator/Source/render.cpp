@@ -92,9 +92,10 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 };
 
 Render::Render(const std::filesystem::path& scene_file,
-    std::uint32_t output_width,
-    std::uint32_t output_height)
-    : m_width(output_width), m_height(output_height)
+               size_t output_width,
+               size_t output_height)
+    : m_width(static_cast<std::uint32_t>(output_width)),
+      m_height(static_cast<std::uint32_t>(output_height))
 {
     assert(m_width);
     assert(m_height);
@@ -133,12 +134,12 @@ Render::Render(const std::filesystem::path& scene_file,
 
     for (auto& output_info : kMultipleIteratedOutputs)
     {
-        m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
+        m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
     for (auto& output_info : kSingleIteratedOutputs)
     {
-        m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
+        m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
 
@@ -344,10 +345,10 @@ void Render::SetLightConfig(const std::vector<LightInfo>& lights)
 
 void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                              const std::vector<LightInfo>& light_states,
-                             const std::vector<unsigned>& spp,
+                             const std::vector<size_t>& spp,
                              const std::filesystem::path& output_dir,
                              bool gamma_correction_enabled,
-                             std::uint32_t start_cam_id)
+                             size_t start_cam_id)
 {
     using namespace RadeonRays;
 
@@ -374,8 +375,6 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
         THROW_EX("spp should be positive");
     }
 
-
-    int cam_index = start_cam_id;
     for (const auto& cam_state : cam_states)
     {
         // create camera if it wasn't  done earlier
@@ -420,7 +419,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                 {
                     std::stringstream ss;
 
-                    ss << "cam_" << cam_index << "_"
+                    ss << "cam_" << start_cam_id << "_"
                         << output.name << ".bin";
 
                     SaveOutput(output,
@@ -436,7 +435,7 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                 {
                     std::stringstream ss;
 
-                    ss << "cam_" << cam_index << "_"
+                    ss << "cam_" << start_cam_id << "_"
                         << output.name << "_spp_" << i << ".bin";
 
                     SaveOutput(output,
@@ -445,10 +444,11 @@ void Render::GenerateDataset(const std::vector<CameraInfo>& cam_states,
                                 output_dir);
                 }
                 ++spp_iter;
+                std::cout << "cam_" << start_cam_id << "_spp_" << i << "_generated" << std::endl;
             }
         }
 
-        cam_index++;
+        start_cam_id++;
     }
 }
 

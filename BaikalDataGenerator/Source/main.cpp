@@ -30,48 +30,39 @@ void Run(const DGenConfig& config)
 
     Render render(config.scene_file, config.width, config.height);
 
-    if (config.split_num != 0)
+    if ((config.split_num > 0) && (config.split_num > config_loader.CamStates().size()))
     {
-        if (static_cast<size_t>(config.split_num) > config_loader.CamStates().size())
-        {
-            THROW_EX("'split_num' option value is bigger than camera states number");
-        }
-
-        if (config.split_idx >= config.split_num)
-        {
-            THROW_EX("'split_idx' must be less than split_num");
-        }
-
-        auto split_idx = config.split_idx;
-        auto split_num = config.split_num;
-        auto camera_states = config_loader.CamStates();
-        auto dataset_size = camera_states.size() / config.split_num;
-
-        std::vector<CameraInfo> camera_states_subset {
-            camera_states.begin() + split_idx * dataset_size,
-            camera_states.begin() + split_idx * dataset_size  + dataset_size};
-
-        if ((camera_states.size() % split_num != 0) &&
-            (split_idx < camera_states.size() % split_num))
-        {
-            camera_states_subset.push_back(camera_states[dataset_size * split_num + split_idx]);
-        }
-
-        render.GenerateDataset(camera_states_subset,
-                               config_loader.Lights(),
-                               config_loader.Spp(),
-                               config.output_dir,
-                               config.gamma_correction,
-                               config.offset_idx);
+        THROW_EX("'split_num' should be positive and less than camera states number");
     }
-    else
+
+    if (config.split_idx >= config.split_num)
     {
-        render.GenerateDataset(config_loader.CamStates(),
-                               config_loader.Lights(),
-                               config_loader.Spp(),
-                               config.output_dir,
-                               config.gamma_correction);
+        THROW_EX("'split_idx' must be less than split_num");
     }
+
+    auto split_idx = config.split_idx;
+    auto split_num = config.split_num;
+    auto camera_states = config_loader.CamStates();
+    auto dataset_size = camera_states.size() / config.split_num;
+
+    std::vector<CameraInfo> camera_states_subset {
+        camera_states.begin() + split_idx * dataset_size,
+        camera_states.begin() + split_idx * dataset_size  + dataset_size};
+
+    if ((camera_states.size() % split_num != 0) &&
+        (split_idx < (camera_states.size() % split_num)))
+    {
+        camera_states_subset.push_back(camera_states[dataset_size * split_num + split_idx]);
+    }
+
+    render.GenerateDataset(camera_states_subset,
+                            config_loader.Lights(),
+                            config_loader.Spp(),
+                            config.output_dir,
+                            config.gamma_correction,
+                            config.offset_idx);
+
+    std::cout << "Dataset generation is finished" << std::endl;
 }
 
 int main(int argc, char *argv[])

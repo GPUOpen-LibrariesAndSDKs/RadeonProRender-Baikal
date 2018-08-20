@@ -42,10 +42,10 @@ struct DGenConfig
     std::filesystem::path camera_file;
     std::filesystem::path spp_file;
     std::filesystem::path output_dir;
-    std::uint32_t width, height;
-    std::uint32_t split_num = 0;
-    std::uint32_t split_idx = 0;
-    std::uint32_t offset_idx = 0;
+    size_t width, height;
+    size_t split_num = 1;
+    size_t split_idx = 0;
+    size_t offset_idx = 0;
     bool gamma_correction;
 };
 

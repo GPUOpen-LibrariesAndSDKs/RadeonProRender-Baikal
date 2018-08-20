@@ -37,7 +37,7 @@ public:
 
     std::vector<CameraInfo> CamStates() const;
     std::vector<LightInfo> Lights() const;
-    std::vector<unsigned> Spp() const;
+    std::vector<size_t> Spp() const;
 
 private:
 
@@ -49,5 +49,5 @@ private:
 
     std::vector<CameraInfo> m_camera_states;
     std::vector<LightInfo> m_light_settings;
-    std::vector<unsigned> m_spp;
+    std::vector<size_t> m_spp;
 };

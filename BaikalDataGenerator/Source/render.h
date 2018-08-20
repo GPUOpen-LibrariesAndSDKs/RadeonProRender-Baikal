@@ -54,8 +54,8 @@ public:
     // 'output_width' - width of outputs which will be saved on disk
     // 'output_height' - height of outputs which will be saved on disk
     Render(const std::filesystem::path& scene_file,
-           std::uint32_t output_width,
-           std::uint32_t output_height);
+           size_t output_width,
+           size_t output_height);
 
     // This function generates dataset for network training
     // 'cam_states' - camera states collection
@@ -66,10 +66,10 @@ public:
     // 'start_cam_id' - the number starting from will be named generated samples
     void GenerateDataset(const std::vector<CameraInfo>& cam_states,
                          const std::vector<LightInfo>& lights,
-                         const std::vector<unsigned>& spp,
+                         const std::vector<size_t>& spp,
                          const std::filesystem::path& output_dir,
                          bool gamma_correction_enabled = true,
-                         std::uint32_t start_cam_id = 0);
+                         size_t start_cam_id = 0);
 
     ~Render();
 
