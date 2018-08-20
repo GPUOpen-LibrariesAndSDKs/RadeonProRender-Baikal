@@ -89,7 +89,7 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open lights set file.")
+        THROW_EX("Failed to open cameras set file.")
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("camera");
@@ -201,7 +201,7 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open lights set file.")
+        THROW_EX("Failed to open spp set file.")
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("spp");

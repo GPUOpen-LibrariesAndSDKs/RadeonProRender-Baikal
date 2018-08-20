@@ -324,7 +324,7 @@ void Render::SetLightConfig(const std::vector<LightInfo>& lights)
             auto texure_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
             if (!std::filesystem::exists(texure_path))
             {
-                THROW_EX("textrue image doesn't exist on specified path")
+                THROW_EX("texture image doesn't exist on specified path")
             }
 
             Texture::Ptr tex = image_io->LoadImage(texure_path.string());
