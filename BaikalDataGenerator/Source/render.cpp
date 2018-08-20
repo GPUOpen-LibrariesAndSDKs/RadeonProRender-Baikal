@@ -166,21 +166,9 @@ Render::Render(const std::filesystem::path& scene_file,
 
 void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 {
-    if (cam_state.aperture != m_camera->GetAperture())
-    {
-        m_camera->SetAperture(cam_state.aperture);
-    }
-
-    if (cam_state.focal_length != m_camera->GetFocalLength())
-    {
-        m_camera->SetFocalLength(cam_state.focal_length);
-    }
-
-    if (cam_state.focus_distance != m_camera->GetFocusDistance())
-    {
-        m_camera->SetFocusDistance(cam_state.focus_distance);
-    }
-
+    m_camera->SetAperture(cam_state.aperture);
+    m_camera->SetFocalLength(cam_state.focal_length);
+    m_camera->SetFocusDistance(cam_state.focus_distance);
     m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
 }
 
