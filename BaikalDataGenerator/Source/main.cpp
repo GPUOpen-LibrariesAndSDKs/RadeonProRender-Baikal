@@ -56,11 +56,11 @@ void Run(const DGenConfig& config)
     }
 
     render.GenerateDataset(camera_states_subset,
-                            config_loader.Lights(),
-                            config_loader.Spp(),
-                            config.output_dir,
-                            config.gamma_correction,
-                            config.offset_idx);
+                           config_loader.Lights(),
+                           config_loader.Spp(),
+                           config.output_dir,
+                           config.gamma_correction,
+                           config.offset_idx);
 
     std::cout << "Dataset generation is finished" << std::endl;
 }
