@@ -180,6 +180,40 @@ Render::Render(const std::filesystem::path& scene_file,
     }
 }
 
+void Render::SaveMetadata(const std::filesystem::path& output_dir) const
+{
+    using namespace tinyxml2;
+
+    XMLDocument doc;
+
+    auto file_name = output_dir;
+    file_name.append("metadata.xml");
+
+    XMLNode *root= doc.NewElement("metadata");
+    doc.InsertFirstChild(root);
+
+    // log outputs layout
+    XMLElement* size_attribute = doc.NewElement("layout");
+    size_attribute->SetAttribute("width", m_width);
+    size_attribute->SetAttribute("height", m_height);
+    root->InsertEndChild(size_attribute);
+
+    // log enabled outputs info
+    std::vector<OutputInfo> outputs = kSingleIteratedOutputs;
+    outputs.insert(outputs.end(), kMultipleIteratedOutputs.begin(), kMultipleIteratedOutputs.end());
+
+    for (const auto& output : outputs)
+    {
+        XMLElement* output_attribute = doc.NewElement("input");
+        output_attribute->SetAttribute("name", output.name.c_str());
+        output_attribute->SetAttribute("type", "float32");
+        output_attribute->SetAttribute("channels", output.channels_num);
+        root->InsertEndChild(output_attribute);
+    }
+
+    doc.SaveFile(file_name.string().c_str());
+}
+
 void Render::UpdateCameraSettings(CameraIterator cam_state)
 {
     if (cam_state->aperture != m_camera->GetAperture())
@@ -373,6 +407,7 @@ void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
         THROW_EX("spp should be positive");
     }
 
+    SaveMetadata(output_dir);
 
     int cam_index = 1;
     for (auto cam_state = cam_begin; cam_state != cam_end; ++cam_state)

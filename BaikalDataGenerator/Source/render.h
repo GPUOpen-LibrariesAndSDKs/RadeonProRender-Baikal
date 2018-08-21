@@ -84,6 +84,8 @@ private:
                     bool gamma_correction_enabled,
                     const std::filesystem::path& output_dir);
 
+    void SaveMetadata(const std::filesystem::path& output_dir) const;
+
     std::uint32_t m_width, m_height;
     std::unique_ptr<Baikal::Renderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
