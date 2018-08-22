@@ -338,7 +338,8 @@ void Render::SaveOutput(const OutputInfo& info,
             sizeof(float) * image_data.size());
 }
 
-void Render::SetLightConfig(LightsIterator begin, LightsIterator end)
+void Render::SetLightConfig(LightsIterator begin, LightsIterator end,
+                            const std::filesystem::path& lights_dir)
 {
     for (auto light = begin; light != end; ++light)
     {
@@ -365,16 +366,20 @@ void Render::SetLightConfig(LightsIterator begin, LightsIterator end)
             ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<
                 ImageBasedLight>(light_instance);
 
-            auto image_io(ImageIo::CreateImageIo());
-            // check that texture file is exist
-            auto texure_path = std::filesystem::path(light->texture);
-
-            if (!std::filesystem::exists(texure_path))
+            // check that texture file exists
+            auto texture_path = std::filesystem::path(light->texture);
+            if (texture_path.is_relative())
             {
-                THROW_EX("textrue image doesn't exist on specified path")
+                texture_path = lights_dir / light->texture;
             }
 
-            Texture::Ptr tex = image_io->LoadImage(light->texture);
+            if (!std::filesystem::exists(texture_path))
+            {
+                THROW_EX("Texture image not found: " + texture_path.string())
+            }
+
+            auto image_io = ImageIo::CreateImageIo();
+            Texture::Ptr tex = image_io->LoadImage(texture_path.string());
             ibl->SetTexture(tex);
             ibl->SetMultiplier(light->mul);
         }
@@ -392,6 +397,7 @@ void Render::SetLightConfig(LightsIterator begin, LightsIterator end)
 
 void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
                              LightsIterator light_begin, LightsIterator light_end,
+                             const std::filesystem::path& lights_dir,
                              SppIterator spp_begin, SppIterator spp_end,
                              const std::filesystem::path& output_dir,
                              bool gamma_correction_enabled)
@@ -409,7 +415,7 @@ void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
         return;
     }
 
-    SetLightConfig(light_begin, light_end);
+    SetLightConfig(light_begin, light_end, lights_dir);
 
     std::vector<int> sorted_spp(spp_begin, spp_end);
     std::sort(sorted_spp.begin(), sorted_spp.end());

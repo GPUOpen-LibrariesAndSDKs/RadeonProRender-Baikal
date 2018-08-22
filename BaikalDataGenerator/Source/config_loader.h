@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <filesystem>
 #include <vector>
 #include "utils.h"
 #include "input_info.h"
@@ -40,6 +41,7 @@ public:
 
     LightsIterator LightsBegin() const;
     LightsIterator LightsEnd() const;
+    const std::filesystem::path& LightsDir() const;
 
     SppIterator SppBegin() const;
     SppIterator SppEnd() const;
@@ -54,5 +56,6 @@ private:
 
     std::vector<CameraInfo> m_camera_states;
     std::vector<LightInfo> m_light_settings;
+    std::filesystem::path m_ligths_dir;
     std::vector<int> m_spp;
 };
