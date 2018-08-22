@@ -34,7 +34,6 @@ namespace std
     namespace filesystem = experimental::filesystem::v1;
 }
 
-
 struct DGenConfig
 {
     std::filesystem::path scene_file;
@@ -43,6 +42,7 @@ struct DGenConfig
     std::filesystem::path spp_file;
     std::filesystem::path output_dir;
     std::uint32_t width, height;
+    std::uint32_t num_bounces = 5;
     bool gamma_correction;
 };
 

@@ -35,12 +35,11 @@ struct OutputInfo;
 namespace Baikal
 {
     struct ClwScene;
-    class Renderer;
     class ClwRenderFactory;
     class Output;
     class Scene1;
     class PerspectiveCamera;
-
+    class MonteCarloRenderer;
     template <class T = ClwScene>
     class SceneController;
 }
@@ -55,7 +54,8 @@ public:
     // 'output_height' - height of outputs which will be saved on disk
     Render(const std::filesystem::path& scene_file,
            std::uint32_t output_width,
-           std::uint32_t output_height);
+           std::uint32_t output_height,
+           std::uint32_t num_bounces = 5);
 
     // This function generates dataset for network training
     // 'cam_begin' - begin iterator on camera states collection
@@ -84,8 +84,11 @@ private:
                     bool gamma_correction_enabled,
                     const std::filesystem::path& output_dir);
 
+    void SaveMetadata(const std::filesystem::path& output_dir) const;
+
+    std::uint32_t m_num_bounces;
     std::uint32_t m_width, m_height;
-    std::unique_ptr<Baikal::Renderer> m_renderer;
+    std::unique_ptr<Baikal::MonteCarloRenderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::vector<std::unique_ptr<Baikal::Output>> m_outputs;
