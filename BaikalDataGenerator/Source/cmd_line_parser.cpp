@@ -66,6 +66,8 @@ DGenConfig CmdLineParser::Parse() const
 
     config.gamma_correction = (m_cmd_parser.GetOption<int>("-gamma", 0) == 1);
 
+    config.num_bounces = m_cmd_parser.GetOption<std::uint32_t>("-nb", config.num_bounces);
+
     return config;
 }
 

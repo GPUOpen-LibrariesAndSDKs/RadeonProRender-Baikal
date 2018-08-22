@@ -28,7 +28,7 @@ void Run(const DGenConfig& config)
 {
     ConfigLoader config_loader(config);
 
-    Render render(config.scene_file, config.width, config.height);
+    Render render(config.scene_file, config.width, config.height, config.num_bounces);
 
     if ((config.split_num == 0) || (config.split_num > config_loader.CamStates().size()))
     {

@@ -35,12 +35,11 @@ struct OutputInfo;
 namespace Baikal
 {
     struct ClwScene;
-    class Renderer;
     class ClwRenderFactory;
     class Output;
     class Scene1;
     class PerspectiveCamera;
-
+    class MonteCarloRenderer;
     template <class T = ClwScene>
     class SceneController;
 }
@@ -53,9 +52,11 @@ public:
     // 'scene_file' - full path till .obj/.objm or some kind of this files with scene
     // 'output_width' - width of outputs which will be saved on disk
     // 'output_height' - height of outputs which will be saved on disk
+    // 'num_bounces' - number of bounces for each ray
     Render(const std::filesystem::path& scene_file,
-        size_t output_width,
-        size_t output_height);
+           size_t output_width,
+           size_t output_height,
+           std::uint32_t num_bounces = 5);
 
     // This function generates dataset for network training
     // 'cam_states' - camera states range
@@ -68,12 +69,12 @@ public:
              template <class, class...> class TLightsRange,
              class... Args1,
              class... Args2>
-        void GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_states,
-                             const TLightsRange<LightInfo, Args2 ...>& lights,
-                             const std::vector<size_t>& spp,
-                             const std::filesystem::path& output_dir,
-                             bool gamma_correction_enabled = true,
-                             size_t start_cam_id = 0);
+    void GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_states,
+                            const TLightsRange<LightInfo, Args2 ...>& lights,
+                            const std::vector<size_t>& spp,
+                            const std::filesystem::path& output_dir,
+                            bool gamma_correction_enabled = true,
+                            size_t start_cam_id = 0);
 
     ~Render();
 
@@ -102,8 +103,11 @@ private:
                         bool gamma_correction_enabled,
                         size_t start_cam_id);
 
+    void SaveMetadata(const std::filesystem::path& output_dir) const;
+
+    std::uint32_t m_num_bounces;
     std::uint32_t m_width, m_height;
-    std::unique_ptr<Baikal::Renderer> m_renderer;
+    std::unique_ptr<Baikal::MonteCarloRenderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::vector<std::unique_ptr<Baikal::Output>> m_outputs;
@@ -121,13 +125,12 @@ private:
 template<template<class, class...> class TCamStatesRange,
          template<class, class...> class TLightsRange,
          class... Args1, class... Args2>
-    void Render::GenerateDataset(
-        const TCamStatesRange<CameraInfo, Args1 ...>& cam_states,
-        const TLightsRange<LightInfo, Args2 ...>& lights,
-        const std::vector<size_t>& spp,
-        const std::filesystem::path& output_dir,
-        bool gamma_correction_enabled,
-        size_t start_cam_id)
+void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_states,
+                             const TLightsRange<LightInfo, Args2 ...>& lights,
+                             const std::vector<size_t>& spp,
+                             const std::filesystem::path& output_dir,
+                             bool gamma_correction_enabled,
+                             size_t start_cam_id)
 {
     using namespace RadeonRays;
 
@@ -153,6 +156,8 @@ template<template<class, class...> class TCamStatesRange,
     {
         THROW_EX("spp should be positive");
     }
+
+    SaveMetadata(output_dir);
 
     for (const auto& cam_state : cam_states)
     {

@@ -34,7 +34,7 @@ THE SOFTWARE.
 #include "SceneGraph/light.h"
 #include "Output/clwoutput.h"
 #include "BaikalIO/image_io.h"
-
+#include "Renderers/monte_carlo_renderer.h"
 #include "OpenImageIO/imageio.h"
 
 #include <filesystem>
@@ -76,12 +76,17 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 
 Render::Render(const std::filesystem::path& scene_file,
                size_t output_width,
-               size_t output_height)
+               size_t output_height,
+               std::uint32_t num_bounces)
     : m_width(static_cast<std::uint32_t>(output_width)),
-      m_height(static_cast<std::uint32_t>(output_height))
+      m_height(static_cast<std::uint32_t>(output_height)),
+      m_num_bounces(num_bounces)
 {
+    using namespace Baikal;
+
     assert(m_width);
     assert(m_height);
+    assert(num_bounces);
 
     std::vector<CLWPlatform> platforms;
     CLWPlatform::CreateAllPlatforms(platforms);
@@ -111,8 +116,11 @@ Render::Render(const std::filesystem::path& scene_file,
 
     assert(m_context);
 
-    m_factory = std::make_unique<Baikal::ClwRenderFactory>(*m_context, "cache");
-    m_renderer = m_factory->CreateRenderer(Baikal::ClwRenderFactory::RendererType::kUnidirectionalPathTracer);
+    m_factory = std::make_unique<ClwRenderFactory>(*m_context, "cache");
+
+    m_renderer.reset(dynamic_cast<MonteCarloRenderer*>(
+        m_factory->CreateRenderer(ClwRenderFactory::RendererType::kUnidirectionalPathTracer).release()));
+
     m_controller = m_factory->CreateSceneController();
 
     for (auto& output_info : kMultipleIteratedOutputs)
@@ -125,6 +133,8 @@ Render::Render(const std::filesystem::path& scene_file,
         m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
+
+    m_renderer->SetMaxBounces(m_num_bounces);
 
     if (!std::filesystem::exists(scene_file))
     {
@@ -143,7 +153,7 @@ Render::Render(const std::filesystem::path& scene_file,
 #endif
     }
 
-    m_scene = Baikal::SceneIo::LoadScene(scene_file.string(), scene_dir);
+    m_scene = SceneIo::LoadScene(scene_file.string(), scene_dir);
 
     // load materials.xml if it exists
     auto materials_file = scene_file.parent_path() / "materials.xml";
@@ -152,7 +162,7 @@ Render::Render(const std::filesystem::path& scene_file,
     if (std::filesystem::exists(materials_file) &&
         std::filesystem::exists(mapping_file))
     {
-        auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
+        auto material_io = MaterialIo::CreateMaterialIoXML();
         auto materials = material_io->LoadMaterials(materials_file.string());
         auto mapping = material_io->LoadMaterialMapping(mapping_file.string());
 
@@ -162,6 +172,46 @@ Render::Render(const std::filesystem::path& scene_file,
     {
         std::cout << "WARNING: materials.xml or mapping.xml is missed" << std::endl;
     }
+}
+
+
+void Render::SaveMetadata(const std::filesystem::path& output_dir) const
+{
+    using namespace tinyxml2;
+
+    XMLDocument doc;
+
+    auto file_name = output_dir;
+    file_name.append("metadata.xml");
+
+    XMLNode* root= doc.NewElement("metadata");
+    doc.InsertFirstChild(root);
+
+    // log outputs layout
+    XMLElement* size_attribute = doc.NewElement("layout");
+    size_attribute->SetAttribute("width", m_width);
+    size_attribute->SetAttribute("height", m_height);
+    root->InsertEndChild(size_attribute);
+
+    // log outputs data
+    std::vector<OutputInfo> outputs = kSingleIteratedOutputs;
+    outputs.insert(outputs.end(), kMultipleIteratedOutputs.begin(), kMultipleIteratedOutputs.end());
+
+    for (const auto& output : outputs)
+    {
+        XMLElement* output_attribute = doc.NewElement("input");
+        output_attribute->SetAttribute("name", output.name.c_str());
+        output_attribute->SetAttribute("type", "float32");
+        output_attribute->SetAttribute("channels", output.channels_num);
+        root->InsertEndChild(output_attribute);
+    }
+
+    // log render settings
+    XMLElement* render_attribute = doc.NewElement("render");
+    render_attribute->SetAttribute("num_bounce", m_num_bounces);
+    root->InsertEndChild(render_attribute);
+
+    doc.SaveFile(file_name.string().c_str());
 }
 
 void Render::SetLight(const LightInfo& light)
@@ -247,7 +297,6 @@ void Render::GenerateSample(const CameraInfo& cam_state,
     }
 
     UpdateCameraSettings(cam_state);
-
     for (const auto& output : m_outputs)
     {
         output->Clear(float3());
@@ -379,5 +428,4 @@ void Render::SaveOutput(const OutputInfo& info,
     f.write(reinterpret_cast<const char*>(image_data.data()),
             sizeof(float) * image_data.size());
 }
-
 Render::~Render() = default;
