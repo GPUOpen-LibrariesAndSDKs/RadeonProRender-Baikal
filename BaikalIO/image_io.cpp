@@ -2,6 +2,7 @@
 #include "SceneGraph/texture.h"
 
 #include "OpenImageIO/imageio.h"
+#include "file_utils.h"
 
 namespace Baikal
 {
@@ -40,7 +41,14 @@ namespace Baikal
     {
         OIIO_NAMESPACE_USING
 
-        std::unique_ptr<ImageInput> input{ImageInput::open(filename)};
+        std::string actual_filename = filename;
+
+        if (!FindFilenameFromCaseInsensitive(filename, actual_filename))
+        {
+            throw std::runtime_error("Image " + filename + " doesn't exist");
+        }
+
+        std::unique_ptr<ImageInput> input{ImageInput::open(actual_filename)};
 
         if (!input)
         {
