@@ -50,9 +50,6 @@ namespace Baikal
         return CameraType::kPerspective;
     }
 
-
-    Material::Ptr ClwSceneController::s_default_material = UberV2Material::Create();
-
     ClwSceneController::ClwSceneController(CLWContext context, RadeonRays::IntersectionApi* api, const CLProgramManager *program_manager)
     : m_context(context)
     , m_api(api)
@@ -71,9 +68,9 @@ namespace Baikal
         m_api->SetOption("bvh.sah.num_bins", 16.f);
     }
 
-    Material::Ptr ClwSceneController::GetDefaultMaterial() const
+    Material::Ptr ClwSceneController::GetDefaultMaterial(Scene1 const& scene) const
     {
-        return s_default_material;
+        return scene.GetDefaultMaterial();
     }
 
     ClwSceneController::~ClwSceneController()
@@ -503,8 +500,12 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            shape.material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            shape.material.layers = GetMaterialLayers(mesh->GetMaterial());
+
+            auto mesh_material = mesh->GetMaterial();
+            if (mesh_material == nullptr)
+                mesh_material = scene.GetDefaultMaterial();
+            shape.material.offset = GetMaterialIndex(mat_collector, mesh_material);
+            shape.material.layers = GetMaterialLayers(mesh_material);
 
             shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
 
@@ -564,8 +565,12 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            shape.material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            shape.material.layers = GetMaterialLayers(mesh->GetMaterial());
+
+            auto mesh_material = mesh->GetMaterial();
+            if (mesh_material == nullptr)
+                mesh_material = scene.GetDefaultMaterial();
+            shape.material.offset = GetMaterialIndex(mat_collector, mesh_material);
+            shape.material.layers = GetMaterialLayers(mesh_material);
 
             shape.volume_idx = GetVolumeIndex(vol_collector, mesh->GetVolumeMaterial());
 
@@ -612,8 +617,12 @@ namespace Baikal
 
             shape.linearvelocity = float3(0.0f, 0.f, 0.f);
             shape.angularvelocity = float3(0.f, 0.f, 0.f, 1.f);
-            shape.material.offset = GetMaterialIndex(mat_collector, instance->GetMaterial());
-            shape.material.layers = std::static_pointer_cast<UberV2Material>(instance->GetMaterial())->GetLayers();
+
+            auto instance_material = instance->GetMaterial();
+            if (instance_material == nullptr)
+                instance_material = scene.GetDefaultMaterial();
+            shape.material.offset = GetMaterialIndex(mat_collector, instance_material);
+            shape.material.layers = GetMaterialLayers(instance_material);
 
             shape.volume_idx = GetVolumeIndex(vol_collector, instance->GetVolumeMaterial());
 
@@ -669,8 +678,12 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            current_shape->material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            current_shape->material.layers = GetMaterialLayers(mesh->GetMaterial());
+
+            auto mesh_material = mesh->GetMaterial();
+            if (mesh_material == nullptr)
+                mesh_material = scene.GetDefaultMaterial();
+            current_shape->material.offset = GetMaterialIndex(mat_collector, mesh_material);
+            current_shape->material.layers = GetMaterialLayers(mesh_material);
 
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
@@ -692,8 +705,12 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            current_shape->material.offset = GetMaterialIndex(mat_collector, mesh->GetMaterial());
-            current_shape->material.layers = GetMaterialLayers(mesh->GetMaterial());
+
+            auto mesh_material = mesh->GetMaterial();
+            if (mesh_material == nullptr)
+                mesh_material = scene.GetDefaultMaterial();
+            current_shape->material.offset = GetMaterialIndex(mat_collector, mesh_material);
+            current_shape->material.layers = GetMaterialLayers(mesh_material);
 
             current_shape->volume_idx = GetVolumeIndex(volume_collector, mesh->GetVolumeMaterial());
 
@@ -715,8 +732,12 @@ namespace Baikal
             current_shape->transform.m1 = { transform.m10, transform.m11, transform.m12, transform.m13 };
             current_shape->transform.m2 = { transform.m20, transform.m21, transform.m22, transform.m23 };
             current_shape->transform.m3 = { transform.m30, transform.m31, transform.m32, transform.m33 };
-            current_shape->material.offset = GetMaterialIndex(mat_collector, instance->GetMaterial());
-            current_shape->material.layers = GetMaterialLayers(std::static_pointer_cast<UberV2Material>(instance->GetMaterial()));
+
+            auto instance_material = instance->GetMaterial();
+            if (instance_material == nullptr)
+                instance_material = scene.GetDefaultMaterial();
+            current_shape->material.offset = GetMaterialIndex(mat_collector, instance_material);
+            current_shape->material.layers = GetMaterialLayers(instance_material);
 
             current_shape->volume_idx = GetVolumeIndex(volume_collector, instance->GetVolumeMaterial());
 
@@ -1276,8 +1297,8 @@ namespace Baikal
 
     int ClwSceneController::GetMaterialIndex(Collector const& collector, Material::Ptr material) const
     {
-        auto m = material ? material : s_default_material;
-        return ResolveMaterialPtr(m);
+        assert(material != nullptr);
+        return ResolveMaterialPtr(material);
     }
 
     int ClwSceneController::GetVolumeIndex(Collector const& collector, VolumeMaterial::Ptr volume) const
@@ -1393,8 +1414,8 @@ namespace Baikal
 
     int ClwSceneController::GetMaterialLayers(Material::Ptr material) const
     {
-        auto m = material ? material : s_default_material;
-        return std::static_pointer_cast<UberV2Material>(m)->GetLayers();
+        assert(material != nullptr);
+        return std::static_pointer_cast<UberV2Material>(material)->GetLayers();
     }
 
 }

@@ -74,7 +74,7 @@ namespace Baikal
         auto shape_iter = scene->CreateShapeIterator();
         auto light_iter = scene->CreateLightIterator();
 
-        auto default_material = GetDefaultMaterial();
+        auto default_material = scene->GetDefaultMaterial();
         // Collect materials from shapes first
         m_material_collector.Collect(*shape_iter,
                               // This function adds all materials to resulting map

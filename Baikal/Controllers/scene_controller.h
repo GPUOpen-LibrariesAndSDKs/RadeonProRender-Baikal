@@ -94,7 +94,7 @@ namespace Baikal
         // Update input map leafs only
         virtual void UpdateLeafsData(Scene1 const& scene, Collector& input_map_leafs_collector, Collector& tex_collector, CompiledScene& out) const = 0;
         // Default material
-        virtual Material::Ptr GetDefaultMaterial() const = 0;
+        virtual Material::Ptr GetDefaultMaterial(Scene1 const& scene) const = 0;
         // If m_current_scene changes
         virtual void UpdateCurrentScene(Scene1 const& scene, CompiledScene& out) const = 0;
         // Update volume materials only

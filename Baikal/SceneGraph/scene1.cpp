@@ -2,6 +2,7 @@
 #include "light.h"
 #include "camera.h"
 #include "iterator.h"
+#include "SceneGraph/uberv2material.h"
 
 #include <vector>
 #include <list>
@@ -24,6 +25,8 @@ namespace Baikal
         Baikal::Texture::Ptr m_background_texture;
         EnvironmentOverride m_environment_override;
 
+        Material::Ptr m_default_material;
+
         DirtyFlags m_dirty_flags;
         std::mutex m_scene_mutex;
     };
@@ -32,6 +35,7 @@ namespace Baikal
     : m_impl(new SceneImpl)
     {
         m_impl->m_camera = nullptr;
+        m_impl->m_default_material = UberV2Material::Create();
         ClearDirtyFlags();
     }
 
@@ -218,6 +222,15 @@ namespace Baikal
     const Scene1::EnvironmentOverride& Scene1::GetEnvironmentOverride() const
     {
         return m_impl->m_environment_override;
+    }
+
+    void Scene1::SetDefaultMaterial(Baikal::Material::Ptr material)
+    {
+        m_impl->m_default_material = material;
+    }
+    Baikal::Material::Ptr Scene1::GetDefaultMaterial() const
+    {
+        return m_impl->m_default_material;
     }
 
     void Scene1::Acquire(std::uint32_t controller_id)
