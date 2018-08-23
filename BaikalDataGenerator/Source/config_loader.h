@@ -36,16 +36,12 @@ class ConfigLoader
 public:
     explicit ConfigLoader(const DGenConfig& config);
 
-    CameraIterator CamStatesBegin() const;
-    CameraIterator CamStatesEnd() const;
+    std::vector<CameraInfo> CamStates() const;
+    std::vector<LightInfo> Lights() const;
+    std::vector<size_t> Spp() const;
 
-    LightsIterator LightsBegin() const;
-    LightsIterator LightsEnd() const;
+
     const std::filesystem::path& LightsDir() const;
-
-    SppIterator SppBegin() const;
-    SppIterator SppEnd() const;
-
 private:
 
     void ValidateConfig(const DGenConfig& config) const;
@@ -56,6 +52,5 @@ private:
 
     std::vector<CameraInfo> m_camera_states;
     std::vector<LightInfo> m_light_settings;
-    std::filesystem::path m_ligths_dir;
-    std::vector<int> m_spp;
-};
+    std::vector<size_t> m_spp;
+    std::filesystem::path m_ligths_dir;};

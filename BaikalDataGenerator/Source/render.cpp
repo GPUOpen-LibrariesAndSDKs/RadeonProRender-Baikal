@@ -43,23 +43,6 @@ THE SOFTWARE.
 
 using namespace Baikal;
 
-namespace
-{
-    std::uint32_t constexpr kNumIterations = 4096;
-
-    bool RoughCompare(float x, float y, float epsilon = std::numeric_limits<float>::epsilon())
-    {
-    return std::abs(x - y) < epsilon;
-    }
-
-    bool RoughCompare(float3 const& l, float3 const& r, float epsilon = std::numeric_limits<float>::epsilon())
-    {
-        return RoughCompare(l.x, r.x, epsilon) &&
-               RoughCompare(l.y, r.y, epsilon) &&
-               RoughCompare(l.z, r.z, epsilon);
-    }
-}
-
 struct OutputInfo
 {
     Renderer::OutputType type;
@@ -92,10 +75,12 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 };
 
 Render::Render(const std::filesystem::path& scene_file,
-               std::uint32_t output_width,
-               std::uint32_t output_height,
+               size_t output_width,
+               size_t output_height,
                std::uint32_t num_bounces)
-    : m_width(output_width), m_height(output_height), m_num_bounces(num_bounces)
+    : m_width(static_cast<std::uint32_t>(output_width)),
+      m_height(static_cast<std::uint32_t>(output_height)),
+      m_num_bounces(num_bounces)
 {
     using namespace Baikal;
 
@@ -140,12 +125,12 @@ Render::Render(const std::filesystem::path& scene_file,
 
     for (auto& output_info : kMultipleIteratedOutputs)
     {
-        m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
+        m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
     for (auto& output_info : kSingleIteratedOutputs)
     {
-        m_outputs.push_back(m_factory->CreateOutput(output_width, output_height));
+        m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
 
@@ -189,6 +174,7 @@ Render::Render(const std::filesystem::path& scene_file,
     }
 }
 
+
 void Render::SaveMetadata(const std::filesystem::path& output_dir) const
 {
     using namespace tinyxml2;
@@ -228,32 +214,137 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir) const
     doc.SaveFile(file_name.string().c_str());
 }
 
-void Render::UpdateCameraSettings(CameraIterator cam_state)
+void Render::SetLight(const LightInfo& light)
 {
-    if (cam_state->aperture != m_camera->GetAperture())
+    Light::Ptr light_instance;
+
+    if (light.type == "point")
     {
-        m_camera->SetAperture(cam_state->aperture);
+        light_instance = PointLight::Create();
+    }
+    else if (light.type == "direct")
+    {
+        light_instance = DirectionalLight::Create();
+    }
+    else if (light.type == "spot")
+    {
+        light_instance = SpotLight::Create();
+        SpotLight::Ptr spot = std::dynamic_pointer_cast<SpotLight>(light_instance);
+        spot->SetConeShape(light.cs);
+    }
+    else if (light.type == "ibl")
+    {
+        light_instance = ImageBasedLight::Create();
+
+        ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<
+            ImageBasedLight>(light_instance);
+
+        auto image_io(ImageIo::CreateImageIo());
+
+        // check that texture file is exists
+        auto texture_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
+        if (!std::filesystem::exists(texture_path))
+        {
+            THROW_EX("texture image doesn't exist on specified path")
+        }
+
+        Texture::Ptr tex = image_io->LoadImage(texture_path.string());
+        ibl->SetTexture(tex);
+        ibl->SetMultiplier(light.mul);
+    }
+    else
+    {
+        THROW_EX("unsupported light type")
     }
 
-    if (cam_state->focal_length != m_camera->GetFocalLength())
+    light_instance->SetPosition(light.pos);
+    light_instance->SetDirection(light.dir);
+    light_instance->SetEmittedRadiance(light.rad);
+    m_scene->AttachLight(light_instance);
+}
+
+void Render::UpdateCameraSettings(const CameraInfo& cam_state)
+{
+    m_camera->SetAperture(cam_state.aperture);
+    m_camera->SetFocalLength(cam_state.focal_length);
+    m_camera->SetFocusDistance(cam_state.focus_distance);
+    m_camera->LookAt(cam_state.pos, cam_state.at, cam_state.up);
+}
+
+void Render::GenerateSample(const CameraInfo& cam_state,
+                            const std::vector<size_t>& sorted_spp,
+                            const std::filesystem::path& output_dir,
+                            bool gamma_correction_enabled,
+                            size_t start_cam_id)
+{
+    // create camera if it wasn't  done earlier
+    if (!m_camera)
     {
-        m_camera->SetFocalLength(cam_state->focal_length);
+        m_camera = Baikal::PerspectiveCamera::Create(cam_state.at,
+                                                     cam_state.pos,
+                                                     cam_state.up);
+
+        // default sensor width
+        float sensor_width = 0.036f;
+        float inverserd_aspect_ration = static_cast<float>(m_height) /
+            static_cast<float>(m_width);
+        float sensor_height = sensor_width * inverserd_aspect_ration;
+
+        m_camera->SetSensorSize(float2(0.036f, sensor_height));
+        m_camera->SetDepthRange(float2(0.0f, 100000.f));
+
+        m_scene->SetCamera(m_camera);
     }
 
-    if (cam_state->focus_distance != m_camera->GetFocusDistance())
+    UpdateCameraSettings(cam_state);
+    for (const auto& output : m_outputs)
     {
-        m_camera->SetFocusDistance(cam_state->focus_distance);
+        output->Clear(float3());
     }
 
-    auto cur_pos = m_camera->GetPosition();
-    auto at = m_camera->GetForwardVector();
-    auto up = m_camera->GetUpVector();
+    // recompile scene cause of changing camera pos and settings
+    m_controller->CompileScene(m_scene);
+    auto& scene = m_controller->GetCachedScene(m_scene);
 
-    if (!RoughCompare(cur_pos, cam_state->pos) ||
-        !RoughCompare(at, cam_state->at) ||
-        !RoughCompare(up, cam_state->up))
+    auto spp_iter = sorted_spp.begin();
+
+    for (auto i = 1u; i <= sorted_spp.back(); i++)
     {
-        m_camera->LookAt(cam_state->pos, cam_state->at, cam_state->up);
+        m_renderer->Render(scene);
+
+        if (i == 1)
+        {
+            for (const auto& output : kSingleIteratedOutputs)
+            {
+                std::stringstream ss;
+
+                ss << "cam_" << start_cam_id << "_"
+                    << output.name << ".bin";
+
+                SaveOutput(output,
+                    ss.str(),
+                    gamma_correction_enabled,
+                    output_dir);
+            }
+        }
+
+        if (*spp_iter == i)
+        {
+            for (const auto& output : kMultipleIteratedOutputs)
+            {
+                std::stringstream ss;
+
+                ss << "cam_" << start_cam_id << "_"
+                    << output.name << "_spp_" << i << ".bin";
+
+                SaveOutput(output,
+                    ss.str(),
+                    gamma_correction_enabled,
+                    output_dir);
+            }
+            ++spp_iter;
+            std::cout << "cam_" << start_cam_id << "_spp_" << i << "_generated" << std::endl;
+        }
     }
 }
 
@@ -337,173 +428,4 @@ void Render::SaveOutput(const OutputInfo& info,
     f.write(reinterpret_cast<const char*>(image_data.data()),
             sizeof(float) * image_data.size());
 }
-
-void Render::SetLightConfig(LightsIterator begin, LightsIterator end,
-                            const std::filesystem::path& lights_dir)
-{
-    for (auto light = begin; light != end; ++light)
-    {
-        Light::Ptr light_instance;
-
-        if (light->type == "point")
-        {
-            light_instance = PointLight::Create();
-        }
-        else if (light->type == "direct")
-        {
-            light_instance = DirectionalLight::Create();
-        }
-        else if (light->type == "spot")
-        {
-            light_instance = SpotLight::Create();
-            SpotLight::Ptr spot = std::dynamic_pointer_cast<SpotLight>(light_instance);
-            spot->SetConeShape(light->cs);
-        }
-        else if (light->type == "ibl")
-        {
-            light_instance = ImageBasedLight::Create();
-
-            ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<
-                ImageBasedLight>(light_instance);
-
-            // check that texture file exists
-            auto texture_path = std::filesystem::path(light->texture);
-            if (texture_path.is_relative())
-            {
-                texture_path = lights_dir / light->texture;
-            }
-
-            if (!std::filesystem::exists(texture_path))
-            {
-                THROW_EX("Texture image not found: " + texture_path.string())
-            }
-
-            auto image_io = ImageIo::CreateImageIo();
-            Texture::Ptr tex = image_io->LoadImage(texture_path.string());
-            ibl->SetTexture(tex);
-            ibl->SetMultiplier(light->mul);
-        }
-        else
-        {
-            THROW_EX("unsupported light type")
-        }
-
-        light_instance->SetPosition(light->pos);
-        light_instance->SetDirection(light->dir);
-        light_instance->SetEmittedRadiance(light->rad);
-        m_scene->AttachLight(light_instance);
-    }
-}
-
-void Render::GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
-                             LightsIterator light_begin, LightsIterator light_end,
-                             const std::filesystem::path& lights_dir,
-                             SppIterator spp_begin, SppIterator spp_end,
-                             const std::filesystem::path& output_dir,
-                             bool gamma_correction_enabled)
-{
-    using namespace RadeonRays;
-
-    if (!std::filesystem::is_directory(output_dir))
-    {
-        THROW_EX("incorrect output directory signature");
-    }
-
-    // check if number of samples to render wasn't specified
-    if (spp_begin == spp_end)
-    {
-        return;
-    }
-
-    SetLightConfig(light_begin, light_end, lights_dir);
-
-    std::vector<int> sorted_spp(spp_begin, spp_end);
-    std::sort(sorted_spp.begin(), sorted_spp.end());
-
-    sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
-
-    if (sorted_spp.front() <= 0)
-    {
-        THROW_EX("spp should be positive");
-    }
-
-    SaveMetadata(output_dir);
-
-    int cam_index = 1;
-    for (auto cam_state = cam_begin; cam_state != cam_end; ++cam_state)
-    {
-        // create camera if it wasn't  done earlier
-        if (!m_camera)
-        {
-            m_camera = Baikal::PerspectiveCamera::Create(cam_state->at,
-                                                         cam_state->pos,
-                                                         cam_state->up);
-
-            // default sensor width
-            float sensor_width = 0.036f;
-            float inverserd_aspect_ration = static_cast<float>(m_height) /
-                                            static_cast<float>(m_width);
-            float sensor_height = sensor_width * inverserd_aspect_ration;
-
-            m_camera->SetSensorSize(RadeonRays::float2(0.036f, sensor_height));
-            m_camera->SetDepthRange(RadeonRays::float2(0.0f, 100000.f));
-
-            m_scene->SetCamera(m_camera);
-        }
-
-        UpdateCameraSettings(cam_state);
-
-        for (const auto& output: m_outputs)
-        {
-            output->Clear(RadeonRays::float3());
-        }
-
-        // recompile scene cause of changing camera pos and settings
-        m_controller->CompileScene(m_scene);
-        auto& scene = m_controller->GetCachedScene(m_scene);
-
-        auto spp_iter = sorted_spp.begin();
-
-        for (auto i = 1; i <= sorted_spp.back(); i++)
-        {
-            m_renderer->Render(scene);
-
-            if (i == 1)
-            {
-                for (const auto& output : kSingleIteratedOutputs)
-                {
-                    std::stringstream ss;
-
-                    ss << "cam_" << cam_index << "_"
-                        << output.name << ".bin";
-
-                    SaveOutput(output,
-                               ss.str(),
-                               gamma_correction_enabled,
-                               output_dir);
-                }
-            }
-
-            if (*spp_iter == i)
-            {
-                for (const auto& output : kMultipleIteratedOutputs)
-                {
-                    std::stringstream ss;
-
-                    ss << "cam_" << cam_index << "_"
-                        << output.name << "_spp_" << i << ".bin";
-
-                    SaveOutput(output,
-                                ss.str(),
-                                gamma_correction_enabled,
-                                output_dir);
-                }
-                ++spp_iter;
-            }
-        }
-
-        cam_index++;
-    }
-}
-
 Render::~Render() = default;
