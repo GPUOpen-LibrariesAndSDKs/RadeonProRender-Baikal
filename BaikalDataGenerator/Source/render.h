@@ -35,12 +35,11 @@ struct OutputInfo;
 namespace Baikal
 {
     struct ClwScene;
-    class Renderer;
     class ClwRenderFactory;
     class Output;
     class Scene1;
     class PerspectiveCamera;
-
+    class MonteCarloRenderer;
     template <class T = ClwScene>
     class SceneController;
 }
@@ -55,7 +54,8 @@ public:
     // 'output_height' - height of outputs which will be saved on disk
     Render(const std::filesystem::path& scene_file,
            std::uint32_t output_width,
-           std::uint32_t output_height);
+           std::uint32_t output_height,
+           std::uint32_t num_bounces = 5);
 
     // This function generates dataset for network training
     // 'cam_begin' - begin iterator on camera states collection
@@ -68,6 +68,7 @@ public:
     // 'gamma_correction_enabled' - flag to enable/disable gamma correction
     void GenerateDataset(CameraIterator cam_begin, CameraIterator cam_end,
                          LightsIterator light_begin, LightsIterator light_end,
+                         const std::filesystem::path& lights_dir,
                          SppIterator spp_begin, SppIterator spp_end,
                          const std::filesystem::path& output_dir,
                          bool gamma_correction_enabled = false);
@@ -77,15 +78,19 @@ public:
 private:
     void UpdateCameraSettings(CameraIterator cam_state);
 
-    void SetLightConfig(LightsIterator begin, LightsIterator end);
+    void SetLightConfig(LightsIterator begin, LightsIterator end,
+                        const std::filesystem::path& lights_dir);
 
     void SaveOutput(const OutputInfo& info,
                     const std::string& name,
                     bool gamma_correction_enabled,
                     const std::filesystem::path& output_dir);
 
+    void SaveMetadata(const std::filesystem::path& output_dir) const;
+
+    std::uint32_t m_num_bounces;
     std::uint32_t m_width, m_height;
-    std::unique_ptr<Baikal::Renderer> m_renderer;
+    std::unique_ptr<Baikal::MonteCarloRenderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
     std::vector<std::unique_ptr<Baikal::Output>> m_outputs;

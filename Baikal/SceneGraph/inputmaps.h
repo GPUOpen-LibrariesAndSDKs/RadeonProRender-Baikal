@@ -44,7 +44,6 @@ namespace Baikal
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
         {
-            return;
         }
 
         void SetValue(RadeonRays::float3 value)
@@ -85,7 +84,6 @@ namespace Baikal
 
         void CollectTextures(std::set<Texture::Ptr> &textures) override
         {
-            return;
         }
 
         void SetValue(float value)
@@ -127,7 +125,6 @@ namespace Baikal
         void CollectTextures(std::set<Texture::Ptr> &textures) override
         {
             textures.insert(m_texture);
-            return;
         }
 
         virtual void SetTexture(Texture::Ptr texture)
@@ -159,7 +156,6 @@ namespace Baikal
         InputMap(InputMapType::kSampler),
         m_texture(texture)
         {
-            assert(m_texture);
             SetDirty(true);
         }
     };
@@ -197,7 +193,6 @@ namespace Baikal
         {
             m_a->CollectTextures(textures);
             m_b->CollectTextures(textures);
-            return;
         }
 
         void SetA(InputMap::Ptr a)
@@ -286,7 +281,6 @@ namespace Baikal
         void CollectTextures(std::set<Texture::Ptr> &textures) override
         {
             m_arg->CollectTextures(textures);
-            return;
         }
 
         void SetArg(InputMap::Ptr arg)
@@ -366,7 +360,6 @@ namespace Baikal
         {
             InputMap_TwoArg::CollectTextures(textures);
             m_control->CollectTextures(textures);
-            return;
         }
 
         bool IsDirty() const override
@@ -547,7 +540,6 @@ namespace Baikal
             m_source_range->CollectTextures(textures);
             m_destination_range->CollectTextures(textures);
             m_data->CollectTextures(textures);
-            return;
         }
 
         void SetSourceRange(InputMap::Ptr source_range)

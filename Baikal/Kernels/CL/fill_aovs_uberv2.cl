@@ -36,6 +36,10 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/path.cl>
 #include <../Baikal/Kernels/CL/vertex.cl>
 
+#define CORRECT_VALUE(value)\
+    if (any(isnan(value.xyz)) || (value.w == 0))\
+        value = make_float4(0.f, 0.f, 0.f, 1.f);
+
 // Fill AOVs
 KERNEL void FillAOVsUberV2(
     // Ray batch
@@ -140,7 +144,7 @@ KERNEL void FillAOVsUberV2(
     GLOBAL float4* restrict aov_depth,
     // Shape id map enabled flag
     int shape_ids_enabled,
-    // Shape id map stores shape ud in every pixel
+    // Shape id map stores shape id in every pixel
     // And negative number if there is no any shape in the pixel
     GLOBAL float4* restrict aov_shape_ids,
     GLOBAL InputMapData const* restrict input_map_values
@@ -190,7 +194,13 @@ KERNEL void FillAOVsUberV2(
                 }
             }
             aov_background[idx].w += 1.0f;
+            CORRECT_VALUE(aov_background[idx])
         }
+        else
+        {
+
+        }
+
 
         if (isect.shapeid > -1)
         {
@@ -218,6 +228,7 @@ KERNEL void FillAOVsUberV2(
             {
                 aov_world_position[idx].xyz += diffgeo.p;
                 aov_world_position[idx].w += 1.f;
+                CORRECT_VALUE(aov_world_position[idx])
             }
 
             if (world_shading_normal_enabled)
@@ -246,12 +257,14 @@ KERNEL void FillAOVsUberV2(
 
                 aov_world_shading_normal[idx].xyz += diffgeo.n;
                 aov_world_shading_normal[idx].w += 1.f;
+                CORRECT_VALUE(aov_world_shading_normal[idx])
             }
 
             if (world_geometric_normal_enabled)
             {
                 aov_world_geometric_normal[idx].xyz += diffgeo.ng;
                 aov_world_geometric_normal[idx].w += 1.f;
+                CORRECT_VALUE(aov_world_geometric_normal[idx])
             }
 
             if (wireframe_enabled)
@@ -260,12 +273,14 @@ KERNEL void FillAOVsUberV2(
                 float3 value = hit ? make_float3(1.f, 1.f, 1.f) : make_float3(0.f, 0.f, 0.f);
                 aov_wireframe[idx].xyz += value;
                 aov_wireframe[idx].w += 1.f;
+                CORRECT_VALUE(aov_wireframe[idx])
             }
 
             if (uv_enabled)
             {
                 aov_uv[idx].xy += diffgeo.uv.xy;
                 aov_uv[idx].w += 1.f;
+                CORRECT_VALUE(aov_uv[idx])
             }
 
             if (albedo_enabled)
@@ -282,6 +297,7 @@ KERNEL void FillAOVsUberV2(
 
                 aov_albedo[idx].xyz += kd;
                 aov_albedo[idx].w += 1.f;
+                CORRECT_VALUE(aov_albedo[idx])
             }
 
             if (world_tangent_enabled)
@@ -311,6 +327,7 @@ KERNEL void FillAOVsUberV2(
 
                 aov_world_tangent[idx].xyz += diffgeo.dpdu;
                 aov_world_tangent[idx].w += 1.f;
+                CORRECT_VALUE(aov_world_tangent[idx])
             }
 
             if (world_bitangent_enabled)
@@ -340,6 +357,7 @@ KERNEL void FillAOVsUberV2(
 
                 aov_world_bitangent[idx].xyz += diffgeo.dpdv;
                 aov_world_bitangent[idx].w += 1.f;
+                CORRECT_VALUE(aov_world_bitangent[idx])
             }
 
             if (gloss_enabled)
@@ -370,6 +388,7 @@ KERNEL void FillAOVsUberV2(
 
                 aov_gloss[idx].xyz += gloss;
                 aov_gloss[idx].w += 1.f;
+                CORRECT_VALUE(aov_gloss[idx])
             }
             
             if (mesh_id_enabled)
@@ -380,6 +399,7 @@ KERNEL void FillAOVsUberV2(
                     UniformSampler_Sample1D(&shapeid_sampler),
                     UniformSampler_Sample1D(&shapeid_sampler)), 0.0f, 1.0f);
                 mesh_id[idx].w += 1.0f;
+                CORRECT_VALUE(mesh_id[idx])
             }
 
             if (group_id_enabled)
@@ -390,6 +410,7 @@ KERNEL void FillAOVsUberV2(
                     UniformSampler_Sample1D(&groupid_sampler),
                     UniformSampler_Sample1D(&groupid_sampler)), 0.0f, 1.0f);
                 group_id[idx].w += 1.0f;
+                CORRECT_VALUE(group_id[idx])
             }
 
             if (depth_enabled)
@@ -405,6 +426,7 @@ KERNEL void FillAOVsUberV2(
                     aov_depth[idx].xyz += isect.uvwt.w;
                     aov_depth[idx].w += 1.f;
                 }
+                CORRECT_VALUE(aov_depth[idx])
             }
 
             if (shape_ids_enabled)
@@ -421,6 +443,8 @@ KERNEL void FillAOVsUberV2(
 
                 aov_view_shading_normal[idx].xyz += res;
                 aov_view_shading_normal[idx].w += 1.f;
+
+                CORRECT_VALUE(aov_view_shading_normal[idx])
             }
         }
     }

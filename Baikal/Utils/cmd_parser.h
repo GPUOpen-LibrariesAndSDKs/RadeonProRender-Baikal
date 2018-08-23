@@ -66,7 +66,7 @@ namespace Baikal
         // 'default_value' - default value if option wasn't specified
         // return the value of the option (the format of the strign should be 'option' 'value') or 'default_value'
         template <class T = std::string>
-        std::decay_t<T> GetOption(const std::string& option, T&& default_value) const
+        std::decay_t<T> GetOption(const std::string& option, T default_value) const
         {
             auto value = GetOptionValue(option);
 
