@@ -102,10 +102,6 @@ inline void SaveBinaries(std::string const& name, std::vector<std::uint8_t>& dat
     }
 }
 
-
-std::unordered_map<std::string, std::shared_ptr<std::mutex>> CLProgram::s_binary_cache_names;
-std::mutex CLProgram::s_binary_cache_map_mutex;
-
 CLProgram::CLProgram(const CLProgramManager *program_manager, uint32_t id, CLWContext context,
                      const std::string &program_name, const std::string &cache_path) :
     m_program_manager(program_manager),
@@ -222,6 +218,9 @@ bool CLProgram::IsHeaderNeeded(const std::string &header_name) const
 
 CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
 {
+    static std::unordered_map<std::string, std::shared_ptr<std::mutex>> s_binary_cache_names;
+    static std::mutex s_binary_cache_map_mutex;
+
     // global dirty flag
     if (m_is_dirty)
     {
@@ -281,9 +280,6 @@ CLWProgram CLProgram::GetCLWProgram(const std::string &opts)
             // Save binaries
             result.GetBinaries(0, binary);
             SaveBinaries(cached_program_path, binary);
-
-            // Block other workers until binary cache generated
-            cache_lock.unlock();
         }
     }
 
