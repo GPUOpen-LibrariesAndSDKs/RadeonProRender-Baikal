@@ -1390,8 +1390,7 @@ void LoadMtl(std::map<std::string, int> *material_map,
     }
 
     // transmittance
-    if ((token[0] == 'K' && token[1] == 't' && IS_SPACE((token[2]))) ||
-        (token[0] == 'T' && token[1] == 'f' && IS_SPACE((token[2])))) {
+    if (token[0] == 'K' && token[1] == 't' && IS_SPACE((token[2]))) {
       token += 2;
       real_t r, g, b;
       parseReal3(&r, &g, &b, &token);
