@@ -81,76 +81,69 @@ if (BAIKAL_ENABLE_MATERIAL_CONVERTER)
     add_subdirectory(Tools/MaterialConverter)
 endif (BAIKAL_ENABLE_MATERIAL_CONVERTER)
 
-set (BAIKAL_DLLS
-    "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
-    "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
-)
-
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    list(APPEND BAIKAL_DLLS
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
-    )
-    set (IO_DLLS
-         "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll")
-else ()
-    list(APPEND BAIKAL_DLLS
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
-    )
-    set (IO_DLLS
-        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll")
-endif ()
-
-add_custom_target(ResourcesDir)
-add_custom_target(BaikalKernelsDir)
-
-set(RESOURCES_DIR Resources)
-FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${RESOURCES_DIR} RESOURCES_SRC)
-FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${RESOURCES_DIR} RESOURCES_DST)
-
-set(BAIKAL_KERNELS_DIR Baikal/Kernels)
-FILE(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_SRC)
-FILE(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_DST)
-
-if (WIN32)
-    add_custom_command(TARGET ResourcesDir POST_BUILD
-        COMMAND IF NOT EXIST ${RESOURCES_DST} mklink /D ${RESOURCES_DST} ${RESOURCES_SRC}
-        COMMAND IF NOT EXIST ${BAIKAL_KERNELS_DST} mklink /D ${BAIKAL_KERNELS_DST} ${BAIKAL_KERNELS_SRC}
-        DEPENDS ${RESOURCES_DST} ${BAIKAL_KERNELS_DST}
-    )
-else ()
-    add_custom_command(TARGET ResourcesDir POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESOURCES_SRC} ${RESOURCES_DST}
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKAL_KERNELS_SRC} ${BAIKAL_KERNELS_DST}
-        DEPENDS ${RESOURCES_DST} ${BAIKAL_KERNELS_DST}
-    )
-endif ()
-
 if (BAIKAL_ENABLE_STANDALONE)
-    set(BAIKALSTANDALONE_DLLS ${BAIKAL_DLLS})
-
     find_package(GLFW3 REQUIRED)
-
     add_subdirectory(BaikalStandalone)
 endif (BAIKAL_ENABLE_STANDALONE)
 
 if (BAIKAL_ENABLE_DATAGENERATOR)
-
     add_subdirectory(BaikalDataGenerator)
-
-    if (MSVC)
-        add_compile_options(/DGENERATE_DATASET)
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -MGENERATE_DATASET")
-    endif()
-
 endif (BAIKAL_ENABLE_DATAGENERATOR)
 
 if (BAIKAL_ENABLE_TESTS)
-    set(BAIKAL_TESTS_DLLS ${BAIKAL_DLLS})
-
     add_subdirectory(Gtest)
     add_subdirectory(BaikalTest)
     if (BAIKAL_ENABLE_RPR)
         add_subdirectory(RprTest)
     endif (BAIKAL_ENABLE_RPR)
 endif (BAIKAL_ENABLE_TESTS)
+
+# Copy 3rd party dlls on Windows
+if (WIN32)
+    set (THIRDPARTY_DLLS
+        "${Baikal_SOURCE_DIR}/3rdparty/glew/bin/x64/glew32.dll"
+        "${Baikal_SOURCE_DIR}/3rdparty/glfw/bin/x64/glfw3.dll"
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIO.dll"
+        "${Baikal_SOURCE_DIR}/3rdparty/oiio/bin/x64/OpenImageIOD.dll"
+    )
+
+    add_custom_target(Copy3rdParty ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${THIRDPARTY_DLLS} "$<TARGET_FILE_DIR:Baikal>"
+    )
+else ()
+    # Empty dummy target
+    add_custom_target(Copy3rdParty)
+endif ()
+
+# Add symbolic link from binary to Resources directory
+set(RESOURCES_DIR Resources)
+file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${RESOURCES_DIR} RESOURCES_SRC)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${RESOURCES_DIR} RESOURCES_DST)
+
+if (WIN32)
+    add_custom_target(ResourcesDir ALL
+        COMMAND IF NOT EXIST ${RESOURCES_DST} mklink /D ${RESOURCES_DST} ${RESOURCES_SRC}
+    )
+else ()
+    add_custom_target(ResourcesDir ALL
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESOURCES_SRC} ${RESOURCES_DST}
+    )
+endif ()
+
+# Install Resources folder
+file(TO_CMAKE_PATH ${RESOURCES_SRC} RESOURCES_SRC_CMAKE)
+install(DIRECTORY ${RESOURCES_SRC_CMAKE} DESTINATION .)
+
+# TODO: the following should be added to CMakeLists.txt of RadeonRays
+#if (WIN32)
+#    install(TARGETS RadeonRays RUNTIME DESTINATION bin)
+#else ()
+#    install(TARGETS RadeonRays LIBRARY DESTINATION lib)
+#endif ()
+
+# TODO: the following should be removed after the above being add to CMakeLists.txt of RadeonRays
+if (WIN32)
+    install(FILES $<TARGET_FILE:RadeonRays> DESTINATION bin)
+else ()
+    install(FILES $<TARGET_FILE:RadeonRays> DESTINATION lib)
+endif ()

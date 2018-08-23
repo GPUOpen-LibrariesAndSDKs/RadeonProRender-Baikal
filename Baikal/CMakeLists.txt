@@ -149,14 +149,18 @@ source_group("SceneGraph\\Collector" FILES ${SCENEGRAPH_COLLECTOR_SOURCES})
 source_group("XML" FILES ${XML_SOURCES})
 source_group("Kernels\\CL" FILES ${KERNELS_SOURCES})
 
+# Set CMAKE_EXPORT_ALL_SYMBOLS flag for exporting dll
+# symbols without __declspec(dllimport / dllexport) specifier
 if (WIN32)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 elseif (UNIX)
     add_definitions(-fvisibility=default)
 endif (WIN32)
+
 add_library(Baikal SHARED ${SOURCES})
+
 # We need to use this definition because CMAKE_EXPORT_ALL_SYMBOLS
-# actually doesn't export data symbols, only functions
+# actually doesn't export data symbols
 target_compile_definitions(Baikal PRIVATE BAIKAL_EXPORT_DATA_SYMBOLS)
 
 if (BAIKAL_ENABLE_DENOISER)
@@ -168,9 +172,9 @@ if (BAIKAL_ENABLE_RAYMASK)
 endif (BAIKAL_ENABLE_RAYMASK)
 
 if (BAIKAL_EMBED_KERNELS)
+    target_compile_definitions(Baikal PRIVATE BAIKAL_EMBED_KERNELS)
     set(KERNEL_HEADER "${Baikal_BINARY_DIR}/Baikal/embed_kernels.h")
     set(STRINGIFY_SCRIPT "${CMAKE_SOURCE_DIR}/Tools/scripts/baikal_stringify.py")
-    target_compile_definitions(Baikal PRIVATE BAIKAL_EMBED_KERNELS)
     add_custom_command(
         OUTPUT ${KERNEL_HEADER}
         COMMAND ${PYTHON_EXECUTABLE} ${STRINGIFY_SCRIPT} ../Baikal/Kernels/CL/ .cl opencl > ${KERNEL_HEADER}
@@ -180,15 +184,44 @@ if (BAIKAL_EMBED_KERNELS)
         VERBATIM)
     add_custom_target(BaikalKernelCache DEPENDS ${KERNEL_HEADER})
     add_dependencies(Baikal BaikalKernelCache)
+    # Add directory where embed_kernels.h lies
     target_include_directories(Baikal PRIVATE ${Baikal_BINARY_DIR}/Baikal)
 endif (BAIKAL_EMBED_KERNELS)
 
 target_compile_features(Baikal PRIVATE cxx_std_14)
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/Baikal")
 target_link_libraries(Baikal PUBLIC RadeonRays)
+
+# Add 'treat warnings as errors' flag and 'Wall' flag on Unix
 if (WIN32)
     target_compile_options(Baikal PUBLIC /WX)
 elseif (UNIX)
     target_compile_options(Baikal PUBLIC -Wall -Werror)
 endif (WIN32)
-    
+
+# Add symbolic link from binary to Baikal/Kernels directory
+set(BAIKAL_KERNELS_DIR Baikal/Kernels)
+file(TO_NATIVE_PATH ${Baikal_SOURCE_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_SRC)
+file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR}/${BAIKAL_KERNELS_DIR} BAIKAL_KERNELS_DST)
+
+if (WIN32)
+    add_custom_target(BaikalKernelsDir ALL
+        COMMAND IF NOT EXIST ${BAIKAL_KERNELS_DST} mklink /D ${BAIKAL_KERNELS_DST} ${BAIKAL_KERNELS_SRC}
+    )
+else ()
+    add_custom_target(BaikalKernelsDir ALL
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${BAIKAL_KERNELS_SRC} ${BAIKAL_KERNELS_DST}
+    )
+endif ()
+
+add_dependencies(Baikal BaikalKernelsDir ResourcesDir)
+
+# Install target
+if (WIN32)
+    install(TARGETS Baikal RUNTIME DESTINATION bin)
+else ()
+    install(TARGETS Baikal LIBRARY DESTINATION lib)
+endif ()
+
+file(TO_CMAKE_PATH ${BAIKAL_KERNELS_SRC} BAIKAL_KERNELS_SRC_CMAKE)
+install(DIRECTORY ${BAIKAL_KERNELS_SRC_CMAKE} DESTINATION Baikal)
