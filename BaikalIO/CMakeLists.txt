@@ -21,7 +21,12 @@ add_library(BaikalIO SHARED ${SOURCES})
 
 target_compile_definitions(BaikalIO PRIVATE BAIKAL_EXPORT_API)
 target_compile_features(BaikalIO PRIVATE cxx_std_14)
-target_link_libraries(BaikalIO PUBLIC Baikal OpenImageIO::OpenImageIO stdc++fs)
+target_link_libraries(BaikalIO PUBLIC Baikal OpenImageIO::OpenImageIO)
+
+if (UNIX)
+    target_link_libraries(BaikalIO PUBLIC stdc++fs)
+endif ()
+
 target_include_directories(BaikalIO PUBLIC "${Baikal_SOURCE_DIR}/BaikalIO" "${Baikal_SOURCE_DIR}/3rdparty/tinyobjloader/include")
 if (BAIKAL_ENABLE_FBX)
     target_link_libraries(BaikalIO PUBLIC fbxsdk::fbxsdk)
