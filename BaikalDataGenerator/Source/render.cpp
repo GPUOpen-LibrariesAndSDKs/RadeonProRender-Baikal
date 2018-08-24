@@ -214,7 +214,7 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir) const
     doc.SaveFile(file_name.string().c_str());
 }
 
-void Render::SetLight(const LightInfo& light)
+void Render::SetLight(const LightInfo& light, const std::filesystem::path& lights_dir)
 {
     Light::Ptr light_instance;
 
@@ -234,21 +234,22 @@ void Render::SetLight(const LightInfo& light)
     }
     else if (light.type == "ibl")
     {
-        light_instance = ImageBasedLight::Create();
-
-        ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<
-            ImageBasedLight>(light_instance);
-
-        auto image_io(ImageIo::CreateImageIo());
-
-        // check that texture file is exists
-        auto texture_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
+        // find texture path and check that it exists
+        std::filesystem::path texture_path = light.texture;
+        if (texture_path.is_relative())
+        {
+            texture_path = lights_dir / light.texture;
+        }
         if (!std::filesystem::exists(texture_path))
         {
             THROW_EX("texture image doesn't exist on specified path")
         }
 
-        Texture::Ptr tex = image_io->LoadImage(texture_path.string());
+        auto image_io = ImageIo::CreateImageIo();
+        auto tex = image_io->LoadImage(texture_path.string());
+
+        light_instance = ImageBasedLight::Create();
+        auto ibl = std::dynamic_pointer_cast<ImageBasedLight>(light_instance);
         ibl->SetTexture(tex);
         ibl->SetMultiplier(light.mul);
     }
@@ -405,14 +406,14 @@ void Render::SaveOutput(const OutputInfo& info,
                 if (info.channels_num == 3)
                 {
                     int dst_pixel = y * m_width + x;
-                    // invert the image 
+                    // invert the image
                     dst_row[info.channels_num * x] = val.x;
                     dst_row[info.channels_num * x + 1] = val.y;
                     dst_row[info.channels_num * x + 2] = val.z;
                 }
                 else // info.channels_num = 1
                 {
-                    // invert the image 
+                    // invert the image
                     dst_row[x] = val.x;
                 }
             }

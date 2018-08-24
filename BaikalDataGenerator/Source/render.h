@@ -70,25 +70,27 @@ public:
              class... Args1,
              class... Args2>
     void GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_states,
-                            const TLightsRange<LightInfo, Args2 ...>& lights,
-                            const std::vector<size_t>& spp,
-                            const std::filesystem::path& output_dir,
-                            bool gamma_correction_enabled = true,
-                            size_t start_cam_id = 0);
+                         const TLightsRange<LightInfo, Args2 ...>& lights,
+                         const std::filesystem::path& lights_dir,
+                         const std::vector<size_t>& spp,
+                         const std::filesystem::path& output_dir,
+                         bool gamma_correction_enabled = true,
+                         size_t start_cam_id = 0);
 
     ~Render();
 
 private:
     void UpdateCameraSettings(const CameraInfo& cam_state);
 
-    void SetLight(const LightInfo& light);
+    void SetLight(const LightInfo& light, const std::filesystem::path& lights_dir);
 
     template<template<class, class...> class TCamStatesRange, class... Args>
-    void SetLightConfig(const TCamStatesRange<LightInfo, Args...>& lights)
+    void SetLightConfig(const TCamStatesRange<LightInfo, Args...>& lights,
+                        const std::filesystem::path& lights_dir)
     {
         for (const auto& light : lights)
         {
-            SetLight(light);
+            SetLight(light, lights_dir);
         }
     }
 
@@ -127,6 +129,7 @@ template<template<class, class...> class TCamStatesRange,
          class... Args1, class... Args2>
 void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_states,
                              const TLightsRange<LightInfo, Args2 ...>& lights,
+                             const std::filesystem::path& lights_dir,
                              const std::vector<size_t>& spp,
                              const std::filesystem::path& output_dir,
                              bool gamma_correction_enabled,
@@ -145,7 +148,7 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
         THROW_EX("spp collection is empty");
     }
 
-    SetLightConfig(lights);
+    SetLightConfig(lights, lights_dir);
 
     auto sorted_spp = spp;
     std::sort(sorted_spp.begin(), sorted_spp.end());

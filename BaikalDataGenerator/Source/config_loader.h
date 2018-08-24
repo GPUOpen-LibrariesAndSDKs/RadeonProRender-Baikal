@@ -38,11 +38,10 @@ public:
 
     std::vector<CameraInfo> CamStates() const;
     std::vector<LightInfo> Lights() const;
+    const std::filesystem::path& LightsDir() const;
     std::vector<size_t> Spp() const;
 
-
-    const std::filesystem::path& LightsDir() const;
-private:
+    private:
 
     void ValidateConfig(const DGenConfig& config) const;
 

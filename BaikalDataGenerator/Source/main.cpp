@@ -57,6 +57,7 @@ void Run(const DGenConfig& config)
 
     render.GenerateDataset(camera_states_subset,
                            config_loader.Lights(),
+                           config_loader.LightsDir(),
                            config_loader.Spp(),
                            config.output_dir,
                            config.gamma_correction,
