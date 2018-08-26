@@ -9,9 +9,14 @@ set(SOURCES
     scene_io.h
     scene_test_io.cpp
     scene_obj_io.cpp
-    file_utils.cpp
-    file_utils.h
     )
+
+if (UNIX AND NOT APPLE)
+    list(APPEND SOURCES
+        file_utils.cpp
+        file_utils.h
+    )
+endif ()
 
 if (BAIKAL_ENABLE_FBX)
     list(APPEND SOURCES scene_fbx_io.cpp)
@@ -23,7 +28,7 @@ target_compile_definitions(BaikalIO PRIVATE BAIKAL_EXPORT_API)
 target_compile_features(BaikalIO PRIVATE cxx_std_14)
 target_link_libraries(BaikalIO PUBLIC Baikal OpenImageIO::OpenImageIO)
 
-if (UNIX)
+if (UNIX AND NOT APPLE)
     target_link_libraries(BaikalIO PUBLIC stdc++fs)
 endif ()
 
