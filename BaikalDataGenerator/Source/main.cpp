@@ -22,10 +22,18 @@ THE SOFTWARE.
 
 #include "cmd_line_parser.h"
 #include "config_loader.h"
+#include "logging.h"
 #include "render.h"
+
+#include <ctime>
+
 
 void Run(const DGenConfig& config)
 {
+    DG_LOG(KeyValue("event", "started")
+        << KeyValue("status", "running")
+        << KeyValue("start_ts", std::time(nullptr)));
+
     ConfigLoader config_loader(config);
 
     Render render(config.scene_file, config.width, config.height, config.num_bounces);
@@ -63,7 +71,9 @@ void Run(const DGenConfig& config)
                            config.gamma_correction,
                            config.offset_idx);
 
-    std::cout << "Dataset generation is finished" << std::endl;
+    DG_LOG(KeyValue("event", "finished")
+        << KeyValue("status", "finished")
+        << KeyValue("end_ts", std::time(nullptr)));
 }
 
 int main(int argc, char *argv[])

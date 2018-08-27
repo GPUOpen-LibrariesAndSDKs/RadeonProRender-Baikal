@@ -22,13 +22,11 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <vector>
-#include <set>
-#include <memory>
-#include <algorithm>
-#include <iostream>
-
 #include "config_loader.h"
+
+#include <algorithm>
+#include <memory>
+#include <vector>
 
 struct OutputInfo;
 
@@ -107,8 +105,9 @@ private:
 
     void SaveMetadata(const std::filesystem::path& output_dir) const;
 
-    std::uint32_t m_num_bounces;
+    std::filesystem::path m_scene_file;
     std::uint32_t m_width, m_height;
+    std::uint32_t m_num_bounces;
     std::unique_ptr<Baikal::MonteCarloRenderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;
@@ -133,7 +132,7 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
                              const std::vector<size_t>& spp,
                              const std::filesystem::path& output_dir,
                              bool gamma_correction_enabled,
-                             size_t start_cam_id)
+                             const size_t start_cam_id)
 {
     using namespace RadeonRays;
 
@@ -162,9 +161,10 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
 
     SaveMetadata(output_dir);
 
+    auto camera_id = start_cam_id;
     for (const auto& cam_state : cam_states)
     {
-        GenerateSample(cam_state, sorted_spp, output_dir, gamma_correction_enabled, start_cam_id);
-        start_cam_id++;
+        GenerateSample(cam_state, sorted_spp, output_dir, gamma_correction_enabled, camera_id);
+        camera_id++;
     }
 }
