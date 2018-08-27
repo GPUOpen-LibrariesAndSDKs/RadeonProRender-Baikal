@@ -25,12 +25,16 @@ THE SOFTWARE.
 #include "Output/output.h"
 
 #include <map>
+#include <set>
 #include <string>
 #include <stdexcept>
 #include <cassert>
 
+
 namespace Baikal
 {
+    class Camera;
+
     /**
     \brief Interface for post-processing effects.
 
@@ -45,59 +49,78 @@ namespace Baikal
     class PostEffect
     {
     public:
-        // Data type to pass all necessary content into the post effect. 
+
+        enum class ParamType
+        {
+            kFloat = 0,
+            kUint,
+            kFloat2,
+            kFloat4,
+            kString,
+        };
+
+        class Param
+        {
+        public:
+            ParamType GetType() const;
+
+            float GetFloat() const;
+            std::uint32_t GetUint() const;
+            const RadeonRays::float2& GetFloat2() const;
+            const RadeonRays::float4& GetFloat4() const;
+            const std::string& GetString() const;
+
+            Param(float value);
+            Param(std::uint32_t value);
+            Param(RadeonRays::float2 const& value);
+            Param(RadeonRays::float4 const& value);
+            Param(std::string const& value);
+
+            operator float() const { return GetFloat(); }
+            operator std::uint32_t() const { return GetUint(); }
+            operator const RadeonRays::float2&() const { return GetFloat2(); }
+            operator const RadeonRays::float4&() const { return GetFloat4(); }
+            operator const std::string&() const { return GetString(); }
+
+        private:
+            void AssertType(ParamType type) const;
+
+            ParamType m_type;
+            union {
+                std::uint32_t m_uint_value;
+                float m_float_value;
+                RadeonRays::float2 m_float2_value;
+                RadeonRays::float4 m_float4_value;
+            };
+            std::string m_str_value;
+        };
+
+        // Data type to pass all necessary content into the post effect.
         using InputSet = std::map<Renderer::OutputType, Output*>;
+
+        // Specification of the input set types
+        using InputTypes = std::set<Renderer::OutputType>;
 
         // Default constructor & destructor
         PostEffect() = default;
         virtual ~PostEffect() = default;
 
+        virtual InputTypes GetInputTypes() const = 0;
+
         // Apply post effect and use output for the result
         virtual void Apply(InputSet const& input_set, Output& output) = 0;
 
-        // Set scalar parameter
-        void SetParameter(std::string const& name, RadeonRays::float4 const& value);
+        virtual void SetParameter(std::string const& name, Param value);
 
-        // Get scalar parameter
-        RadeonRays::float4 GetParameter(std::string const& name) const;
+        const Param& GetParameter(std::string const& name) const;
 
     protected:
-        // Adds scalar parameter into the parameter map
-        void RegisterParameter(std::string const& name, RadeonRays::float4 const& initial_value);
+
+        void RegisterParameter(std::string const& name, Param init_value);
 
     private:
+
         // Parameter map
-        std::map<std::string, RadeonRays::float4> m_parameters;
+        std::map<std::string, Param> m_parameters;
     };
-
-    inline void PostEffect::SetParameter(std::string const& name, RadeonRays::float4 const& value)
-    {
-        auto iter = m_parameters.find(name);
-
-        if (iter == m_parameters.cend())
-        {
-            throw std::runtime_error("PostEffect: no such parameter " + name);
-        }
-
-        iter->second = value;
-    }
-
-    inline RadeonRays::float4 PostEffect::GetParameter(std::string const& name) const
-    {
-        auto iter = m_parameters.find(name);
-
-        if (iter == m_parameters.cend())
-        {
-            throw std::runtime_error("PostEffect: no such parameter " + name);
-        }
-
-        return iter->second;
-    }
-
-    inline void PostEffect::RegisterParameter(std::string const& name, RadeonRays::float4 const& initial_value)
-    {
-        assert(m_parameters.find(name) == m_parameters.cend());
-
-        m_parameters.emplace(name, initial_value);
-    }
 }

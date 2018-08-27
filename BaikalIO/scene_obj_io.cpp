@@ -209,8 +209,8 @@ namespace Baikal
 
         // TODO: temporary code to add directional light
         auto light = DirectionalLight::Create();
-        light->SetDirection(RadeonRays::float3(.1f, -1.f, -.1f));
-        light->SetEmittedRadiance(RadeonRays::float3(1.f, 1.f, 1.f));
+        light->SetDirection(RadeonRays::float3(-1.f, -1.f, -1.f));
+        light->SetEmittedRadiance(RadeonRays::float3(10.f, 8.f, 6.f));
 
         scene->AttachLight(light);
 

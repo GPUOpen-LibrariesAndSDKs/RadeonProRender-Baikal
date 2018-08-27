@@ -23,6 +23,7 @@ THE SOFTWARE.
 #define DENOISE_CL
 
 #include <../Baikal/Kernels/CL/common.cl>
+#include <../Baikal/Kernels/CL/utils.cl>
 
 // Similarity function
 inline float C(float3 x1, float3 x2, float sigma)
@@ -109,6 +110,72 @@ void BilateralDenoise_main(
             out_colors[idx].xyz = color;
             out_colors[idx].w = 1.f;
         }
+    }
+}
+
+// perform division on w component
+KERNEL
+void DivideBySampleCount(GLOBAL float4* restrict dst,
+                         GLOBAL float4 const* restrict src,
+                         int elems_num)
+{
+    int id = get_global_id(0);
+
+    if (id >= elems_num)
+    {
+        return;
+    }
+
+    if (src[id].w != 0.0f)
+    {
+        dst[id].xyz = src[id].xyz / src[id].w;
+        dst[id].w = src[id].w;
+    }
+    else
+    {
+        dst[id] = make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+}
+
+KERNEL
+void CopyInterleaved(GLOBAL float4* restrict dst,
+                     GLOBAL float4 const* restrict src,
+                     int dst_width,
+                     int dst_height,
+                     int dst_channels_offset, // offset inside pixel in channels (not bytes)
+                     int dst_channels_num,
+                     int src_width,
+                     int src_height,
+                     int src_channels_offset, // offset inside pixel in channels (not bytes)
+                     int src_channels_num,
+                     int channels_to_copy,
+                     GLOBAL float* restrict out_sample_count)
+{
+    int global_id = get_global_id(0);
+
+    int x = global_id % dst_width;
+    int y = global_id / dst_width;
+
+    if ((x > dst_width) || (global_id > dst_width * dst_height))
+    {
+        return;
+    }
+
+    int src_offset = src_channels_num * (y * src_width + x) + src_channels_offset;
+    int dst_offset = dst_channels_num * (y * dst_width + x) + dst_channels_offset;
+
+    GLOBAL float* dst_pixel = (GLOBAL float*)dst + dst_offset;
+    GLOBAL float const* src_pixel = (GLOBAL float const*)src + src_offset;
+
+    for (int i = 0; i < channels_to_copy; i++)
+    {
+        dst_pixel[i] = src_pixel[i];
+    }
+
+    if (global_id == 0)
+    {
+        *out_sample_count = src[0].w;
     }
 }
 

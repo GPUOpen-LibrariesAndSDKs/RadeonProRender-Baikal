@@ -24,6 +24,7 @@ THE SOFTWARE.
 #include "gtest/gtest.h"
 
 #include "CLW.h"
+#include "Controllers/clw_scene_controller.h"
 #include "Renderers/renderer.h"
 #include "RenderFactory/clw_render_factory.h"
 #include "Output/output.h"

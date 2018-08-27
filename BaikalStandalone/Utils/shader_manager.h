@@ -29,7 +29,6 @@ THE SOFTWARE.
 #include "GLFW/glfw3.h"
 #elif WIN32
 #define NOMINMAX
-#include <Windows.h>
 #include "GL/glew.h"
 #else
 #include <CL/cl.h>

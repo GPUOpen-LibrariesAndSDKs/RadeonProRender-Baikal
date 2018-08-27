@@ -20,7 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #pragma once
-#include "clw_post_effect.h"
+
+#include "PostEffects/clw_post_effect.h"
 
 #ifdef BAIKAL_EMBED_KERNELS
 #include "embed_kernels.h"
@@ -43,18 +44,30 @@ namespace Baikal
         * kColor
         * kWorldShadingNormal
         * kWorldPosition
+        * kAlbedo
     */
     class BilateralDenoiser : public ClwPostEffect
     {
     public:
         // Constructor
-        BilateralDenoiser(CLWContext context, const CLProgramManager *program_manager);
+        BilateralDenoiser(CLWContext context, const CLProgramManager* program_manager);
         // Apply filter
         void Apply(InputSet const& input_set, Output& output) override;
 
+        InputTypes GetInputTypes() const override
+        {
+            return std::set<Renderer::OutputType>(
+                    {
+                        Renderer::OutputType::kColor,
+                        Renderer::OutputType::kWorldShadingNormal,
+                        Renderer::OutputType::kWorldPosition,
+                        Renderer::OutputType::kAlbedo
+                    });
+        }
+
     private: 
         // Find required output
-        ClwOutput* FindOutput(InputSet const& input_set, Renderer::OutputType type);
+        static ClwOutput* FindOutput(InputSet const& input_set, Renderer::OutputType type);
 
         CLWProgram m_program;
     };
@@ -67,11 +80,11 @@ namespace Baikal
 #endif
     {
         // Add necessary params
-        RegisterParameter("radius", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
-        RegisterParameter("color_sensitivity", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
-        RegisterParameter("position_sensitivity", RadeonRays::float4(5.f, 0.f, 0.f, 0.f));
-        RegisterParameter("normal_sensitivity", RadeonRays::float4(0.1f, 0.f, 0.f, 0.f));
-        RegisterParameter("albedo_sensitivity", RadeonRays::float4(0.1f, 0.f, 0.f, 0.f));
+        RegisterParameter("radius", 5.f);
+        RegisterParameter("color_sensitivity", 5.f);
+        RegisterParameter("position_sensitivity", 5.f);
+        RegisterParameter("normal_sensitivity", 0.1f);
+        RegisterParameter("albedo_sensitivity", 0.1f);
     }
 
     inline ClwOutput* BilateralDenoiser::FindOutput(InputSet const& input_set, Renderer::OutputType type)
@@ -88,11 +101,11 @@ namespace Baikal
 
     inline void BilateralDenoiser::Apply(InputSet const& input_set, Output& output)
     {
-        auto radius = static_cast<std::uint32_t>(GetParameter("radius").x);
-        auto sigma_color = GetParameter("color_sensitivity").x;
-        auto sigma_position = GetParameter("position_sensitivity").x;
-        auto sigma_normal = GetParameter("normal_sensitivity").x;
-        auto sigma_albedo = GetParameter("albedo_sensitivity").x;
+        auto radius = static_cast<std::uint32_t>(GetParameter("radius").GetFloat());
+        auto sigma_color = GetParameter("color_sensitivity").GetFloat();
+        auto sigma_position = GetParameter("position_sensitivity").GetFloat();
+        auto sigma_normal = GetParameter("normal_sensitivity").GetFloat();
+        auto sigma_albedo = GetParameter("albedo_sensitivity").GetFloat();
 
         auto color = FindOutput(input_set, Renderer::OutputType::kColor);
         auto normal = FindOutput(input_set, Renderer::OutputType::kWorldShadingNormal);
@@ -118,12 +131,9 @@ namespace Baikal
         denoise_kernel.SetArg(argc++, out_color->data());
 
         // Run shading kernel
-        {
-            size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
-            size_t ls[] = { 8, 8 };
+        size_t gs[] = { static_cast<size_t>((output.width() + 7) / 8 * 8), static_cast<size_t>((output.height() + 7) / 8 * 8) };
+        size_t ls[] = { 8, 8 };
 
-            GetContext().Launch2D(0, gs, ls, denoise_kernel);
-        }
+        GetContext().Launch2D(0, gs, ls, denoise_kernel);
     }
-
 }

@@ -13,15 +13,28 @@ set(ESTIMATORS_SOURCES
 set(OUTPUT_SOURCES
     Output/clwoutput.h
     Output/output.h)
-    
+
+set(POSTEFFECT_ML_SOURCES
+    PostEffects/ML/denoiser.h
+    PostEffects/ML/denoiser.cpp
+    PostEffects/ML/inference.h
+    PostEffects/ML/inference_impl.h
+    PostEffects/ML/inference_impl.cpp
+    PostEffects/ML/model.h
+    PostEffects/ML/model_holder.h
+    PostEffects/ML/model_holder.cpp
+    PostEffects/ML/tensor.h
+)
+
 set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
     PostEffects/post_effect.h
+    PostEffects/post_effect.cpp
     PostEffects/bilateral_denoiser.h
     PostEffects/wavelet_denoiser.h
     PostEffects/AreaMap33.h
-    )
-    
+)
+
 set(RENDERERS_SOURCES
     Renderers/adaptive_renderer.cpp
     Renderers/adaptive_renderer.h
@@ -85,11 +98,11 @@ set(SCENEGRAPH_SOURCES
     SceneGraph/uberv2material.h
     SceneGraph/inputmap.h
     SceneGraph/inputmaps.h)
-    
+
 set(SCENEGRAPH_COLLECTOR_SOURCES
     SceneGraph/Collector/collector.cpp
     SceneGraph/Collector/collector.h)
-       
+
 set(XML_SOURCES
     XML/tinyxml2.cpp
     XML/tinyxml2.h)
@@ -127,6 +140,7 @@ set(SOURCES
     ${ESTIMATORS_SOURCES}
     ${OUTPUT_SOURCES}
     ${POSTEFFECT_SOURCES}
+    ${POSTEFFECT_ML_SOURCES}
     ${RENDERERS_SOURCES}
     ${RENDERFACTORY_SOURCES}
     ${UTILS_SOURCES}
@@ -134,13 +148,13 @@ set(SOURCES
     ${SCENEGRAPH_COLLECTOR_SOURCES}
     ${SCENEGRAPH_IO_SOURCES}
     ${XML_SOURCES}
-    ${KERNELS_SOURCES}
-    )
+    ${KERNELS_SOURCES})
     
 source_group("Controllers" FILES ${CONTROLLERS_SOURCES})
 source_group("Estimators" FILES ${ESTIMATORS_SOURCES})
 source_group("Output" FILES ${OUTPUT_SOURCES})
 source_group("Posteffect" FILES ${POSTEFFECT_SOURCES})
+source_group("Posteffect\\ML" FILES ${POSTEFFECT_ML_SOURCES})
 source_group("Renderers" FILES ${RENDERERS_SOURCES})
 source_group("RenderFactory" FILES ${RENDERFACTORY_SOURCES})
 source_group("Utils" FILES ${UTILS_SOURCES})
@@ -162,10 +176,6 @@ add_library(Baikal SHARED ${SOURCES})
 # We need to use this definition because CMAKE_EXPORT_ALL_SYMBOLS
 # actually doesn't export data symbols
 target_compile_definitions(Baikal PRIVATE BAIKAL_EXPORT_DATA_SYMBOLS)
-
-if (BAIKAL_ENABLE_DENOISER)
-    target_compile_definitions(Baikal PUBLIC ENABLE_DENOISER)
-endif(BAIKAL_ENABLE_DENOISER)
 
 if (BAIKAL_ENABLE_RAYMASK)
     target_compile_definitions(Baikal PUBLIC ENABLE_RAYMASK)
@@ -197,6 +207,7 @@ if (WIN32)
     target_compile_options(Baikal PUBLIC /WX)
 elseif (UNIX)
     target_compile_options(Baikal PUBLIC -Wall -Werror)
+    target_link_libraries(Baikal PUBLIC dl)
 endif (WIN32)
 
 # Add symbolic link from binary to Baikal/Kernels directory
@@ -225,3 +236,9 @@ endif ()
 
 file(TO_CMAKE_PATH ${BAIKAL_KERNELS_SRC} BAIKAL_KERNELS_SRC_CMAKE)
 install(DIRECTORY ${BAIKAL_KERNELS_SRC_CMAKE} DESTINATION Baikal)
+
+# Ignore warning caused by old tiny_obj_loader.h code
+if ((CMAKE_CXX_COMPILER_ID STREQUAL GNU) AND
+    (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8.0.0))
+    target_compile_options(Baikal PUBLIC -Wno-class-memaccess)
+endif()

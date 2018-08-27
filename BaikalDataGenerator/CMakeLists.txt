@@ -21,8 +21,12 @@ target_compile_features(BaikalDataGenerator PRIVATE cxx_std_17)
 target_include_directories(BaikalDataGenerator
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE .)
-    
+
 target_link_libraries(BaikalDataGenerator PRIVATE Baikal BaikalIO)
+
+if (NOT MSVC)
+    target_link_libraries(BaikalDataGenerator PRIVATE stdc++fs)
+endif ()
 
 set_target_properties(BaikalDataGenerator
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGenerator)

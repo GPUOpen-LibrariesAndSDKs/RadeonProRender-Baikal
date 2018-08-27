@@ -39,6 +39,8 @@ namespace Baikal
     {
         AppSettings s;
 
+        s.help = m_cmd_parser.OptionExists("-help");
+
         s.path = m_cmd_parser.GetOption("-p", s.path);
 
         s.modelname = m_cmd_parser.GetOption("-f", s.modelname);
@@ -57,6 +59,8 @@ namespace Baikal
         }
 
         s.num_bounces = m_cmd_parser.GetOption("-nb", s.num_bounces);
+
+        s.split_output = m_cmd_parser.OptionExists("-split");
 
         s.camera_pos.x = m_cmd_parser.GetOption("-cpx", s.camera_pos.x);
 
@@ -90,6 +94,49 @@ namespace Baikal
 
         s.image_file_format = m_cmd_parser.GetOption("-iff", s.image_file_format);
 
+        s.gpu_mem_fraction = m_cmd_parser.GetOption("-gmf", s.gpu_mem_fraction);
+
+        s.visible_devices = m_cmd_parser.GetOption("-vds", s.visible_devices);
+
+        auto has_primary_device = [](std::string const& str)
+        {
+            if (str.empty())
+            {
+                return true;
+            }
+
+            std::stringstream ss(str);
+
+            while (ss.good())
+            {
+                std::string substr;
+                std::getline( ss, substr, ',' );
+
+                if (substr == "0")
+                {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        float max_gmf = 1.f;
+        if (has_primary_device(s.visible_devices))
+        {
+            max_gmf = .5f;
+        }
+
+        if (s.gpu_mem_fraction < 0.0f)
+        {
+            std::cout << "WARNING: '-gmf' option value clamped to zero" << std::endl;
+            s.gpu_mem_fraction = 0.0f;
+        }
+        else if (s.gpu_mem_fraction > max_gmf)
+        {
+            std::cout << "WARNING: '-gmf' option value clamped to one or 0.5 in case primary device" << std::endl;
+            s.gpu_mem_fraction = 1.f;
+        }
+
         if (m_cmd_parser.OptionExists("-ct"))
         {
             auto camera_type = m_cmd_parser.GetOption("-ct");
@@ -111,15 +158,15 @@ namespace Baikal
             auto cfg = m_cmd_parser.GetOption("-config");
 
             if (cfg == "cpu")
-                s.mode = ConfigManager::Mode::kUseSingleCpu;
+                s.mode = Mode::kUseSingleCpu;
             else if (cfg == "gpu")
-                s.mode = ConfigManager::Mode::kUseSingleGpu;
+                s.mode = Mode::kUseSingleGpu;
             else if (cfg == "mcpu")
-                s.mode = ConfigManager::Mode::kUseCpus;
+                s.mode = Mode::kUseCpus;
             else if (cfg == "mgpu")
-                s.mode = ConfigManager::Mode::kUseGpus;
+                s.mode = Mode::kUseGpus;
             else if (cfg == "all")
-                s.mode = ConfigManager::Mode::kUseAll;
+                s.mode = Mode::kUseAll;
         }
 
         s.platform_index = m_cmd_parser.GetOption("-platform", s.platform_index);
@@ -142,6 +189,30 @@ namespace Baikal
             s.cmd_line_mode = true;
         }
 
+        if (m_cmd_parser.OptionExists("-denoiser_type"))
+        {
+            auto denoiser_type = m_cmd_parser.GetOption("-denoiser_type");
+
+            if (denoiser_type == "bilateral")
+            {
+                s.denoiser_type = DenoiserType::kBilateral;
+            }
+            else if (denoiser_type == "wavelet")
+            {
+                s.denoiser_type = DenoiserType::kWavelet;
+            }
+            else if (denoiser_type == "ml")
+            {
+                s.denoiser_type = DenoiserType::kML;
+            }
+            else
+            {
+                std::cerr << "WARNING: unknown denoiser mode\n";
+            }
+        }
+
+        s.denoiser_start_spp = m_cmd_parser.GetOption("-start_spp", s.denoiser_start_spp);
+
         return s;
     }
 
@@ -151,7 +222,8 @@ namespace Baikal
     }
 
     AppSettings::AppSettings()
-        : path("../Resources/CornellBox")
+        : help(false)
+        , path("../Resources/CornellBox")
         , modelname("orig.objm")
         , envmapname("../Resources/Textures/studio015.hdr")
         //render
@@ -161,7 +233,7 @@ namespace Baikal
         , num_samples(-1)
         , interop(true)
         , cspeed(10.25f)
-        , mode(ConfigManager::Mode::kUseSingleGpu)
+        , mode(Mode::kUseSingleGpu)
         //ao
         , ao_radius(1.f)
         , num_ao_rays(1)

@@ -20,18 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #pragma once
-#include "clw_post_effect.h"
 
-#include <SceneGraph/camera.h>
-#include <math/matrix.h>
-#include <math/mathutils.h>
-#include "AreaMap33.h"
+#include "PostEffects/clw_post_effect.h"
+#include "PostEffects/AreaMap33.h"
+#include "SceneGraph/camera.h"
+
+#include "math/matrix.h"
+#include "math/mathutils.h"
 
 #include <limits>
+#include <cmath>
 
 #ifdef BAIKAL_EMBED_KERNELS
 #include "embed_kernels.h"
 #endif
+
 
 namespace Baikal
 {
@@ -58,9 +61,21 @@ namespace Baikal
         // Constructor
         WaveletDenoiser(CLWContext context, const CLProgramManager *program_manager);
         virtual ~WaveletDenoiser();
+
+        InputTypes GetInputTypes() const override
+        {
+            return std::set<Renderer::OutputType>(
+                    {
+                            Renderer::OutputType::kColor,
+                            Renderer::OutputType::kWorldShadingNormal,
+                            Renderer::OutputType::kWorldPosition,
+                            Renderer::OutputType::kAlbedo,
+                            Renderer::OutputType::kMeshID
+                    });
+        }
+
         // Apply filter
         void Apply(InputSet const& input_set, Output& output) override;
-        void Update(PerspectiveCamera* camera);
 
     private:
         // Find required output
@@ -103,7 +118,7 @@ namespace Baikal
         bool                m_buffers_initialized;
     };
 
-    inline WaveletDenoiser::WaveletDenoiser(CLWContext context, const CLProgramManager *program_manager)
+    inline WaveletDenoiser::WaveletDenoiser(CLWContext context, const CLProgramManager* program_manager)
 #ifdef BAIKAL_EMBED_KERNELS
         : ClwPostEffect(context, program_manager, "wavelet_denoise", g_wavelet_denoise_opencl, g_wavelet_denoise_opencl_headers)
 #else
@@ -116,9 +131,18 @@ namespace Baikal
         , m_buffers_initialized(false)
     {
         // Add necessary params
-        RegisterParameter("color_sensitivity", RadeonRays::float4(0.07f, 0.f, 0.f, 0.f));
-        RegisterParameter("position_sensitivity", RadeonRays::float4(0.03f, 0.f, 0.f, 0.f));
-        RegisterParameter("normal_sensitivity", RadeonRays::float4(0.01f, 0.f, 0.f, 0.f));
+        RegisterParameter("color_sensitivity", 0.07f);
+        RegisterParameter("position_sensitivity", 0.03f);
+        RegisterParameter("normal_sensitivity", 0.01f);
+
+        RegisterParameter("camera_focal_length", 0.f);
+        RegisterParameter("camera_sensor_size", RadeonRays::float2());
+        RegisterParameter("camera_depth_range", RadeonRays::float2());
+        RegisterParameter("camera_up_vector", RadeonRays::float3());
+        RegisterParameter("camera_forward_vector", RadeonRays::float3());
+        RegisterParameter("camera_right_vector", RadeonRays::float3());
+        RegisterParameter("camera_position", RadeonRays::float3());
+        RegisterParameter("camera_aspect_ratio", 1.f);
 
         for (uint32_t buffer_index = 0; buffer_index < m_num_tmp_buffers; buffer_index++)
         {
@@ -199,11 +223,41 @@ namespace Baikal
 
     inline void WaveletDenoiser::Apply(InputSet const& input_set, Output& output)
     {
+        m_prev_view_proj = m_view_proj;
+
+        const float focal_length = GetParameter("camera_focal_length");
+        const float2 sensor_size = GetParameter("camera_sensor_size");
+        float2 z_range = GetParameter("camera_depth_range");
+
+        // Nan-avoidance in perspective matrix
+        z_range.x = std::max(z_range.x, std::numeric_limits<float>::epsilon());
+
+        const float fovy = std::atan(sensor_size.y / (2.0f * focal_length));
+
+        const float3 up = GetParameter("camera_up_vector");
+        const float3 right = GetParameter("camera_right_vector");
+        const float3 forward = GetParameter("camera_forward_vector");
+        const float3 pos = GetParameter("camera_position");
+        const float aspect_ratio = GetParameter("camera_aspect_ratio");
+
+        const matrix proj = perspective_proj_fovy_rh_gl(fovy, aspect_ratio, z_range.x, z_range.y);
+        const float3 ip = float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
+
+        const matrix view = matrix(right.x, right.y, right.z, ip.x,
+            up.x, up.y, up.z, ip.y,
+            forward.x, forward.y, forward.z, ip.z,
+            0.0f, 0.0f, 0.0f, 1.0f);
+
+        m_view_proj = proj * view;
+
+        GetContext().WriteBuffer(0, m_view_proj_buffer, &m_view_proj.m[0][0], 16).Wait();
+        GetContext().WriteBuffer(0, m_prev_view_proj_buffer, &m_prev_view_proj.m[0][0], 16).Wait();
+
         uint32_t prev_buffer_index = m_current_buffer_index;
         m_current_buffer_index = (m_current_buffer_index + 1) % m_num_tmp_buffers;
 
-        auto sigma_color = GetParameter("color_sensitivity").x;
-        auto sigma_position = GetParameter("position_sensitivity").x;
+        auto sigma_color = GetParameter("color_sensitivity").GetFloat();
+        auto sigma_position = GetParameter("position_sensitivity").GetFloat();
 
         auto color = FindOutput(input_set, Renderer::OutputType::kColor);
         auto normal = FindOutput(input_set, Renderer::OutputType::kWorldShadingNormal);
@@ -522,38 +576,5 @@ namespace Baikal
                 GetContext().Launch2D(0, gs, ls, neighborhood_blending_kernel);
             }
         }
-    }
-
-    inline void WaveletDenoiser::Update(PerspectiveCamera* camera)
-    {
-        m_prev_view_proj = m_view_proj;
-
-        const float focal_length = camera->GetFocalLength();
-        const RadeonRays::float2 sensor_size = camera->GetSensorSize();
-
-        RadeonRays::float2 z_range = camera->GetDepthRange();
-
-        // Nan-avoidance in perspective matrix
-        z_range.x = std::max(z_range.x, std::numeric_limits<float>::epsilon());
-
-        const float fovy = atan(sensor_size.y / (2.0f * focal_length));
-
-        const RadeonRays::float3 up = camera->GetUpVector();
-        const RadeonRays::float3 right = -camera->GetRightVector();
-        const RadeonRays::float3 forward = camera->GetForwardVector();
-        const RadeonRays::float3 pos = camera->GetPosition();
-
-        const RadeonRays::matrix proj = RadeonRays::perspective_proj_fovy_rh_gl(fovy, camera->GetAspectRatio(), z_range.x, z_range.y);
-        const RadeonRays::float3 ip = RadeonRays::float3(-dot(right, pos), -dot(up, pos), -dot(forward, pos));
-
-        const RadeonRays::matrix view = RadeonRays::matrix(right.x, right.y, right.z, ip.x,
-            up.x, up.y, up.z, ip.y,
-            forward.x, forward.y, forward.z, ip.z,
-            0.0f, 0.0f, 0.0f, 1.0f);
-
-        m_view_proj = proj * view;
-
-        GetContext().WriteBuffer(0, m_view_proj_buffer, &m_view_proj.m[0][0], 16).Wait();
-        GetContext().WriteBuffer(0, m_prev_view_proj_buffer, &m_prev_view_proj.m[0][0], 16).Wait();
     }
 }
