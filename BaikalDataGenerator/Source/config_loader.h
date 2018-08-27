@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #pragma once
 
+#include <filesystem>
 #include <vector>
 #include "utils.h"
 #include "input_info.h"
@@ -35,15 +36,12 @@ class ConfigLoader
 public:
     explicit ConfigLoader(const DGenConfig& config);
 
-    CameraIterator CamStatesBegin() const;
-    CameraIterator CamStatesEnd() const;
+    std::vector<CameraInfo> CamStates() const;
+    std::vector<LightInfo> Lights() const;
+    std::vector<size_t> Spp() const;
 
-    LightsIterator LightsBegin() const;
-    LightsIterator LightsEnd() const;
 
-    SppIterator SppBegin() const;
-    SppIterator SppEnd() const;
-
+    const std::filesystem::path& LightsDir() const;
 private:
 
     void ValidateConfig(const DGenConfig& config) const;
@@ -54,5 +52,5 @@ private:
 
     std::vector<CameraInfo> m_camera_states;
     std::vector<LightInfo> m_light_settings;
-    std::vector<int> m_spp;
-};
+    std::vector<size_t> m_spp;
+    std::filesystem::path m_ligths_dir;};

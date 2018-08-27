@@ -67,7 +67,7 @@ void ConfigLoader::ValidateConfig(const DGenConfig& config) const
 
     if (!std::filesystem::is_directory(config.output_dir))
     {
-        THROW_EX((config.output_dir.string() + " should be directory").c_str())
+        THROW_EX(config.output_dir.string() + " should be directory")
     }
 }
 
@@ -89,7 +89,7 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open lights set file.")
+        THROW_EX("Failed to open cameras set file.")
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("camera");
@@ -132,6 +132,8 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
 
 void ConfigLoader::LoadLightConfig(const std::filesystem::path& file_name)
 {
+    m_ligths_dir = file_name.parent_path();
+
     tinyxml2::XMLDocument doc;
     doc.LoadFile(file_name.string().c_str());
     auto root = doc.FirstChildElement("light_list");
@@ -201,7 +203,7 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open lights set file.")
+        THROW_EX("Failed to open SPP file: " + file_name.string())
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("spp");
@@ -216,33 +218,19 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
     }
 }
 
-CameraIterator ConfigLoader::CamStatesBegin() const
+
+std::vector<CameraInfo> ConfigLoader::CamStates() const
 {
-    return m_camera_states.begin();
+    return m_camera_states;
 }
 
 
-CameraIterator ConfigLoader::CamStatesEnd() const
+std::vector<LightInfo> ConfigLoader::Lights() const
 {
-    return m_camera_states.end();
+    return m_light_settings;
 }
 
-LightsIterator ConfigLoader::LightsBegin() const
+std::vector<size_t> ConfigLoader::Spp() const
 {
-    return m_light_settings.begin();
-}
-
-LightsIterator ConfigLoader::LightsEnd() const
-{
-    return m_light_settings.end();
-}
-
-SppIterator ConfigLoader::SppBegin() const
-{
-    return m_spp.begin();
-}
-
-SppIterator ConfigLoader::SppEnd() const
-{
-    return m_spp.end();
+    return m_spp;
 }

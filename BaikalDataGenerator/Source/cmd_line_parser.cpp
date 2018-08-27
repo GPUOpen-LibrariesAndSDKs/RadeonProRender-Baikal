@@ -54,11 +54,19 @@ DGenConfig CmdLineParser::Parse() const
 
     config.spp_file = m_cmd_parser.GetOption("-spp_file");
 
-    config.width = m_cmd_parser.GetOption<std::uint32_t>("-width");
+    config.width = m_cmd_parser.GetOption<size_t>("-width");
 
-    config.height = m_cmd_parser.GetOption<std::uint32_t>("-height");
+    config.height = m_cmd_parser.GetOption<size_t>("-height");
+
+    config.split_num = m_cmd_parser.GetOption<size_t>("-split_num", config.split_num);
+
+    config.split_idx = m_cmd_parser.GetOption<size_t>("-split_idx", config.split_idx);
+
+    config.offset_idx = m_cmd_parser.GetOption<size_t>("-offset_idx", config.offset_idx);
 
     config.gamma_correction = (m_cmd_parser.GetOption<int>("-gamma", 0) == 1);
+
+    config.num_bounces = m_cmd_parser.GetOption<std::uint32_t>("-nb", config.num_bounces);
 
     return config;
 }

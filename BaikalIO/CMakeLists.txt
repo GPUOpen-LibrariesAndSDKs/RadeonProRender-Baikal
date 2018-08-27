@@ -33,13 +33,16 @@ if (UNIX AND NOT APPLE)
 endif ()
 
 target_include_directories(BaikalIO PUBLIC "${Baikal_SOURCE_DIR}/BaikalIO" "${Baikal_SOURCE_DIR}/3rdparty/tinyobjloader/include")
+
 if (BAIKAL_ENABLE_FBX)
     target_link_libraries(BaikalIO PUBLIC fbxsdk::fbxsdk)
 endif (BAIKAL_ENABLE_FBX)
 
+add_dependencies(BaikalIO ResourcesDir Copy3rdParty)
+
+# Install target
 if (WIN32)
     install(TARGETS BaikalIO RUNTIME DESTINATION bin)
 else ()
     install(TARGETS BaikalIO LIBRARY DESTINATION lib)
 endif ()
-
