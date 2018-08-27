@@ -26,14 +26,11 @@ THE SOFTWARE.
 #include "render.h"
 
 #include <ctime>
+#include <csignal>
 
 
 void Run(const DGenConfig& config)
 {
-    DG_LOG(KeyValue("event", "started")
-        << KeyValue("status", "running")
-        << KeyValue("start_ts", std::time(nullptr)));
-
     ConfigLoader config_loader(config);
 
     Render render(config.scene_file, config.width, config.height, config.num_bounces);
@@ -70,31 +67,48 @@ void Run(const DGenConfig& config)
                            config.output_dir,
                            config.gamma_correction,
                            config.offset_idx);
-
-    DG_LOG(KeyValue("event", "finished")
-        << KeyValue("status", "finished")
-        << KeyValue("end_ts", std::time(nullptr)));
 }
 
 int main(int argc, char *argv[])
+try
 {
-    try
+    auto OnCancel = [](int signal)
     {
-        CmdLineParser cmd_parser(argc, argv);
+        DG_LOG(KeyValue("status", "canceled") << KeyValue("end_ts", std::time(nullptr)));
+        std::exit(-1);
+    };
+    std::signal(SIGBREAK, OnCancel);
+    std::signal(SIGINT, OnCancel);
 
-        if (cmd_parser.HasHelpOption())
-        {
-            cmd_parser.ShowHelp();
-            return 0;
-        }
-
-        auto config = cmd_parser.Parse();
-
-        Run(config);
-    }
-    catch (std::exception& ex)
+    auto OnFailure = [](int signal)
     {
-        std::cout << ex.what() << std::endl;
-        return -1;
+        DG_LOG(KeyValue("status", "failed") << KeyValue("end_ts", std::time(nullptr)));
+    };
+    std::signal(SIGABRT, OnFailure);
+    std::signal(SIGFPE, OnFailure);
+    std::signal(SIGILL, OnFailure);
+    std::signal(SIGSEGV, OnFailure);
+    std::signal(SIGTERM, OnFailure);
+
+    DG_LOG(KeyValue("status", "running") << KeyValue("start_ts", std::time(nullptr)));
+
+    CmdLineParser cmd_parser(argc, argv);
+
+    if (cmd_parser.HasHelpOption())
+    {
+        cmd_parser.ShowHelp();
+        return 0;
     }
+
+    auto config = cmd_parser.Parse();
+
+    Run(config);
+
+    DG_LOG(KeyValue("status", "finished") << KeyValue("end_ts", std::time(nullptr)));
+}
+catch (std::exception& ex)
+{
+    DG_LOG(KeyValue("status", "failed") << KeyValue("end_ts", std::time(nullptr)));
+    std::cout << ex.what() << std::endl;
+    return -1;
 }
