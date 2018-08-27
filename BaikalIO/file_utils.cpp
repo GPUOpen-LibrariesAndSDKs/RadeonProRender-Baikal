@@ -4,15 +4,13 @@
 
 namespace Baikal
 {
-    namespace fs = std::experimental::filesystem;
-
-    inline bool is_dot(fs::path const &path)
+    inline bool is_dot(std::experimental::filesystem::path const &path)
     {
         std::string const &filename = path.string();
         return filename.size() == 1 && filename[0] == '.';
     }
 
-    inline bool is_dotdot(fs::path const &path)
+    inline bool is_dotdot(std::experimental::filesystem::path const &path)
     {
         std::string const &filename = path.string();
         return filename.size() == 2 && filename[0] == '.' && filename[1] == '.';
@@ -20,35 +18,35 @@ namespace Baikal
 
     bool FindFilenameFromCaseInsensitive(std::string const &req_filename, std::string &actual_filename, bool resolve_symlinks = true)
     {
-        const fs::path file_path(req_filename);
+        const std::experimental::filesystem::path file_path(req_filename);
 
         // First, check if file with required filename exists
-        if (fs::exists(file_path))
+        if (std::experimental::filesystem::exists(file_path))
         {
             actual_filename = req_filename;
             return true;
         }
 
         // Split path to components
-        std::deque<fs::path> components;
+        std::deque<std::experimental::filesystem::path> components;
         for (auto &f : file_path.relative_path())
         {
             components.push_back(f);
         }
 
         // Start from the current directory
-        fs::path result = fs::current_path();
+        std::experimental::filesystem::path result = std::experimental::filesystem::current_path();
 
         while (!components.empty())
         {
             // Get a path component
-            fs::path c = std::move(components.front());
+            std::experimental::filesystem::path c = std::move(components.front());
             components.pop_front();
 
             if (is_dot(c)) // <path>/.
             {
                 // Ensure that this is a directory and skip the dot
-                if (!fs::is_directory(result))
+                if (!std::experimental::filesystem::is_directory(result))
                 {
                     // Is not a directory
                     return false;
@@ -57,7 +55,7 @@ namespace Baikal
             else if (is_dotdot(c)) // <path>/..
             {
                 result /= c;
-                if (!fs::exists(result))
+                if (!std::experimental::filesystem::exists(result))
                 {
                     // Upper directory is not exist
                     return false;
@@ -66,22 +64,22 @@ namespace Baikal
             else // <path>/<other symbols>
             {
                 // The path doesn't exist
-                if (!fs::exists(result / c))
+                if (!std::experimental::filesystem::exists(result / c))
                 {
                     // Path in this letter case doesn't exist...
                     // But we'll try to find it in another case
                     bool component_found = false;
 
-                    if (!fs::is_directory(result))
+                    if (!std::experimental::filesystem::is_directory(result))
                     {
                         // Something went wrong, we're not in a directory
                         return false;
                     }
 
-                    for (auto const &entry : fs::directory_iterator(result))
+                    for (auto const &entry : std::experimental::filesystem::directory_iterator(result))
                     {
                         // Get only name of the folder/file
-                        fs::path found_name = entry.path().filename();
+                        std::experimental::filesystem::path found_name = entry.path().filename();
 
                         // Move to lower case and compare path strings
                         std::string path_str = found_name.string();
@@ -112,10 +110,10 @@ namespace Baikal
                 }
 
                 // If the result is a symbolic link, resolve it
-                if (fs::is_symlink(result) && resolve_symlinks)
+                if (std::experimental::filesystem::is_symlink(result) && resolve_symlinks)
                 {
                     // Get a target of the link
-                    fs::path target = fs::read_symlink(result);
+                    std::experimental::filesystem::path target = std::experimental::filesystem::read_symlink(result);
 
                     if (target.is_absolute())
                     {
@@ -139,7 +137,7 @@ namespace Baikal
         }
 
         // Final check
-        if (!fs::exists(result))
+        if (!std::experimental::filesystem::exists(result))
         {
             return false;
         }
