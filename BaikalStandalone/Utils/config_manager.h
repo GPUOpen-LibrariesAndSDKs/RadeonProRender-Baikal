@@ -67,6 +67,7 @@ struct Config
 
     Config() = default;
     Config(Config&& cfg) = default;
+
     ~Config();
 };
 
