@@ -31,9 +31,6 @@ THE SOFTWARE.
 namespace Baikal
 {
     class Renderer;
-
-    template<class T>
-    class SceneController;
 }
 
 enum class DeviceType
@@ -70,12 +67,13 @@ struct Config
 
     Config() = default;
     Config(Config&& cfg) = default;
+    ~Config();
 };
 
 void CreateConfigs(
     Mode mode,
     bool interop,
-    std::vector<Config>& renderers,
+    std::vector<Config>& configs,
     int initial_num_bounces,
     int req_platform_index = -1,
     int req_device_index = -1);

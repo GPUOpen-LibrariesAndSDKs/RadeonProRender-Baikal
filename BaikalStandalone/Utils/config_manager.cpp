@@ -40,6 +40,9 @@ THE SOFTWARE.
 #include <GL/glx.h>
 #endif
 
+// Enable forward declarations of T for std::unique_ptr<T>
+Config::~Config() = default;
+
 void CreateConfigs(
     Mode mode,
     bool interop,
