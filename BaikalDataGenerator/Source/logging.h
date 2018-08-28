@@ -6,7 +6,7 @@
 
 /**
  * I/O maninpulator. Inserts a formatted daytime into an std::ostream.
- * Replacement for std::put_time which is not yet supperted by all compilers.
+ * Replacement for std::put_time which is not yet supported by all compilers.
  */
 struct Timestamp
 {
