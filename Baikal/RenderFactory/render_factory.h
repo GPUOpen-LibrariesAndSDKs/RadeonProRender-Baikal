@@ -23,15 +23,14 @@
 
 #include <memory>
 
+#include "CLW.h"
+#include "Controllers/scene_controller.h"
 
 namespace Baikal
 {
     class Renderer;
     class Output;
     class PostEffect;
-
-    template <class T>
-    class SceneController;
 
     enum class PostEffectType
     {
