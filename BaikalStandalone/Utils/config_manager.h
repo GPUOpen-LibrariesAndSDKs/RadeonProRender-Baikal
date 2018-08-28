@@ -31,6 +31,9 @@ THE SOFTWARE.
 namespace Baikal
 {
     class Renderer;
+
+    template<class T>
+    class SceneController;
 }
 
 enum class DeviceType
