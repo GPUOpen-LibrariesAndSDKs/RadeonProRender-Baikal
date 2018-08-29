@@ -74,21 +74,25 @@ try
 {
     auto OnCancel = [](int signal)
     {
-        DG_LOG(KeyValue("status", "canceled") << KeyValue("end_ts", std::time(nullptr)));
+        DG_LOG(KeyValue("status", "canceled")
+            << KeyValue("end_ts", std::time(nullptr))
+            << KeyValue("signal", signal));
         std::exit(-1);
     };
     std::signal(SIGBREAK, OnCancel);
     std::signal(SIGINT, OnCancel);
+    std::signal(SIGTERM, OnCancel);
 
     auto OnFailure = [](int signal)
     {
-        DG_LOG(KeyValue("status", "failed") << KeyValue("end_ts", std::time(nullptr)));
+        DG_LOG(KeyValue("status", "failed")
+            << KeyValue("end_ts", std::time(nullptr))
+            << KeyValue("signal", signal));
     };
     std::signal(SIGABRT, OnFailure);
     std::signal(SIGFPE, OnFailure);
     std::signal(SIGILL, OnFailure);
     std::signal(SIGSEGV, OnFailure);
-    std::signal(SIGTERM, OnFailure);
 
     DG_LOG(KeyValue("status", "running") << KeyValue("start_ts", std::time(nullptr)));
 
