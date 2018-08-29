@@ -22,9 +22,9 @@ KeyValueType<std::string> KeyValue(char const* key, char const* value)
     return KeyValueType<std::string>(key, value);
 }
 
-KeyValueStream& operator <<(KeyValueStream& lhs, KeyValueType<std::string> const& rhs)
+KeyValueStream operator<<(KeyValueStream lhs, KeyValueType<std::string> const& rhs)
 {
-    lhs.stream << lhs.delimiter << '"' << rhs.key << '"' << ": " << '"' << rhs.value << '"';
+    *lhs.stream << lhs.delimiter << '"' << rhs.key << '"' << ": " << '"' << rhs.value << '"';
     lhs.delimiter = ", ";
     return lhs;
 }
