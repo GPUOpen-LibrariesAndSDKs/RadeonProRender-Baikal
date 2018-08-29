@@ -23,7 +23,6 @@ THE SOFTWARE.
 #include "config_loader.h"
 #include "XML/tinyxml2.h"
 #include "material_io.h"
-#include <filesystem>
 #include <sstream>
 
 // validation checks helper macroses to reduce copy paste

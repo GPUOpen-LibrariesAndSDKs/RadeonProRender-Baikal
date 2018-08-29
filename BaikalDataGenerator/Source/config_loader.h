@@ -22,10 +22,16 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
 #include "utils.h"
 #include "input_info.h"
+
+#if (defined(__GNUC__) && (__GNUC__ < 8))
+#include <experimental/filesystem>
+#else
+#include <filesystem>
+#endif
+
+#include <vector>
 
 using CameraIterator = std::vector<CameraInfo>::const_iterator;
 using LightsIterator = std::vector<LightInfo>::const_iterator;

@@ -40,7 +40,12 @@ THE SOFTWARE.
 
 #include "XML/tinyxml2.h"
 
+#if (defined(__GNUC__) && (__GNUC__ < 8))
+#include <experimental/filesystem>
+#else
 #include <filesystem>
+#endif
+
 #include <fstream>
 
 using namespace Baikal;
@@ -413,7 +418,6 @@ void Render::SaveOutput(const OutputInfo& info,
 
                 if (info.channels_num == 3)
                 {
-                    int dst_pixel = y * m_width + x;
                     // invert the image
                     dst_row[info.channels_num * x] = val.x;
                     dst_row[info.channels_num * x + 1] = val.y;
