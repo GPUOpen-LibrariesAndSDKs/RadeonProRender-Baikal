@@ -230,6 +230,11 @@ std::vector<LightInfo> ConfigLoader::Lights() const
     return m_light_settings;
 }
 
+const std::filesystem::path& ConfigLoader::LightsDir() const
+{
+    return m_ligths_dir;
+}
+
 std::vector<size_t> ConfigLoader::Spp() const
 {
     return m_spp;
