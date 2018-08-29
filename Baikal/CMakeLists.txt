@@ -47,7 +47,6 @@ set(UTILS_SOURCES
     Utils/shproject.cpp
     Utils/shproject.h
     Utils/sobol.h
-    Utils/tiny_obj_loader.h
     Utils/toFloat.h
     Utils/version.h
     Utils/mkpath.cpp

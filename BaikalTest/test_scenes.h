@@ -32,7 +32,7 @@ protected:
         {
             m_scene = Baikal::SceneIo::LoadScene(file_name, file_path);
         }
-        catch (std::exception)
+        catch (std::exception &)
         {
             return false;
         }

@@ -81,7 +81,7 @@ namespace Baikal
                 m_texture_cache[name] = texture;
                 return texture;
             }
-            catch (std::runtime_error)
+            catch (std::runtime_error &)
             {
                 LogInfo("Missing texture: ", name, "\n");
                 return nullptr;

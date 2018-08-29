@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-
+#include <OpenImageIO/imageio.h>
 #ifdef __APPLE__
 #include <OpenCL/OpenCL.h>
 #define GLFW_INCLUDE_GLCOREARB
@@ -43,7 +43,6 @@ THE SOFTWARE.
 
 #include "XML/tinyxml2.h"
 
-#include <OpenImageIO/imageio.h>
 #include <memory>
 #include <chrono>
 #include <cassert>
@@ -1022,8 +1021,9 @@ namespace Baikal
                 bool status = m_material_explorer->DrawExplorer(explorer_win_size);
                 update = update ? true : status;
             }
-            ImGui::Render();
         }
+
+        ImGui::Render();
 
         return update;
     }
