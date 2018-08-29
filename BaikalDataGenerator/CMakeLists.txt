@@ -1,5 +1,6 @@
 set(DATAGENERATOR_SOURCES
     Source/main.cpp
+    Source/filesystem.h
     Source/cmd_line_parser.h
     Source/cmd_line_parser.cpp
     Source/render.h

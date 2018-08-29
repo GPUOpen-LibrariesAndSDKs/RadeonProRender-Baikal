@@ -24,12 +24,7 @@ THE SOFTWARE.
 
 #include "utils.h"
 #include "input_info.h"
-
-#if (defined(__GNUC__) && (__GNUC__ < 8))
-#include <experimental/filesystem>
-#else
-#include <filesystem>
-#endif
+#include "filesystem.h"
 
 #include <vector>
 

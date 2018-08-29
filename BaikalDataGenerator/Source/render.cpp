@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "material_io.h"
 #include "render.h"
 #include "utils.h"
+#include "filesystem.h"
 
 #include "Baikal/Output/clwoutput.h"
 #include "Baikal/Renderers/monte_carlo_renderer.h"
@@ -39,12 +40,6 @@ THE SOFTWARE.
 #include "OpenImageIO/imageio.h"
 
 #include "XML/tinyxml2.h"
-
-#if (defined(__GNUC__) && (__GNUC__ < 8))
-#include <experimental/filesystem>
-#else
-#include <filesystem>
-#endif
 
 #include <fstream>
 
