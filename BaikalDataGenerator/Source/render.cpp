@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "material_io.h"
 #include "render.h"
 #include "utils.h"
+#include "filesystem.h"
 
 #include "Baikal/Output/clwoutput.h"
 #include "Baikal/Renderers/monte_carlo_renderer.h"
@@ -40,7 +41,6 @@ THE SOFTWARE.
 
 #include "XML/tinyxml2.h"
 
-#include <filesystem>
 #include <fstream>
 
 using namespace Baikal;
@@ -413,7 +413,6 @@ void Render::SaveOutput(const OutputInfo& info,
 
                 if (info.channels_num == 3)
                 {
-                    int dst_pixel = y * m_width + x;
                     // invert the image
                     dst_row[info.channels_num * x] = val.x;
                     dst_row[info.channels_num * x + 1] = val.y;

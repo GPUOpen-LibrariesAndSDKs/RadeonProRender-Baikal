@@ -22,10 +22,11 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
 #include "utils.h"
 #include "input_info.h"
+#include "filesystem.h"
+
+#include <vector>
 
 using CameraIterator = std::vector<CameraInfo>::const_iterator;
 using LightsIterator = std::vector<LightInfo>::const_iterator;

@@ -79,7 +79,9 @@ try
             << KeyValue("signal", signal));
         std::exit(-1);
     };
+#ifdef WIN32
     std::signal(SIGBREAK, OnCancel);
+#endif
     std::signal(SIGINT, OnCancel);
     std::signal(SIGTERM, OnCancel);
 

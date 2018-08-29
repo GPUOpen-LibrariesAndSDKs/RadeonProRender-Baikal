@@ -46,31 +46,31 @@ KeyValueType<std::string> KeyValue(char const* key, char const* value);
 
 struct KeyValueStream
 {
-    explicit KeyValueStream(std::ostream& stream) : stream(stream) { }
-    std::ostream& stream;
+    explicit KeyValueStream(std::ostream& stream) : stream(&stream) { }
+    std::ostream* stream;
     char const* delimiter = "";
 };
 
 template<class Value>
-KeyValueStream operator <<(std::ostream& lhs, KeyValueType<Value> const& rhs)
+KeyValueStream operator<<(std::ostream& lhs, KeyValueType<Value> const& rhs)
 {
     KeyValueStream stream(lhs);
     return stream << rhs;
 }
 
 template<class Value>
-KeyValueStream& operator <<(KeyValueStream& lhs, KeyValueType<Value> const& rhs)
+KeyValueStream operator<<(KeyValueStream lhs, KeyValueType<Value> const& rhs)
 {
-    lhs.stream << lhs.delimiter << '"' << rhs.key << '"' << ": " << rhs.value;
+    *lhs.stream << lhs.delimiter << '"' << rhs.key << '"' << ": " << rhs.value;
     lhs.delimiter = ", ";
     return lhs;
 }
 
-KeyValueStream& operator <<(KeyValueStream& lhs, KeyValueType<std::string> const& rhs);
+KeyValueStream operator<<(KeyValueStream lhs, KeyValueType<std::string> const& rhs);
 
 template<class T>
-std::ostream& operator <<(KeyValueStream& lhs, T const& rhs)
+std::ostream& operator<<(KeyValueStream lhs, T const& rhs)
 {
-    lhs.stream << rhs;
-    return lhs.stream;
+    *lhs.stream << rhs;
+    return *lhs.stream;
 }
