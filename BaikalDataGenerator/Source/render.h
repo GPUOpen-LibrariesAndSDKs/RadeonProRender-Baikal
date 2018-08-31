@@ -72,8 +72,8 @@ public:
                          const std::filesystem::path& lights_dir,
                          const std::vector<size_t>& spp,
                          const std::filesystem::path& output_dir,
-                         bool gamma_correction_enabled = true,
-                         size_t start_cam_id = 0);
+                         std::int32_t cameras_index_offset = 0,
+                         bool gamma_correction_enabled = true);
 
     ~Render();
 
@@ -100,10 +100,14 @@ private:
     void GenerateSample(const CameraInfo& cam_state,
                         const std::vector<size_t>& spp,
                         const std::filesystem::path& output_dir,
-                        bool gamma_correction_enabled,
-                        size_t start_cam_id);
+                        std::int32_t cameras_index_offset,
+                        bool gamma_correction_enabled);
 
-    void SaveMetadata(const std::filesystem::path& output_dir) const;
+    void SaveMetadata(const std::filesystem::path& output_dir,
+                      size_t cameras_start_idx,
+                      size_t cameras_end_idx,
+                      std::int32_t cameras_index_offset,
+                      bool gamma_correction_enabled) const;
 
     std::filesystem::path m_scene_file;
     std::uint32_t m_width, m_height;
@@ -131,8 +135,8 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
                              const std::filesystem::path& lights_dir,
                              const std::vector<size_t>& spp,
                              const std::filesystem::path& output_dir,
-                             bool gamma_correction_enabled,
-                             const size_t start_cam_id)
+                             std::int32_t cameras_index_offset,
+                             bool gamma_correction_enabled)
 {
     using namespace RadeonRays;
 
@@ -159,12 +163,18 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
         THROW_EX("spp should be positive");
     }
 
-    SaveMetadata(output_dir);
+    SaveMetadata(output_dir,
+                 cam_states.begin()->index,
+                 (cam_states.end() - 1)->index,
+                 cameras_index_offset,
+                 gamma_correction_enabled);
 
-    auto camera_id = start_cam_id;
     for (const auto& cam_state : cam_states)
     {
-        GenerateSample(cam_state, sorted_spp, output_dir, gamma_correction_enabled, camera_id);
-        camera_id++;
+        GenerateSample(cam_state,
+                       sorted_spp,
+                       output_dir,
+                       cameras_index_offset,
+                       gamma_correction_enabled);
     }
 }

@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include "filesystem.h"
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 
 
 struct DGenConfig
@@ -37,9 +38,54 @@ struct DGenConfig
     size_t width, height;
     size_t split_num = 1;
     size_t split_idx = 0;
-    size_t offset_idx = 0;
+    std::int32_t offset_idx = 0;
     std::uint32_t num_bounces = 5;
     bool gamma_correction;
 };
+
+template<typename T>
+std::vector<std::vector<T>> SplitVector(const std::vector<T>& vec, size_t n)
+{
+    std::vector<std::vector<T>> outVec;
+
+    size_t length = vec.size() / n;
+    size_t remain = vec.size() % n;
+
+    size_t begin = 0;
+    size_t end = 0;
+
+    for (size_t i = 0; i < std::min(n, vec.size()); ++i)
+    {
+        end += (remain > 0) ? (length + ((remain--) != 0)) : length;
+
+        outVec.push_back(std::vector<T>(vec.begin() + begin, vec.begin() + end));
+
+        begin = end;
+    }
+
+    return outVec;
+}
+
+template<typename T>
+std::vector<T> GetSplitByIdx(const std::vector<T>& vec, size_t n, size_t idx)
+{
+    size_t length = vec.size() / n;
+    size_t remain = vec.size() % n;
+
+    size_t begin = 0;
+    size_t end = 0;
+
+    if (idx < remain)
+    {
+        begin = idx * (length + 1);
+        end = begin + length + 1;
+    }
+    else
+    {
+        begin = remain * (length + 1) + (idx - remain) * length;
+        end = begin + length;
+    }
+    return std::vector<T>(vec.begin() + begin, vec.begin() + end);
+}
 
 #define THROW_EX(text) throw std::runtime_error(std::string(__func__) + ": " + text);

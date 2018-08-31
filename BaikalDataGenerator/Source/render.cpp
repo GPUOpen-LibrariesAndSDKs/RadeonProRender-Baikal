@@ -178,7 +178,11 @@ Render::Render(const std::filesystem::path& scene_file,
 }
 
 
-void Render::SaveMetadata(const std::filesystem::path& output_dir) const
+void Render::SaveMetadata(const std::filesystem::path& output_dir,
+                          size_t cameras_start_idx,
+                          size_t cameras_end_idx,
+                          std::int32_t cameras_index_offset,
+                          bool gamma_correction_enabled) const
 {
     using namespace tinyxml2;
 
@@ -187,35 +191,43 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir) const
     auto file_name = output_dir;
     file_name.append("metadata.xml");
 
-    XMLNode* root= doc.NewElement("metadata");
+    XMLNode* root = doc.NewElement("metadata");
     doc.InsertFirstChild(root);
 
     XMLElement* scene = doc.NewElement("scene");
     scene->SetAttribute("file", m_scene_file.c_str());
     root->InsertEndChild(scene);
 
-    // log outputs layout
-    XMLElement* size_attribute = doc.NewElement("layout");
-    size_attribute->SetAttribute("width", m_width);
-    size_attribute->SetAttribute("height", m_height);
-    root->InsertEndChild(size_attribute);
+    XMLElement* cameras = doc.NewElement("cameras");
+    cameras->SetAttribute("start_idx", static_cast<int>(cameras_start_idx));
+    cameras->SetAttribute("end_idx", static_cast<int>(cameras_end_idx));
+    cameras->SetAttribute("idx_offset", cameras_index_offset);
+    root->InsertEndChild(cameras);
 
-    // log outputs data
+    XMLElement* outputs_list = doc.NewElement("outputs");
+    outputs_list->SetAttribute("width", m_width);
+    outputs_list->SetAttribute("height", m_height);
+    root->InsertEndChild(outputs_list);
+
     std::vector<OutputInfo> outputs = kSingleIteratedOutputs;
     outputs.insert(outputs.end(), kMultipleIteratedOutputs.begin(), kMultipleIteratedOutputs.end());
 
     for (const auto& output : outputs)
     {
-        XMLElement* output_attribute = doc.NewElement("input");
-        output_attribute->SetAttribute("name", output.name.c_str());
-        output_attribute->SetAttribute("type", "float32");
-        output_attribute->SetAttribute("channels", output.channels_num);
-        root->InsertEndChild(output_attribute);
+        XMLElement* outputs_item = doc.NewElement("output");
+        outputs_item->SetAttribute("name", output.name.c_str());
+        outputs_item->SetAttribute("type", "float32");
+        outputs_item->SetAttribute("channels", output.channels_num);
+        if (output.type == Renderer::OutputType::kColor)
+        {
+            outputs_item->SetAttribute("gamma_correction", gamma_correction_enabled);
+        }
+        outputs_list->InsertEndChild(outputs_item);
     }
 
     // log render settings
-    XMLElement* render_attribute = doc.NewElement("render");
-    render_attribute->SetAttribute("num_bounce", m_num_bounces);
+    XMLElement* render_attribute = doc.NewElement("renderer");
+    render_attribute->SetAttribute("num_bounces", m_num_bounces);
     root->InsertEndChild(render_attribute);
 
     doc.SaveFile(file_name.string().c_str());
@@ -282,8 +294,8 @@ void Render::UpdateCameraSettings(const CameraInfo& cam_state)
 void Render::GenerateSample(const CameraInfo& cam_state,
                             const std::vector<size_t>& sorted_spp,
                             const std::filesystem::path& output_dir,
-                            bool gamma_correction_enabled,
-                            size_t camera_id)
+                            std::int32_t cameras_index_offset,
+                            bool gamma_correction_enabled)
 {
     // create camera if it wasn't  done earlier
     if (!m_camera)
@@ -313,6 +325,7 @@ void Render::GenerateSample(const CameraInfo& cam_state,
     auto& scene = m_controller->GetCachedScene(m_scene);
 
     auto spp_iter = sorted_spp.begin();
+    auto camera_id = cam_state.index + cameras_index_offset;
 
     for (auto spp = 1u; spp <= sorted_spp.back(); spp++)
     {
@@ -368,7 +381,7 @@ void Render::SaveOutput(const OutputInfo& info,
 
     assert(output);
 
-    auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
+    auto buffer = dynamic_cast<Baikal::ClwOutput*>(output)->data();
 
     std::vector<RadeonRays::float3> output_data(buffer.GetElementCount());
 

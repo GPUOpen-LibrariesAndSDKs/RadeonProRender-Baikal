@@ -95,6 +95,7 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
 
     m_camera_states.clear();
 
+    size_t camera_index = 0;
     while (elem)
     {
         CameraInfo cam_info;
@@ -123,6 +124,8 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
         cam_info.focal_length = elem->FloatAttribute("focal_length");
         cam_info.focus_distance = elem->FloatAttribute("focus_dist");
         cam_info.aperture = elem->FloatAttribute("aperture");
+
+        cam_info.index = camera_index++;
 
         m_camera_states.push_back(cam_info);
         elem = elem->NextSiblingElement("camera");
@@ -211,7 +214,7 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
 
     while (elem)
     {
-        int spp = (int)elem->Int64Attribute("iter_num");
+        auto spp = static_cast<size_t>(elem->Int64Attribute("iter_num"));
         m_spp.push_back(spp);
         elem = elem->NextSiblingElement("spp");
     }

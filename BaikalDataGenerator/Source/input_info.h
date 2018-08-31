@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 struct CameraInfo
 {
+    std::size_t index;
     std::string type;
     RadeonRays::float3 pos;
     RadeonRays::float3 at;
