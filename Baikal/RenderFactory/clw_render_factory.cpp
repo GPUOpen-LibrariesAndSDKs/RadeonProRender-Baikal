@@ -4,13 +4,14 @@
 #include "Renderers/monte_carlo_renderer.h"
 #include "Renderers/adaptive_renderer.h"
 #include "Estimators/path_tracing_estimator.h"
+#include "Controllers/scene_controller.h"
 
-#ifdef ENABLE_DENOISER
 #include "PostEffects/bilateral_denoiser.h"
 #include "PostEffects/wavelet_denoiser.h"
-#endif
+#include "PostEffects/ML/denoiser.h"
 
 #include <memory>
+
 
 namespace Baikal
 {
@@ -31,8 +32,7 @@ namespace Baikal
     }
 
     // Create a renderer of specified type
-    std::unique_ptr<Renderer> ClwRenderFactory::CreateRenderer(
-                                                    RendererType type) const
+    std::unique_ptr<Renderer> ClwRenderFactory::CreateRenderer(RendererType type) const
     {
         switch (type)
         {
@@ -55,24 +55,19 @@ namespace Baikal
         return std::unique_ptr<Output>(new ClwOutput(m_context, w, h));
     }
 
-    std::unique_ptr<PostEffect> ClwRenderFactory::CreatePostEffect(
-                                                    PostEffectType type) const
+    std::unique_ptr<PostEffect> ClwRenderFactory::CreatePostEffect(PostEffectType type) const
     {
-#ifdef ENABLE_DENOISER
         switch (type)
         {
             case PostEffectType::kBilateralDenoiser:
-                return std::unique_ptr<PostEffect>(
-                                            new BilateralDenoiser(m_context, &m_program_manager));
+                return std::make_unique<BilateralDenoiser>(m_context, &m_program_manager);
             case PostEffectType::kWaveletDenoiser:
-                return std::unique_ptr<PostEffect>(
-                                            new WaveletDenoiser(m_context, &m_program_manager));
+                return std::make_unique<WaveletDenoiser>(m_context, &m_program_manager);
+            case PostEffectType::kMLDenoiser:
+                return std::make_unique<PostEffects::MLDenoiser>(m_context, &m_program_manager);
             default:
                 throw std::runtime_error("PostEffect is not supported");
         }
-#else
-        throw std::runtime_error("PostEffect is not supported");
-#endif
     }
 
     std::unique_ptr<SceneController<ClwScene>> ClwRenderFactory::CreateSceneController() const

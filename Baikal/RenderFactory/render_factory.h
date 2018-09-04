@@ -31,7 +31,14 @@ namespace Baikal
     class Renderer;
     class Output;
     class PostEffect;
-    
+
+    enum class PostEffectType
+    {
+        kBilateralDenoiser,
+        kWaveletDenoiser,
+        kMLDenoiser
+    };
+
     /**
         \brief RenderFactory class is in charge of render entities creation.
      
@@ -46,12 +53,6 @@ namespace Baikal
         enum class RendererType
         {
             kUnidirectionalPathTracer
-        };
-        
-        enum class PostEffectType
-        {
-            kBilateralDenoiser,
-            kWaveletDenoiser
         };
 
         RenderFactory() = default;
@@ -72,6 +73,4 @@ namespace Baikal
         RenderFactory(RenderFactory<Scene> const&) = delete;
         RenderFactory const& operator = (RenderFactory<Scene> const&) = delete;
     };
-    
-    
 }

@@ -647,7 +647,45 @@ KERNEL void ApplyGammaAndCopyData(
         float4 val = clamp(native_powr(v / v.w, 1.f / gamma), 0.f, 1.f);
         write_imagef(img, make_int2(global_idx, global_idy), val);
     }
-} 
+}
+
+// Copy data to interop texture if supported
+KERNEL void ApplyGammaAndCopySplitData(
+    GLOBAL float4 const* left_data,
+    GLOBAL float4 const* right_data,
+    int img_width,
+    int img_height,
+    float gamma,
+    write_only image2d_t img
+)
+{
+    int global_id = get_global_id(0);
+
+    int global_idx = global_id % img_width;
+    int global_idy = global_id / img_width;
+
+    if (global_idx < img_width && global_idy < img_height)
+    {
+        float4 v;
+        if (global_idx < img_width / 2)
+        {
+            v = left_data[global_id];
+        }
+        else
+        {
+            v = right_data[global_id];
+        }
+
+#ifdef ADAPTIVITY_DEBUG
+        float a = v.w < 1024 ? min(1.f, v.w / 1024.f) : 0.f;
+        float4 mul_color = make_float4(1.f, 1.f - a, 1.f - a, 1.f);
+        v *= mul_color;
+#endif
+
+        float4 val = clamp(native_powr(v / v.w, 1.f / gamma), 0.f, 1.f);
+        write_imagef(img, make_int2(global_idx, global_idy), val);
+    }
+}
 
 KERNEL void AccumulateSingleSample(
     GLOBAL float4 const* restrict src_sample_data,

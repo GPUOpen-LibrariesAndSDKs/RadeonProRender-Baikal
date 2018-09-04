@@ -22,12 +22,12 @@
  ********************************************************************/
 #pragma once
 
-#include "render_factory.h"
+#include "RenderFactory/render_factory.h"
+#include "Utils/cl_program_manager.h"
+#include "SceneGraph/clwscene.h"
+
 #include "radeon_rays_cl.h"
 #include "CLW.h"
-
-#include "SceneGraph/clwscene.h"
-#include "Utils/cl_program_manager.h"
 
 #include <memory>
 #include <string>
@@ -54,8 +54,7 @@ namespace Baikal
         std::unique_ptr<Output> 
             CreateOutput(std::uint32_t w, std::uint32_t h) const override;
         // Create post effect of specified type
-        std::unique_ptr<PostEffect> 
-            CreatePostEffect(PostEffectType type) const override;
+        std::unique_ptr<PostEffect>  CreatePostEffect(PostEffectType type) const override;
 
         std::unique_ptr<SceneController<ClwScene>>
             CreateSceneController() const override;

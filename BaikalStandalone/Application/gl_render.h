@@ -31,7 +31,6 @@
 #include "GLFW/glfw3.h"
 #elif WIN32
 #define NOMINMAX
-#include <Windows.h>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #else

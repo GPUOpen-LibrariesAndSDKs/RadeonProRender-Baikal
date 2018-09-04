@@ -94,6 +94,26 @@ namespace Baikal
     static float2   g_mouse_delta = float2(0, 0);
     static float2   g_scroll_delta = float2(0, 0);
 
+    static const std::vector<std::pair<Baikal::Renderer::OutputType, char const*>> kBaikalOutputs =
+    {
+        { Renderer::OutputType::kColor, "Color" },
+        { Renderer::OutputType::kOpacity, "Opacity" },
+        { Renderer::OutputType::kVisibility, "Visibility" },
+        { Renderer::OutputType::kWorldPosition, "World Position" },
+        { Renderer::OutputType::kWorldShadingNormal, "World Shading Normal" },
+        { Renderer::OutputType::kWorldGeometricNormal, "World Geometric Normal" },
+        { Renderer::OutputType::kUv, "Texture Coordinates" },
+        { Renderer::OutputType::kWireframe, "Wireframe" },
+        { Renderer::OutputType::kAlbedo, "Albedo" },
+        { Renderer::OutputType::kWorldTangent, "Tangent" },
+        { Renderer::OutputType::kWorldBitangent, "Bitangent" },
+        { Renderer::OutputType::kGloss, "Glossiness" },
+        { Renderer::OutputType::kMeshID, "Object ID" },
+        { Renderer::OutputType::kGroupID, "Object Group ID" },
+        { Renderer::OutputType::kBackground, "Background" },
+        { Renderer::OutputType::kDepth, "Depth" }
+    };
+
     const std::string kCameraLogFile("camera.xml");
     //ls - light set
     const std::string kLightLogFile("light.xml");
@@ -333,7 +353,7 @@ namespace Baikal
     {
         ImGuiIO& io = ImGui::GetIO();
         Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
-        
+
         const bool press_or_repeat = action == GLFW_PRESS || action == GLFW_REPEAT;
 
         if (action == GLFW_PRESS)
@@ -414,24 +434,23 @@ namespace Baikal
             camroty = -delta.y;
 
 
+            const float kMovementSpeed = m_settings.cspeed;
+
             if (!g_is_middle_pressed)
             {
-
                 if (std::abs(camroty) > 0.001f)
                 {
-                    camera->Tilt(camroty);
+                    camera->Tilt(camroty * kMovementSpeed);
                     update = true;
                 }
 
                 if (std::abs(camrotx) > 0.001f)
                 {
-
-                    camera->Rotate(camrotx);
+                    camera->Rotate(camrotx * kMovementSpeed);
                     update = true;
                 }
             }
 
-            const float kMovementSpeed = m_settings.cspeed;
             if (std::abs(scroll_delta.y) > 0.001f)
             {
                 camera->Zoom(scroll_delta.y * kMovementSpeed);
@@ -555,9 +574,9 @@ namespace Baikal
         {
             std::swap_ranges(data + channels * w * i, data + channels * w * (i + 1) - 1, data + channels * w * (h - (i + 1)));
         }
-        
+
         const auto filename = m_settings.path + "/" + m_settings.base_image_file_name + "-" + std::to_string(time.time_since_epoch().count()) + "." + m_settings.image_file_format;
-        
+
         auto out = ImageOutput::create(filename);
         if (out)
         {
@@ -571,7 +590,7 @@ namespace Baikal
         {
             std::cout << "Wrong file format\n";
         }
-        
+
         delete[] data;
     }
 
@@ -612,7 +631,7 @@ namespace Baikal
         return false;
     }
 
-    Application::Application(int argc, char * argv[])
+    Application::Application(int argc, char* argv[])
         : m_window(nullptr, glfwDestroyWindow) // Add custom deleter to shared_ptr
         , m_num_triangles(0)
         , m_num_instances(0)
@@ -620,6 +639,12 @@ namespace Baikal
         // Command line parsing
         AppCliParser cli(argc, argv);
         m_settings = cli.Parse();
+
+        if (m_settings.help)
+        {
+            AppCliParser::ShowHelp();
+            std::exit(0);
+        }
 
         if (!m_settings.cmd_line_mode)
         {
@@ -709,6 +734,12 @@ namespace Baikal
 
         if (!m_settings.cmd_line_mode)
         {
+            // Add outputs selectable in UI
+            for (auto& output : kBaikalOutputs)
+            {
+                m_cl->AddOutput(output.first);
+            }
+
             try
             {
                 m_cl->StartRenderThreads();
@@ -726,9 +757,9 @@ namespace Baikal
                 m_cl->StopRenderThreads();
 
             }
-            catch (std::runtime_error&)
+            catch (std::runtime_error& e)
             {
-                std::cout << "Caught exception in Application::Run()\n";
+                std::cout << "Caught exception in Application::Run(): " << e.what() << "\n";
                 throw;
             }
 
@@ -767,34 +798,13 @@ namespace Baikal
         }
     }
 
-
-
     bool Application::UpdateGui()
     {
         static const ImVec2 win_size(380, 580);
-        static float aperture = 0.0f;
+        static float aperture = m_settings.camera_aperture;
         static float focal_length = 35.f;
         static float focus_distance = 1.f;
-        static int num_bounces = 5;
-        static const std::vector<std::pair<Baikal::Renderer::OutputType, char const*>> kBaikalOutputs =
-        {
-            { Renderer::OutputType::kColor, "Color" },
-            { Renderer::OutputType::kOpacity, "Opacity" },
-            { Renderer::OutputType::kVisibility, "Visibility" },
-            { Renderer::OutputType::kWorldPosition, "World Position" },
-            { Renderer::OutputType::kWorldShadingNormal, "Shading Normal" },
-            { Renderer::OutputType::kWorldGeometricNormal, "Geometric Normal" },
-            { Renderer::OutputType::kUv, "Texture Coordinates" },
-            { Renderer::OutputType::kWireframe, "Wireframe" },
-            { Renderer::OutputType::kAlbedo, "Albedo" },
-            { Renderer::OutputType::kWorldTangent, "Tangent" },
-            { Renderer::OutputType::kWorldBitangent, "Bitangent" },
-            { Renderer::OutputType::kGloss, "Glossiness" },
-            { Renderer::OutputType::kMeshID, "Object ID" },
-            { Renderer::OutputType::kGroupID, "Object Group ID" },
-            { Renderer::OutputType::kBackground, "Background" },
-            { Renderer::OutputType::kDepth, "Depth" }
-        };
+        static int num_bounces = m_settings.num_bounces;
 
         static int output = 0;
         bool update = false;
@@ -956,27 +966,36 @@ namespace Baikal
                 ImGui::Text("Shadow rays: %f Mrays/s", stats.shadow_throughput * 1e-6f);
             }
 
-#ifdef ENABLE_DENOISER
-            ImGui::Separator();
-
-            static float sigmaPosition = m_cl->GetDenoiserFloatParam("position_sensitivity").x;
-            static float sigmaNormal = m_cl->GetDenoiserFloatParam("normal_sensitivity").x;
-            static float sigmaColor = m_cl->GetDenoiserFloatParam("color_sensitivity").x;
-
-            ImGui::Text("Denoiser settings");
-            ImGui::SliderFloat("Position sigma", &sigmaPosition, 0.f, 0.3f);
-            ImGui::SliderFloat("Normal sigma", &sigmaNormal, 0.f, 5.f);
-            ImGui::SliderFloat("Color sigma", &sigmaColor, 0.f, 5.f);       
-
-            if (m_cl->GetDenoiserFloatParam("position_sensitivity").x != sigmaPosition ||
-                m_cl->GetDenoiserFloatParam("normal_sensitivity").x != sigmaNormal ||
-                m_cl->GetDenoiserFloatParam("color_sensitivity").x != sigmaColor)
+            if (m_cl->GetDenoiserType() == DenoiserType::kBilateral ||
+                m_cl->GetDenoiserType() == DenoiserType::kWavelet)
             {
-                m_cl->SetDenoiserFloatParam("position_sensitivity", sigmaPosition);
-                m_cl->SetDenoiserFloatParam("normal_sensitivity", sigmaNormal);
-                m_cl->SetDenoiserFloatParam("color_sensitivity", sigmaColor);
+                ImGui::Separator();
+
+                static float sigmaPosition = m_cl->GetDenoiserFloatParam("position_sensitivity");
+                static float sigmaNormal = m_cl->GetDenoiserFloatParam("normal_sensitivity");
+                static float sigmaColor = m_cl->GetDenoiserFloatParam("color_sensitivity");
+
+                ImGui::Text("Denoiser settings");
+                ImGui::SliderFloat("Position sigma", &sigmaPosition, 0.f, 0.3f);
+                ImGui::SliderFloat("Normal sigma", &sigmaNormal, 0.f, 5.f);
+                ImGui::SliderFloat("Color sigma", &sigmaColor, 0.f, 5.f);
+
+                if (m_cl->GetDenoiserFloatParam("position_sensitivity") != sigmaPosition ||
+                    m_cl->GetDenoiserFloatParam("normal_sensitivity") != sigmaNormal ||
+                    m_cl->GetDenoiserFloatParam("color_sensitivity") != sigmaColor)
+                {
+                    m_cl->SetDenoiserFloatParam("position_sensitivity", sigmaPosition);
+                    m_cl->SetDenoiserFloatParam("normal_sensitivity", sigmaNormal);
+                    m_cl->SetDenoiserFloatParam("color_sensitivity", sigmaColor);
+                }
             }
-#endif
+
+            if (m_cl->GetDenoiserType() != DenoiserType::kNone)
+            {
+                ImGui::Separator();
+                ImGui::Checkbox("Split output", &m_settings.split_output);
+            }
+
             ImGui::End();
 
             // Get shape/material info from renderer

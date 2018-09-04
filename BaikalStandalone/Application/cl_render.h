@@ -22,11 +22,6 @@
  ********************************************************************/
 #pragma once
 
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <future>
-
 #include "RenderFactory/render_factory.h"
 #include "Renderers/monte_carlo_renderer.h"
 #include "Output/clwoutput.h"
@@ -34,10 +29,16 @@
 #include "Utils/config_manager.h"
 #include "Application/gl_render.h"
 #include "SceneGraph/camera.h"
+#include "PostEffects/post_effect.h"
+#include "Output/output.h"
 
-#ifdef ENABLE_DENOISER
-#include "PostEffects/bilateral_denoiser.h"
-#endif
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <future>
+#include <map>
+#include <memory>
+#include <vector>
 
 
 namespace Baikal
@@ -46,21 +47,11 @@ namespace Baikal
     {
         struct OutputData
         {
+            std::map<Renderer::OutputType, std::unique_ptr<Output>> render_outputs;
             std::unique_ptr<Baikal::Output> output;
             std::unique_ptr<Baikal::Output> dummy_output;
-
-#ifdef ENABLE_DENOISER
-            std::unique_ptr<Baikal::Output> output_position;
-            std::unique_ptr<Baikal::Output> output_normal;
-            std::unique_ptr<Baikal::Output> output_albedo;
-            std::unique_ptr<Baikal::Output> output_mesh_id;
-            std::unique_ptr<Baikal::Output> output_denoised;
-            std::unique_ptr<Baikal::PostEffect> denoiser;
-#endif
-
             std::vector<float3> fdata;
             std::vector<unsigned char> udata;
-            CLWBuffer<float3> copybuffer;
         };
 
         struct ControlData
@@ -94,7 +85,7 @@ namespace Baikal
 
         inline Baikal::Camera::Ptr GetCamera() { return m_camera; };
         inline Baikal::Scene1::Ptr GetScene() { return m_scene; };
-        inline const std::vector<ConfigManager::Config>& GetConfigs() const { return m_cfgs; };
+        inline const std::vector<Config>& GetConfigs() const { return m_cfgs; };
         inline Renderer::OutputType GetOutputType() { return m_output_type; };
 
         void SetNumBounces(int num_bounces);
@@ -103,19 +94,28 @@ namespace Baikal
         std::future<int> GetShapeId(std::uint32_t x, std::uint32_t y);
         Baikal::Shape::Ptr GetShapeById(int shape_id);
 
-#ifdef ENABLE_DENOISER
-        // Denoiser
-        void SetDenoiserFloatParam(const std::string& name, const float4& value);
-        float4 GetDenoiserFloatParam(const std::string& name);
-        void CreateDenoiserOutputs(std::size_t cfg_index, int width, int height);
-        void SetDenoiserOutputs(std::size_t cfg_index) const;
-        void ClearDenoiserOutputs(std::size_t cfg_index) const;
-        void RestoreDenoiserOutput(std::size_t cfg_index, Renderer::OutputType type) const;
-#endif
+        DenoiserType GetDenoiserType() const;
+        void SetDenoiserFloatParam(std::string const& name, float value);
+        float GetDenoiserFloatParam(std::string const& name) const;
+
+        void AddOutput(Renderer::OutputType type);
+
     private:
+        using RendererOutputs = std::map<Renderer::OutputType, std::unique_ptr<Output>>;
+
         void InitCl(AppSettings& settings, GLuint tex);
         void LoadScene(AppSettings& settings);
         void RenderThread(ControlData& cd);
+
+        Output* GetRendererOutput(size_t device_idx, Renderer::OutputType type);
+        void AddRendererOutput(size_t device_idx, Renderer::OutputType type);
+        void GetOutputData(size_t device_idx, Renderer::OutputType type, RadeonRays::float3* data) const;
+        void AddPostEffect(size_t device_idx, PostEffectType type);
+        void CopyToGL(Output* output);
+        void CopyToGL(Output* left_output, Output* right_output);
+        void ApplyGammaCorrection(size_t device_idx, float gamma, bool divide_by_spp);
+        void InitPostEffect(AppSettings const& settings);
+        void SetPostEffectParams(int sample_cnt);
 
         Baikal::Scene1::Ptr m_scene;
         Baikal::Camera::Ptr m_camera;
@@ -124,17 +124,24 @@ namespace Baikal
         bool m_shape_id_requested = false;
         OutputData m_shape_id_data;
         RadeonRays::float2 m_shape_id_pos;
-        std::vector<ConfigManager::Config> m_cfgs;
+        std::vector<Config> m_cfgs;
+
         std::vector<OutputData> m_outputs;
         std::unique_ptr<ControlData[]> m_ctrl;
         std::vector<std::thread> m_renderthreads;
-        int m_primary = -1;
+        size_t m_primary;
         std::uint32_t m_width, m_height;
+        CLWBuffer<float3> m_copybuffer;
 
         //if interop
         CLWImage2D m_cl_interop_image;
         //save GL tex for no interop case
         GLuint m_tex;
-        Renderer::OutputType m_output_type;
+        Renderer::OutputType m_output_type = Renderer::OutputType::kColor;
+
+        DenoiserType m_denoiser_type = DenoiserType::kNone;
+        std::unique_ptr<PostEffect> m_post_effect;
+        PostEffect::InputSet m_post_effect_inputs;
+        std::unique_ptr<Output> m_post_effect_output;
     };
 }

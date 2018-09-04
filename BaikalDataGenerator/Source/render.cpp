@@ -20,6 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
+#include "CLW.h"
+#include "Controllers/scene_controller.h"
+#include "Renderers/renderer.h"
+#include "RenderFactory/clw_render_factory.h"
+#include "SceneGraph/camera.h"
+#include "scene_io.h"
 #include "input_info.h"
 #include "logging.h"
 #include "material_io.h"

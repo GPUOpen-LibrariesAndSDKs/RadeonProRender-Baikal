@@ -87,8 +87,6 @@ git clone --recursive https://github.com/GPUOpen-LibrariesAndSDKs/RadeonProRende
 
 Available premake options:
 
-- `BAIKAL_ENABLE_DENOISER` enables EAW denoiser in interactive output:
-
 - `BAIKAL_ENABLE_RPR` generates RadeonProRender API implemenatiton C-library and couple of RPR tutorials.
 
 ## Run

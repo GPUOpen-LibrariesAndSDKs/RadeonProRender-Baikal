@@ -36,6 +36,8 @@ namespace Baikal
     {
         AppSettings();
 
+        bool help;
+
         //model load settings
         std::string path;
         std::string modelname;
@@ -48,7 +50,8 @@ namespace Baikal
         int num_samples;
         bool interop;
         float cspeed;
-        ConfigManager::Mode mode;
+        Mode mode;
+        bool split_output = false;
 
         //ao
         float ao_radius;
@@ -95,6 +98,13 @@ namespace Baikal
         int platform_index;
         int device_index;
 
+        // device settings
+        float gpu_mem_fraction = 0; // float number from 0 to 1, percentage of max used device memory, 0 for default behavior
+        std::string visible_devices;
+
+        // denoiser settings
+        DenoiserType denoiser_type = DenoiserType::kNone;
+        std::uint32_t denoiser_start_spp = 8;
     };
 
     class AppCliParser
@@ -103,10 +113,9 @@ namespace Baikal
 
         AppCliParser(int argc, char * argv[]);
         AppSettings Parse();
+        static void ShowHelp();
 
     private:
-
-        void ShowHelp();
 
         CmdParser m_cmd_parser;
     };

@@ -20,43 +20,61 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #include "OpenImageIO/imageio.h"
-#include "image_io.h"
 
 #include "Application/cl_render.h"
+
 #include "Application/gl_render.h"
+#include "Utils/output_accessor.h"
 
 #include "SceneGraph/scene1.h"
 #include "SceneGraph/camera.h"
 #include "SceneGraph/material.h"
-#include "scene_io.h"
-#include "material_io.h"
-#include "SceneGraph/material.h"
-
+#include "BaikalIO/scene_io.h"
+#include "BaikalIO/image_io.h"
+#include "BaikalIO/material_io.h"
 #include "Renderers/monte_carlo_renderer.h"
 #include "Renderers/adaptive_renderer.h"
+#include "Utils/clw_class.h"
+
+#include "OpenImageIO/imageio.h"
 
 #include <fstream>
 #include <sstream>
 #include <thread>
 #include <chrono>
-
-#ifdef ENABLE_DENOISER
-#include "PostEffects/wavelet_denoiser.h"
-#endif
-#include "Utils/clw_class.h"
+#include <cmath>
 
 namespace Baikal
 {
-    AppClRender::AppClRender(AppSettings& settings, GLuint tex) : m_tex(tex), m_output_type(Renderer::OutputType::kColor)
+
+    namespace
+    {
+        constexpr float kGamma = 2.2f;
+
+        // Define the IMAGE_DUMP_PATH value to dump render data
+#ifdef IMAGE_DUMP_PATH
+        std::unique_ptr<RendererOutputAccessor> s_output_accessor;
+#endif
+    }
+
+    AppClRender::AppClRender(AppSettings& settings, GLuint tex)
+    : m_tex(tex)
+    , m_denoiser_type(settings.denoiser_type)
     {
         InitCl(settings, m_tex);
+        InitPostEffect(settings);
         LoadScene(settings);
+
+#ifdef IMAGE_DUMP_PATH
+        s_output_accessor = std::make_unique<RendererOutputAccessor>(
+                IMAGE_DUMP_PATH, m_width, m_height);
+#endif
     }
 
     void AppClRender::InitCl(AppSettings& settings, GLuint tex)
     {
         // Create cl context
-        ConfigManager::CreateConfigs(
+        CreateConfigs(
             settings.mode,
             settings.interop,
             m_cfgs,
@@ -76,14 +94,13 @@ namespace Baikal
 
         settings.interop = false;
 
-        m_outputs.resize(m_cfgs.size());
-        m_ctrl.reset(new ControlData[m_cfgs.size()]);
+        m_ctrl = std::make_unique<ControlData[]>(m_cfgs.size());
 
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (m_cfgs[i].type == ConfigManager::kPrimary)
+            if (m_cfgs[i].type == DeviceType::kPrimary)
             {
-                m_primary = static_cast<int>(i);
+                m_primary = i;
 
                 if (m_cfgs[i].caninterop)
                 {
@@ -108,36 +125,55 @@ namespace Baikal
             std::cout << "OpenGL interop mode disabled\n";
         }
 
+        m_outputs.resize(m_cfgs.size());
+
         //create renderer
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            m_outputs[i].output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
-            m_outputs[i].dummy_output = m_cfgs[i].factory->CreateOutput(m_width, m_height);
-
-#ifdef ENABLE_DENOISER
-            if (m_cfgs[i].type == ConfigManager::kPrimary)
-            {
-                CreateDenoiserOutputs(i, settings.width, settings.height);
-                SetDenoiserOutputs(i);
-                m_outputs[i].denoiser = m_cfgs[i].factory->CreatePostEffect(Baikal::RenderFactory<Baikal::ClwScene>::PostEffectType::kWaveletDenoiser);
-            }
-#endif
-            m_cfgs[i].renderer->SetOutput(Baikal::Renderer::OutputType::kColor, m_outputs[i].output.get());
+            AddRendererOutput(i, Renderer::OutputType::kColor);
+            m_outputs[i].dummy_output = m_cfgs[i].factory->CreateOutput(m_width, m_height); // TODO: mldenoiser, clear?
 
             m_outputs[i].fdata.resize(settings.width * settings.height);
             m_outputs[i].udata.resize(settings.width * settings.height * 4);
-
-            if (m_cfgs[i].type == ConfigManager::kPrimary)
-            {
-                m_outputs[i].copybuffer = m_cfgs[i].context.CreateBuffer<RadeonRays::float3>(m_width * m_height, CL_MEM_READ_WRITE);
-            }
         }
 
         m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
-        m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_outputs[m_primary].output);
+        m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
+        m_copybuffer = m_cfgs[m_primary].context.CreateBuffer<RadeonRays::float3>(m_width * m_height, CL_MEM_READ_WRITE);
+    }
+
+    void AppClRender::AddPostEffect(size_t device_idx, PostEffectType type)
+    {
+        m_post_effect = m_cfgs[device_idx].factory->CreatePostEffect(type);
+
+        // create or get inputs for post-effect
+        for (auto required_input : m_post_effect->GetInputTypes())
+        {
+            AddRendererOutput(device_idx, required_input);
+            m_post_effect_inputs[required_input] = GetRendererOutput(device_idx, required_input);
+        }
+
+        // create buffer for post-effect output
+        m_post_effect_output = m_cfgs[device_idx].factory->CreateOutput(m_width, m_height);
+
+        m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
     }
 
+    DenoiserType AppClRender::GetDenoiserType() const
+    {
+        return m_denoiser_type;
+    }
+
+    void AppClRender::SetDenoiserFloatParam(std::string const& name, float value)
+    {
+        m_post_effect->SetParameter(name, value);
+    }
+
+    float AppClRender::GetDenoiserFloatParam(std::string const& name) const
+    {
+        return m_post_effect->GetParameter(name).GetFloat();
+    }
 
     void AppClRender::LoadScene(AppSettings& settings)
     {
@@ -160,6 +196,7 @@ namespace Baikal
 
                 auto ibl = ImageBasedLight::Create();
                 ibl->SetTexture(ibl_texture);
+                ibl->SetMultiplier(settings.envmapmul);
                 m_scene->AttachLight(ibl);
             }
 
@@ -236,19 +273,24 @@ namespace Baikal
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (i == static_cast<std::size_t>(m_primary))
+            if (i == m_primary)
             {
-                m_cfgs[i].renderer->Clear(float3(0, 0, 0), *m_outputs[i].output);
+                m_cfgs[i].renderer->Clear(float3(), *GetRendererOutput(i, Renderer::OutputType::kColor));
                 m_cfgs[i].controller->CompileScene(m_scene);
                 ++m_ctrl[i].scene_state;
 
-#ifdef ENABLE_DENOISER
-                ClearDenoiserOutputs(i);
-#endif
-
+                if (m_post_effect_output)
+                {
+                    m_post_effect_output->Clear(float3());
+                }
             }
             else
                 m_ctrl[i].clear.store(true);
+        }
+
+        for (auto& output : m_outputs[m_primary].render_outputs)
+        {
+            output.second->Clear(float3());
         }
     }
 
@@ -256,10 +298,16 @@ namespace Baikal
     {
         ++settings.samplecount;
 
+#ifdef IMAGE_DUMP_PATH
+        s_output_accessor->SaveAllOutputs(m_outputs);
+#endif
+
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (m_cfgs[i].type == ConfigManager::kPrimary)
+            if (m_cfgs[i].type == DeviceType::kPrimary)
+            {
                 continue;
+            }
 
             int desired = 1;
             if (std::atomic_compare_exchange_strong(&m_ctrl[i].newdata, &desired, 0))
@@ -270,16 +318,19 @@ namespace Baikal
                     continue;
                 }
 
-                {
-                    m_cfgs[m_primary].context.WriteBuffer(0, m_outputs[m_primary].copybuffer, &m_outputs[i].fdata[0], settings.width * settings.height);
-                }
+                m_cfgs[m_primary].context.WriteBuffer(
+                        0, m_copybuffer,
+                        &m_outputs[i].fdata[0],
+                        settings.width * settings.height);
 
-                auto acckernel = static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetAccumulateKernel();
+                auto acckernel = static_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetAccumulateKernel();
 
                 int argc = 0;
-                acckernel.SetArg(argc++, m_outputs[m_primary].copybuffer);
+                acckernel.SetArg(argc++, m_copybuffer);
                 acckernel.SetArg(argc++, settings.width * settings.width);
-                acckernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(m_outputs[m_primary].output.get())->data());
+                acckernel.SetArg(argc++,
+                        static_cast<Baikal::ClwOutput*>(GetRendererOutput(
+                                m_primary, Renderer::OutputType::kColor))->data());
 
                 int globalsize = settings.width * settings.height;
                 m_cfgs[m_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, acckernel);
@@ -289,60 +340,53 @@ namespace Baikal
 
         if (!settings.interop)
         {
-#ifdef ENABLE_DENOISER
-            m_outputs[m_primary].output_denoised->GetData(&m_outputs[m_primary].fdata[0]);
-#else
-            m_outputs[m_primary].output->GetData(&m_outputs[m_primary].fdata[0]);
-#endif
-
-            float gamma = 2.2f;
-            for (int i = 0; i < (int)m_outputs[m_primary].fdata.size(); ++i)
+            if (m_post_effect_output)
             {
-                m_outputs[m_primary].udata[4 * i] = (unsigned char)clamp(clamp(pow(m_outputs[m_primary].fdata[i].x / m_outputs[m_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
-                m_outputs[m_primary].udata[4 * i + 1] = (unsigned char)clamp(clamp(pow(m_outputs[m_primary].fdata[i].y / m_outputs[m_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
-                m_outputs[m_primary].udata[4 * i + 2] = (unsigned char)clamp(clamp(pow(m_outputs[m_primary].fdata[i].z / m_outputs[m_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
-                m_outputs[m_primary].udata[4 * i + 3] = 1;
+                m_post_effect_output->GetData(&m_outputs[m_primary].fdata[0]);
+                ApplyGammaCorrection(m_primary, kGamma, false);
+            }
+            else
+            {
+                GetOutputData(m_primary, Renderer::OutputType::kColor, &m_outputs[m_primary].fdata[0]);
+                ApplyGammaCorrection(m_primary, kGamma, true);
             }
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, m_tex);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_outputs[m_primary].output->width(), m_outputs[m_primary].output->height(), GL_RGBA, GL_UNSIGNED_BYTE, &m_outputs[m_primary].udata[0]);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, &m_outputs[m_primary].udata[0]);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
         else
         {
-            std::vector<cl_mem> objects;
-            objects.push_back(m_cl_interop_image);
-            m_cfgs[m_primary].context.AcquireGLObjects(0, objects);
-
-            auto copykernel = static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetCopyKernel();
-
-#ifdef ENABLE_DENOISER
-            auto output = m_outputs[m_primary].output_denoised.get();
-#else
-            auto output = m_outputs[m_primary].output.get();
-#endif
-
-            int argc = 0;
-
-            copykernel.SetArg(argc++, static_cast<Baikal::ClwOutput*>(output)->data());
-            copykernel.SetArg(argc++, output->width());
-            copykernel.SetArg(argc++, output->height());
-            copykernel.SetArg(argc++, 2.2f);
-            copykernel.SetArg(argc++, m_cl_interop_image);
-
-            int globalsize = output->width() * output->height();
-            m_cfgs[m_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, copykernel);
-
-            m_cfgs[m_primary].context.ReleaseGLObjects(0, objects);
-            m_cfgs[m_primary].context.Finish(0);
+            if (!m_post_effect_output)
+            {
+                CopyToGL(GetRendererOutput(m_primary, m_output_type));
+            }
+            else
+            {
+                if (m_output_type == Renderer::OutputType::kColor)
+                {
+                    if (settings.split_output)
+                    {
+                        CopyToGL(GetRendererOutput(m_primary, Renderer::OutputType::kColor),
+                                 m_post_effect_output.get());
+                    }
+                    else
+                    {
+                        CopyToGL(m_post_effect_output.get());
+                    }
+                }
+                else
+                {
+                    CopyToGL(GetRendererOutput(m_primary, m_output_type));
+                }
+            }
         }
-
 
         if (settings.benchmark)
         {
             auto& scene = m_cfgs[m_primary].controller->CompileScene(m_scene);
-            static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
+            dynamic_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
 
             settings.benchmark = false;
             settings.rt_benchmarked = true;
@@ -352,14 +396,7 @@ namespace Baikal
 
     void AppClRender::Render(int sample_cnt)
     {
-#ifdef ENABLE_DENOISER
-        WaveletDenoiser* wavelet_denoiser = dynamic_cast<WaveletDenoiser*>(m_outputs[m_primary].denoiser.get());
-
-        if (wavelet_denoiser != nullptr)
-        {
-            wavelet_denoiser->Update(static_cast<PerspectiveCamera*>(m_camera.get()));
-        }
-#endif
+        SetPostEffectParams(sample_cnt);
 
         auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
         m_cfgs[m_primary].renderer->Render(scene);
@@ -377,34 +414,10 @@ namespace Baikal
             m_shape_id_requested = false;
         }
 
-#ifdef ENABLE_DENOISER
-        Baikal::PostEffect::InputSet input_set;
-        input_set[Baikal::Renderer::OutputType::kColor] = m_outputs[m_primary].output.get();
-        input_set[Baikal::Renderer::OutputType::kWorldShadingNormal] = m_outputs[m_primary].output_normal.get();
-        input_set[Baikal::Renderer::OutputType::kWorldPosition] = m_outputs[m_primary].output_position.get();
-        input_set[Baikal::Renderer::OutputType::kAlbedo] = m_outputs[m_primary].output_albedo.get();
-        input_set[Baikal::Renderer::OutputType::kMeshID] = m_outputs[m_primary].output_mesh_id.get();
-
-        auto radius = 10U - RadeonRays::clamp((sample_cnt / 16), 1U, 9U);
-        auto position_sensitivity = 5.f + 10.f * (radius / 10.f);
-
-        const bool is_bilateral_denoiser = dynamic_cast<BilateralDenoiser*>(m_outputs[m_primary].denoiser.get()) != nullptr;
-
-        if (is_bilateral_denoiser)
+        if (m_post_effect && m_output_type == Renderer::OutputType::kColor)
         {
-
-            auto normal_sensitivity = 0.1f + (radius / 10.f) * 0.15f;
-            auto color_sensitivity = (radius / 10.f) * 2.f;
-            auto albedo_sensitivity = 0.5f + (radius / 10.f) * 0.5f;
-            m_outputs[m_primary].denoiser->SetParameter("radius", static_cast<float>(radius));
-            m_outputs[m_primary].denoiser->SetParameter("color_sensitivity", color_sensitivity);
-            m_outputs[m_primary].denoiser->SetParameter("normal_sensitivity", normal_sensitivity);
-            m_outputs[m_primary].denoiser->SetParameter("position_sensitivity", position_sensitivity);
-            m_outputs[m_primary].denoiser->SetParameter("albedo_sensitivity", albedo_sensitivity);
+            m_post_effect->Apply(m_post_effect_inputs, *m_post_effect_output);
         }
-
-        m_outputs[m_primary].denoiser->Apply(input_set, *m_outputs[m_primary].output_denoised);
-#endif
     }
 
     void AppClRender::SaveFrameBuffer(AppSettings& settings)
@@ -415,10 +428,14 @@ namespace Baikal
         std::vector<RadeonRays::float3> output_data;
         if (settings.interop)
         {
-            auto output = m_outputs[m_primary].output.get();
-            auto buffer = static_cast<Baikal::ClwOutput*>(output)->data();
+            auto output = GetRendererOutput(m_primary, Renderer::OutputType::kColor);
+            auto buffer = dynamic_cast<Baikal::ClwOutput*>(output)->data();
             output_data.resize(buffer.GetElementCount());
-            m_cfgs[m_primary].context.ReadBuffer(0, static_cast<Baikal::ClwOutput*>(output)->data(), &output_data[0], output_data.size()).Wait();
+            m_cfgs[m_primary].context.ReadBuffer(
+                    0,
+                    dynamic_cast<Baikal::ClwOutput*>(output)->data(),
+                    &output_data[0],
+                    output_data.size()).Wait();
         }
 
         //use already copied to CPU cl data in case of no interop
@@ -456,9 +473,9 @@ namespace Baikal
                 float3 val = data[(height - 1 - y) * width + x];
                 tempbuf[y * width + x] = (1.f / val.w) * val;
 
-                tempbuf[y * width + x].x = std::pow(tempbuf[y * width + x].x, 1.f / 2.2f);
-                tempbuf[y * width + x].y = std::pow(tempbuf[y * width + x].y, 1.f / 2.2f);
-                tempbuf[y * width + x].z = std::pow(tempbuf[y * width + x].z, 1.f / 2.2f);
+                tempbuf[y * width + x].x = std::pow(tempbuf[y * width + x].x, 1.f / kGamma);
+                tempbuf[y * width + x].y = std::pow(tempbuf[y * width + x].y, 1.f / kGamma);
+                tempbuf[y * width + x].z = std::pow(tempbuf[y * width + x].z, 1.f / kGamma);
             }
 
         ImageOutput* out = ImageOutput::create(name);
@@ -479,7 +496,6 @@ namespace Baikal
     {
         auto renderer = m_cfgs[cd.idx].renderer.get();
         auto controller = m_cfgs[cd.idx].controller.get();
-        auto output = m_outputs[cd.idx].output.get();
 
         auto updatetime = std::chrono::high_resolution_clock::now();
 
@@ -492,7 +508,10 @@ namespace Baikal
             bool update = false;
             if (std::atomic_compare_exchange_strong(&cd.clear, &result, 0))
             {
-                renderer->Clear(float3(0, 0, 0), *output);
+                for (auto& output : m_outputs[cd.idx].render_outputs)
+                {
+                    output.second->Clear(float3());
+                }
                 controller->CompileScene(m_scene);
                 scene_state = m_ctrl[m_primary].scene_state;
                 update = true;
@@ -508,7 +527,7 @@ namespace Baikal
 
             if (update)
             {
-                m_outputs[cd.idx].output->GetData(&m_outputs[cd.idx].fdata[0]);
+                GetOutputData(cd.idx, Renderer::OutputType::kColor, &m_outputs[cd.idx].fdata[0]);
                 updatetime = now;
                 m_ctrl[cd.idx].scene_state = scene_state;
                 m_ctrl[cd.idx].new_samples_count = new_samples_count;
@@ -524,32 +543,29 @@ namespace Baikal
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (i != static_cast<std::size_t>(m_primary))
+            if (i != m_primary)
             {
-                m_renderthreads.push_back(std::thread(&AppClRender::RenderThread, this, std::ref(m_ctrl[i])));
+                m_renderthreads.emplace_back(&AppClRender::RenderThread, this, std::ref(m_ctrl[i]));
             }
         }
 
-        std::cout << m_cfgs.size() << " OpenCL submission threads started\n";
+        std::cout << m_renderthreads.size() << " OpenCL submission threads started\n";
     }
 
     void AppClRender::StopRenderThreads()
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            if (i == static_cast<std::size_t>(m_primary))
+            if (i != m_primary)
             {
-                continue;
+                m_ctrl[i].stop.store(true);
             }
-
-            m_ctrl[i].stop.store(true);
         }
 
         for (std::size_t i = 0; i < m_renderthreads.size(); ++i)
         {
             m_renderthreads[i].join();
         }
-
     }
 
     void AppClRender::RunBenchmark(AppSettings& settings)
@@ -569,15 +585,8 @@ namespace Baikal
 
         settings.time_benchmark_time = delta / 1000.f;
 
-        m_outputs[m_primary].output->GetData(&m_outputs[m_primary].fdata[0]);
-        float gamma = 2.2f;
-        for (int i = 0; i < (int)m_outputs[m_primary].fdata.size(); ++i)
-        {
-            m_outputs[m_primary].udata[4 * i] = (unsigned char)clamp(clamp(pow(m_outputs[m_primary].fdata[i].x / m_outputs[m_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
-            m_outputs[m_primary].udata[4 * i + 1] = (unsigned char)clamp(clamp(pow(m_outputs[m_primary].fdata[i].y / m_outputs[m_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
-            m_outputs[m_primary].udata[4 * i + 2] = (unsigned char)clamp(clamp(pow(m_outputs[m_primary].fdata[i].z / m_outputs[m_primary].fdata[i].w, 1.f / gamma), 0.f, 1.f) * 255, 0, 255);
-            m_outputs[m_primary].udata[4 * i + 3] = 1;
-        }
+        GetOutputData(m_primary, Renderer::OutputType::kColor, &m_outputs[m_primary].fdata[0]);
+        ApplyGammaCorrection(m_primary, kGamma, true);
 
         auto& fdata = m_outputs[m_primary].fdata;
         std::vector<RadeonRays::float3> data(fdata.size());
@@ -596,39 +605,56 @@ namespace Baikal
         std::cout << "Running RT benchmark...\n";
 
         auto& scene = m_cfgs[m_primary].controller->GetCachedScene(m_scene);
-        static_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
+        dynamic_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->Benchmark(scene, settings.stats);
+    }
+
+    void AppClRender::ApplyGammaCorrection(size_t device_idx, float gamma, bool divide_by_spp = true)
+    {
+        auto adjust_gamma = [gamma](float val)
+        {
+            return (unsigned char)clamp(std::pow(val , 1.f / gamma) * 255, 0, 255);
+        };
+
+        if (divide_by_spp)
+        {
+            for (int i = 0; i < (int)m_outputs[device_idx].fdata.size(); ++i)
+            {
+                auto &fdata = m_outputs[device_idx].fdata[i];
+                auto &udata = m_outputs[device_idx].udata;
+
+                udata[4 * i] = adjust_gamma(fdata.x / fdata.w);
+                udata[4 * i + 1] = adjust_gamma(fdata.y / fdata.w);
+                udata[4 * i + 2] = adjust_gamma(fdata.z / fdata.w);
+                udata[4 * i + 3] = 1;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < (int)m_outputs[device_idx].fdata.size(); ++i)
+            {
+                auto &fdata = m_outputs[device_idx].fdata[i];
+                auto &udata = m_outputs[device_idx].udata;
+
+                udata[4 * i] = adjust_gamma(fdata.x);
+                udata[4 * i + 1] = adjust_gamma(fdata.y);
+                udata[4 * i + 2] = adjust_gamma(fdata.z);
+                udata[4 * i + 3] = 1;
+            }
+        }
     }
 
     void AppClRender::SetNumBounces(int num_bounces)
     {
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            static_cast<Baikal::MonteCarloRenderer*>(m_cfgs[i].renderer.get())->SetMaxBounces(num_bounces);
+            dynamic_cast<Baikal::MonteCarloRenderer*>(m_cfgs[i].renderer.get())->SetMaxBounces(num_bounces);
         }
     }
 
     void AppClRender::SetOutputType(Renderer::OutputType type)
     {
-        for (std::size_t i = 0; i < m_cfgs.size(); ++i)
-        {
-#ifdef ENABLE_DENOISER
-            RestoreDenoiserOutput(i, m_output_type);
-#else
-            m_cfgs[i].renderer->SetOutput(m_output_type, nullptr);
-#endif
-            if (type == Renderer::OutputType::kOpacity || type == Renderer::OutputType::kVisibility)
-            {
-                m_cfgs[i].renderer->SetOutput(Renderer::OutputType::kColor, m_outputs[i].dummy_output.get());
-            }
-            else
-            {
-                m_cfgs[i].renderer->SetOutput(Renderer::OutputType::kColor, nullptr);
-            }
-            m_cfgs[i].renderer->SetOutput(type, m_outputs[i].output.get());
-        }
         m_output_type = type;
     }
-
 
     std::future<int> AppClRender::GetShapeId(std::uint32_t x, std::uint32_t y)
     {
@@ -664,63 +690,143 @@ namespace Baikal
         return nullptr;
     }
 
-#ifdef ENABLE_DENOISER
-    void AppClRender::SetDenoiserFloatParam(const std::string& name, const float4& value)
+    void AppClRender::AddRendererOutput(size_t device_idx, Renderer::OutputType type)
     {
-        m_outputs[m_primary].denoiser->SetParameter(name, value);
-    }
-
-    float4 AppClRender::GetDenoiserFloatParam(const std::string& name)
-    {
-        return m_outputs[m_primary].denoiser->GetParameter(name);
-    }
-
-    void AppClRender::CreateDenoiserOutputs(std::size_t cfg_index, int width, int height)
-    {
-        m_outputs[cfg_index].output_denoised = m_cfgs[cfg_index].factory->CreateOutput(width, height);
-        m_outputs[cfg_index].output_normal = m_cfgs[cfg_index].factory->CreateOutput(width, height);
-        m_outputs[cfg_index].output_position = m_cfgs[cfg_index].factory->CreateOutput(width, height);
-        m_outputs[cfg_index].output_albedo = m_cfgs[cfg_index].factory->CreateOutput(width, height);
-        m_outputs[cfg_index].output_mesh_id = m_cfgs[cfg_index].factory->CreateOutput(width, height);
-    }
-
-    void AppClRender::SetDenoiserOutputs(std::size_t cfg_index) const
-    {
-        m_cfgs[cfg_index].renderer->SetOutput(Renderer::OutputType::kWorldShadingNormal, m_outputs[cfg_index].output_normal.get());
-        m_cfgs[cfg_index].renderer->SetOutput(Renderer::OutputType::kWorldPosition, m_outputs[cfg_index].output_position.get());
-        m_cfgs[cfg_index].renderer->SetOutput(Renderer::OutputType::kAlbedo, m_outputs[cfg_index].output_albedo.get());
-        m_cfgs[cfg_index].renderer->SetOutput(Renderer::OutputType::kMeshID, m_outputs[cfg_index].output_mesh_id.get());
-    }
-
-    void AppClRender::ClearDenoiserOutputs(std::size_t cfg_index) const
-    {
-        m_cfgs[cfg_index].renderer->Clear(float3(0, 0, 0), *m_outputs[cfg_index].output_normal);
-        m_cfgs[cfg_index].renderer->Clear(float3(0, 0, 0), *m_outputs[cfg_index].output_position);
-        m_cfgs[cfg_index].renderer->Clear(float3(0, 0, 0), *m_outputs[cfg_index].output_albedo);
-        m_cfgs[cfg_index].renderer->Clear(float3(0, 0, 0), *m_outputs[cfg_index].output_mesh_id);
-    }
-
-    void AppClRender::RestoreDenoiserOutput(std::size_t cfg_index, Renderer::OutputType type) const
-    {
-        switch (type)
+        auto it = m_outputs[device_idx].render_outputs.find(type);
+        if (it == m_outputs[device_idx].render_outputs.end())
         {
-        case Renderer::OutputType::kWorldShadingNormal:
-            m_cfgs[cfg_index].renderer->SetOutput(type, m_outputs[cfg_index].output_normal.get());
+            const auto& config = m_cfgs.at(device_idx);
+            auto output = config.factory->CreateOutput(m_width, m_height);
+            config.renderer->SetOutput(type, output.get());
+            config.renderer->Clear(RadeonRays::float3(0, 0, 0), *output);
+
+            m_outputs[device_idx].render_outputs.emplace(type, std::move(output));
+        }
+    }
+
+    Output* AppClRender::GetRendererOutput(size_t device_idx, Renderer::OutputType type)
+    {
+        return m_outputs.at(device_idx).render_outputs.at(type).get();
+    }
+
+    void AppClRender::GetOutputData(size_t device_idx, Renderer::OutputType type, RadeonRays::float3* data) const
+    {
+        m_outputs.at(device_idx).render_outputs.at(type)->GetData(data);
+    }
+
+    void AppClRender::CopyToGL(Output* output)
+    {
+        std::vector<cl_mem> objects = {m_cl_interop_image};
+        m_cfgs[m_primary].context.AcquireGLObjects(0, objects);
+
+        auto copykernel = dynamic_cast<MonteCarloRenderer*>(
+                m_cfgs[m_primary].renderer.get())->GetCopyKernel();
+
+        copykernel.SetArg(0, dynamic_cast<ClwOutput*>(output)->data());
+        copykernel.SetArg(1, output->width());
+        copykernel.SetArg(2, output->height());
+        copykernel.SetArg(3, kGamma);
+        copykernel.SetArg(4, m_cl_interop_image);
+
+        int globalsize = output->width() * output->height();
+        m_cfgs[m_primary].context.Launch1D(0, (globalsize + 63) / 64 * 64, 64, copykernel);
+
+        m_cfgs[m_primary].context.ReleaseGLObjects(0, objects);
+        m_cfgs[m_primary].context.Finish(0);
+    }
+
+    void AppClRender::CopyToGL(Output* left_output, Output* right_output)
+    {
+        assert(left_output->width() == right_output->width());
+        assert(left_output->height() == right_output->height());
+
+        std::vector<cl_mem> objects = {m_cl_interop_image};
+        m_cfgs[m_primary].context.AcquireGLObjects(0, objects);
+
+        auto copykernel = dynamic_cast<MonteCarloRenderer*>(
+                m_cfgs[m_primary].renderer.get())->GetCopySplitKernel();
+
+        copykernel.SetArg(0, dynamic_cast<ClwOutput*>(left_output)->data());
+        copykernel.SetArg(1, dynamic_cast<ClwOutput*>(right_output)->data());
+        copykernel.SetArg(2, left_output->width());
+        copykernel.SetArg(3, left_output->height());
+        copykernel.SetArg(4, kGamma);
+        copykernel.SetArg(5, m_cl_interop_image);
+
+        int globalsize = left_output->width() * left_output->height();
+        m_cfgs[m_primary].context.Launch1D(0, (globalsize + 63) / 64 * 64, 64, copykernel);
+
+        m_cfgs[m_primary].context.ReleaseGLObjects(0, objects);
+        m_cfgs[m_primary].context.Finish(0);
+    }
+
+    void AppClRender::AddOutput(Renderer::OutputType type)
+    {
+        for (std::size_t idx = 0; idx < m_cfgs.size(); ++idx)
+        {
+            AddRendererOutput(idx, type);
+        }
+    }
+
+    void AppClRender::InitPostEffect(AppSettings const& settings)
+    {
+        switch (m_denoiser_type)
+        {
+        case DenoiserType::kNone:
             break;
-        case Renderer::OutputType::kWorldPosition:
-            m_cfgs[cfg_index].renderer->SetOutput(type, m_outputs[cfg_index].output_position.get());
+        case DenoiserType::kBilateral:
+            if (settings.camera_type != CameraType::kPerspective)
+            {
+                throw std::logic_error("Bilateral denoiser requires perspective camera");
+            }
+            AddPostEffect(m_primary, PostEffectType::kBilateralDenoiser);
             break;
-        case Renderer::OutputType::kAlbedo:
-            m_cfgs[cfg_index].renderer->SetOutput(type, m_outputs[cfg_index].output_albedo.get());
+        case DenoiserType::kWavelet:
+            AddPostEffect(m_primary, PostEffectType::kWaveletDenoiser);
             break;
-        case Renderer::OutputType::kMeshID:
-            m_cfgs[cfg_index].renderer->SetOutput(type, m_outputs[cfg_index].output_mesh_id.get());
+        case DenoiserType::kML:
+            AddPostEffect(m_primary, PostEffectType::kMLDenoiser);
+            m_post_effect->SetParameter("gpu_memory_fraction", settings.gpu_mem_fraction);
+            m_post_effect->SetParameter("visible_devices", settings.visible_devices);
+            m_post_effect->SetParameter("start_spp", settings.denoiser_start_spp);
             break;
         default:
-            // Nothing to restore
-            m_cfgs[cfg_index].renderer->SetOutput(type, nullptr);
+            throw std::runtime_error("AppClRender(...): Unsupported denoiser type");
+        }
+    }
+
+    void AppClRender::SetPostEffectParams(int sample_cnt)
+    {
+        switch (m_denoiser_type)
+        {
+        case DenoiserType::kBilateral:
+        {
+            const auto radius = 10U - RadeonRays::clamp((sample_cnt / 16), 1U, 9U);
+            m_post_effect->SetParameter("radius", static_cast<float>(radius));
+            m_post_effect->SetParameter("color_sensitivity", (radius / 10.f) * 2.f);
+            m_post_effect->SetParameter("normal_sensitivity", 0.1f + (radius / 10.f) * 0.15f);
+            m_post_effect->SetParameter("position_sensitivity", 5.f + 10.f * (radius / 10.f));
+            m_post_effect->SetParameter("albedo_sensitivity", 0.5f + (radius / 10.f) * 0.5f);
+            break;
+        }
+        case DenoiserType::kWavelet:
+        {
+            auto pCamera = dynamic_cast<PerspectiveCamera*>(m_camera.get());
+            m_post_effect->SetParameter("camera_focal_length", pCamera->GetFocalLength());
+            m_post_effect->SetParameter("camera_sensor_size", pCamera->GetSensorSize());
+            m_post_effect->SetParameter("camera_depth_range", pCamera->GetDepthRange());
+            m_post_effect->SetParameter("camera_up_vector", pCamera->GetUpVector());
+            m_post_effect->SetParameter("camera_forward_vector", pCamera->GetForwardVector());
+            m_post_effect->SetParameter("camera_right_vector", -pCamera->GetRightVector());
+            m_post_effect->SetParameter("camera_position", pCamera->GetPosition());
+            m_post_effect->SetParameter("camera_aspect_ratio", pCamera->GetAspectRatio());
+            break;
+        }
+        case DenoiserType::kML:
+        case DenoiserType::kNone:
+        default:
             break;
         }
     }
-#endif
+
 } // Baikal

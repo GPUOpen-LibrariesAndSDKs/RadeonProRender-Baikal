@@ -369,6 +369,11 @@ namespace Baikal
         return GetKernel("ApplyGammaAndCopyData");
     }
 
+    CLWKernel MonteCarloRenderer::GetCopySplitKernel()
+    {
+        return GetKernel("ApplyGammaAndCopySplitData");
+    }
+
     CLWKernel MonteCarloRenderer::GetAccumulateKernel()
     {
         return GetKernel("AccumulateData");
@@ -422,5 +427,5 @@ namespace Baikal
             GetContext().Launch1D(0, ((size + 63) / 64) * 64, 64, misskernel);
         }
     }
-    
+
 }

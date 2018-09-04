@@ -21,14 +21,15 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
-#include "post_effect.h"
-
-#include "CLW.h"
+#include "PostEffects/post_effect.h"
 #include "Output/clwoutput.h"
 #include "Utils/clw_class.h"
 
+#include "CLW.h"
+
 #include <string>
 #include <unordered_map>
+
 
 namespace Baikal
 {

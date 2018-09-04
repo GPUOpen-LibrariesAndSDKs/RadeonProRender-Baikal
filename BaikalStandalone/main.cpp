@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #include "Application/application.h"
+#include "except.h"
 
 int main(int argc, char * argv[])
 {
@@ -41,6 +42,11 @@ int main(int argc, char * argv[])
         std::cerr << ex.what() << std::endl;
         return -1;
 
+    }
+    catch(Calc::Exception& ex)
+    {
+	std::cout << ex.what() << std::endl;
+	return -1;
     }
 
     return 0;

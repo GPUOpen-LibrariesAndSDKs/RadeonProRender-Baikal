@@ -196,10 +196,6 @@ KERNEL void FillAOVsUberV2(
             aov_background[idx].w += 1.0f;
             CORRECT_VALUE(aov_background[idx])
         }
-        else
-        {
-
-        }
 
 
         if (isect.shapeid > -1)
@@ -370,7 +366,7 @@ KERNEL void FillAOVsUberV2(
                 UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
                 GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
-		int sampled_component = Bxdf_UberV2_GetSampledComponent(&diffgeo);
+                int sampled_component = Bxdf_UberV2_GetSampledComponent(&diffgeo);
 
                 float gloss = 0.f;
                 if (sampled_component == kBxdfUberV2SampleCoating)

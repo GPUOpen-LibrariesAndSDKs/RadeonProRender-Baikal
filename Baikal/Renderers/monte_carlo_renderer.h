@@ -70,8 +70,10 @@ namespace Baikal
 
         void SetRandomSeed(std::uint32_t seed) override;
 
-        // Interop function
+        // Interop functions
         CLWKernel GetCopyKernel();
+        CLWKernel GetCopySplitKernel();
+
         // Add function
         CLWKernel GetAccumulateKernel();
         // Run render benchmark
