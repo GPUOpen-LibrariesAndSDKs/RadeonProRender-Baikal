@@ -23,7 +23,6 @@ THE SOFTWARE.
 #include "config_loader.h"
 #include "XML/tinyxml2.h"
 #include "material_io.h"
-#include <filesystem>
 #include <sstream>
 
 // validation checks helper macroses to reduce copy paste
@@ -228,6 +227,11 @@ std::vector<CameraInfo> ConfigLoader::CamStates() const
 std::vector<LightInfo> ConfigLoader::Lights() const
 {
     return m_light_settings;
+}
+
+const std::filesystem::path& ConfigLoader::LightsDir() const
+{
+    return m_ligths_dir;
 }
 
 std::vector<size_t> ConfigLoader::Spp() const

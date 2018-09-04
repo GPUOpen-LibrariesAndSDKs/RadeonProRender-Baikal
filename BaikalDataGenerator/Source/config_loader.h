@@ -22,10 +22,11 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
 #include "utils.h"
 #include "input_info.h"
+#include "filesystem.h"
+
+#include <vector>
 
 using CameraIterator = std::vector<CameraInfo>::const_iterator;
 using LightsIterator = std::vector<LightInfo>::const_iterator;
@@ -38,11 +39,10 @@ public:
 
     std::vector<CameraInfo> CamStates() const;
     std::vector<LightInfo> Lights() const;
+    const std::filesystem::path& LightsDir() const;
     std::vector<size_t> Spp() const;
 
-
-    const std::filesystem::path& LightsDir() const;
-private:
+    private:
 
     void ValidateConfig(const DGenConfig& config) const;
 

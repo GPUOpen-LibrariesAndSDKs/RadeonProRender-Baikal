@@ -37,7 +37,7 @@ THE SOFTWARE.
 #include <set>
 #include <cassert>
 
-#include "Utils/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 #include "Utils/log.h"
 
 namespace Baikal
@@ -76,11 +76,12 @@ namespace Baikal
         // Loader data
         std::vector<shape_t> objshapes;
         std::vector<material_t> objmaterials;
+        attrib_t attrib;
 
         // Try loading file
         LogInfo("Loading a scene from OBJ: ", filename, " ... ");
         std::string err;
-        auto res = LoadObj(objshapes, objmaterials, err, filename.c_str(), basepath.c_str(), triangulation|calculate_normals);
+        auto res = LoadObj(&attrib, &objshapes, &objmaterials, &err, filename.c_str(), basepath.c_str(), true);
         if (!res)
         {
             throw std::runtime_error(err);
@@ -118,7 +119,14 @@ namespace Baikal
             for (int used_material : used_materials)
             {
                 // Map from old index to new index.
-                std::map<unsigned int, unsigned int> used_indices;
+                auto index_comp = [](index_t const& a, index_t const& b)
+                {
+                    return (a.vertex_index < b.vertex_index)
+                        || (a.vertex_index == b.vertex_index && a.normal_index < b.normal_index)
+                        || (a.vertex_index == b.vertex_index && a.normal_index == b.normal_index
+                            && a.texcoord_index < b.texcoord_index);
+                };
+                std::map<index_t, unsigned int, decltype(index_comp)> used_indices(index_comp);
 
                 // Remapped indices.
                 std::vector<unsigned int> indices;
@@ -132,25 +140,43 @@ namespace Baikal
                     // Skip faces which don't use the current material.
                     if (shape.mesh.material_ids[i] != used_material) continue;
 
-                    const int num_face_vertices = shape.mesh.num_vertices[i];
+                    const int num_face_vertices = shape.mesh.num_face_vertices[i];
                     assert(num_face_vertices == 3 && "expected triangles");
                     // For each vertex index of this face.
                     for (int j = 0; j < num_face_vertices; ++j)
                     {
-                        const unsigned int old_index = shape.mesh.indices[num_face_vertices * i + j];
+                        index_t old_index = shape.mesh.indices[num_face_vertices * i + j];
+
                         // Collect vertex/normal/texcoord data. Avoid inserting the same data twice.
                         auto result = used_indices.emplace(old_index, (unsigned int)(vertices.size() / 3));
                         if (result.second) // Did insert?
                         {
                             // Push the new data.
                             for (int k = 0; k < 3; ++k)
-                                vertices.push_back(shape.mesh.positions[3 * old_index + k]);
+                            {
+                                vertices.push_back(attrib.vertices[3 * old_index.vertex_index + k]);
+                            }
+
                             for (int k = 0; k < 3; ++k)
-                                normals.push_back(shape.mesh.normals[3 * old_index + k]);
-                            if (!shape.mesh.texcoords.empty())
-                                for (int k = 0; k < 2; ++k)
-                                    texcoords.push_back(shape.mesh.texcoords[2 * old_index + k]);
+                            {
+                                normals.push_back(attrib.normals[3 * old_index.normal_index + k]);
+                            }
+
+                            for (int k = 0; k < 2; ++k)
+                            {
+                                // If an uv is present
+                                if (old_index.texcoord_index != -1)
+                                {
+                                    texcoords.push_back(attrib.texcoords[2 * old_index.texcoord_index + k]);
+                                }
+                                else
+                                {
+                                    texcoords.push_back(0.0f);
+                                }
+                            }
+
                         }
+
                         const unsigned int new_index = result.first->second;
                         indices.push_back(new_index);
                     }
@@ -167,18 +193,7 @@ namespace Baikal
                 mesh->SetNormals(&normals[0], num_normals);
 
                 auto num_uvs = texcoords.size() / 2;
-
-                // If we do not have UVs, generate zeroes
-                if (num_uvs)
-                {
-                    mesh->SetUVs(&texcoords[0], num_uvs);
-                }
-                else
-                {
-                    std::vector<RadeonRays::float2> zero(num_vertices);
-                    std::fill(zero.begin(), zero.end(), RadeonRays::float2(0, 0));
-                    mesh->SetUVs(&zero[0], num_vertices);
-                }
+                mesh->SetUVs(&texcoords[0], num_uvs);
 
                 // Set indices
                 auto num_indices = indices.size();

@@ -27,20 +27,27 @@ THE SOFTWARE.
 #include "SceneGraph/camera.h"
 #include "scene_io.h"
 #include "input_info.h"
-
-#include "utils.h"
-#include "render.h"
-#include "scene_io.h"
+#include "logging.h"
 #include "material_io.h"
-#include "SceneGraph/light.h"
-#include "Output/clwoutput.h"
+#include "render.h"
+#include "utils.h"
+#include "filesystem.h"
+
+#include "Baikal/Output/clwoutput.h"
+#include "Baikal/Renderers/monte_carlo_renderer.h"
+#include "Baikal/Renderers/renderer.h"
+#include "Baikal/RenderFactory/clw_render_factory.h"
+#include "Baikal/SceneGraph/camera.h"
+#include "Baikal/SceneGraph/light.h"
+
 #include "BaikalIO/image_io.h"
-#include "Renderers/monte_carlo_renderer.h"
+#include "BaikalIO/scene_io.h"
+
 #include "OpenImageIO/imageio.h"
 
-#include <filesystem>
-#include <fstream>
 #include "XML/tinyxml2.h"
+
+#include <fstream>
 
 using namespace Baikal;
 
@@ -76,10 +83,11 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 };
 
 Render::Render(const std::filesystem::path& scene_file,
-               size_t output_width,
-               size_t output_height,
-               std::uint32_t num_bounces)
-    : m_width(static_cast<std::uint32_t>(output_width)),
+    size_t output_width,
+    size_t output_height,
+    std::uint32_t num_bounces)
+    : m_scene_file(scene_file),
+      m_width(static_cast<std::uint32_t>(output_width)),
       m_height(static_cast<std::uint32_t>(output_height)),
       m_num_bounces(num_bounces)
 {
@@ -188,6 +196,10 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir) const
     XMLNode* root= doc.NewElement("metadata");
     doc.InsertFirstChild(root);
 
+    XMLElement* scene = doc.NewElement("scene");
+    scene->SetAttribute("file", m_scene_file.c_str());
+    root->InsertEndChild(scene);
+
     // log outputs layout
     XMLElement* size_attribute = doc.NewElement("layout");
     size_attribute->SetAttribute("width", m_width);
@@ -215,7 +227,7 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir) const
     doc.SaveFile(file_name.string().c_str());
 }
 
-void Render::SetLight(const LightInfo& light)
+void Render::SetLight(const LightInfo& light, const std::filesystem::path& lights_dir)
 {
     Light::Ptr light_instance;
 
@@ -235,21 +247,22 @@ void Render::SetLight(const LightInfo& light)
     }
     else if (light.type == "ibl")
     {
-        light_instance = ImageBasedLight::Create();
-
-        ImageBasedLight::Ptr ibl = std::dynamic_pointer_cast<
-            ImageBasedLight>(light_instance);
-
-        auto image_io(ImageIo::CreateImageIo());
-
-        // check that texture file is exists
-        auto texture_path = std::filesystem::absolute(std::filesystem::relative(light.texture));
+        // find texture path and check that it exists
+        std::filesystem::path texture_path = light.texture;
+        if (texture_path.is_relative())
+        {
+            texture_path = lights_dir / light.texture;
+        }
         if (!std::filesystem::exists(texture_path))
         {
             THROW_EX("texture image doesn't exist on specified path")
         }
 
-        Texture::Ptr tex = image_io->LoadImage(texture_path.string());
+        auto image_io = ImageIo::CreateImageIo();
+        auto tex = image_io->LoadImage(texture_path.string());
+
+        light_instance = ImageBasedLight::Create();
+        auto ibl = std::dynamic_pointer_cast<ImageBasedLight>(light_instance);
         ibl->SetTexture(tex);
         ibl->SetMultiplier(light.mul);
     }
@@ -276,7 +289,7 @@ void Render::GenerateSample(const CameraInfo& cam_state,
                             const std::vector<size_t>& sorted_spp,
                             const std::filesystem::path& output_dir,
                             bool gamma_correction_enabled,
-                            size_t start_cam_id)
+                            size_t camera_id)
 {
     // create camera if it wasn't  done earlier
     if (!m_camera)
@@ -287,9 +300,7 @@ void Render::GenerateSample(const CameraInfo& cam_state,
 
         // default sensor width
         float sensor_width = 0.036f;
-        float inverserd_aspect_ration = static_cast<float>(m_height) /
-            static_cast<float>(m_width);
-        float sensor_height = sensor_width * inverserd_aspect_ration;
+        float sensor_height = static_cast<float>(m_height) / static_cast<float>(m_width) * sensor_width;
 
         m_camera->SetSensorSize(float2(0.036f, sensor_height));
         m_camera->SetDepthRange(float2(0.0f, 100000.f));
@@ -309,17 +320,17 @@ void Render::GenerateSample(const CameraInfo& cam_state,
 
     auto spp_iter = sorted_spp.begin();
 
-    for (auto i = 1u; i <= sorted_spp.back(); i++)
+    for (auto spp = 1u; spp <= sorted_spp.back(); spp++)
     {
         m_renderer->Render(scene);
 
-        if (i == 1)
+        if (spp == 1)
         {
             for (const auto& output : kSingleIteratedOutputs)
             {
                 std::stringstream ss;
 
-                ss << "cam_" << start_cam_id << "_"
+                ss << "cam_" << camera_id << "_"
                     << output.name << ".bin";
 
                 SaveOutput(output,
@@ -329,14 +340,14 @@ void Render::GenerateSample(const CameraInfo& cam_state,
             }
         }
 
-        if (*spp_iter == i)
+        if (*spp_iter == spp)
         {
             for (const auto& output : kMultipleIteratedOutputs)
             {
                 std::stringstream ss;
 
-                ss << "cam_" << start_cam_id << "_"
-                    << output.name << "_spp_" << i << ".bin";
+                ss << "cam_" << camera_id << "_"
+                    << output.name << "_spp_" << spp << ".bin";
 
                 SaveOutput(output,
                     ss.str(),
@@ -344,9 +355,12 @@ void Render::GenerateSample(const CameraInfo& cam_state,
                     output_dir);
             }
             ++spp_iter;
-            std::cout << "cam_" << start_cam_id << "_spp_" << i << "_generated" << std::endl;
         }
     }
+
+    DG_LOG(KeyValue("event", "generated")
+        << KeyValue("status", "generating")
+        << KeyValue("camera_id", camera_id));
 }
 
 void Render::SaveOutput(const OutputInfo& info,
@@ -412,7 +426,7 @@ void Render::SaveOutput(const OutputInfo& info,
                 }
                 else // info.channels_num = 1
                 {
-                    // invert the image 
+                    // invert the image
                     dst_row[x] = val.x;
                 }
             }
@@ -428,4 +442,6 @@ void Render::SaveOutput(const OutputInfo& info,
     f.write(reinterpret_cast<const char*>(image_data.data()),
             sizeof(float) * image_data.size());
 }
+
+// Enable forward declarations for types stored in unique_ptr
 Render::~Render() = default;

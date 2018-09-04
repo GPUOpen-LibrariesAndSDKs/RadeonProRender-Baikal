@@ -22,7 +22,12 @@ THE SOFTWARE.
 
 #include "cmd_line_parser.h"
 #include "config_loader.h"
+#include "logging.h"
 #include "render.h"
+
+#include <ctime>
+#include <csignal>
+
 
 void Run(const DGenConfig& config)
 {
@@ -57,33 +62,59 @@ void Run(const DGenConfig& config)
 
     render.GenerateDataset(camera_states_subset,
                            config_loader.Lights(),
+                           config_loader.LightsDir(),
                            config_loader.Spp(),
                            config.output_dir,
                            config.gamma_correction,
                            config.offset_idx);
-
-    std::cout << "Dataset generation is finished" << std::endl;
 }
 
 int main(int argc, char *argv[])
+try
 {
-    try
+    auto OnCancel = [](int signal)
     {
-        CmdLineParser cmd_parser(argc, argv);
+        DG_LOG(KeyValue("status", "canceled")
+            << KeyValue("end_ts", std::time(nullptr))
+            << KeyValue("signal", signal));
+        std::exit(-1);
+    };
+#ifdef WIN32
+    std::signal(SIGBREAK, OnCancel);
+#endif
+    std::signal(SIGINT, OnCancel);
+    std::signal(SIGTERM, OnCancel);
 
-        if (cmd_parser.HasHelpOption())
-        {
-            cmd_parser.ShowHelp();
-            return 0;
-        }
-
-        auto config = cmd_parser.Parse();
-
-        Run(config);
-    }
-    catch (std::exception& ex)
+    auto OnFailure = [](int signal)
     {
-        std::cout << ex.what() << std::endl;
-        return -1;
+        DG_LOG(KeyValue("status", "failed")
+            << KeyValue("end_ts", std::time(nullptr))
+            << KeyValue("signal", signal));
+    };
+    std::signal(SIGABRT, OnFailure);
+    std::signal(SIGFPE, OnFailure);
+    std::signal(SIGILL, OnFailure);
+    std::signal(SIGSEGV, OnFailure);
+
+    DG_LOG(KeyValue("status", "running") << KeyValue("start_ts", std::time(nullptr)));
+
+    CmdLineParser cmd_parser(argc, argv);
+
+    if (cmd_parser.HasHelpOption())
+    {
+        cmd_parser.ShowHelp();
+        return 0;
     }
+
+    auto config = cmd_parser.Parse();
+
+    Run(config);
+
+    DG_LOG(KeyValue("status", "finished") << KeyValue("end_ts", std::time(nullptr)));
+}
+catch (std::exception& ex)
+{
+    DG_LOG(KeyValue("status", "failed") << KeyValue("end_ts", std::time(nullptr)));
+    std::cout << ex.what() << std::endl;
+    return -1;
 }

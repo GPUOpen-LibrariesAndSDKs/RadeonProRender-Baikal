@@ -3,6 +3,10 @@
 
 #include "OpenImageIO/imageio.h"
 
+#ifdef __linux__
+#include "file_utils.h"
+#endif
+
 namespace Baikal
 {
     class Oiio : public ImageIo
@@ -40,7 +44,16 @@ namespace Baikal
     {
         OIIO_NAMESPACE_USING
 
-        std::unique_ptr<ImageInput> input{ImageInput::open(filename)};
+        std::string actual_filename = filename;
+
+#ifdef __linux__
+        if (!FindFilenameFromCaseInsensitive(filename, actual_filename))
+        {
+            throw std::runtime_error("Image " + filename + " doesn't exist");
+        }
+#endif
+
+        std::unique_ptr<ImageInput> input{ImageInput::open(actual_filename)};
 
         if (!input)
         {

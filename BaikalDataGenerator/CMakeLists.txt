@@ -1,5 +1,6 @@
 set(DATAGENERATOR_SOURCES
     Source/main.cpp
+    Source/filesystem.h
     Source/cmd_line_parser.h
     Source/cmd_line_parser.cpp
     Source/render.h
@@ -7,7 +8,10 @@ set(DATAGENERATOR_SOURCES
     Source/utils.h
     Source/config_loader.h
     Source/config_loader.cpp
-    Source/input_info.h)
+    Source/input_info.h
+    Source/logging.h
+    Source/logging.cpp
+)
 
 set(SOURCES
     ${DATAGENERATOR_SOURCES})
