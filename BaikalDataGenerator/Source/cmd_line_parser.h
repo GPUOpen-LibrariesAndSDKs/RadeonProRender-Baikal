@@ -37,6 +37,9 @@ public:
     // Generate DGenConfig from internal string
     DGenConfig Parse() const;
 
+    // check whether device list is requested
+    bool HasListDevicesOption() const;
+
     // check if there is '-help' option
     // returns true if there's a help option, false otherwise
     bool HasHelpOption() const;

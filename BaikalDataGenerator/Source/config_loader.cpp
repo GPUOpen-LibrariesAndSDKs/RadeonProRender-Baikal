@@ -23,26 +23,27 @@ THE SOFTWARE.
 #include "config_loader.h"
 #include "XML/tinyxml2.h"
 #include "material_io.h"
-#include <sstream>
+#include "utils.h"
+
 
 // validation checks helper macroses to reduce copy paste
 #define ASSERT_PATH(file_name) \
-     if (file_name.empty()) { \
-         std::stringstream ss; \
-         ss << "missed " << file_name.string(); \
-         THROW_EX(ss.str()) } \
+    if (file_name.empty()) \
+    { \
+        THROW_EX("Missing: " << file_name.string()) \
+    }
 
 #define ASSERT_XML(file_name) \
-     if (file_name.extension() != ".xml") { \
-         std::stringstream ss; \
-         ss << "not xml file: " << file_name.string(); \
-         THROW_EX(ss.str()) } \
+    if (file_name.extension() != ".xml") \
+    { \
+        THROW_EX("Not and XML file: " << file_name.string()) \
+    }
 
 #define ASSERT_FILE_EXISTS(file_name) \
-     if (!std::filesystem::exists(file_name)) { \
-         std::stringstream ss; \
-         ss << "there is no file on specified path: " << file_name.string(); \
-         THROW_EX(ss.str()) } \
+    if (!std::filesystem::exists(file_name)) \
+    { \
+        THROW_EX("File not found: " << file_name.string()) \
+    } \
 
 void ConfigLoader::ValidateConfig(const DGenConfig& config) const
 {
@@ -53,7 +54,7 @@ void ConfigLoader::ValidateConfig(const DGenConfig& config) const
     ASSERT_PATH(config.scene_file);
     ASSERT_PATH(config.output_dir);
 
-    // validate extansions
+    // validate extensions
     ASSERT_XML(config.camera_file)
     ASSERT_XML(config.light_file)
     ASSERT_XML(config.spp_file)
@@ -66,7 +67,7 @@ void ConfigLoader::ValidateConfig(const DGenConfig& config) const
 
     if (!std::filesystem::is_directory(config.output_dir))
     {
-        THROW_EX(config.output_dir.string() + " should be directory")
+        THROW_EX("Not a directory: " << config.output_dir.string())
     }
 }
 
@@ -88,7 +89,7 @@ void ConfigLoader::LoadCameraConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open cameras set file.")
+        THROW_EX("Failed to open cameras set file: " << file_name.string())
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("camera");
@@ -142,7 +143,7 @@ void ConfigLoader::LoadLightConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open lights set file.")
+        THROW_EX("Failed to open lights set file: " << file_name.string())
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("light");
@@ -168,7 +169,7 @@ void ConfigLoader::LoadLightConfig(const std::filesystem::path& file_name)
         }
         else if ((light_info.type != "point") && (light_info.type != "direct"))
         {
-            THROW_EX(light_info.type + "Is invalid light type");
+            THROW_EX("Invalid light type: " << light_info.type);
         }
 
         RadeonRays::float3 pos;
@@ -205,7 +206,7 @@ void ConfigLoader::LoadSppConfig(const std::filesystem::path& file_name)
 
     if (!root)
     {
-        THROW_EX("Failed to open SPP file: " + file_name.string())
+        THROW_EX("Failed to open SPP file: " << file_name.string())
     }
 
     tinyxml2::XMLElement* elem = root->FirstChildElement("spp");

@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
+#include "devices.h"
 #include "input_info.h"
 #include "logging.h"
 #include "material_io.h"
@@ -79,7 +80,8 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 Render::Render(const std::filesystem::path& scene_file,
     size_t output_width,
     size_t output_height,
-    std::uint32_t num_bounces)
+    std::uint32_t num_bounces,
+    std::size_t device_idx)
     : m_scene_file(scene_file),
       m_width(static_cast<std::uint32_t>(output_width)),
       m_height(static_cast<std::uint32_t>(output_height)),
@@ -91,33 +93,17 @@ Render::Render(const std::filesystem::path& scene_file,
     assert(m_height);
     assert(num_bounces);
 
-    std::vector<CLWPlatform> platforms;
-    CLWPlatform::CreateAllPlatforms(platforms);
-
-    bool device_found = false;
-
-    for (const auto& platform : platforms)
+    auto devices = GetDevices();
+    if (devices.empty())
     {
-        for (auto i = 0u; i < platform.GetDeviceCount(); i++)
-        {
-            if (platform.GetDevice(i).GetType() == CL_DEVICE_TYPE_GPU)
-            {
-                m_context = std::make_unique<CLWContext>(CLWContext::Create(platform.GetDevice(i)));
-                device_found = true;
-                break;
-            }
-        }
-
-        if (device_found)
-            break;
+        THROW_EX("Cannot find any device");
+    }
+    if (device_idx >= devices.size())
+    {
+        THROW_EX("Cannot find device with index " << device_idx);
     }
 
-    if (!device_found)
-    {
-        THROW_EX("can't find device");
-    }
-
-    assert(m_context);
+    m_context = std::make_unique<CLWContext>(CLWContext::Create(devices[device_idx]));
 
     m_factory = std::make_unique<ClwRenderFactory>(*m_context, "cache");
 
@@ -195,7 +181,7 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir,
     doc.InsertFirstChild(root);
 
     XMLElement* scene = doc.NewElement("scene");
-    scene->SetAttribute("file", m_scene_file.c_str());
+    scene->SetAttribute("file", m_scene_file.string().c_str());
     root->InsertEndChild(scene);
 
     XMLElement* cameras = doc.NewElement("cameras");
@@ -261,7 +247,7 @@ void Render::SetLight(const LightInfo& light, const std::filesystem::path& light
         }
         if (!std::filesystem::exists(texture_path))
         {
-            THROW_EX("texture image doesn't exist on specified path")
+            THROW_EX("Texture image not found: " << texture_path.string())
         }
 
         auto image_io = ImageIo::CreateImageIo();
@@ -274,7 +260,7 @@ void Render::SetLight(const LightInfo& light, const std::filesystem::path& light
     }
     else
     {
-        THROW_EX("unsupported light type")
+        THROW_EX("Unsupported light type: " << light.type)
     }
 
     light_instance->SetPosition(light.pos);
@@ -321,11 +307,10 @@ void Render::GenerateSample(const CameraInfo& cam_state,
     }
 
     // recompile scene cause of changing camera pos and settings
-    m_controller->CompileScene(m_scene);
-    auto& scene = m_controller->GetCachedScene(m_scene);
+    auto& scene = m_controller->CompileScene(m_scene);
 
     auto spp_iter = sorted_spp.begin();
-    auto camera_id = cam_state.index + cameras_index_offset;
+    auto camera_idx = cam_state.index + cameras_index_offset;
 
     for (auto spp = 1u; spp <= sorted_spp.back(); spp++)
     {
@@ -337,7 +322,7 @@ void Render::GenerateSample(const CameraInfo& cam_state,
             {
                 std::stringstream ss;
 
-                ss << "cam_" << camera_id << "_"
+                ss << "cam_" << camera_idx << "_"
                     << output.name << ".bin";
 
                 SaveOutput(output,
@@ -353,7 +338,7 @@ void Render::GenerateSample(const CameraInfo& cam_state,
             {
                 std::stringstream ss;
 
-                ss << "cam_" << camera_id << "_"
+                ss << "cam_" << camera_idx << "_"
                     << output.name << "_spp_" << spp << ".bin";
 
                 SaveOutput(output,
@@ -367,7 +352,7 @@ void Render::GenerateSample(const CameraInfo& cam_state,
 
     DG_LOG(KeyValue("event", "generated")
         << KeyValue("status", "generating")
-        << KeyValue("camera_id", camera_id));
+        << KeyValue("camera_idx", camera_idx));
 }
 
 void Render::SaveOutput(const OutputInfo& info,
@@ -441,8 +426,7 @@ void Render::SaveOutput(const OutputInfo& info,
         }
     }
 
-    std::filesystem::path file_name = output_dir;
-    file_name.append(name);
+    auto file_name = output_dir / name;
 
     std::ofstream f (file_name.string(), std::ofstream::binary);
 

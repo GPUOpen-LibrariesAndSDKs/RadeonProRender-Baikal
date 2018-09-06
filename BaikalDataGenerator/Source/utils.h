@@ -25,22 +25,25 @@ THE SOFTWARE.
 #include "filesystem.h"
 #include <cstdint>
 #include <cstddef>
+#include <sstream>
 #include <vector>
 
 
 struct DGenConfig
 {
+    std::size_t device_idx = 0;
     std::filesystem::path scene_file;
     std::filesystem::path light_file;
     std::filesystem::path camera_file;
     std::filesystem::path spp_file;
     std::filesystem::path output_dir;
-    size_t width, height;
+    size_t width = 0;
+    size_t height = 0;
     size_t split_num = 1;
     size_t split_idx = 0;
     std::int32_t offset_idx = 0;
     std::uint32_t num_bounces = 5;
-    bool gamma_correction;
+    bool gamma_correction = false;
 };
 
 template<typename T>
@@ -86,4 +89,9 @@ std::vector<T> GetSplitByIdx(const std::vector<T>& vec, size_t n, size_t idx)
     return std::vector<T>(vec.begin() + begin, vec.begin() + end);
 }
 
-#define THROW_EX(text) throw std::runtime_error(std::string(__func__) + ": " + text);
+#define THROW_EX(insertions) \
+    { \
+        std::ostringstream stream; \
+        stream << std::string(__func__) << ": " << insertions; \
+        throw std::runtime_error(stream.str()); \
+    }

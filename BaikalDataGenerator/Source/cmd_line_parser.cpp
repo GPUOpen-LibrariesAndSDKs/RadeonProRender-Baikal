@@ -26,14 +26,18 @@ THE SOFTWARE.
 namespace
 {
     constexpr char const* kHelpMessage =
-        "Baikal [-light_file name_of_the_light_config]"
-        "[-camera_file name_of_the_camera_config]"
-        "[-scene_file name_of_the_scene_config]"
-        "[-spp_file name_of_the_spp_config]"
-        "[-outpute_dir path_to_generate_data]"
-        "[-width output_width]"
-        "[-height output_height]"
-        "[-gamma enables_gamma_correction]";
+        "USAGE:\n\n"
+        "Show this help message:\n"
+        "    BaikalDataGenerator [-help]\n\n"
+        "List available devices:\n"
+        "    BaikalDataGenerator [-list_devices]\n\n"
+        "Run data generation:\n"
+        "    BaikalDataGenerator -width OUTPUT_IMAGES_WIDTH -height OUTPUT_IMAGES_HEIGHT\n"
+        "                        -scene_file SCENE_FILE_PATH -spp_file SPP_CONFIG_PATH\n"
+        "                        -light_file LIGHT_CONFIG_PATH -camera_file CAMERA_CONFIG_PATH\n"
+        "                        -output_dir OUTPUT_DIRECTORY [-device DEVICE_INDEX] [-gamma]\n"
+        "                        [-split_num CAMERA_SUBSET_NUMBER [-split_idx USE_CAMERA_SUBSET]]\n"
+        "                        [-offset_idx CAMERA_NUMERATION_OFFSET] [-nb BOUNSES_NUMBER]\n\n";
 }
 
 CmdLineParser::CmdLineParser(int argc, char* argv[])
@@ -43,6 +47,8 @@ CmdLineParser::CmdLineParser(int argc, char* argv[])
 DGenConfig CmdLineParser::Parse() const
 {
     DGenConfig config;
+
+    config.device_idx = m_cmd_parser.GetOption("-device", config.device_idx);
 
     config.light_file = m_cmd_parser.GetOption("-light_file");
 
@@ -58,22 +64,27 @@ DGenConfig CmdLineParser::Parse() const
 
     config.height = m_cmd_parser.GetOption<size_t>("-height");
 
-    config.split_num = m_cmd_parser.GetOption<size_t>("-split_num", config.split_num);
+    config.split_num = m_cmd_parser.GetOption("-split_num", config.split_num);
 
-    config.split_idx = m_cmd_parser.GetOption<size_t>("-split_idx", config.split_idx);
+    config.split_idx = m_cmd_parser.GetOption("-split_idx", config.split_idx);
 
-    config.offset_idx = m_cmd_parser.GetOption<size_t>("-offset_idx", config.offset_idx);
+    config.offset_idx = m_cmd_parser.GetOption("-offset_idx", config.offset_idx);
 
-    config.gamma_correction = (m_cmd_parser.GetOption<int>("-gamma", 0) == 1);
+    config.gamma_correction = m_cmd_parser.OptionExists("-gamma");
 
-    config.num_bounces = m_cmd_parser.GetOption<std::uint32_t>("-nb", config.num_bounces);
+    config.num_bounces = m_cmd_parser.GetOption("-nb", config.num_bounces);
 
     return config;
 }
 
+bool CmdLineParser::HasListDevicesOption() const
+{
+    return m_cmd_parser.OptionExists("-list_devices");
+}
+
 void CmdLineParser::ShowHelp() const
 {
-    std::cout << kHelpMessage << "\n";
+    std::cout << kHelpMessage;
 }
 
 bool CmdLineParser::HasHelpOption() const

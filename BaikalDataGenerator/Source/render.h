@@ -54,7 +54,8 @@ public:
     Render(const std::filesystem::path& scene_file,
            size_t output_width,
            size_t output_height,
-           std::uint32_t num_bounces = 5);
+           std::uint32_t num_bounces,
+           std::size_t device_idx);
 
     // This function generates dataset for network training
     // 'cam_states' - camera states range
@@ -142,13 +143,13 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
 
     if (!std::filesystem::is_directory(output_dir))
     {
-        THROW_EX("incorrect output directory signature");
+        THROW_EX("Incorrect output directory signature");
     }
 
     // check if number of samples to render wasn't specified
     if (spp.empty())
     {
-        THROW_EX("spp collection is empty");
+        THROW_EX("SPP collection is empty");
     }
 
     SetLightConfig(lights, lights_dir);
@@ -160,7 +161,7 @@ void Render::GenerateDataset(const TCamStatesRange<CameraInfo, Args1 ...>& cam_s
 
     if (sorted_spp.front() <= 0)
     {
-        THROW_EX("spp should be positive");
+        THROW_EX("Found negative SPP: " << sorted_spp.front());
     }
 
     SaveMetadata(output_dir,
