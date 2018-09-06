@@ -78,14 +78,15 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 };
 
 Render::Render(const std::filesystem::path& scene_file,
-    size_t output_width,
-    size_t output_height,
-    std::uint32_t num_bounces,
-    std::size_t device_idx)
+               size_t output_width,
+               size_t output_height,
+               std::uint32_t num_bounces,
+               unsigned device_idx)
     : m_scene_file(scene_file),
       m_width(static_cast<std::uint32_t>(output_width)),
       m_height(static_cast<std::uint32_t>(output_height)),
-      m_num_bounces(num_bounces)
+      m_num_bounces(num_bounces),
+      m_device_idx(device_idx)
 {
     using namespace Baikal;
 
@@ -215,6 +216,14 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir,
     XMLElement* render_attribute = doc.NewElement("renderer");
     render_attribute->SetAttribute("num_bounces", m_num_bounces);
     root->InsertEndChild(render_attribute);
+
+    auto* device_attribute = doc.NewElement("device");
+    auto device = GetDevices().at(m_device_idx);
+    device_attribute->SetAttribute("idx", m_device_idx);
+    device_attribute->SetAttribute("name", device.GetName().c_str());
+    device_attribute->SetAttribute("vendor", device.GetVendor().c_str());
+    device_attribute->SetAttribute("version", device.GetVersion().c_str());
+    root->InsertEndChild(device_attribute);
 
     doc.SaveFile(file_name.string().c_str());
 }

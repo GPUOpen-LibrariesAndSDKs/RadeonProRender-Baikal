@@ -43,6 +43,7 @@ namespace Baikal
 }
 
 class CLWContext;
+class CLWDevice;
 
 class Render
 {
@@ -55,7 +56,7 @@ public:
            size_t output_width,
            size_t output_height,
            std::uint32_t num_bounces,
-           std::size_t device_idx);
+           unsigned device_idx);
 
     // This function generates dataset for network training
     // 'cam_states' - camera states range
@@ -113,6 +114,7 @@ private:
     std::filesystem::path m_scene_file;
     std::uint32_t m_width, m_height;
     std::uint32_t m_num_bounces;
+    unsigned m_device_idx;
     std::unique_ptr<Baikal::MonteCarloRenderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;

@@ -31,7 +31,7 @@ THE SOFTWARE.
 
 struct DGenConfig
 {
-    std::size_t device_idx = 0;
+    unsigned device_idx = 0;
     std::filesystem::path scene_file;
     std::filesystem::path light_file;
     std::filesystem::path camera_file;
