@@ -22,72 +22,9 @@ THE SOFTWARE.
 
 #pragma once
 
-#include "filesystem.h"
-#include <cstdint>
-#include <cstddef>
 #include <sstream>
-#include <vector>
+#include <stdexcept>
 
-
-struct DGenConfig
-{
-    unsigned device_idx = 0;
-    std::filesystem::path scene_file;
-    std::filesystem::path light_file;
-    std::filesystem::path camera_file;
-    std::filesystem::path spp_file;
-    std::filesystem::path output_dir;
-    size_t width = 0;
-    size_t height = 0;
-    size_t split_num = 1;
-    size_t split_idx = 0;
-    std::int32_t offset_idx = 0;
-    std::uint32_t num_bounces = 5;
-    bool gamma_correction = false;
-};
-
-template<typename T>
-std::vector<std::vector<T>> SplitVector(const std::vector<T>& vec, size_t n)
-{
-    std::vector<std::vector<T>> splits;
-
-    size_t length = vec.size() / n;
-    size_t remain = vec.size() % n;
-
-    size_t begin = 0;
-    size_t end = 0;
-
-    for (size_t i = 0; i < std::min(n, vec.size()); ++i)
-    {
-        end += (remain > 0) ? (length + ((remain--) != 0)) : length;
-        splits.push_back(std::vector<T>(vec.begin() + begin, vec.begin() + end));
-        begin = end;
-    }
-
-    return splits;
-}
-
-template<typename T>
-std::vector<T> GetSplitByIdx(const std::vector<T>& vec, size_t n, size_t idx)
-{
-    size_t length = vec.size() / n;
-    size_t remain = vec.size() % n;
-
-    size_t begin = 0;
-    size_t end = 0;
-
-    if (idx < remain)
-    {
-        begin = idx * (length + 1);
-        end = begin + length + 1;
-    }
-    else
-    {
-        begin = remain * (length + 1) + (idx - remain) * length;
-        end = begin + length;
-    }
-    return std::vector<T>(vec.begin() + begin, vec.begin() + end);
-}
 
 #define THROW_EX(insertions) \
     { \

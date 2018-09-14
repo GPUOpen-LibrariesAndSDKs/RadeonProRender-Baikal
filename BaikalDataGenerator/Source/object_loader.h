@@ -22,35 +22,41 @@ THE SOFTWARE.
 
 #pragma once
 
-#include <radeon_rays.h>
-#include <string>
+#include "app_config.h"
+#include "data_generator.h"
 
-struct CameraInfo
+#include "Rpr/WrapObject/CameraObject.h"
+#include "Rpr/WrapObject/LightObject.h"
+#include "Rpr/WrapObject/SceneObject.h"
+
+#include <Baikal/SceneGraph/scene1.h>
+
+#include <vector>
+
+
+class ObjectLoader
 {
-    std::size_t index;
-    std::string type;
-    RadeonRays::float3 pos;
-    RadeonRays::float3 at;
-    RadeonRays::float3 up;
-    RadeonRays::float2 sensor_size;
-    RadeonRays::float2 zcap;
-    float aperture;
-    float focus_distance;
-    float focal_length;
-};
+public:
+    explicit ObjectLoader(const AppConfig& config);
 
-struct LightInfo
-{
-    std::string type;
-    RadeonRays::float3 pos;
-    RadeonRays::float3 dir;
-    RadeonRays::float3 rad;
+    DataGeneratorParams GetDataGeneratorParams();
 
-    // cone shape, this option available only for spot light
-    RadeonRays::float2 cs;
+private:
+    void LoadScene();
+    void LoadCameras();
+    void LoadLights();
+    void LoadSpp();
 
-    // this options available only for ibl
-    // path to texture image
-    std::string texture;
-    float mul;
+    AppConfig m_app_config;
+    SceneObject m_scene;
+    unsigned m_cameras_start_idx = 0;
+    std::vector<CameraObject> m_cameras;
+    std::vector<LightObject> m_lights;
+    std::vector<unsigned> m_spp;
+
+    // DataGeneratorParams data cache
+    std::string m_output_dir;
+    std::string m_scene_name;
+    std::vector<rpr_camera> m_rpr_cameras;
+    std::vector<rpr_light> m_rpr_lights;
 };

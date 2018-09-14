@@ -36,7 +36,7 @@ class TextureMaterialObject;
 class ImageMaterialObject;
 
 //represent rpr_material_node
-class MaterialObject
+class RPR_API_ENTRY MaterialObject
     : public WrapObject
 {
 public:

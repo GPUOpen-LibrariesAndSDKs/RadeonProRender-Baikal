@@ -41,9 +41,9 @@ public:
     std::string GetName() { return m_name; }
     void SetName(const std::string& name) { m_name = name; }
 
-    //forbidden
-    WrapObject(const WrapObject&) = delete;
-    WrapObject& operator= (WrapObject const&) = delete;
+    WrapObject(WrapObject&&) = default;
+    WrapObject& operator= (WrapObject&&) = default;
+
 private:
     std::string m_name;
 };

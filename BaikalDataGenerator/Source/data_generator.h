@@ -22,35 +22,54 @@ THE SOFTWARE.
 
 #pragma once
 
-#include "utils.h"
-#include "input_info.h"
-#include "filesystem.h"
+#include "Rpr/RadeonProRender.h"
 
-#include <vector>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-using CameraIterator = std::vector<CameraInfo>::const_iterator;
-using LightsIterator = std::vector<LightInfo>::const_iterator;
-using SppIterator = std::vector<int>::const_iterator;
-
-class ConfigLoader
+struct DataGeneratorParams
 {
-public:
-    explicit ConfigLoader(const DGenConfig& config);
+    const char* output_dir;
 
-    std::vector<CameraInfo> CamStates() const;
-    std::vector<LightInfo> Lights() const;
-    const std::filesystem::path& LightsDir() const;
-    std::vector<size_t> Spp() const;
+    rpr_scene scene;
+    char const* scene_name;
 
-    private:
+    rpr_camera* cameras;
+    unsigned cameras_start_idx;
+    unsigned cameras_num;
+    int cameras_offset_idx;
 
-    void ValidateConfig(const DGenConfig& config) const;
+    rpr_light* lights;
+    unsigned lights_num;
 
-    void LoadCameraConfig(const std::filesystem::path& file_name);
-    void LoadLightConfig(const std::filesystem::path& file_name);
-    void LoadSppConfig(const std::filesystem::path& file_name);
+    unsigned const* spp;
+    unsigned spp_num;
 
-    std::vector<CameraInfo> m_camera_states;
-    std::vector<LightInfo> m_light_settings;
-    std::vector<size_t> m_spp;
-    std::filesystem::path m_ligths_dir;};
+    unsigned width;
+    unsigned height;
+
+    unsigned bounces_num;
+    unsigned device_idx;
+
+    unsigned gamma_correction;
+
+    void (*progress_callback)(int);
+};
+
+enum DataGeneratorResult
+{
+    kDataGeneratorSuccess = 0,
+    kDataGeneratorBadOutputDir,
+    kDataGeneratorBadScene,
+    kDataGeneratorBadLight,
+    kDataGeneratorBadSpp,
+    kDataGeneratorBadCamera,
+    kDataGeneratorUnknownError,
+};
+
+RPR_API_ENTRY DataGeneratorResult GenerateDataset(DataGeneratorParams const* params);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

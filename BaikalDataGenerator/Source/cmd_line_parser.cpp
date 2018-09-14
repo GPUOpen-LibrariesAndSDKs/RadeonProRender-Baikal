@@ -21,6 +21,9 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "cmd_line_parser.h"
+
+#include "utils.h"
+
 #include <iostream>
 
 namespace
@@ -37,16 +40,16 @@ namespace
         "                        -light_file LIGHT_CONFIG_PATH -camera_file CAMERA_CONFIG_PATH\n"
         "                        -output_dir OUTPUT_DIRECTORY [-device DEVICE_INDEX] [-gamma]\n"
         "                        [-split_num CAMERA_SUBSET_NUMBER [-split_idx USE_CAMERA_SUBSET]]\n"
-        "                        [-offset_idx CAMERA_NUMERATION_OFFSET] [-nb BOUNSES_NUMBER]\n\n";
+        "                        [-offset_idx CAMERA_NUMERATION_OFFSET] [-nb BOUNCES_NUMBER]\n\n";
 }
 
 CmdLineParser::CmdLineParser(int argc, char* argv[])
     : m_cmd_parser(argc, argv)
 {   }
 
-DGenConfig CmdLineParser::Parse() const
+AppConfig CmdLineParser::Parse() const
 {
-    DGenConfig config;
+    AppConfig config;
 
     config.device_idx = m_cmd_parser.GetOption("-device", config.device_idx);
 
@@ -60,9 +63,9 @@ DGenConfig CmdLineParser::Parse() const
 
     config.spp_file = m_cmd_parser.GetOption("-spp_file");
 
-    config.width = m_cmd_parser.GetOption<size_t>("-width");
+    config.width = m_cmd_parser.GetOption<unsigned>("-width");
 
-    config.height = m_cmd_parser.GetOption<size_t>("-height");
+    config.height = m_cmd_parser.GetOption<unsigned>("-height");
 
     config.split_num = m_cmd_parser.GetOption("-split_num", config.split_num);
 

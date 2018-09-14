@@ -23,6 +23,7 @@ THE SOFTWARE.
 
 #include <list>
 
+#include "RadeonProRender.h"
 #include "WrapObject.h"
 #include "SceneGraph/camera.h"
 
@@ -36,7 +37,7 @@ namespace Baikal {
 class SceneObject;
 
 //this class represent rpr_camera
-class CameraObject
+class RPR_API_ENTRY CameraObject
     : public WrapObject
 {
 public:
@@ -79,6 +80,9 @@ public:
 
     void AddToScene(::SceneObject* scene);
     void RemoveFromScene(::SceneObject* scene);
+
+    CameraObject(CameraObject&&) = default;
+    CameraObject& operator= (CameraObject&&) = default;
 
 private:
     void UpdateCameraParams();

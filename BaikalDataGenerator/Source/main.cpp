@@ -21,42 +21,27 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "cmd_line_parser.h"
-#include "config_loader.h"
+#include "data_generator.h"
 #include "devices.h"
 #include "logging.h"
-#include "render.h"
+#include "object_loader.h"
 #include "utils.h"
+
+#include "Rpr/WrapObject/SceneObject.h"
+#include "Rpr/WrapObject/CameraObject.h"
+#include "Rpr/WrapObject/LightObject.h"
+
+#include "BaikalIO/scene_io.h"
 
 #include <ctime>
 #include <csignal>
 
 
-void Run(const DGenConfig& config)
+void Run(const AppConfig& config)
 {
-    ConfigLoader config_loader(config);
-
-    Render render(config.scene_file, config.width, config.height, config.num_bounces, config.device_idx);
-
-    if ((config.split_num == 0) || (config.split_num > config_loader.CamStates().size()))
-    {
-        THROW_EX("'split_num' should be positive and less than camera states number");
-    }
-
-    if (config.split_idx >= config.split_num)
-    {
-        THROW_EX("'split_idx' must be less than split_num");
-    }
-
-    auto camera_states_subset = GetSplitByIdx(config_loader.CamStates(),
-                                              config.split_num,
-                                              config.split_idx);
-    render.GenerateDataset(camera_states_subset,
-                           config_loader.Lights(),
-                           config_loader.LightsDir(),
-                           config_loader.Spp(),
-                           config.output_dir,
-                           config.offset_idx,
-                           config.gamma_correction);
+    ObjectLoader config_loader(config);
+    auto params = config_loader.GetDataGeneratorParams();
+    GenerateDataset(&params);
 }
 
 int main(int argc, char* argv[])
@@ -111,8 +96,23 @@ try
     DG_LOG(KeyValue("status", "running") << KeyValue("start_ts", std::time(nullptr)));
 
     auto config = cmd_parser.Parse();
+    ObjectLoader object_loader(config);
+    auto params = object_loader.GetDataGeneratorParams();
 
-    Run(config);
+    auto progress_callback = [](int camera_idx)
+    {
+        DG_LOG(KeyValue("event", "generated")
+            << KeyValue("status", "generating")
+            << KeyValue("camera_idx", camera_idx));
+    };
+
+    params.progress_callback = progress_callback;
+
+    auto result = GenerateDataset(&params);
+    if (result != kDataGeneratorSuccess)
+    {
+        THROW_EX("Generation failed: result=" << result);
+    }
 
     DG_LOG(KeyValue("status", "finished") << KeyValue("end_ts", std::time(nullptr)));
 }
