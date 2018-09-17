@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#include "object_loader.h"
+#include "ObjectLoader.h"
 
 #include "Rpr/RadeonProRender.h"
 #include "Rpr/WrapObject/Materials/MaterialObject.h"
@@ -120,7 +120,7 @@ std::pair<std::size_t, std::size_t> GetSplitByIdx(std::size_t total_num,
     }
     else
     {
-        begin = remain * (length + 1) + (subrange_idx - remain) * length;
+        begin = subrange_idx * length + remain;
         end = begin + length;
     }
     return {begin, end};
@@ -177,14 +177,12 @@ void ObjectLoader::LoadScene()
     // workaround to avoid issues with tiny_object_loader
     auto scene_dir = m_app_config.scene_file.parent_path().string();
 
-    if (scene_dir.back() != '/' || scene_dir.back() != '\\')
-    {
+    // Baikal::SceneIO requires a trailing delimiter
 #ifdef WIN32
-        scene_dir.append("\\");
+    scene_dir.append("\\");
 #else
-        scene_dir.append("/");
+    scene_dir.append("/");
 #endif
-    }
 
     m_scene.SetScene(Baikal::SceneIo::LoadScene(m_app_config.scene_file.string(), scene_dir));
 

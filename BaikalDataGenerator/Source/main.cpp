@@ -39,8 +39,8 @@ THE SOFTWARE.
 
 void Run(const AppConfig& config)
 {
-    ObjectLoader config_loader(config);
-    auto params = config_loader.GetDataGeneratorParams();
+    ObjectLoader object_loader(config);
+    auto params = object_loader.GetDataGeneratorParams();
     GenerateDataset(&params);
 }
 

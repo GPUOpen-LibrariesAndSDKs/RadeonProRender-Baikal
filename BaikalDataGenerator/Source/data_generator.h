@@ -30,7 +30,7 @@ extern "C" {
 
 struct DataGeneratorParams
 {
-    const char* output_dir;
+    char const* output_dir;
 
     rpr_scene scene;
     char const* scene_name;
@@ -54,12 +54,13 @@ struct DataGeneratorParams
 
     unsigned gamma_correction;
 
-    void (*progress_callback)(int);
+    void (*progress_callback)(int /* camera_idx */);
 };
 
 enum DataGeneratorResult
 {
     kDataGeneratorSuccess = 0,
+    kDataGeneratorBadParams,
     kDataGeneratorBadOutputDir,
     kDataGeneratorBadScene,
     kDataGeneratorBadLight,

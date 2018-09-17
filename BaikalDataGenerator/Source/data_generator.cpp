@@ -32,6 +32,11 @@ THE SOFTWARE.
 DataGeneratorResult GenerateDataset(DataGeneratorParams const* params)
 try
 {
+    if (params == nullptr)
+    {
+        return kDataGeneratorBadParams;
+    }
+
     std::filesystem::path output_dir = params->output_dir;
 
     if (!exists(output_dir))
