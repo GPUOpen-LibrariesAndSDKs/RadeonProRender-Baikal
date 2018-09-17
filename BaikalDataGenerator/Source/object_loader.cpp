@@ -269,7 +269,7 @@ void ObjectLoader::LoadCameras()
                                  m_app_config.split_num,
                                  m_app_config.split_idx);
     m_cameras_start_idx = static_cast<unsigned>(indices.first);
-    m_cameras.erase(m_cameras.begin() + indices.second);
+    m_cameras.erase(m_cameras.begin() + indices.second, m_cameras.end());
     m_cameras.erase(m_cameras.begin(), m_cameras.begin() + indices.first);
     for (auto& camera : m_cameras)
     {
@@ -300,9 +300,9 @@ void ObjectLoader::LoadLights()
             auto light_type = kLightTypesMap.at(elem->Attribute("type"));
             light = std::make_unique<LightObject>(light_type);
         }
-        catch (std::out_of_range& ex)
+        catch (std::out_of_range&)
         {
-            THROW_EX("Unsupported light type: " << elem->Attribute("type"))
+            THROW_EX("Unsupported light type: " << type_name)
         }
 
         switch (light->GetType())

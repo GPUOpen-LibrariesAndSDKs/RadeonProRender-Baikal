@@ -55,6 +55,7 @@ target_link_libraries(RadeonProRender64 PUBLIC Baikal BaikalIO OpenGL::GL GLEW::
 
 # Install target
 if (WIN32)
+    target_compile_options(RadeonProRender64 PUBLIC /wd4251)
     install(TARGETS RadeonProRender64 RUNTIME DESTINATION bin)
 else ()
     install(TARGETS RadeonProRender64 LIBRARY DESTINATION lib)

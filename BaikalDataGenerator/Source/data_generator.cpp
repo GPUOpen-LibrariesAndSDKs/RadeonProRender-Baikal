@@ -89,21 +89,22 @@ try
                         params->cameras_offset_idx,
                         params->gamma_correction != 0);
 
-    for (unsigned i = params->cameras_start_idx; i <= camera_end_idx; ++i)
+    for (unsigned i = 0; i < params->cameras_num; ++i)
     {
         auto* camera = CameraObject::Cast<CameraObject>(params->cameras[i]);
         if (camera == nullptr)
         {
             return kDataGeneratorBadCamera;
         }
+        int camera_idx = params->cameras_start_idx + params->cameras_offset_idx + i;
         render.GenerateSample(camera,
-                              params->cameras_offset_idx + i,
+                              camera_idx,
                               sorted_spp,
                               output_dir,
                               params->gamma_correction != 0);
         if (params->progress_callback)
         {
-            params->progress_callback(params->cameras_offset_idx + i);
+            params->progress_callback(camera_idx);
         }
     }
 

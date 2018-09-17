@@ -21,10 +21,12 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
+#include "RadeonProRender.h"
+
 #include <string>
 
 //base wrap class of Baikal scene nodes
-class WrapObject
+class RPR_API_ENTRY WrapObject
 {
 public:
     WrapObject() = default;

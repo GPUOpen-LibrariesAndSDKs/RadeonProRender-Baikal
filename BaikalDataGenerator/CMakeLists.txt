@@ -15,6 +15,8 @@ add_library(BaikalDataGeneratorLib SHARED ${DATAGENERATOR_LIB_SOURCES})
 
 target_compile_features(BaikalDataGeneratorLib PRIVATE cxx_std_17)
 
+target_compile_definitions(BaikalDataGeneratorLib PRIVATE RPR_EXPORT_API)
+
 target_include_directories(BaikalDataGeneratorLib
     PRIVATE .
     PRIVATE ${Baikal_SOURCE_DIR}
@@ -29,7 +31,11 @@ set_target_properties(BaikalDataGeneratorLib
 
 add_dependencies(BaikalDataGeneratorLib ResourcesDir Copy3rdParty)
 
-install(TARGETS BaikalDataGeneratorLib LIBRARY DESTINATION lib)
+if (WIN32)
+    install(TARGETS BaikalDataGeneratorLib RUNTIME DESTINATION bin)
+else ()
+    install(TARGETS BaikalDataGeneratorLib LIBRARY DESTINATION lib)
+endif ()
 
 
 # Application
