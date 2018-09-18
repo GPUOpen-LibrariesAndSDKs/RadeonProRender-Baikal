@@ -114,7 +114,7 @@ namespace Baikal
 #endif
     private:
         void InitCl(AppSettings& settings, GLuint tex);
-        void LoadScene(AppSettings& settings);
+        void InitScene(AppSettings& settings);
         void RenderThread(ControlData& cd);
 
         Baikal::Scene1::Ptr m_scene;

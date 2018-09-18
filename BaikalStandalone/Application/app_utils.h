@@ -87,6 +87,9 @@ namespace Baikal
         std::string base_image_file_name;
         std::string image_file_format;
 
+        //light file
+        std::string light_file;
+
         //unused
         int num_shadow_rays;
         int samplecount;
