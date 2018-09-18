@@ -25,6 +25,12 @@ target_include_directories(BaikalDataGeneratorLib
 )
 
 target_link_libraries(BaikalDataGeneratorLib PRIVATE RadeonProRender64 Baikal BaikalIO)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_link_libraries(BaikalDataGeneratorLib PRIVATE stdc++fs)
+endif()
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_link_libraries(BaikalDataGeneratorLib PRIVATE c++experimental)
+endif ()
 
 set_target_properties(BaikalDataGeneratorLib
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGeneratorLib)
@@ -41,10 +47,12 @@ endif ()
 # Application
 
 set(DATAGENERATOR_APP_SOURCES
+    Source/app_config.h
     Source/cmd_line_parser.h
     Source/cmd_line_parser.cpp
     Source/devices.h
     Source/devices.cpp
+    Source/filesystem.h
     Source/object_loader.h
     Source/object_loader.cpp
     Source/logging.h
@@ -62,6 +70,12 @@ target_include_directories(BaikalDataGenerator
 )
 
 target_link_libraries(BaikalDataGenerator PRIVATE BaikalDataGeneratorLib RadeonProRender64 Baikal)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_link_libraries(BaikalDataGenerator PRIVATE stdc++fs)
+endif()
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_link_libraries(BaikalDataGenerator PRIVATE c++experimental)
+endif ()
 
 set_target_properties(BaikalDataGenerator
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGenerator)

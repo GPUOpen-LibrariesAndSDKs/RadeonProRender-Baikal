@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#include "ObjectLoader.h"
+#include "object_loader.h"
 
 #include "Rpr/RadeonProRender.h"
 #include "Rpr/WrapObject/Materials/MaterialObject.h"
