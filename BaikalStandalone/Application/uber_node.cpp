@@ -815,6 +815,8 @@ UberNode::UberNode(InputMap::Ptr input_map, UberNode::Ptr parent)
     :m_input_map(input_map), m_parent(parent), m_id(m_next_id++)
 {  }
 
+UberNode::~UberNode() = default;
+
 UberNode_Arg::UberNode_Arg(InputMap::Ptr input_map, UberNode::Ptr parent)
               : UberNode(input_map, parent)
 {
