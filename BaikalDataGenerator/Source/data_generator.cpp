@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #include "data_generator.h"
 
+#include "devices.h"
 #include "render.h"
 #include "utils.h"
 
@@ -37,21 +38,65 @@ try
         return kDataGeneratorBadParams;
     }
 
-    std::filesystem::path output_dir = params->output_dir;
-
-    if (!exists(output_dir))
-    {
-        std::filesystem::create_directory(output_dir);
-    }
-    else if (!std::filesystem::is_directory(output_dir))
-    {
-        return kDataGeneratorBadOutputDir;
-    }
-
     auto* scene = SceneObject::Cast<SceneObject>(params->scene);
     if (scene == nullptr)
     {
         return kDataGeneratorBadScene;
+    }
+    if (params->scene_name == nullptr)
+    {
+        return kDataGeneratorBadSceneName;
+    }
+
+    if (params->cameras == nullptr || params->cameras_num == 0)
+    {
+        return kDataGeneratorBadCameras;
+    }
+
+    if (params->lights == nullptr || params->lights_num == 0)
+    {
+        return kDataGeneratorBadLights;
+    }
+
+    if (params->spp == nullptr || params->spp_num == 0)
+    {
+        return kDataGeneratorBadSpp;
+    }
+    std::vector<size_t> sorted_spp(params->spp, params->spp + params->spp_num);
+    std::sort(sorted_spp.begin(), sorted_spp.end());
+    sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
+    if (sorted_spp.front() == 0)
+    {
+        return kDataGeneratorBadSpp;
+    }
+
+    if (params->width == 0 || params->height == 0)
+    {
+        return kDataGeneratorBadImgSize;
+    }
+
+    if (params->bounces_num == 0)
+    {
+        return kDataGeneratorBadBouncesNum;
+    }
+
+    if (params->device_idx >= GetDevices().size())
+    {
+        return kDataGeneratorBadDeviceIdx;
+    }
+
+    if (params->output_dir == nullptr)
+    {
+        return kDataGeneratorBadOutputDir;
+    }
+    std::filesystem::path output_dir = params->output_dir;
+    if (!exists(output_dir))
+    {
+        create_directory(output_dir);
+    }
+    else if (!is_directory(output_dir))
+    {
+        return kDataGeneratorBadOutputDir;
     }
 
     Render render(scene,
@@ -65,24 +110,9 @@ try
         auto* light = LightObject::Cast<LightObject>(params->lights[i]);
         if (light == nullptr)
         {
-            return kDataGeneratorBadLight;
+            return kDataGeneratorBadLights;
         }
         render.AttachLight(light);
-    }
-
-    if (params->spp_num == 0)
-    {
-        return kDataGeneratorBadSpp;
-    }
-
-    std::vector<size_t> sorted_spp(params->spp, params->spp + params->spp_num);
-    std::sort(sorted_spp.begin(), sorted_spp.end());
-
-    sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
-
-    if (sorted_spp.front() <= 0)
-    {
-        return kDataGeneratorBadSpp;
     }
 
     unsigned camera_end_idx = params->cameras_start_idx + params->cameras_num - 1;
@@ -99,7 +129,7 @@ try
         auto* camera = CameraObject::Cast<CameraObject>(params->cameras[i]);
         if (camera == nullptr)
         {
-            return kDataGeneratorBadCamera;
+            return kDataGeneratorBadCameras;
         }
         int camera_idx = params->cameras_start_idx + params->cameras_offset_idx + i;
         render.GenerateSample(camera,

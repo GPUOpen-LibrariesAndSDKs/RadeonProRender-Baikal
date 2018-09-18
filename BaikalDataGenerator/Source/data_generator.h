@@ -63,9 +63,13 @@ enum DataGeneratorResult
     kDataGeneratorBadParams,
     kDataGeneratorBadOutputDir,
     kDataGeneratorBadScene,
-    kDataGeneratorBadLight,
+    kDataGeneratorBadSceneName,
+    kDataGeneratorBadCameras,
+    kDataGeneratorBadLights,
     kDataGeneratorBadSpp,
-    kDataGeneratorBadCamera,
+    kDataGeneratorBadImgSize,
+    kDataGeneratorBadBouncesNum,
+    kDataGeneratorBadDeviceIdx,
     kDataGeneratorUnknownError,
 };
 
