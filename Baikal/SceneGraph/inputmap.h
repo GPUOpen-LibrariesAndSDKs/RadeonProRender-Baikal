@@ -39,7 +39,7 @@ namespace Baikal
         using Ptr = std::shared_ptr<InputMap>;
         enum class InputMapType
         {
-            kConstantFloat3 = 0, // Holds constant float3 value. 
+            kConstantFloat3 = 0, // Holds constant float3 value.
             kConstantFloat, // Holds constant float value
             kSampler, // Samples value from provided texture
             kAdd, // a + b
@@ -82,5 +82,7 @@ namespace Baikal
         virtual void GetLeafs(std::set<Ptr> &leafs) {};
         // Checks if object is leaf or not
         virtual bool IsLeaf() const { return false;}
+
+        virtual ~InputMap() { }
     };
 }
