@@ -11,36 +11,36 @@ set(DATAGENERATOR_LIB_SOURCES
     Source/utils.h
 )
 
-add_library(BaikalDataGeneratorLib SHARED ${DATAGENERATOR_LIB_SOURCES})
+add_library(BaikalDataGenerator SHARED ${DATAGENERATOR_LIB_SOURCES})
 
-target_compile_features(BaikalDataGeneratorLib PRIVATE cxx_std_17)
+target_compile_features(BaikalDataGenerator PRIVATE cxx_std_17)
 
-target_compile_definitions(BaikalDataGeneratorLib PRIVATE RPR_EXPORT_API)
+target_compile_definitions(BaikalDataGenerator PRIVATE RPR_EXPORT_API)
 
-target_include_directories(BaikalDataGeneratorLib
+target_include_directories(BaikalDataGenerator
     PRIVATE .
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE ${Baikal_SOURCE_DIR}/Rpr
     PRIVATE ${Baikal_SOURCE_DIR}/RadeonRays/include
 )
 
-target_link_libraries(BaikalDataGeneratorLib PRIVATE RadeonProRender64 Baikal BaikalIO)
+target_link_libraries(BaikalDataGenerator PRIVATE RadeonProRender64 Baikal BaikalIO)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_link_libraries(BaikalDataGeneratorLib PRIVATE stdc++fs)
+    target_link_libraries(BaikalDataGenerator PRIVATE stdc++fs)
 endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_link_libraries(BaikalDataGeneratorLib PRIVATE c++experimental)
+    target_link_libraries(BaikalDataGenerator PRIVATE c++experimental)
 endif ()
 
-set_target_properties(BaikalDataGeneratorLib
-    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGeneratorLib)
+set_target_properties(BaikalDataGenerator
+    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGenerator)
 
-add_dependencies(BaikalDataGeneratorLib ResourcesDir Copy3rdParty)
+add_dependencies(BaikalDataGenerator ResourcesDir Copy3rdParty)
 
 if (WIN32)
-    install(TARGETS BaikalDataGeneratorLib RUNTIME DESTINATION bin)
+    install(TARGETS BaikalDataGenerator RUNTIME DESTINATION bin)
 else ()
-    install(TARGETS BaikalDataGeneratorLib LIBRARY DESTINATION lib)
+    install(TARGETS BaikalDataGenerator LIBRARY DESTINATION lib)
 endif ()
 
 
@@ -60,24 +60,24 @@ set(DATAGENERATOR_APP_SOURCES
     Source/main.cpp
 )
 
-add_executable(BaikalDataGenerator ${DATAGENERATOR_APP_SOURCES})
+add_executable(BaikalDataGeneratorApp ${DATAGENERATOR_APP_SOURCES})
 
-target_compile_features(BaikalDataGenerator PRIVATE cxx_std_17)
+target_compile_features(BaikalDataGeneratorApp PRIVATE cxx_std_17)
 
-target_include_directories(BaikalDataGenerator
+target_include_directories(BaikalDataGeneratorApp
     PRIVATE ${Baikal_SOURCE_DIR}
     PRIVATE .
 )
 
-target_link_libraries(BaikalDataGenerator PRIVATE BaikalDataGeneratorLib RadeonProRender64 Baikal)
+target_link_libraries(BaikalDataGeneratorApp PRIVATE BaikalDataGenerator RadeonProRender64 Baikal)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_link_libraries(BaikalDataGenerator PRIVATE stdc++fs)
+    target_link_libraries(BaikalDataGeneratorApp PRIVATE stdc++fs)
 endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_link_libraries(BaikalDataGenerator PRIVATE c++experimental)
+    target_link_libraries(BaikalDataGeneratorApp PRIVATE c++experimental)
 endif ()
 
-set_target_properties(BaikalDataGenerator
+set_target_properties(BaikalDataGeneratorApp
     PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${Baikal_SOURCE_DIR}/BaikalDataGenerator)
 
-install(TARGETS BaikalDataGenerator RUNTIME DESTINATION bin)
+install(TARGETS BaikalDataGeneratorApp RUNTIME DESTINATION bin)

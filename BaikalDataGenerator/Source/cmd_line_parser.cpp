@@ -31,16 +31,16 @@ namespace
     constexpr char const* kHelpMessage =
         "USAGE:\n\n"
         "Show this help message:\n"
-        "    BaikalDataGenerator [-help]\n\n"
+        "    BaikalDataGeneratorApp [-help]\n\n"
         "List available devices:\n"
-        "    BaikalDataGenerator [-list_devices]\n\n"
+        "    BaikalDataGeneratorApp [-list_devices]\n\n"
         "Run data generation:\n"
-        "    BaikalDataGenerator -width OUTPUT_IMAGES_WIDTH -height OUTPUT_IMAGES_HEIGHT\n"
-        "                        -scene_file SCENE_FILE_PATH -spp_file SPP_CONFIG_PATH\n"
-        "                        -light_file LIGHT_CONFIG_PATH -camera_file CAMERA_CONFIG_PATH\n"
-        "                        -output_dir OUTPUT_DIRECTORY [-device DEVICE_INDEX] [-gamma]\n"
-        "                        [-split_num CAMERA_SUBSET_NUMBER [-split_idx USE_CAMERA_SUBSET]]\n"
-        "                        [-offset_idx CAMERA_NUMERATION_OFFSET] [-nb BOUNCES_NUMBER]\n\n";
+        "    BaikalDataGeneratorApp -width OUTPUT_IMAGES_WIDTH -height OUTPUT_IMAGES_HEIGHT\n"
+        "                           -scene_file SCENE_FILE_PATH -spp_file SPP_CONFIG_PATH\n"
+        "                           -light_file LIGHT_CONFIG_PATH -camera_file CAMERA_CONFIG_PATH\n"
+        "                           -output_dir OUTPUT_DIRECTORY [-device DEVICE_INDEX] [-gamma]\n"
+        "                           [-split_num CAMERA_SUBSET_NUMBER [-split_idx USE_CAMERA_SUBSET]]\n"
+        "                           [-offset_idx CAMERA_NUMERATION_OFFSET] [-nb BOUNCES_NUMBER]\n\n";
 }
 
 CmdLineParser::CmdLineParser(int argc, char* argv[])
