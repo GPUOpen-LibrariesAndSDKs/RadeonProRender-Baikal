@@ -26,6 +26,9 @@
 #include <memory>
 #include "app_utils.h"
 
-class Baikal::Scene1;
+namespace Baikal
+{
+    class Scene1;
+}
 
 std::shared_ptr<Baikal::Scene1> LoadScene(Baikal::AppSettings const& settings);

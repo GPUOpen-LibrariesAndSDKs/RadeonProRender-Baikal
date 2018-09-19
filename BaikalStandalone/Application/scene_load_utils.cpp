@@ -31,7 +31,7 @@ using namespace Baikal;
 
 namespace
 {
-    void LoadMateirals(std::string const& basepath, Scene1::Ptr scene)
+    void LoadMaterials(std::string const& basepath, Scene1::Ptr scene)
     {
         // Check it we have material remapping
         std::ifstream in_materials(basepath + "materials.xml");
@@ -64,7 +64,6 @@ namespace
         }
 
         tinyxml2::XMLElement* elem = root->FirstChildElement("light");
-        Light::Ptr light_instance;
 
         while (elem)
         {
@@ -98,7 +97,7 @@ namespace
             }
             else
             {
-                throw std::runtime_error("Unknown light type");
+                throw std::runtime_error(std::string("Unknown light type: ") + type);
             }
 
             RadeonRays::float3 rad;
@@ -140,10 +139,10 @@ Scene1::Ptr LoadScene(Baikal::AppSettings const& settings)
 
     if (scene == nullptr)
     {
-        throw std::runtime_error("LoadScene(...): can not create scene");
+        throw std::runtime_error("LoadScene(...): cannot create scene");
     }
 
-    LoadMateirals(basepath, scene);
+    LoadMaterials(basepath, scene);
     LoadLights(settings.light_file, scene);
     return scene;
 }
