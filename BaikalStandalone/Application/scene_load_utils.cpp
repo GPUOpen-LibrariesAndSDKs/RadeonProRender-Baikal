@@ -129,7 +129,7 @@ Scene1::Ptr LoadScene(Baikal::AppSettings const& settings)
 {
 #ifdef WIN32
     std::string basepath = settings.path + "\\";
-#elif
+#else
     std::string basepath = settings.path +  "/";
 #endif
 
