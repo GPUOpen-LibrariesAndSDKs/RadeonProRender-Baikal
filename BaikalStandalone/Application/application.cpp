@@ -918,6 +918,13 @@ namespace Baikal
                 }
             }
 
+            if (ImGui::Button("Save materials"))
+            {
+                auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
+                material_io->SaveMaterialsFromScene(m_settings.path + "/materials.xml", *m_cl->GetScene());
+                material_io->SaveIdentityMapping(m_settings.path + "/mapping.xml", *m_cl->GetScene());
+            }
+
             if (m_settings.time_benchmark && m_settings.samplecount > 511)
             {
                 m_settings.time_benchmark = false;
