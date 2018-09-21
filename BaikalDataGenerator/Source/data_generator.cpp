@@ -70,6 +70,7 @@ try
     sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
     if (sorted_spp.front() == 0)
     {
+        // Minimal SPP must be >= 1
         return kDataGeneratorBadSpp;
     }
 
@@ -108,6 +109,7 @@ try
                   params->bounces_num,
                   params->device_idx);
 
+    // Attach given lights to the scene
     for (size_t i = 0; i < params->lights_num; ++i)
     {
         auto* light = LightObject::Cast<LightObject>(params->lights[i]);
@@ -121,7 +123,7 @@ try
     // camera_end_idx is index of the last rendered camera
     unsigned camera_end_idx = params->cameras_start_idx + params->cameras_num - 1;
 
-    // Save settings and device info as XML file
+    // Save settings and other info into a metadata file
     render.SaveMetadata(output_dir,
                         params->scene_name,
                         params->cameras_start_idx,
@@ -136,12 +138,17 @@ try
         {
             return kDataGeneratorBadCameras;
         }
+
+        // Render outputs for every specified SPP at the given
+        // camera position and save them to separate files
         int camera_idx = params->cameras_start_idx + params->cameras_offset_idx + i;
         render.GenerateSample(camera,
                               camera_idx,
                               sorted_spp,
                               output_dir,
                               params->gamma_correction != 0);
+
+        // Report the progress
         if (params->progress_callback)
         {
             params->progress_callback(camera_idx);
