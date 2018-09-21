@@ -103,9 +103,13 @@ void ValidateConfig(const AppConfig& config)
     }
 }
 
-std::pair<std::size_t, std::size_t> GetSplitByIdx(std::size_t total_num,
-                                                  std::size_t subrange_num,
-                                                  std::size_t subrange_idx)
+struct Range
+{
+    size_t begin; // Inclusive
+    size_t end; // Exclusive
+};
+
+Range GetSplitByIdx(size_t total_num, size_t subrange_num, size_t subrange_idx)
 {
     size_t length = total_num / subrange_num;
     size_t remain = total_num % subrange_num;
@@ -263,12 +267,14 @@ void ObjectLoader::LoadCameras()
         THROW_EX("'split_num': must be less than camera number")
     }
 
-    auto indices = GetSplitByIdx(m_cameras.size(),
-                                 m_app_config.split_num,
-                                 m_app_config.split_idx);
-    m_cameras_start_idx = static_cast<unsigned>(indices.first);
-    m_cameras.erase(m_cameras.begin() + indices.second, m_cameras.end());
-    m_cameras.erase(m_cameras.begin(), m_cameras.begin() + indices.first);
+    // Split cameras to split_num subsets and leave
+    // the subset with the index split_idx only
+    auto range = GetSplitByIdx(m_cameras.size(),
+                               m_app_config.split_num,
+                               m_app_config.split_idx);
+    m_cameras_start_idx = static_cast<unsigned>(range.begin);
+    m_cameras.erase(m_cameras.begin() + range.end, m_cameras.end());
+    m_cameras.erase(m_cameras.begin(), m_cameras.begin() + range.begin);
     for (auto& camera : m_cameras)
     {
         m_rpr_cameras.push_back(&camera);

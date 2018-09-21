@@ -33,6 +33,8 @@ THE SOFTWARE.
 DataGeneratorResult GenerateDataset(DataGeneratorParams const* params)
 try
 {
+    // Validate input parameters
+
     if (params == nullptr)
     {
         return kDataGeneratorBadParams;
@@ -62,6 +64,7 @@ try
     {
         return kDataGeneratorBadSpp;
     }
+    // Sort SPP list and remove duplicates
     std::vector<size_t> sorted_spp(params->spp, params->spp + params->spp_num);
     std::sort(sorted_spp.begin(), sorted_spp.end());
     sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
@@ -115,8 +118,10 @@ try
         render.AttachLight(light);
     }
 
+    // camera_end_idx is index of the last rendered camera
     unsigned camera_end_idx = params->cameras_start_idx + params->cameras_num - 1;
 
+    // Save settings and device info as XML file
     render.SaveMetadata(output_dir,
                         params->scene_name,
                         params->cameras_start_idx,
