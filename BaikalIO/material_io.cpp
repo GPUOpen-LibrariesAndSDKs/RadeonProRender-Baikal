@@ -13,6 +13,7 @@
 #include "XML/tinyxml2.h"
 
 #include <sstream>
+#include <filesystem>
 #include <map>
 #include <stack>
 #include <string>
@@ -486,18 +487,18 @@ namespace Baikal
                 }
                 else
                 {
-                    std::string texture_name = texture->GetName();
+                    std::filesystem::path texture_name = texture->GetName();
                     if (texture_name.empty())
                     {
                         std::ostringstream oss;
                         oss << (std::uint64_t)texture.get() << ".jpg";
                         texture_name = oss.str();
-                        io.SaveImage(m_base_path + texture_name, texture);
+                        io.SaveImage(m_base_path + texture_name.string(), texture);
                     }
 
-                    m_tex2name[texture] = texture_name;
+                    m_tex2name[texture] = texture_name.filename().string();
 
-                    printer.PushAttribute("value", texture_name.c_str());
+                    printer.PushAttribute("value", m_tex2name[texture].c_str());
                 }
                 printer.CloseElement();
                 break;
