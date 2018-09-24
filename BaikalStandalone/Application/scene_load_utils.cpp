@@ -63,7 +63,7 @@ namespace
             throw std::runtime_error("Failed to open lights set file.");
         }
 
-        tinyxml2::XMLElement* elem = root->FirstChildElement("light");
+        auto elem = root->FirstChildElement("light");
 
         while (elem)
         {
