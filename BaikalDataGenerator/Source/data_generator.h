@@ -36,9 +36,8 @@ struct DataGeneratorParams
     char const* scene_name;
 
     rpr_camera* cameras;
-    unsigned cameras_start_idx;
     unsigned cameras_num;
-    int cameras_offset_idx;
+    int cameras_start_output_idx;
 
     rpr_light* lights;
     unsigned lights_num;
@@ -73,7 +72,7 @@ enum DataGeneratorResult
     kDataGeneratorUnknownError,
 };
 
-RPR_API_ENTRY DataGeneratorResult GenerateDataset(DataGeneratorParams const* params);
+RPR_API_ENTRY DataGeneratorResult  bdgGenerateDataset(DataGeneratorParams const* params);
 
 #ifdef __cplusplus
 } // extern "C"

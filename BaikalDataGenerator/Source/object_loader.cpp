@@ -156,8 +156,7 @@ DataGeneratorParams ObjectLoader::GetDataGeneratorParams()
     params.scene_name = m_scene_name.c_str();
     params.cameras = m_rpr_cameras.data();
     params.cameras_num = static_cast<unsigned>(m_rpr_cameras.size());
-    params.cameras_start_idx = m_cameras_start_idx;
-    params.cameras_offset_idx = m_app_config.offset_idx;
+    params.cameras_start_output_idx = m_app_config.offset_idx;
     params.lights = m_rpr_lights.data();
     params.lights_num = static_cast<unsigned>(m_rpr_lights.size());
     params.spp = m_spp.data();
@@ -272,7 +271,6 @@ void ObjectLoader::LoadCameras()
     auto range = GetSplitByIdx(m_cameras.size(),
                                m_app_config.split_num,
                                m_app_config.split_idx);
-    m_cameras_start_idx = static_cast<unsigned>(range.begin);
     m_cameras.erase(m_cameras.begin() + range.end, m_cameras.end());
     m_cameras.erase(m_cameras.begin(), m_cameras.begin() + range.begin);
     for (auto& camera : m_cameras)

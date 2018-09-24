@@ -49,7 +49,6 @@ private:
 
     AppConfig m_app_config;
     SceneObject m_scene;
-    unsigned m_cameras_start_idx = 0;
     std::vector<CameraObject> m_cameras;
     std::vector<LightObject> m_lights;
     std::vector<unsigned> m_spp;

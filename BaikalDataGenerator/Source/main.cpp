@@ -41,7 +41,7 @@ void Run(const AppConfig& config)
 {
     ObjectLoader object_loader(config);
     auto params = object_loader.GetDataGeneratorParams();
-    GenerateDataset(&params);
+    bdgGenerateDataset(&params);
 }
 
 int main(int argc, char* argv[])
@@ -108,7 +108,7 @@ try
 
     params.progress_callback = progress_callback;
 
-    auto result = GenerateDataset(&params);
+    auto result = bdgGenerateDataset(&params);
     if (result != kDataGeneratorSuccess)
     {
         THROW_EX("Generation failed: result=" << result);

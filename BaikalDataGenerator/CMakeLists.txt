@@ -6,8 +6,8 @@ set(DATAGENERATOR_LIB_SOURCES
     Source/devices.h
     Source/devices.cpp
     Source/filesystem.h
-    Source/render.h
-    Source/render.cpp
+    Source/data_generator_impl.h
+    Source/data_generator_impl.cpp
     Source/utils.h
 )
 

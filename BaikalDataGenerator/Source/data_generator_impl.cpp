@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 
-#include "render.h"
+#include "data_generator_impl.h"
 
 #include "filesystem.h"
 #include "devices.h"
@@ -74,11 +74,11 @@ const std::vector<OutputInfo> kSingleIteratedOutputs
 } // namespace
 
 
-Render::Render(SceneObject* scene,
-               size_t output_width,
-               size_t output_height,
-               std::uint32_t num_bounces,
-               unsigned device_idx)
+DataGeneratorImpl::DataGeneratorImpl(SceneObject* scene,
+                                    size_t output_width,
+                                    size_t output_height,
+                                    std::uint32_t num_bounces,
+                                    unsigned device_idx)
     : m_scene(scene),
       m_width(static_cast<std::uint32_t>(output_width)),
       m_height(static_cast<std::uint32_t>(output_height)),
@@ -123,17 +123,17 @@ Render::Render(SceneObject* scene,
     m_renderer->SetMaxBounces(m_num_bounces);
 }
 
-void Render::AttachLight(LightObject* light)
+void DataGeneratorImpl::AttachLight(LightObject* light)
 {
     m_scene->AttachLight(light);
 }
 
-void Render::SaveMetadata(const std::filesystem::path& output_dir,
-                          const std::string& scene_name,
-                          unsigned cameras_start_idx,
-                          unsigned cameras_end_idx,
-                          int cameras_index_offset,
-                          bool gamma_correction_enabled) const
+void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
+                                     const std::string& scene_name,
+                                     unsigned cameras_start_idx,
+                                     unsigned cameras_end_idx,
+                                     int cameras_index_offset,
+                                     bool gamma_correction_enabled) const
 {
     tinyxml2::XMLDocument doc;
 
@@ -190,11 +190,11 @@ void Render::SaveMetadata(const std::filesystem::path& output_dir,
     doc.SaveFile(file_name.string().c_str());
 }
 
-void Render::GenerateSample(CameraObject* camera,
-                            int camera_idx,
-                            const std::vector<size_t>& sorted_spp,
-                            const std::filesystem::path& output_dir,
-                            bool gamma_correction_enabled)
+void DataGeneratorImpl::GenerateSample(CameraObject* camera,
+                                       int camera_idx,
+                                       const std::vector<unsigned>& sorted_spp,
+                                       const std::filesystem::path& output_dir,
+                                       bool gamma_correction_enabled)
 {
     m_scene->SetCamera(camera);
 
@@ -247,10 +247,10 @@ void Render::GenerateSample(CameraObject* camera,
     }
 }
 
-void Render::SaveOutput(const OutputInfo& info,
-                        const std::string& name,
-                        bool gamma_correction_enabled,
-                        const std::filesystem::path& output_dir)
+void DataGeneratorImpl::SaveOutput(const OutputInfo& info,
+                                   const std::string& name,
+                                   bool gamma_correction_enabled,
+                                   const std::filesystem::path& output_dir)
 {
     using RadeonRays::float3;
 
@@ -329,4 +329,4 @@ void Render::SaveOutput(const OutputInfo& info,
 }
 
 // Enable forward declarations for types stored in unique_ptr
-Render::~Render() = default;
+DataGeneratorImpl::~DataGeneratorImpl() = default;

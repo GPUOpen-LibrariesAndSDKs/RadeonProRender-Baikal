@@ -53,18 +53,18 @@ class CLWDevice;
 struct OutputInfo;
 
 
-class Render
+class DataGeneratorImpl
 {
 public:
     // 'scene_file' - full path till .obj/.objm or some kind of this files with scene
     // 'output_width' - width of outputs which will be saved on disk
     // 'output_height' - height of outputs which will be saved on disk
     // 'num_bounces' - number of bounces for each ray
-    Render(SceneObject* scene,
-           size_t output_width,
-           size_t output_height,
-           std::uint32_t num_bounces,
-           unsigned device_idx);
+    DataGeneratorImpl(SceneObject* scene,
+                      size_t output_width,
+                      size_t output_height,
+                      std::uint32_t num_bounces,
+                      unsigned device_idx);
 
     void AttachLight(LightObject* light);
 
@@ -89,11 +89,11 @@ public:
 
     void GenerateSample(CameraObject* camera,
                         int camera_idx,
-                        const std::vector<size_t>& spp,
+                        const std::vector<unsigned>& spp,
                         const std::filesystem::path& output_dir,
                         bool gamma_correction_enabled);
 
-    ~Render();
+    ~DataGeneratorImpl();
 
 private:
     void SaveOutput(const OutputInfo& info,

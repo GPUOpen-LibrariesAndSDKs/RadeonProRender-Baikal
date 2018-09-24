@@ -23,14 +23,14 @@ THE SOFTWARE.
 #include "data_generator.h"
 
 #include "devices.h"
-#include "render.h"
+#include "data_generator_impl.h"
 #include "utils.h"
 
 #include "Rpr/WrapObject/LightObject.h"
 #include "Rpr/WrapObject/SceneObject.h"
 
 
-DataGeneratorResult GenerateDataset(DataGeneratorParams const* params)
+DataGeneratorResult bdgGenerateDataset(DataGeneratorParams const* params)
 try
 {
     // Validate input parameters
@@ -65,7 +65,7 @@ try
         return kDataGeneratorBadSpp;
     }
     // Sort SPP list and remove duplicates
-    std::vector<size_t> sorted_spp(params->spp, params->spp + params->spp_num);
+    std::vector<unsigned> sorted_spp(params->spp, params->spp + params->spp_num);
     std::sort(sorted_spp.begin(), sorted_spp.end());
     sorted_spp.erase(std::unique(sorted_spp.begin(), sorted_spp.end()), sorted_spp.end());
     if (sorted_spp.front() == 0)
@@ -103,11 +103,11 @@ try
         return kDataGeneratorBadOutputDir;
     }
 
-    Render render(scene,
-                  params->width,
-                  params->height,
-                  params->bounces_num,
-                  params->device_idx);
+    DataGeneratorImpl data_generator(scene,
+                                     params->width,
+                                     params->height,
+                                     params->bounces_num,
+                                     params->device_idx);
 
     // Attach given lights to the scene
     for (size_t i = 0; i < params->lights_num; ++i)
@@ -117,19 +117,19 @@ try
         {
             return kDataGeneratorBadLights;
         }
-        render.AttachLight(light);
+        data_generator.AttachLight(light);
     }
 
     // camera_end_idx is index of the last rendered camera
-    unsigned camera_end_idx = params->cameras_start_idx + params->cameras_num - 1;
+    unsigned camera_end_idx = params->cameras_num - 1;
 
     // Save settings and other info into a metadata file
-    render.SaveMetadata(output_dir,
-                        params->scene_name,
-                        params->cameras_start_idx,
-                        camera_end_idx,
-                        params->cameras_offset_idx,
-                        params->gamma_correction != 0);
+    data_generator.SaveMetadata(output_dir,
+                                params->scene_name,
+                                0,
+                                camera_end_idx,
+                                params->cameras_start_output_idx,
+                                params->gamma_correction != 0);
 
     for (unsigned i = 0; i < params->cameras_num; ++i)
     {
@@ -141,12 +141,12 @@ try
 
         // Render outputs for every specified SPP at the given
         // camera position and save them to separate files
-        int camera_idx = params->cameras_start_idx + params->cameras_offset_idx + i;
-        render.GenerateSample(camera,
-                              camera_idx,
-                              sorted_spp,
-                              output_dir,
-                              params->gamma_correction != 0);
+        int camera_idx = params->cameras_start_output_idx + i;
+        data_generator.GenerateSample(camera,
+                                      camera_idx,
+                                      sorted_spp,
+                                      output_dir,
+                                      params->gamma_correction != 0);
 
         // Report the progress
         if (params->progress_callback)
