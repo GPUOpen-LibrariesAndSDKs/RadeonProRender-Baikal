@@ -277,6 +277,8 @@ void ObjectLoader::LoadCameras()
     {
         m_rpr_cameras.push_back(&camera);
     }
+
+    SaveAppMetadata(range.begin, range.end);
 }
 
 void ObjectLoader::LoadLights()
@@ -391,4 +393,29 @@ void ObjectLoader::LoadSpp()
         m_spp.push_back(static_cast<unsigned>(spp));
         elem = elem->NextSiblingElement("spp");
     }
+}
+
+void ObjectLoader::SaveAppMetadata(size_t start_idx, size_t end_idx)
+{
+    tinyxml2::XMLDocument doc;
+
+    auto app_metadata_file_name = m_app_config.output_dir;
+    app_metadata_file_name.append("app_metadata.xml");
+
+    auto* root = doc.NewElement("app_metadata");
+    doc.InsertFirstChild(root);
+
+    auto* split = doc.NewElement("split");
+    split->SetAttribute("split_idx", m_app_config.split_idx);
+    split->SetAttribute("split_num", m_app_config.split_num);
+    root->InsertEndChild(split);
+
+    auto* cameras = doc.NewElement("cameras");
+    cameras->SetAttribute("idx_offset", m_app_config.offset_idx);
+    cameras->SetAttribute("end_idx", static_cast<int>(end_idx));
+    cameras->SetAttribute("start_idx", static_cast<int>(start_idx));
+    
+    root->InsertEndChild(cameras);
+
+    doc.SaveFile(app_metadata_file_name.string().c_str());
 }

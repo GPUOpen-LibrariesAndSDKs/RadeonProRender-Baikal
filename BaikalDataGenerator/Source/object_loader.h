@@ -47,6 +47,8 @@ private:
     void LoadLights();
     void LoadSpp();
 
+    void SaveAppMetadata(size_t start_idx, size_t end_idx);
+
     AppConfig m_app_config;
     SceneObject m_scene;
     std::vector<CameraObject> m_cameras;

@@ -75,10 +75,10 @@ const std::vector<OutputInfo> kSingleIteratedOutputs
 
 
 DataGeneratorImpl::DataGeneratorImpl(SceneObject* scene,
-                                    size_t output_width,
-                                    size_t output_height,
-                                    std::uint32_t num_bounces,
-                                    unsigned device_idx)
+                                     size_t output_width,
+                                     size_t output_height,
+                                     std::uint32_t num_bounces,
+                                     unsigned device_idx)
     : m_scene(scene),
       m_width(static_cast<std::uint32_t>(output_width)),
       m_height(static_cast<std::uint32_t>(output_height)),
@@ -137,8 +137,8 @@ void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
 {
     tinyxml2::XMLDocument doc;
 
-    auto file_name = output_dir;
-    file_name.append("metadata.xml");
+    auto bdg_metadata_file_name = output_dir;
+    bdg_metadata_file_name.append("metadata.xml");
 
     auto* root = doc.NewElement("metadata");
     doc.InsertFirstChild(root);
@@ -146,12 +146,6 @@ void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
     auto* scene = doc.NewElement("scene");
     scene->SetAttribute("name", scene_name.c_str());
     root->InsertEndChild(scene);
-
-    auto* cameras = doc.NewElement("cameras");
-    cameras->SetAttribute("start_idx", static_cast<int>(cameras_start_idx));
-    cameras->SetAttribute("end_idx", static_cast<int>(cameras_end_idx));
-    cameras->SetAttribute("idx_offset", cameras_index_offset);
-    root->InsertEndChild(cameras);
 
     auto* outputs_list = doc.NewElement("outputs");
     outputs_list->SetAttribute("width", m_width);
@@ -187,7 +181,7 @@ void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
     device_attribute->SetAttribute("version", device.GetVersion().c_str());
     root->InsertEndChild(device_attribute);
 
-    doc.SaveFile(file_name.string().c_str());
+    doc.SaveFile(bdg_metadata_file_name.string().c_str());
 }
 
 void DataGeneratorImpl::GenerateSample(CameraObject* camera,
