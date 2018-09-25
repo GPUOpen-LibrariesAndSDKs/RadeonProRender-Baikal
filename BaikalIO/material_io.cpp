@@ -24,6 +24,18 @@
 #include <filesystem>
 #endif
 
+// Visual Studio 2015 and GCC 7 work-around ...
+// std::filesystem was incorporated into C++-17 (which is obviously after VS
+// 2015 was released). However, Microsoft implemented the draft standard in
+// the std::exerimental namespace. To avoid nasty ripple effects when the
+// compiler is updated, make it look like the standard here
+#if (defined(_MSC_VER) && (_MSC_VER < 1900)) || (defined(__GNUC__) && (__GNUC__ < 8))
+namespace std
+{
+    namespace filesystem = experimental::filesystem::v1;
+}
+#endif
+
 namespace Baikal
 {
     using namespace tinyxml2;
@@ -492,12 +504,7 @@ namespace Baikal
                 }
                 else
                 {
-#if (defined(_MSC_VER) && (_MSC_VER < 1900)) || (defined(__GNUC__) && (__GNUC__ < 8))
-                    std::experimental::filesystem::v1::path texture_name = texture->GetName();
-#else
                     std::filesystem::path texture_name = texture->GetName();
-#endif
-
                     if (texture_name.empty())
                     {
                         std::ostringstream oss;
