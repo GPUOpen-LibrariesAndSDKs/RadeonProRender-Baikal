@@ -492,7 +492,12 @@ namespace Baikal
                 }
                 else
                 {
+#if (defined(_MSC_VER) && (_MSC_VER < 1900)) || (defined(__GNUC__) && (__GNUC__ < 8))
+                    std::experimental::filesystem::v1::path = texture_name = texture->GetName();
+#else
                     std::filesystem::path texture_name = texture->GetName();
+#endif
+
                     if (texture_name.empty())
                     {
                         std::ostringstream oss;
