@@ -13,11 +13,16 @@
 #include "XML/tinyxml2.h"
 
 #include <sstream>
-#include <filesystem>
 #include <map>
 #include <stack>
 #include <string>
 #include <assert.h>
+
+#if (defined(__GNUC__) && (__GNUC__ < 8))
+#include <experimental/filesystem>
+#else
+#include <filesystem>
+#endif
 
 namespace Baikal
 {
