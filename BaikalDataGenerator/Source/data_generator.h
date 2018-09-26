@@ -49,8 +49,7 @@ struct DataGeneratorParams
     unsigned bounces_num;
     unsigned device_idx;
 
-    // 0 or 1
-    unsigned gamma_correction;
+    unsigned gamma_correction; /* 0 or 1 */
 
     char const* output_dir;
 
