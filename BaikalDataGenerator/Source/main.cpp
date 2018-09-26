@@ -36,6 +36,33 @@ THE SOFTWARE.
 #include <ctime>
 #include <csignal>
 
+#include "XML/tinyxml2.h"
+
+void SaveAppMetadata(const AppConfig& config, Range cameras_range)
+{
+    tinyxml2::XMLDocument doc;
+
+    auto app_metadata_file_name = config.output_dir;
+    app_metadata_file_name.append("app_metadata.xml");
+
+    auto* root = doc.NewElement("app_metadata");
+    doc.InsertFirstChild(root);
+
+    auto* split = doc.NewElement("split");
+    split->SetAttribute("split_idx", config.split_idx);
+    split->SetAttribute("split_num", config.split_num);
+    root->InsertEndChild(split);
+
+    auto* cameras = doc.NewElement("cameras");
+    cameras->SetAttribute("idx_offset", config.start_output_idx <= DEFAULT_START_OUTPUT_IDX ?
+        0 : config.start_output_idx - static_cast<int>(cameras_range.begin));
+    cameras->SetAttribute("start_idx", static_cast<int>(cameras_range.begin));
+    cameras->SetAttribute("end_idx", static_cast<int>(cameras_range.end - 1));
+
+    root->InsertEndChild(cameras);
+
+    doc.SaveFile(app_metadata_file_name.string().c_str());
+}
 
 void Run(const AppConfig& config)
 {
@@ -98,6 +125,8 @@ try
     auto config = cmd_parser.Parse();
     ObjectLoader object_loader(config);
     auto params = object_loader.GetDataGeneratorParams();
+
+    SaveAppMetadata(config, object_loader.GetCamerasRange());
 
     auto progress_callback = [](int camera_idx)
     {

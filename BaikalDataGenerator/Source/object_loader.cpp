@@ -59,76 +59,70 @@ THE SOFTWARE.
 
 namespace {
 
-const std::unordered_map<std::string, LightObject::Type> kLightTypesMap
-{
-    { "point", LightObject::Type::kPointLight },
-    { "spot", LightObject::Type::kSpotLight },
-    { "direct", LightObject::Type::kDirectionalLight },
-    { "ibl", LightObject::Type::kEnvironmentLight },
-};
-
-void ValidateConfig(const AppConfig& config)
-{
-    // validate input config
-    ASSERT_PATH(config.camera_file);
-    ASSERT_PATH(config.light_file);
-    ASSERT_PATH(config.spp_file);
-    ASSERT_PATH(config.scene_file);
-    ASSERT_PATH(config.output_dir);
-
-    // validate extensions
-    ASSERT_XML(config.camera_file)
-    ASSERT_XML(config.light_file)
-    ASSERT_XML(config.spp_file)
-
-    // validate that files really exists
-    ASSERT_FILE_EXISTS(config.camera_file)
-    ASSERT_FILE_EXISTS(config.light_file)
-    ASSERT_FILE_EXISTS(config.spp_file)
-    ASSERT_FILE_EXISTS(config.scene_file)
-
-    if (!std::filesystem::is_directory(config.output_dir))
+    const std::unordered_map<std::string, LightObject::Type> kLightTypesMap
     {
-        THROW_EX("Not a directory: " << config.output_dir.string())
+        { "point", LightObject::Type::kPointLight },
+        { "spot", LightObject::Type::kSpotLight },
+        { "direct", LightObject::Type::kDirectionalLight },
+        { "ibl", LightObject::Type::kEnvironmentLight },
+    };
+
+    void ValidateConfig(const AppConfig& config)
+    {
+        // validate input config
+        ASSERT_PATH(config.camera_file);
+        ASSERT_PATH(config.light_file);
+        ASSERT_PATH(config.spp_file);
+        ASSERT_PATH(config.scene_file);
+        ASSERT_PATH(config.output_dir);
+
+        // validate extensions
+        ASSERT_XML(config.camera_file)
+        ASSERT_XML(config.light_file)
+        ASSERT_XML(config.spp_file)
+
+        // validate that files really exists
+        ASSERT_FILE_EXISTS(config.camera_file)
+        ASSERT_FILE_EXISTS(config.light_file)
+        ASSERT_FILE_EXISTS(config.spp_file)
+        ASSERT_FILE_EXISTS(config.scene_file)
+
+        if (!std::filesystem::is_directory(config.output_dir))
+        {
+            THROW_EX("Not a directory: " << config.output_dir.string())
+        }
+
+        if (config.split_num == 0)
+        {
+            THROW_EX("'split_num' should be positive");
+        }
+
+        if (config.split_idx >= config.split_num)
+        {
+            THROW_EX("'split_idx' must be less than split_num");
+        }
     }
 
-    if (config.split_num == 0)
+    Range GetSplitByIdx(unsigned total_num, unsigned subrange_num, unsigned subrange_idx)
     {
-        THROW_EX("'split_num' should be positive");
+        unsigned length = total_num / subrange_num;
+        unsigned remain = total_num % subrange_num;
+
+        unsigned begin = 0;
+        unsigned end = 0;
+
+        if (subrange_idx < remain)
+        {
+            begin = subrange_idx * (length + 1);
+            end = begin + length + 1;
+        }
+        else
+        {
+            begin = subrange_idx * length + remain;
+            end = begin + length;
+        }
+        return {begin, end};
     }
-
-    if (config.split_idx >= config.split_num)
-    {
-        THROW_EX("'split_idx' must be less than split_num");
-    }
-}
-
-struct Range
-{
-    size_t begin; // Inclusive
-    size_t end; // Exclusive
-};
-
-Range GetSplitByIdx(size_t total_num, size_t subrange_num, size_t subrange_idx)
-{
-    size_t length = total_num / subrange_num;
-    size_t remain = total_num % subrange_num;
-
-    size_t begin = 0;
-    size_t end = 0;
-
-    if (subrange_idx < remain)
-    {
-        begin = subrange_idx * (length + 1);
-        end = begin + length + 1;
-    }
-    else
-    {
-        begin = subrange_idx * length + remain;
-        end = begin + length;
-    }
-    return {begin, end};
-}
 
 } // namespace
 
@@ -147,6 +141,11 @@ ObjectLoader::ObjectLoader(const AppConfig& config)
     LoadSpp();
 }
 
+Range ObjectLoader::GetCamerasRange() const
+{
+    return m_cameras_idx_range;
+}
+
 DataGeneratorParams ObjectLoader::GetDataGeneratorParams()
 {
     DataGeneratorParams params{};
@@ -156,7 +155,8 @@ DataGeneratorParams ObjectLoader::GetDataGeneratorParams()
     params.scene_name = m_scene_name.c_str();
     params.cameras = m_rpr_cameras.data();
     params.cameras_num = static_cast<unsigned>(m_rpr_cameras.size());
-    params.cameras_start_output_idx = m_app_config.offset_idx;
+    params.cameras_start_output_idx = (m_app_config.start_output_idx <= DEFAULT_START_OUTPUT_IDX) ?
+        m_cameras_idx_range.begin : m_app_config.start_output_idx;
     params.lights = m_rpr_lights.data();
     params.lights_num = static_cast<unsigned>(m_rpr_lights.size());
     params.spp = m_spp.data();
@@ -268,17 +268,15 @@ void ObjectLoader::LoadCameras()
 
     // Split cameras to split_num subsets and leave
     // the subset with the index split_idx only
-    auto range = GetSplitByIdx(m_cameras.size(),
-                               m_app_config.split_num,
-                               m_app_config.split_idx);
-    m_cameras.erase(m_cameras.begin() + range.end, m_cameras.end());
-    m_cameras.erase(m_cameras.begin(), m_cameras.begin() + range.begin);
+    m_cameras_idx_range = GetSplitByIdx(static_cast<unsigned>(m_cameras.size()),
+                                        m_app_config.split_num,
+                                        m_app_config.split_idx);
+    m_cameras.erase(m_cameras.begin() + m_cameras_idx_range.end, m_cameras.end());
+    m_cameras.erase(m_cameras.begin(), m_cameras.begin() + m_cameras_idx_range.begin);
     for (auto& camera : m_cameras)
     {
         m_rpr_cameras.push_back(&camera);
     }
-
-    SaveAppMetadata(range.begin, range.end);
 }
 
 void ObjectLoader::LoadLights()
@@ -393,29 +391,4 @@ void ObjectLoader::LoadSpp()
         m_spp.push_back(static_cast<unsigned>(spp));
         elem = elem->NextSiblingElement("spp");
     }
-}
-
-void ObjectLoader::SaveAppMetadata(size_t start_idx, size_t end_idx)
-{
-    tinyxml2::XMLDocument doc;
-
-    auto app_metadata_file_name = m_app_config.output_dir;
-    app_metadata_file_name.append("app_metadata.xml");
-
-    auto* root = doc.NewElement("app_metadata");
-    doc.InsertFirstChild(root);
-
-    auto* split = doc.NewElement("split");
-    split->SetAttribute("split_idx", m_app_config.split_idx);
-    split->SetAttribute("split_num", m_app_config.split_num);
-    root->InsertEndChild(split);
-
-    auto* cameras = doc.NewElement("cameras");
-    cameras->SetAttribute("idx_offset", m_app_config.offset_idx);
-    cameras->SetAttribute("end_idx", static_cast<int>(end_idx));
-    cameras->SetAttribute("start_idx", static_cast<int>(start_idx));
-    
-    root->InsertEndChild(cameras);
-
-    doc.SaveFile(app_metadata_file_name.string().c_str());
 }

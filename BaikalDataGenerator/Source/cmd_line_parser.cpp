@@ -40,7 +40,7 @@ namespace
         "                           -light_file LIGHT_CONFIG_PATH -camera_file CAMERA_CONFIG_PATH\n"
         "                           -output_dir OUTPUT_DIRECTORY [-device DEVICE_INDEX] [-gamma]\n"
         "                           [-split_num CAMERA_SUBSET_NUMBER [-split_idx USE_CAMERA_SUBSET]]\n"
-        "                           [-offset_idx CAMERA_NUMERATION_OFFSET] [-nb BOUNCES_NUMBER]\n\n";
+        "                           [-start_output_idx CAMERA_START_OUTPUT_INDEX] [-nb BOUNCES_NUMBER]\n\n";
 }
 
 CmdLineParser::CmdLineParser(int argc, char* argv[])
@@ -71,7 +71,7 @@ AppConfig CmdLineParser::Parse() const
 
     config.split_idx = m_cmd_parser.GetOption("-split_idx", config.split_idx);
 
-    config.offset_idx = m_cmd_parser.GetOption("-offset_idx", config.offset_idx);
+    config.start_output_idx = m_cmd_parser.GetOption("-start_output_idx", config.start_output_idx);
 
     config.gamma_correction = m_cmd_parser.OptionExists("-gamma");
 

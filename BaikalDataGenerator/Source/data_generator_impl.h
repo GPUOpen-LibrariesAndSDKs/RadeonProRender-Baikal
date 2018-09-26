@@ -52,19 +52,25 @@ class CLWDevice;
 
 struct OutputInfo;
 
-
 class DataGeneratorImpl
 {
 public:
-    // 'scene_file' - full path till .obj/.objm or some kind of this files with scene
-    // 'output_width' - width of outputs which will be saved on disk
-    // 'output_height' - height of outputs which will be saved on disk
+    // 'scene' - pointer to rpr SceneObject
+    // 'scene_name' - the name of the scene on disk
+    // 'width/height' - width/height of outputs which will be saved on disk
     // 'num_bounces' - number of bounces for each ray
+    // 'device_idx' - index of the device to launch datagenerator on
+    // 'sorted_spp' - sorted collection of spp without duplications
+    // 'output_dir' - directory to save generated result
+    // 'gamma_correction_enable' - gamma correction enable flag
     DataGeneratorImpl(SceneObject* scene,
-                      size_t output_width,
-                      size_t output_height,
-                      std::uint32_t num_bounces,
-                      unsigned device_idx);
+                      std::string const& scene_name,
+                      unsigned width, unsigned height,
+                      unsigned num_bounces,
+                      unsigned device_idx,
+                      const std::vector<unsigned>& sorted_spp,
+                      const std::filesystem::path& output_dir,
+                      bool gamma_correction_enable);
 
     void AttachLight(LightObject* light);
 
@@ -80,18 +86,9 @@ public:
     /// 'gamma_correction_enabled' - flag to enable/disable gamma correction
     /// 'start_cam_id' - the number starting from will be named generated samples
 
-    void SaveMetadata(const std::filesystem::path& output_dir,
-                      const std::string& scene_name,
-                      unsigned cameras_start_idx,
-                      unsigned cameras_end_idx,
-                      int cameras_index_offset,
-                      bool gamma_correction_enabled) const;
+    void SaveMetadata() const;
 
-    void GenerateSample(CameraObject* camera,
-                        int camera_idx,
-                        const std::vector<unsigned>& spp,
-                        const std::filesystem::path& output_dir,
-                        bool gamma_correction_enabled);
+    void GenerateCameraData(CameraObject* camera, unsigned camera_idx);
 
     ~DataGeneratorImpl();
 
@@ -102,9 +99,14 @@ private:
                     const std::filesystem::path& output_dir);
 
     SceneObject* m_scene = nullptr;
-    std::uint32_t m_width, m_height;
-    std::uint32_t m_num_bounces;
+    std::string m_scene_name;
+    unsigned m_width, m_height;
+    unsigned m_num_bounces;
     unsigned m_device_idx;
+    std::filesystem::path m_output_dir;
+    std::vector<unsigned> m_sorted_spp;
+    bool m_gamma_correction_enabled;
+
     std::unique_ptr<Baikal::MonteCarloRenderer> m_renderer;
     std::unique_ptr<Baikal::ClwRenderFactory> m_factory;
     std::unique_ptr<Baikal::SceneController<Baikal::ClwScene>> m_controller;

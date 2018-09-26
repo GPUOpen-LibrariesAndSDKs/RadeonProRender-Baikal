@@ -33,6 +33,11 @@ THE SOFTWARE.
 
 #include <vector>
 
+struct Range
+{
+    unsigned begin; // inclusive
+    unsigned end;   // exclusive
+};
 
 class ObjectLoader
 {
@@ -41,13 +46,12 @@ public:
 
     DataGeneratorParams GetDataGeneratorParams();
 
+    Range GetCamerasRange() const;
 private:
     void LoadScene();
     void LoadCameras();
     void LoadLights();
     void LoadSpp();
-
-    void SaveAppMetadata(size_t start_idx, size_t end_idx);
 
     AppConfig m_app_config;
     SceneObject m_scene;
@@ -60,4 +64,6 @@ private:
     std::string m_scene_name;
     std::vector<rpr_camera> m_rpr_cameras;
     std::vector<rpr_light> m_rpr_lights;
+
+    Range m_cameras_idx_range;
 };

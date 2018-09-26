@@ -50,45 +50,48 @@ struct OutputInfo
     int channels_num;
 };
 
+
 namespace {
 
-// if you need to add new output for saving to disk
-// for iterations number counted in spp.xml file
-// just put its description in this collection
-const std::vector<OutputInfo> kMultipleIteratedOutputs
-{
-    {Baikal::Renderer::OutputType::kColor, "color", 3},
-    {Baikal::Renderer::OutputType::kAlbedo, "albedo", 3},
-    {Baikal::Renderer::OutputType::kGloss, "gloss", 1}
-};
+    // if you need to add new output for saving to disk
+    // for iterations number counted in spp.xml file
+    // just put its description in this collection
+    const std::vector<OutputInfo> kMultipleIteratedOutputs
+    {
+        {Baikal::Renderer::OutputType::kColor, "color", 3},
+        {Baikal::Renderer::OutputType::kAlbedo, "albedo", 3},
+        {Baikal::Renderer::OutputType::kGloss, "gloss", 1}
+    };
 
-// if you need to add new output for saving to disk
-// only for the one time
-// just put its description in this collection
-const std::vector<OutputInfo> kSingleIteratedOutputs
-{
-    {Baikal::Renderer::OutputType::kViewShadingNormal, "view_shading_normal", 3},
-    {Baikal::Renderer::OutputType::kDepth, "view_shading_depth", 1}
-};
+    // if you need to add new output for saving to disk
+    // only for the one time
+    // just put its description in this collection
+    const std::vector<OutputInfo> kSingleIteratedOutputs
+    {
+        {Baikal::Renderer::OutputType::kViewShadingNormal, "view_shading_normal", 3},
+        {Baikal::Renderer::OutputType::kDepth, "view_shading_depth", 1}
+    };
 
 } // namespace
 
 
 DataGeneratorImpl::DataGeneratorImpl(SceneObject* scene,
-                                     size_t output_width,
-                                     size_t output_height,
-                                     std::uint32_t num_bounces,
-                                     unsigned device_idx)
+                                     std::string const& scene_name,
+                                     unsigned width, unsigned height,
+                                     unsigned num_bounces,
+                                     unsigned device_idx,
+                                     const std::vector<unsigned>& sorted_spp,
+                                     const std::filesystem::path& output_dir,
+                                     bool gamma_correction_enable)
     : m_scene(scene),
-      m_width(static_cast<std::uint32_t>(output_width)),
-      m_height(static_cast<std::uint32_t>(output_height)),
+      m_scene_name(scene_name),
+      m_width(width), m_height(height),
       m_num_bounces(num_bounces),
-      m_device_idx(device_idx)
+      m_device_idx(device_idx),
+      m_output_dir(output_dir),
+      m_sorted_spp(sorted_spp),
+      m_gamma_correction_enabled(gamma_correction_enable)
 {
-    assert(m_width);
-    assert(m_height);
-    assert(num_bounces);
-
     auto devices = GetDevices();
     if (devices.empty())
     {
@@ -111,16 +114,16 @@ DataGeneratorImpl::DataGeneratorImpl(SceneObject* scene,
 
     for (auto& output_info : kMultipleIteratedOutputs)
     {
-        m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
+        m_outputs.push_back(m_factory->CreateOutput(width, height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
     for (auto& output_info : kSingleIteratedOutputs)
     {
-        m_outputs.push_back(m_factory->CreateOutput(m_width, m_height));
+        m_outputs.push_back(m_factory->CreateOutput(width, height));
         m_renderer->SetOutput(output_info.type, m_outputs.back().get());
     }
 
-    m_renderer->SetMaxBounces(m_num_bounces);
+    m_renderer->SetMaxBounces(num_bounces);
 }
 
 void DataGeneratorImpl::AttachLight(LightObject* light)
@@ -128,23 +131,18 @@ void DataGeneratorImpl::AttachLight(LightObject* light)
     m_scene->AttachLight(light);
 }
 
-void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
-                                     const std::string& scene_name,
-                                     unsigned cameras_start_idx,
-                                     unsigned cameras_end_idx,
-                                     int cameras_index_offset,
-                                     bool gamma_correction_enabled) const
+void DataGeneratorImpl::SaveMetadata() const
 {
     tinyxml2::XMLDocument doc;
 
-    auto bdg_metadata_file_name = output_dir;
+    auto bdg_metadata_file_name = m_output_dir;
     bdg_metadata_file_name.append("metadata.xml");
 
     auto* root = doc.NewElement("metadata");
     doc.InsertFirstChild(root);
 
     auto* scene = doc.NewElement("scene");
-    scene->SetAttribute("name", scene_name.c_str());
+    scene->SetAttribute("name", m_scene_name.c_str());
     root->InsertEndChild(scene);
 
     auto* outputs_list = doc.NewElement("outputs");
@@ -163,15 +161,15 @@ void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
         outputs_item->SetAttribute("channels", output.channels_num);
         if (output.type == Baikal::Renderer::OutputType::kColor)
         {
-            outputs_item->SetAttribute("gamma_correction", gamma_correction_enabled);
+            outputs_item->SetAttribute("gamma_correction", m_gamma_correction_enabled);
         }
         outputs_list->InsertEndChild(outputs_item);
     }
 
     // log render settings
-    auto* render_attribute = doc.NewElement("renderer");
-    render_attribute->SetAttribute("num_bounces", m_num_bounces);
-    root->InsertEndChild(render_attribute);
+    auto* renderer_attribute = doc.NewElement("renderer");
+    renderer_attribute->SetAttribute("num_bounces", m_num_bounces);
+    root->InsertEndChild(renderer_attribute);
 
     auto* device_attribute = doc.NewElement("device");
     auto device = GetDevices().at(m_device_idx);
@@ -184,11 +182,7 @@ void DataGeneratorImpl::SaveMetadata(const std::filesystem::path& output_dir,
     doc.SaveFile(bdg_metadata_file_name.string().c_str());
 }
 
-void DataGeneratorImpl::GenerateSample(CameraObject* camera,
-                                       int camera_idx,
-                                       const std::vector<unsigned>& sorted_spp,
-                                       const std::filesystem::path& output_dir,
-                                       bool gamma_correction_enabled)
+void DataGeneratorImpl::GenerateCameraData(CameraObject* camera, unsigned camera_idx)
 {
     m_scene->SetCamera(camera);
 
@@ -200,9 +194,9 @@ void DataGeneratorImpl::GenerateSample(CameraObject* camera,
     // recompile scene cause of changing camera pos and settings
     auto& scene = m_controller->CompileScene(m_scene->GetScene());
 
-    auto spp_iter = sorted_spp.begin();
+    auto spp_iter = m_sorted_spp.begin();
 
-    for (auto spp = 1u; spp <= sorted_spp.back(); spp++)
+    for (auto spp = 1u; spp <= m_sorted_spp.back(); spp++)
     {
         m_renderer->Render(scene);
 
@@ -217,8 +211,8 @@ void DataGeneratorImpl::GenerateSample(CameraObject* camera,
 
                 SaveOutput(output,
                            ss.str(),
-                           gamma_correction_enabled,
-                           output_dir);
+                           m_gamma_correction_enabled,
+                           m_output_dir);
             }
         }
 
@@ -233,8 +227,8 @@ void DataGeneratorImpl::GenerateSample(CameraObject* camera,
 
                 SaveOutput(output,
                            ss.str(),
-                           gamma_correction_enabled,
-                           output_dir);
+                           m_gamma_correction_enabled,
+                           m_output_dir);
             }
             ++spp_iter;
         }

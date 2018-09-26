@@ -104,10 +104,14 @@ try
     }
 
     DataGeneratorImpl data_generator(scene,
+                                     params->scene_name,
                                      params->width,
                                      params->height,
                                      params->bounces_num,
-                                     params->device_idx);
+                                     params->device_idx,
+                                     sorted_spp,
+                                     output_dir,
+                                     params->gamma_correction != 0);
 
     // Attach given lights to the scene
     for (size_t i = 0; i < params->lights_num; ++i)
@@ -124,12 +128,7 @@ try
     unsigned camera_end_idx = params->cameras_num - 1;
 
     // Save settings and other info into a metadata file
-    data_generator.SaveMetadata(output_dir,
-                                params->scene_name,
-                                0,
-                                camera_end_idx,
-                                params->cameras_start_output_idx,
-                                params->gamma_correction != 0);
+    data_generator.SaveMetadata();
 
     for (unsigned i = 0; i < params->cameras_num; ++i)
     {
@@ -142,11 +141,7 @@ try
         // Render outputs for every specified SPP at the given
         // camera position and save them to separate files
         int camera_idx = params->cameras_start_output_idx + i;
-        data_generator.GenerateSample(camera,
-                                      camera_idx,
-                                      sorted_spp,
-                                      output_dir,
-                                      params->gamma_correction != 0);
+        data_generator.GenerateCameraData(camera, camera_idx);
 
         // Report the progress
         if (params->progress_callback)

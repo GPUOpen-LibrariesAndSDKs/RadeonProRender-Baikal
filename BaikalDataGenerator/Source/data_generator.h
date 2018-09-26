@@ -35,12 +35,12 @@ struct DataGeneratorParams
     rpr_scene scene;
     char const* scene_name;
 
-    rpr_camera* cameras;
-    unsigned cameras_num;
-    int cameras_start_output_idx;
-
     rpr_light* lights;
     unsigned lights_num;
+
+    rpr_camera* cameras;
+    unsigned cameras_num;
+    unsigned cameras_start_output_idx;
 
     unsigned const* spp;
     unsigned spp_num;
