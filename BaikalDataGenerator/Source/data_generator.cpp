@@ -103,6 +103,26 @@ try
         return kDataGeneratorBadOutputDir;
     }
 
+    // Attach given lights to the scene
+    for (size_t i = 0; i < params->lights_num; ++i)
+    {
+        auto* light = LightObject::Cast<LightObject>(params->lights[i]);
+        if (light == nullptr)
+        {
+            return kDataGeneratorBadLights;
+        }
+        scene->AttachLight(light);
+    }
+
+    for (unsigned i = 0; i < params->cameras_num; ++i)
+    {
+        auto* camera = CameraObject::Cast<CameraObject>(params->cameras[i]);
+        if (camera == nullptr)
+        {
+            return kDataGeneratorBadCameras;
+        }
+    }
+
     DataGeneratorImpl data_generator(scene,
                                      params->scene_name,
                                      params->width,
@@ -113,17 +133,6 @@ try
                                      output_dir,
                                      params->gamma_correction != 0);
 
-    // Attach given lights to the scene
-    for (size_t i = 0; i < params->lights_num; ++i)
-    {
-        auto* light = LightObject::Cast<LightObject>(params->lights[i]);
-        if (light == nullptr)
-        {
-            return kDataGeneratorBadLights;
-        }
-        data_generator.AttachLight(light);
-    }
-
     // camera_end_idx is index of the last rendered camera
     unsigned camera_end_idx = params->cameras_num - 1;
 
@@ -133,20 +142,18 @@ try
     for (unsigned i = 0; i < params->cameras_num; ++i)
     {
         auto* camera = CameraObject::Cast<CameraObject>(params->cameras[i]);
-        if (camera == nullptr)
-        {
-            return kDataGeneratorBadCameras;
-        }
 
         // Render outputs for every specified SPP at the given
         // camera position and save them to separate files
-        int camera_idx = params->cameras_start_output_idx + i;
+        unsigned camera_idx = params->cameras_start_output_idx + i;
         data_generator.GenerateCameraData(camera, camera_idx);
 
         // Report the progress
         if (params->progress_callback)
         {
-            params->progress_callback(camera_idx);
+            params->progress_callback(0,
+                                      i + 1,
+                                      params->cameras_num);
         }
     }
 

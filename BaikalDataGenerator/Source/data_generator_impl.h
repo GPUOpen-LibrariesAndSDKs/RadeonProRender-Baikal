@@ -72,8 +72,6 @@ public:
                       const std::filesystem::path& output_dir,
                       bool gamma_correction_enable);
 
-    void AttachLight(LightObject* light);
-
     /// This function generates dataset for network training
     ///
     /// @param output_dir Output directory to save dataset

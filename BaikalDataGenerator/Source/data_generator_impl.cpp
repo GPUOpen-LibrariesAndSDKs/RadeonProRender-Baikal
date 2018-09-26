@@ -85,7 +85,8 @@ DataGeneratorImpl::DataGeneratorImpl(SceneObject* scene,
                                      bool gamma_correction_enable)
     : m_scene(scene),
       m_scene_name(scene_name),
-      m_width(width), m_height(height),
+      m_width(width),
+      m_height(height),
       m_num_bounces(num_bounces),
       m_device_idx(device_idx),
       m_output_dir(output_dir),
@@ -124,11 +125,6 @@ DataGeneratorImpl::DataGeneratorImpl(SceneObject* scene,
     }
 
     m_renderer->SetMaxBounces(num_bounces);
-}
-
-void DataGeneratorImpl::AttachLight(LightObject* light)
-{
-    m_scene->AttachLight(light);
 }
 
 void DataGeneratorImpl::SaveMetadata() const

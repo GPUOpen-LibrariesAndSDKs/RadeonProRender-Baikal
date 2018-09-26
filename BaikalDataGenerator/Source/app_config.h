@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#define DEFAULT_START_OUTPUT_IDX (-1)
+const int default_start_output_index = -1;
 
 struct AppConfig
 {
@@ -17,7 +17,7 @@ struct AppConfig
     unsigned height = 0;
     unsigned split_num = 1;
     unsigned split_idx = 0;
-    int start_output_idx = DEFAULT_START_OUTPUT_IDX;
+    int start_output_idx = default_start_output_index;
     unsigned num_bounces = 5;
     unsigned device_idx = 0;
     bool gamma_correction = false;
