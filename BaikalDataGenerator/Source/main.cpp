@@ -54,7 +54,7 @@ void SaveAppMetadata(const AppConfig& config, Range cameras_range)
     root->InsertEndChild(split);
 
     auto* cameras = doc.NewElement("cameras");
-    cameras->SetAttribute("idx_offset", config.start_output_idx <= default_start_output_index ?
+    cameras->SetAttribute("idx_offset", config.start_output_idx <= kDefaultStartOutputIndex ?
         0 : config.start_output_idx - static_cast<int>(cameras_range.begin));
     cameras->SetAttribute("start_idx", static_cast<int>(cameras_range.begin));
     cameras->SetAttribute("end_idx", static_cast<int>(cameras_range.end - 1));
@@ -128,15 +128,11 @@ try
 
     SaveAppMetadata(config, object_loader.GetCamerasRange());
 
-    auto progress_callback = [](unsigned start_idx, unsigned camera_idx, unsigned end_idx)
+    auto progress_callback = [](unsigned, unsigned camera_idx, unsigned)
     {
-        int progress = static_cast<int>((end_idx > start_idx) ?
-            100 * (float)camera_idx / (float)(end_idx - start_idx) : 100);
-
         DG_LOG(KeyValue("event", "generated")
             << KeyValue("status", "generating")
-            << KeyValue("camera_idx", camera_idx)
-            << KeyValue("progress", progress));
+            << KeyValue("camera_idx", camera_idx));
     };
 
     params.progress_callback = progress_callback;

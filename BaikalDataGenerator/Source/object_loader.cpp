@@ -155,7 +155,7 @@ DataGeneratorParams ObjectLoader::GetDataGeneratorParams()
     params.scene_name = m_scene_name.c_str();
     params.cameras = m_rpr_cameras.data();
     params.cameras_num = static_cast<unsigned>(m_rpr_cameras.size());
-    params.cameras_start_output_idx = (m_app_config.start_output_idx <= default_start_output_index) ?
+    params.cameras_start_output_idx = (m_app_config.start_output_idx <= kDefaultStartOutputIndex) ?
         m_cameras_idx_range.begin : m_app_config.start_output_idx;
     params.lights = m_rpr_lights.data();
     params.lights_num = static_cast<unsigned>(m_rpr_lights.size());

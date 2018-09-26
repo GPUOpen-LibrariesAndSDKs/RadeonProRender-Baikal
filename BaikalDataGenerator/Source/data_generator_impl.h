@@ -72,18 +72,6 @@ public:
                       const std::filesystem::path& output_dir,
                       bool gamma_correction_enable);
 
-    /// This function generates dataset for network training
-    ///
-    /// @param output_dir Output directory to save dataset
-    /// @param scene_name Scene name
-    /// @param cameras_start_idx The save index of the 1st camera
-    /// @param cameras_end_idx The save index of the last camera
-    /// @param cam_states Camera states range
-    /// @param lights - lights range
-    /// 'spp' - spp vector
-    /// 'gamma_correction_enabled' - flag to enable/disable gamma correction
-    /// 'start_cam_id' - the number starting from will be named generated samples
-
     void SaveMetadata() const;
 
     void GenerateCameraData(CameraObject* camera, unsigned camera_idx);

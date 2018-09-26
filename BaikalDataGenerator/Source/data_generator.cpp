@@ -133,9 +133,6 @@ try
                                      output_dir,
                                      params->gamma_correction != 0);
 
-    // camera_end_idx is index of the last rendered camera
-    unsigned camera_end_idx = params->cameras_num - 1;
-
     // Save settings and other info into a metadata file
     data_generator.SaveMetadata();
 
@@ -151,9 +148,9 @@ try
         // Report the progress
         if (params->progress_callback)
         {
-            params->progress_callback(0,
-                                      i + 1,
-                                      params->cameras_num);
+            params->progress_callback(params->cameras_start_output_idx,
+                                      camera_idx,
+                                      params->cameras_start_output_idx + params->cameras_num - 1);
         }
     }
 
