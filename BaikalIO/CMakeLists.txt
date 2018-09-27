@@ -9,6 +9,7 @@ set(SOURCES
     scene_io.h
     scene_test_io.cpp
     scene_obj_io.cpp
+    filesystem.h
     )
 
 if (UNIX AND NOT APPLE)
@@ -32,7 +33,7 @@ if (UNIX AND NOT APPLE)
     target_link_libraries(BaikalIO PUBLIC stdc++fs)
 endif ()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR APPLE)
        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++experimental")
 endif()
 
