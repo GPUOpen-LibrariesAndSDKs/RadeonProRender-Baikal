@@ -33,9 +33,13 @@ if (UNIX AND NOT APPLE)
     target_link_libraries(BaikalIO PUBLIC stdc++fs)
 endif ()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR APPLE)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++experimental")
 endif()
+
+if (APPLE)
+    target_compile_options(BaikalIO PUBLIC -stdlib=libc++)
+endif (APPLE)
 
 target_include_directories(BaikalIO PUBLIC "${Baikal_SOURCE_DIR}/BaikalIO" "${Baikal_SOURCE_DIR}/3rdparty/tinyobjloader/include")
 
