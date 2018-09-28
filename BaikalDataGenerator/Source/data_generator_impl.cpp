@@ -138,7 +138,7 @@ void DataGeneratorImpl::SaveMetadata() const
     doc.InsertFirstChild(root);
 
     auto* scene = doc.NewElement("scene");
-    scene->SetAttribute("name", m_scene_name.c_str());
+    scene->SetAttribute("file", m_scene_name.c_str());
     root->InsertEndChild(scene);
 
     auto* outputs_list = doc.NewElement("outputs");
