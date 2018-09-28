@@ -34,7 +34,7 @@ if (UNIX OR APPLE)
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lc++experimental")
+       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++fs -lc++experimental")
        target_compile_options(BaikalIO PUBLIC -stdlib=libc++)
 endif()
 
