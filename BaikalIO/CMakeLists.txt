@@ -29,7 +29,7 @@ target_compile_definitions(BaikalIO PRIVATE BAIKAL_EXPORT_API)
 target_compile_features(BaikalIO PRIVATE cxx_std_17)
 target_link_libraries(BaikalIO PUBLIC Baikal OpenImageIO::OpenImageIO)
 
-if (UNIX AND NOT APPLE)
+if (UNIX OR APPLE)
     target_link_libraries(BaikalIO PUBLIC stdc++fs)
 endif ()
 
