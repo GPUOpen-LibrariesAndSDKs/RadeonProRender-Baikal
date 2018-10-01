@@ -37,8 +37,10 @@ THE SOFTWARE.
 #include <../Baikal/Kernels/CL/vertex.cl>
 
 #define CORRECT_VALUE(value)\
-    if (any(isnan(value.xyz)) || (value.w == 0))\
-        value = make_float4(0.f, 0.f, 0.f, 1.f);
+    if (any(isnan(value)) || (value.w == 0))\
+    {\
+        value = make_float4(0.f, 0.f, 0.f, 1.f);\
+    }
 
 // Fill AOVs
 KERNEL void FillAOVsUberV2(
@@ -196,11 +198,6 @@ KERNEL void FillAOVsUberV2(
             aov_background[idx].w += 1.0f;
             CORRECT_VALUE(aov_background[idx])
         }
-        else
-        {
-
-        }
-
 
         if (isect.shapeid > -1)
         {
@@ -370,7 +367,7 @@ KERNEL void FillAOVsUberV2(
                 UberV2PrepareInputs(&diffgeo, input_map_values, material_attributes, TEXTURE_ARGS, &uber_shader_data);
                 GetMaterialBxDFType(wi, &sampler, SAMPLER_ARGS, &diffgeo, &uber_shader_data);
 
-		int sampled_component = Bxdf_UberV2_GetSampledComponent(&diffgeo);
+                int sampled_component = Bxdf_UberV2_GetSampledComponent(&diffgeo);
 
                 float gloss = 0.f;
                 if (sampled_component == kBxdfUberV2SampleCoating)
@@ -437,8 +434,8 @@ KERNEL void FillAOVsUberV2(
             if (view_shading_normal_enabled)
             {
                 float3 res = make_float3(dot(camera->right, diffgeo.n), 
-                                        dot(camera->up, diffgeo.n), 
-                                        dot(camera->forward, diffgeo.n));
+                                         dot(camera->up, diffgeo.n), 
+                                         dot(camera->forward, diffgeo.n));
                 res = normalize(res);
 
                 aov_view_shading_normal[idx].xyz += res;
