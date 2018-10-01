@@ -227,7 +227,7 @@ namespace Baikal
             auto transform = mesh->GetTransform();
             shape->SetTransform(transform, inverse(transform));
             shape->SetId(id++);
-            shape->SetMask(iter->GetVisibilityMask());
+            // shape->SetMask(iter->GetVisibilityMask());
 
             out.isect_shapes.push_back(shape);
             out.visible_shapes.push_back(shape);

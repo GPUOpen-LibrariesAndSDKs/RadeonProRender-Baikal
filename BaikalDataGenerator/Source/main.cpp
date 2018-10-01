@@ -21,55 +21,57 @@ THE SOFTWARE.
 ********************************************************************/
 
 #include "cmd_line_parser.h"
-#include "config_loader.h"
+#include "data_generator.h"
+#include "devices.h"
 #include "logging.h"
-#include "render.h"
+#include "object_loader.h"
+#include "utils.h"
+
+#include "Rpr/WrapObject/SceneObject.h"
+#include "Rpr/WrapObject/CameraObject.h"
+#include "Rpr/WrapObject/LightObject.h"
+
+#include "BaikalIO/scene_io.h"
 
 #include <ctime>
 #include <csignal>
 
+#include "XML/tinyxml2.h"
 
-void Run(const DGenConfig& config)
+void SaveAppMetadata(const AppConfig& config, Range cameras_range)
 {
-    ConfigLoader config_loader(config);
+    tinyxml2::XMLDocument doc;
 
-    Render render(config.scene_file, config.width, config.height, config.num_bounces);
+    auto app_metadata_file_name = config.output_dir;
+    app_metadata_file_name.append("app_metadata.xml");
 
-    if ((config.split_num == 0) || (config.split_num > config_loader.CamStates().size()))
-    {
-        THROW_EX("'split_num' should be positive and less than camera states number");
-    }
+    auto* root = doc.NewElement("app_metadata");
+    doc.InsertFirstChild(root);
 
-    if (config.split_idx >= config.split_num)
-    {
-        THROW_EX("'split_idx' must be less than split_num");
-    }
+    auto* split = doc.NewElement("split");
+    split->SetAttribute("split_idx", config.split_idx);
+    split->SetAttribute("split_num", config.split_num);
+    root->InsertEndChild(split);
 
-    auto split_idx = config.split_idx;
-    auto split_num = config.split_num;
-    auto camera_states = config_loader.CamStates();
-    auto dataset_size = camera_states.size() / config.split_num;
+    auto* cameras = doc.NewElement("cameras");
+    cameras->SetAttribute("idx_offset", config.start_output_idx <= kDefaultStartOutputIndex ?
+        0 : config.start_output_idx - static_cast<int>(cameras_range.begin));
+    cameras->SetAttribute("start_idx", static_cast<int>(cameras_range.begin));
+    cameras->SetAttribute("end_idx", static_cast<int>(cameras_range.end - 1));
 
-    std::vector<CameraInfo> camera_states_subset {
-        camera_states.begin() + split_idx * dataset_size,
-        camera_states.begin() + split_idx * dataset_size  + dataset_size};
+    root->InsertEndChild(cameras);
 
-    if ((camera_states.size() % split_num != 0) &&
-        (split_idx < (camera_states.size() % split_num)))
-    {
-        camera_states_subset.push_back(camera_states[dataset_size * split_num + split_idx]);
-    }
-
-    render.GenerateDataset(camera_states_subset,
-                           config_loader.Lights(),
-                           config_loader.LightsDir(),
-                           config_loader.Spp(),
-                           config.output_dir,
-                           config.gamma_correction,
-                           config.offset_idx);
+    doc.SaveFile(app_metadata_file_name.string().c_str());
 }
 
-int main(int argc, char *argv[])
+void Run(const AppConfig& config)
+{
+    ObjectLoader object_loader(config);
+    auto params = object_loader.GetDataGeneratorParams();
+    bdgGenerateDataset(&params);
+}
+
+int main(int argc, char* argv[])
 try
 {
     auto OnCancel = [](int signal)
@@ -96,8 +98,6 @@ try
     std::signal(SIGILL, OnFailure);
     std::signal(SIGSEGV, OnFailure);
 
-    DG_LOG(KeyValue("status", "running") << KeyValue("start_ts", std::time(nullptr)));
-
     CmdLineParser cmd_parser(argc, argv);
 
     if (cmd_parser.HasHelpOption())
@@ -106,9 +106,42 @@ try
         return 0;
     }
 
-    auto config = cmd_parser.Parse();
+    if (cmd_parser.HasListDevicesOption())
+    {
+        std::cout << "Device list:\n";
+        auto devices = GetDevices();
+        for (std::size_t idx = 0; idx < devices.size(); ++idx)
+        {
+            DG_LOG(KeyValue("idx", idx)
+                << KeyValue("name", devices[idx].GetName())
+                << KeyValue("vendor", devices[idx].GetVendor())
+                << KeyValue("version", devices[idx].GetVersion()));
+        }
+        return 0;
+    }
 
-    Run(config);
+    DG_LOG(KeyValue("status", "running") << KeyValue("start_ts", std::time(nullptr)));
+
+    auto config = cmd_parser.Parse();
+    ObjectLoader object_loader(config);
+    auto params = object_loader.GetDataGeneratorParams();
+
+    SaveAppMetadata(config, object_loader.GetCamerasRange());
+
+    auto progress_callback = [](unsigned, unsigned camera_idx, unsigned)
+    {
+        DG_LOG(KeyValue("event", "generated")
+            << KeyValue("status", "generating")
+            << KeyValue("camera_idx", camera_idx));
+    };
+
+    params.progress_callback = progress_callback;
+
+    auto result = bdgGenerateDataset(&params);
+    if (result != kDataGeneratorSuccess)
+    {
+        THROW_EX("Generation failed: result=" << result);
+    }
 
     DG_LOG(KeyValue("status", "finished") << KeyValue("end_ts", std::time(nullptr)));
 }

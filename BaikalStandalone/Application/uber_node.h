@@ -72,6 +72,8 @@ public:
 
     int GetParentId() const;
 
+    virtual ~UberNode();
+
 protected:
     UberNode(InputMap::Ptr input_map, UberNode::Ptr parent);
 

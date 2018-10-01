@@ -22,24 +22,13 @@ THE SOFTWARE.
 
 #pragma once
 
-#include "filesystem.h"
-#include <cstdint>
-#include <cstddef>
+#include <sstream>
+#include <stdexcept>
 
 
-struct DGenConfig
-{
-    std::filesystem::path scene_file;
-    std::filesystem::path light_file;
-    std::filesystem::path camera_file;
-    std::filesystem::path spp_file;
-    std::filesystem::path output_dir;
-    size_t width, height;
-    size_t split_num = 1;
-    size_t split_idx = 0;
-    size_t offset_idx = 0;
-    std::uint32_t num_bounces = 5;
-    bool gamma_correction;
-};
-
-#define THROW_EX(text) throw std::runtime_error(std::string(__func__) + ": " + text);
+#define THROW_EX(insertions) \
+    { \
+        std::ostringstream stream; \
+        stream << std::string(__func__) << ": " << insertions; \
+        throw std::runtime_error(stream.str()); \
+    }

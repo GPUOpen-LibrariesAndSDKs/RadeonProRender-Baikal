@@ -71,7 +71,11 @@ namespace Baikal
 
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            std::cout << i << ": " << m_cfgs[i].context.GetDevice(0).GetName() << "\n";
+            const auto& device = m_cfgs[i].context.GetDevice(0);
+            std::cout << i << ". name: " << device.GetName()
+                << ", vendor: " << device.GetVendor()
+                << ", version: " << device.GetVersion()
+                << "\n";
         }
 
         settings.interop = false;
