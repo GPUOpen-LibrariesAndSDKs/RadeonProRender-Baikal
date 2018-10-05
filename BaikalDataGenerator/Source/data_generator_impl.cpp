@@ -262,7 +262,7 @@ void DataGeneratorImpl::SaveOutput(const OutputInfo& info,
         {
             for (auto x = 0u; x < m_width; ++x)
             {
-                float3 val = output_data[(m_height - 1 - y) * m_width + x];
+                float3 val = output_data[y * m_width + x];
                 // "The 4-th pixel component is a count of accumulated samples.
                 // It can be different for every pixel in case of adaptive sampling.
                 // So, we need to normalize pixel values here".
@@ -281,7 +281,7 @@ void DataGeneratorImpl::SaveOutput(const OutputInfo& info,
         {
             for (auto x = 0u; x < m_width; ++x)
             {
-                float3 val = output_data[(m_height - 1 - y) * m_width + x];
+                float3 val = output_data[y * m_width + x];
                 // "The 4-th pixel component is a count of accumulated samples.
                 // It can be different for every pixel in case of adaptive sampling.
                 // So, we need to normalize pixel values here".
