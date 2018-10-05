@@ -123,6 +123,10 @@ namespace Baikal
         void SetEnvironmentOverride(const EnvironmentOverride& env_override);
         const EnvironmentOverride& GetEnvironmentOverride() const;
         
+        // Default material
+        void SetDefaultMaterial(Baikal::Material::Ptr material);
+        Material::Ptr GetDefaultMaterial() const;
+
         // Forbidden stuff
         Scene1(Scene1 const&) = delete;
         Scene1& operator = (Scene1 const&) = delete;

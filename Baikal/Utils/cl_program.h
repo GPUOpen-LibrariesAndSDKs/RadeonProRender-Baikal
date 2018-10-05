@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
 #include "CLWProgram.h"
 #include "CLWContext.h"
 
@@ -94,6 +95,5 @@ namespace Baikal
         uint32_t m_id;
         CLWContext m_context;
         std::set<std::string> m_included_headers; ///< Set of included headers
-
     };
 }

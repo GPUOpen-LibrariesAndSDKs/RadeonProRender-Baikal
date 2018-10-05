@@ -87,7 +87,7 @@ namespace Baikal
         // Update input map leafs only
         void UpdateLeafsData(Scene1 const& scene, Collector& input_map_leafs_collector, Collector& tex_collector, ClwScene& out) const override;
         // Get default material
-        Material::Ptr GetDefaultMaterial() const override;
+        Material::Ptr GetDefaultMaterial(Scene1 const& scene) const override;
         // If m_current_scene changes
         void UpdateCurrentScene(Scene1 const& scene, ClwScene& out) const override;
         // Update volume materiuals
@@ -128,8 +128,6 @@ namespace Baikal
         CLWContext m_context;
         // Intersection API
         RadeonRays::IntersectionApi* m_api;
-        // Default material
-        Material::Ptr m_default_material;
         // CL Program manager
         const CLProgramManager *m_program_manager;
         // Material to device material map
