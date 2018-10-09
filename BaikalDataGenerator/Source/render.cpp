@@ -83,13 +83,10 @@ const std::vector<OutputInfo> kSingleIteratedOutputs =
 };
 
 Render::Render(const std::filesystem::path& scene_file,
-    size_t output_width,
-    size_t output_height,
-    std::uint32_t num_bounces)
     : m_scene_file(scene_file),
+      m_num_bounces(num_bounces),
       m_width(static_cast<std::uint32_t>(output_width)),
-      m_height(static_cast<std::uint32_t>(output_height)),
-      m_num_bounces(num_bounces)
+      m_height(static_cast<std::uint32_t>(output_height))
 {
     using namespace Baikal;
 

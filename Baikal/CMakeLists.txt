@@ -235,9 +235,3 @@ endif ()
 
 file(TO_CMAKE_PATH ${BAIKAL_KERNELS_SRC} BAIKAL_KERNELS_SRC_CMAKE)
 install(DIRECTORY ${BAIKAL_KERNELS_SRC_CMAKE} DESTINATION Baikal)
-
-# Ignore warning caused by old tiny_obj_loader.h code
-if ((CMAKE_CXX_COMPILER_ID STREQUAL GNU) AND
-    (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8.0.0))
-    target_compile_options(Baikal PUBLIC -Wno-class-memaccess)
-endif()

@@ -31,6 +31,10 @@ THE SOFTWARE.
 #include "CLWBuffer.h"
 #include "math/mathutils.h"
 
+#ifdef BAIKAL_EMBED_KERNELS
+#include "embed_kernels.h"
+#endif
+
 // E.g. #define ML_DENOISER_IMAGES_DIR "/images/dir"
 #ifdef ML_DENOISER_IMAGES_DIR
 #include <fstream>
@@ -68,15 +72,15 @@ namespace Baikal
                 std::size_t input_channels;
                 switch (inputs) {
                     case MLDenoiserInputs::kColorDepthNormalGloss7:
-                        model_path = "models/color_depth_normal_gloss_7.pb";
+                        model_path = "models/color_depth_normal_gloss_7_v3.pb";
                         input_channels = 7;
                         break;
                     case MLDenoiserInputs::kColorAlbedoNormal8:
-                        model_path = "models/color_albedo_normal_8.pb";
+                        model_path = "models/color_albedo_normal_8_v3.pb";
                         input_channels = 8;
                         break;
                     case MLDenoiserInputs::kColorAlbedoDepthNormal9:
-                        model_path = "models/color_albedo_depth_normal_9_v2.pb";
+                        model_path = "models/color_albedo_depth_normal_9_v3.pb";
                         input_channels = 9;
                         break;
                 }
