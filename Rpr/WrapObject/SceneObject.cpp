@@ -37,8 +37,14 @@ SceneObject::SceneObject()
 {
     m_scene = Baikal::Scene1::Create();
 }
+
 SceneObject::~SceneObject()
 {
+}
+
+void SceneObject::SetScene(Baikal::Scene1::Ptr scene)
+{
+    m_scene = std::move(scene);
 }
 
 void SceneObject::Clear()

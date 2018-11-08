@@ -21,6 +21,7 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
+#include "RadeonProRender.h"
 #include "WrapObject.h"
 #include "math/matrix.h"
 #include "math/float2.h"
@@ -30,7 +31,7 @@ THE SOFTWARE.
 
 class MaterialObject;
 
-class LightObject
+class RPR_API_ENTRY LightObject
     : public WrapObject
 {
 public:
@@ -50,7 +51,13 @@ public:
     //light methods
     void SetTransform(const RadeonRays::matrix& transform);
     RadeonRays::matrix GetTransform();
-    
+
+    void SetPosition(const RadeonRays::float3& position);
+    RadeonRays::float3 GetPosition();
+
+    void SetDirection(const RadeonRays::float3& direction);
+    RadeonRays::float3 GetDirection();
+
     void SetRadiantPower(const RadeonRays::float3& p);
     RadeonRays::float3 GetRadiantPower();
 
@@ -63,6 +70,10 @@ public:
     MaterialObject* GetEnvTexture();
     void SetEnvMultiplier(rpr_float mult);
     rpr_float GetEnvMultiplier();
+
+    LightObject(LightObject&&) = default;
+    LightObject& operator= (LightObject&&) = default;
+
 private:
     Type m_type;
     Baikal::Light::Ptr m_light;

@@ -22,35 +22,60 @@ THE SOFTWARE.
 
 #pragma once
 
-#include "utils.h"
-#include "input_info.h"
-#include "filesystem.h"
+#include "Rpr/RadeonProRender.h"
 
-#include <vector>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-using CameraIterator = std::vector<CameraInfo>::const_iterator;
-using LightsIterator = std::vector<LightInfo>::const_iterator;
-using SppIterator = std::vector<int>::const_iterator;
-
-class ConfigLoader
+struct DataGeneratorParams
 {
-public:
-    explicit ConfigLoader(const DGenConfig& config);
+    rpr_scene scene;
+    char const* scene_name;
 
-    std::vector<CameraInfo> CamStates() const;
-    std::vector<LightInfo> Lights() const;
-    const std::filesystem::path& LightsDir() const;
-    std::vector<size_t> Spp() const;
+    rpr_light* lights;
+    unsigned lights_num;
 
-    private:
+    rpr_camera* cameras;
+    unsigned cameras_num;
+    unsigned cameras_start_output_idx;
 
-    void ValidateConfig(const DGenConfig& config) const;
+    unsigned const* spp;
+    unsigned spp_num;
 
-    void LoadCameraConfig(const std::filesystem::path& file_name);
-    void LoadLightConfig(const std::filesystem::path& file_name);
-    void LoadSppConfig(const std::filesystem::path& file_name);
+    unsigned width;
+    unsigned height;
 
-    std::vector<CameraInfo> m_camera_states;
-    std::vector<LightInfo> m_light_settings;
-    std::vector<size_t> m_spp;
-    std::filesystem::path m_ligths_dir;};
+    unsigned bounces_num;
+    unsigned device_idx;
+
+    unsigned gamma_correction; /* 0 or 1 */
+
+    char const* output_dir;
+
+    void(*progress_callback)(unsigned /* start_idx */,
+                             unsigned /* current_idx */,
+                             unsigned  /* end_idx */);
+};
+
+enum DataGeneratorResult
+{
+    kDataGeneratorSuccess = 0,
+    kDataGeneratorBadParams,
+    kDataGeneratorBadOutputDir,
+    kDataGeneratorBadScene,
+    kDataGeneratorBadSceneName,
+    kDataGeneratorBadCameras,
+    kDataGeneratorBadLights,
+    kDataGeneratorBadSpp,
+    kDataGeneratorBadImgSize,
+    kDataGeneratorBadBouncesNum,
+    kDataGeneratorBadDeviceIdx,
+    kDataGeneratorUnknownError,
+};
+
+RPR_API_ENTRY DataGeneratorResult  bdgGenerateDataset(DataGeneratorParams const* params);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

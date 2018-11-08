@@ -21,10 +21,12 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
+#include "RadeonProRender.h"
+
 #include <string>
 
 //base wrap class of Baikal scene nodes
-class WrapObject
+class RPR_API_ENTRY WrapObject
 {
 public:
     WrapObject() = default;
@@ -41,9 +43,9 @@ public:
     std::string GetName() { return m_name; }
     void SetName(const std::string& name) { m_name = name; }
 
-    //forbidden
-    WrapObject(const WrapObject&) = delete;
-    WrapObject& operator= (WrapObject const&) = delete;
+    WrapObject(WrapObject&&) = default;
+    WrapObject& operator= (WrapObject&&) = default;
+
 private:
     std::string m_name;
 };

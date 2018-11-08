@@ -40,6 +40,8 @@ THE SOFTWARE.
 #include <thread>
 #include <chrono>
 
+#include "Application/scene_load_utils.h"
+
 #ifdef ENABLE_DENOISER
 #include "PostEffects/wavelet_denoiser.h"
 #endif
@@ -50,7 +52,7 @@ namespace Baikal
     AppClRender::AppClRender(AppSettings& settings, GLuint tex) : m_tex(tex), m_output_type(Renderer::OutputType::kColor)
     {
         InitCl(settings, m_tex);
-        LoadScene(settings);
+        InitScene(settings);
     }
 
     void AppClRender::InitCl(AppSettings& settings, GLuint tex)
@@ -71,7 +73,11 @@ namespace Baikal
 
         for (std::size_t i = 0; i < m_cfgs.size(); ++i)
         {
-            std::cout << i << ": " << m_cfgs[i].context.GetDevice(0).GetName() << "\n";
+            const auto& device = m_cfgs[i].context.GetDevice(0);
+            std::cout << i << ". name: " << device.GetName()
+                << ", vendor: " << device.GetVendor()
+                << ", version: " << device.GetVersion()
+                << "\n";
         }
 
         settings.interop = false;
@@ -139,53 +145,11 @@ namespace Baikal
     }
 
 
-    void AppClRender::LoadScene(AppSettings& settings)
+    void AppClRender::InitScene(AppSettings& settings)
     {
         rand_init();
 
-        // Load obj file
-        std::string basepath = settings.path;
-        basepath += "/";
-        std::string filename = basepath + settings.modelname;
-
-        {
-            m_scene = Baikal::SceneIo::LoadScene(filename, basepath);
-
-            {
-            #ifdef WIN32
-            #undef LoadImage
-            #endif
-                auto image_io(ImageIo::CreateImageIo());
-                auto ibl_texture = image_io->LoadImage(settings.envmapname);
-
-                auto ibl = ImageBasedLight::Create();
-                ibl->SetTexture(ibl_texture);
-                m_scene->AttachLight(ibl);
-            }
-
-            // Enable this to generate new materal mapping for a model
-#if 0
-            auto material_io{Baikal::MaterialIo::CreateMaterialIoXML()};
-            material_io->SaveMaterialsFromScene(basepath + "materials.xml", *m_scene);
-            material_io->SaveIdentityMapping(basepath + "mapping.xml", *m_scene);
-#endif
-
-            // Check it we have material remapping
-            std::ifstream in_materials(basepath + "materials.xml");
-            std::ifstream in_mapping(basepath + "mapping.xml");
-
-            if (in_materials && in_mapping)
-            {
-                in_materials.close();
-                in_mapping.close();
-
-                auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
-                auto mats = material_io->LoadMaterials(basepath + "materials.xml");
-                auto mapping = material_io->LoadMaterialMapping(basepath + "mapping.xml");
-
-                material_io->ReplaceSceneMaterials(*m_scene, *mats, mapping);
-            }
-        }
+        m_scene = LoadScene(settings);
 
         switch (settings.camera_type)
         {

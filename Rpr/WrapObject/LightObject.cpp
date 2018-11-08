@@ -82,6 +82,26 @@ LightObject::~LightObject()
 {
 }
 
+void LightObject::SetPosition(const RadeonRays::float3& position)
+{
+    m_light->SetPosition(position);
+}
+
+RadeonRays::float3 LightObject::GetPosition()
+{
+    return m_light->GetPosition();
+}
+
+void LightObject::SetDirection(const RadeonRays::float3& direction)
+{
+    m_light->SetDirection(direction);
+}
+
+RadeonRays::float3 LightObject::GetDirection()
+{
+    return m_light->GetDirection();
+}
+
 void LightObject::SetRadiantPower(const RadeonRays::float3& p)
 {
     m_light->SetEmittedRadiance(p);

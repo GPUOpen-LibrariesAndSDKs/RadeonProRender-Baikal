@@ -22,9 +22,12 @@ THE SOFTWARE.
 
 #pragma once
 
+#include "app_config.h"
+
+#include <Baikal/Utils/cmd_parser.h>
+
 #include <string>
-#include "utils.h"
-#include <Utils/cmd_parser.h>
+
 
 class CmdLineParser
 {
@@ -34,8 +37,11 @@ public:
     // 'argv' - command line arguments string
     CmdLineParser(int argc, char* argv[]);
 
-    // Generate DGenConfig from internal string
-    DGenConfig Parse() const;
+    // Generate AppConfig from internal string
+    AppConfig Parse() const;
+
+    // check whether device list is requested
+    bool HasListDevicesOption() const;
 
     // check if there is '-help' option
     // returns true if there's a help option, false otherwise

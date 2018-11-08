@@ -21,6 +21,7 @@ THE SOFTWARE.
 ********************************************************************/
 #pragma once
 
+#include "RadeonProRender.h"
 #include "WrapObject/WrapObject.h"
 #include "SceneGraph/scene1.h"
 #include "SceneGraph/shape.h"
@@ -34,7 +35,7 @@ class CameraObject;
 class MaterialObject;
 
 //this class represent rpr_context
-class SceneObject
+class RPR_API_ENTRY SceneObject
     : public WrapObject
 {
 public:
@@ -63,8 +64,8 @@ public:
     void SetCamera(CameraObject* cam);
     CameraObject* GetCamera() { return m_current_camera; }
 
-	void GetShapeList(void* out_list);
-	size_t GetShapeCount() { return m_scene->GetNumShapes(); }
+    void GetShapeList(void* out_list);
+    size_t GetShapeCount() { return m_scene->GetNumShapes(); }
     
     void GetLightList(void* out_list);
     size_t GetLightCount() { return m_scene->GetNumLights(); }
@@ -79,10 +80,13 @@ public:
     void SetEnvironmentOverride(OverrideType overrride, LightObject* light);
     LightObject* GetEnvironmentOverride(OverrideType overrride);
 
-	void AddEmissive();
-	void RemoveEmissive();
+    void AddEmissive();
+    void RemoveEmissive();
     bool IsDirty();
+
+    void SetScene(Baikal::Scene1::Ptr scene);
     Baikal::Scene1::Ptr GetScene() { return m_scene; };
+
 private:
     Baikal::Scene1::Ptr m_scene;
     CameraObject* m_current_camera = nullptr;
