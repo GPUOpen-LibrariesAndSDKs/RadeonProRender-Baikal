@@ -1,6 +1,6 @@
 #pragma once
 
-#if (defined(__GNUC__) && (__GNUC__ < 8))
+#if (defined(__GNUC__) && (__GNUC__ < 8)) || (defined(__clang__) && (__clang_major__ < 7))
 #include <experimental/filesystem>
 #else
 #include <filesystem>
@@ -15,5 +15,10 @@
 namespace std
 {
     namespace filesystem = experimental::filesystem::v1;
+}
+#elif (defined(__clang__))
+namespace std
+{
+    namespace filesystem = experimental::filesystem;
 }
 #endif
