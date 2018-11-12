@@ -22,8 +22,6 @@ namespace ML
     class MODEL_RUNNER_API Model
     {
     public:
-        using ValueType = float;
-
         /**
          * Takes input 3D array with dimensions (height, width, channels)
          * and infers output 3D array with dimensions (height, width, 3).
@@ -34,11 +32,11 @@ namespace ML
          * @param[in] channels Last array dimension.
          * @param[out] output Output array.
          */
-        virtual void infer(ValueType const* input,
+        virtual void infer(void const* input,
                            std::size_t width,
                            std::size_t height,
                            std::size_t channels,
-                           ValueType* output) const = 0;
+                           void* output) const = 0;
 
         virtual ~Model() {}
     };
@@ -47,17 +45,35 @@ namespace ML
 extern "C"
 {
     /**
+     * Model parameters. All unused values must be initialized to 0.
+     */
+    struct ModelParams
+    {
+        char const* model_path; /**< Path to a model in protobuf format. */
+
+        char const* input_node; /**< Input graph node name, "inputs" by default. */
+
+        char const* output_node; /**< Output graph node name, "outputs" by default. */
+
+        float gpu_memory_fraction; /**<
+                                    * Fraction of GPU memory allowed to use
+                                    * by versions with GPU support, (0..1].
+                                    * All memory is used by default.
+                                    */
+
+        char const* visible_devices; /**<
+                                      * Comma-delimited list of GPU devices
+                                      * accessible for calculations.
+                                      * All devices are visible by default.
+                                      */
+    };
+
+    /**
      * Creates and initializes a model.
      *
-     * @param model_path Path to a model.
-     * @param gpu_memory_fraction Fraction of GPU memory allowed to use
-     *                            by versions with GPU support (0..1].
-     *                            Use 0 for default configuration.
-     * @param visible_devices Comma-delimited list of GPU devices
-     *                        accessible for calculations.
-     * @return A new model object.
+     * @param params Model parameters.
+     *
+     * @return A new model object in case of success, null otherwise.
      */
-    MODEL_RUNNER_API ML::Model* LoadModel(char const* model_path,
-                                          float gpu_memory_fraction,
-                                          char const* visible_devices);
+    MODEL_RUNNER_API ML::Model* LoadModel(ModelParams const* params);
 }

@@ -89,9 +89,11 @@ namespace Baikal
                                 float gpu_memory_fraction,
                                 std::string const& visible_devices)
         {
-            m_model.reset(g_load_model(model_path.c_str(),
-                                       gpu_memory_fraction,
-                                       visible_devices.c_str()));
+            ModelParams params = {};
+            params.model_path = model_path.c_str();
+            params.gpu_memory_fraction = gpu_memory_fraction;
+            params.visible_devices = visible_devices.c_str();
+            m_model.reset(g_load_model(&params));
         }
     }
 }
