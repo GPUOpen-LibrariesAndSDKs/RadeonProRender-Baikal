@@ -44,8 +44,8 @@ namespace Baikal
         std::string envmapname;
 
         //render
-        int width;
-        int height;
+        std::uint32_t width;
+        std::uint32_t height;
         int num_bounces;
         int num_samples;
         bool interop;
@@ -90,6 +90,8 @@ namespace Baikal
         std::string base_image_file_name;
         std::string image_file_format;
 
+        std::string light_file;
+
         //unused
         int num_shadow_rays;
         int samplecount;
@@ -103,7 +105,7 @@ namespace Baikal
         std::string visible_devices;
 
         // denoiser settings
-        DenoiserType denoiser_type = DenoiserType::kNone;
+        PostProcessingType post_processing_type = PostProcessingType::kNone;
         std::uint32_t denoiser_start_spp = 8;
     };
 

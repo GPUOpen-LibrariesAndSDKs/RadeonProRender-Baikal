@@ -966,8 +966,8 @@ namespace Baikal
                 ImGui::Text("Shadow rays: %f Mrays/s", stats.shadow_throughput * 1e-6f);
             }
 
-            if (m_cl->GetDenoiserType() == DenoiserType::kBilateral ||
-                m_cl->GetDenoiserType() == DenoiserType::kWavelet)
+            if (m_cl->GetDenoiserType() == PostProcessingType::kBilateralDenoiser ||
+                m_cl->GetDenoiserType() == PostProcessingType::kWaveletDenoser)
             {
                 ImGui::Separator();
 
@@ -990,7 +990,7 @@ namespace Baikal
                 }
             }
 
-            if (m_cl->GetDenoiserType() != DenoiserType::kNone)
+            if (m_cl->GetDenoiserType() != PostProcessingType::kNone)
             {
                 ImGui::Separator();
                 ImGui::Checkbox("Split output", &m_settings.split_output);

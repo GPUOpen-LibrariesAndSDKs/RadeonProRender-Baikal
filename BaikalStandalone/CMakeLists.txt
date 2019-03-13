@@ -14,7 +14,9 @@ set(APPLICATION_SOURCES
     Application/graph_scheme.h
     Application/graph_scheme.cpp
     Application/material_explorer.h
-    Application/material_explorer.cpp)
+    Application/material_explorer.cpp
+    Application/scene_load_utils.h
+    Application/scene_load_utils.cpp)
 
 set(IMGUI_SORUCES
     ImGUI/imconfig.h

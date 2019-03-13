@@ -41,12 +41,13 @@ enum class DeviceType
     kSecondary
 };
 
-enum class DenoiserType
+enum class PostProcessingType
 {
     kNone = 0,
-    kBilateral,
-    kWavelet,
-    kML
+    kBilateralDenoiser,
+    kWaveletDenoser,
+    kMLDenoiser,
+    kMLUpsample
 };
 
 enum class Mode

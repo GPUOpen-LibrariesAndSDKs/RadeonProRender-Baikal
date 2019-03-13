@@ -94,7 +94,7 @@ namespace Baikal
         std::future<int> GetShapeId(std::uint32_t x, std::uint32_t y);
         Baikal::Shape::Ptr GetShapeById(int shape_id);
 
-        DenoiserType GetDenoiserType() const;
+        PostProcessingType GetDenoiserType() const;
         void SetDenoiserFloatParam(std::string const& name, float value);
         float GetDenoiserFloatParam(std::string const& name) const;
 
@@ -104,7 +104,7 @@ namespace Baikal
         using RendererOutputs = std::map<Renderer::OutputType, std::unique_ptr<Output>>;
 
         void InitCl(AppSettings& settings, GLuint tex);
-        void LoadScene(AppSettings& settings);
+        void InitScene(AppSettings& settings);
         void RenderThread(ControlData& cd);
 
         Output* GetRendererOutput(size_t device_idx, Renderer::OutputType type);
@@ -139,9 +139,10 @@ namespace Baikal
         GLuint m_tex;
         Renderer::OutputType m_output_type = Renderer::OutputType::kColor;
 
-        DenoiserType m_denoiser_type = DenoiserType::kNone;
+        PostProcessingType m_post_processing_type = PostProcessingType::kNone;
         std::unique_ptr<PostEffect> m_post_effect;
         PostEffect::InputSet m_post_effect_inputs;
         std::unique_ptr<Output> m_post_effect_output;
+        std::unique_ptr<Output> m_upscaled_img;
     };
 }

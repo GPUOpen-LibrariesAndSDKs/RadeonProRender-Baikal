@@ -20,9 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ********************************************************************/
 #include "OpenImageIO/imageio.h"
+#include "image_io.h"
 
 #include "Application/cl_render.h"
-
+#include "Application/scene_load_utils.h"
 #include "Application/gl_render.h"
 #include "Utils/output_accessor.h"
 
@@ -44,6 +45,8 @@ THE SOFTWARE.
 #include <chrono>
 #include <cmath>
 
+#include "PostEffects/ML/ml_post_effect.h"
+
 namespace Baikal
 {
 
@@ -59,11 +62,11 @@ namespace Baikal
 
     AppClRender::AppClRender(AppSettings& settings, GLuint tex)
     : m_tex(tex)
-    , m_denoiser_type(settings.denoiser_type)
+    , m_post_processing_type(settings.post_processing_type)
     {
         InitCl(settings, m_tex);
         InitPostEffect(settings);
-        LoadScene(settings);
+        InitScene(settings);
 
 #ifdef IMAGE_DUMP_PATH
         s_output_accessor = std::make_unique<RendererOutputAccessor>(
@@ -82,8 +85,11 @@ namespace Baikal
             settings.platform_index,
             settings.device_index);
 
-        m_width = (std::uint32_t)settings.width;
-        m_height = (std::uint32_t)settings.height;
+        m_width = (m_post_processing_type == PostProcessingType::kMLUpsample) ?
+            settings.width / 2 : settings.width;
+
+        m_height = (m_post_processing_type == PostProcessingType::kMLUpsample) ?
+                   settings.height / 2 : settings.height;
 
         std::cout << "Running on devices: \n";
 
@@ -133,8 +139,8 @@ namespace Baikal
             AddRendererOutput(i, Renderer::OutputType::kColor);
             m_outputs[i].dummy_output = m_cfgs[i].factory->CreateOutput(m_width, m_height); // TODO: mldenoiser, clear?
 
-            m_outputs[i].fdata.resize(settings.width * settings.height);
-            m_outputs[i].udata.resize(settings.width * settings.height * 4);
+            m_outputs[i].fdata.resize(m_width * m_height);
+            m_outputs[i].udata.resize(4 * m_width * m_height);
         }
 
         m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
@@ -154,15 +160,23 @@ namespace Baikal
         }
 
         // create buffer for post-effect output
-        m_post_effect_output = m_cfgs[device_idx].factory->CreateOutput(m_width, m_height);
+        if (m_post_processing_type != PostProcessingType::kMLUpsample)
+        {
+            m_post_effect_output = m_cfgs[device_idx].factory->CreateOutput(m_width, m_height);
+        }
+        else
+        {
+            m_post_effect_output = m_cfgs[device_idx].factory->CreateOutput(2 * m_width, 2 * m_height);
+            m_upscaled_img = m_cfgs[device_idx].factory->CreateOutput(2 * m_width, 2 * m_height);
+        }
 
         m_shape_id_data.output = m_cfgs[m_primary].factory->CreateOutput(m_width, m_height);
         m_cfgs[m_primary].renderer->Clear(RadeonRays::float3(0, 0, 0), *m_shape_id_data.output);
     }
 
-    DenoiserType AppClRender::GetDenoiserType() const
+    PostProcessingType AppClRender::GetDenoiserType() const
     {
-        return m_denoiser_type;
+        return m_post_processing_type;
     }
 
     void AppClRender::SetDenoiserFloatParam(std::string const& name, float value)
@@ -175,69 +189,25 @@ namespace Baikal
         return m_post_effect->GetParameter(name).GetFloat();
     }
 
-    void AppClRender::LoadScene(AppSettings& settings)
+    void AppClRender::InitScene(AppSettings& settings)
     {
         rand_init();
 
-        // Load obj file
-        std::string basepath = settings.path;
-        basepath += "/";
-        std::string filename = basepath + settings.modelname;
-
-        {
-            m_scene = Baikal::SceneIo::LoadScene(filename, basepath);
-
-            {
-            #ifdef WIN32
-            #undef LoadImage
-            #endif
-                auto image_io(ImageIo::CreateImageIo());
-                auto ibl_texture = image_io->LoadImage(settings.envmapname);
-
-                auto ibl = ImageBasedLight::Create();
-                ibl->SetTexture(ibl_texture);
-                ibl->SetMultiplier(settings.envmapmul);
-                m_scene->AttachLight(ibl);
-            }
-
-            // Enable this to generate new materal mapping for a model
-#if 0
-            auto material_io{Baikal::MaterialIo::CreateMaterialIoXML()};
-            material_io->SaveMaterialsFromScene(basepath + "materials.xml", *m_scene);
-            material_io->SaveIdentityMapping(basepath + "mapping.xml", *m_scene);
-#endif
-
-            // Check it we have material remapping
-            std::ifstream in_materials(basepath + "materials.xml");
-            std::ifstream in_mapping(basepath + "mapping.xml");
-
-            if (in_materials && in_mapping)
-            {
-                in_materials.close();
-                in_mapping.close();
-
-                auto material_io = Baikal::MaterialIo::CreateMaterialIoXML();
-                auto mats = material_io->LoadMaterials(basepath + "materials.xml");
-                auto mapping = material_io->LoadMaterialMapping(basepath + "mapping.xml");
-
-                material_io->ReplaceSceneMaterials(*m_scene, *mats, mapping);
-            }
-        }
+        m_scene = LoadScene(settings);
 
         switch (settings.camera_type)
         {
         case CameraType::kPerspective:
             m_camera = Baikal::PerspectiveCamera::Create(
-                settings.camera_pos
-                , settings.camera_at
-                , settings.camera_up);
-
+                    settings.camera_pos
+                    , settings.camera_at
+                    , settings.camera_up);
             break;
         case CameraType::kOrthographic:
             m_camera = Baikal::OrthographicCamera::Create(
-                settings.camera_pos
-                , settings.camera_at
-                , settings.camera_up);
+                    settings.camera_pos
+                    , settings.camera_at
+                    , settings.camera_up);
             break;
         default:
             throw std::runtime_error("AppClRender::InitCl(...): unsupported camera type");
@@ -321,18 +291,18 @@ namespace Baikal
                 m_cfgs[m_primary].context.WriteBuffer(
                         0, m_copybuffer,
                         &m_outputs[i].fdata[0],
-                        settings.width * settings.height);
+                        m_width * m_height);
 
                 auto acckernel = static_cast<MonteCarloRenderer*>(m_cfgs[m_primary].renderer.get())->GetAccumulateKernel();
 
                 int argc = 0;
                 acckernel.SetArg(argc++, m_copybuffer);
-                acckernel.SetArg(argc++, settings.width * settings.width);
+                acckernel.SetArg(argc++, m_width * m_height);
                 acckernel.SetArg(argc++,
                         static_cast<Baikal::ClwOutput*>(GetRendererOutput(
                                 m_primary, Renderer::OutputType::kColor))->data());
 
-                int globalsize = settings.width * settings.height;
+                int globalsize = m_width * m_height;
                 m_cfgs[m_primary].context.Launch1D(0, ((globalsize + 63) / 64) * 64, 64, acckernel);
                 settings.samplecount += m_ctrl[i].new_samples_count;
             }
@@ -368,8 +338,22 @@ namespace Baikal
                 {
                     if (settings.split_output)
                     {
-                        CopyToGL(GetRendererOutput(m_primary, Renderer::OutputType::kColor),
-                                 m_post_effect_output.get());
+                        if (m_post_processing_type != PostProcessingType::kMLUpsample)
+                        {
+                            CopyToGL(GetRendererOutput(m_primary, Renderer::OutputType::kColor),
+                                     m_post_effect_output.get());
+                        }
+                        else
+                        {
+                            auto ml_post_effect = dynamic_cast<PostEffects::MLPostEffect*>(m_post_effect.get());
+
+                            ml_post_effect->Resize_2x(dynamic_cast<ClwOutput*>(m_upscaled_img.get())->data(),
+                                                      dynamic_cast<ClwOutput*>(GetRendererOutput(
+                                                      m_primary,
+                                                      Renderer::OutputType::kColor))->data());
+
+                            CopyToGL(m_upscaled_img.get(), m_post_effect_output.get());
+                        }
                     }
                     else
                     {
@@ -770,22 +754,28 @@ namespace Baikal
 
     void AppClRender::InitPostEffect(AppSettings const& settings)
     {
-        switch (m_denoiser_type)
+        switch (m_post_processing_type)
         {
-        case DenoiserType::kNone:
+        case PostProcessingType::kNone:
             break;
-        case DenoiserType::kBilateral:
+        case PostProcessingType::kBilateralDenoiser:
             if (settings.camera_type != CameraType::kPerspective)
             {
                 throw std::logic_error("Bilateral denoiser requires perspective camera");
             }
             AddPostEffect(m_primary, PostEffectType::kBilateralDenoiser);
             break;
-        case DenoiserType::kWavelet:
+        case PostProcessingType::kWaveletDenoser:
             AddPostEffect(m_primary, PostEffectType::kWaveletDenoiser);
             break;
-        case DenoiserType::kML:
+        case PostProcessingType::kMLDenoiser:
             AddPostEffect(m_primary, PostEffectType::kMLDenoiser);
+            m_post_effect->SetParameter("gpu_memory_fraction", settings.gpu_mem_fraction);
+            m_post_effect->SetParameter("visible_devices", settings.visible_devices);
+            m_post_effect->SetParameter("start_spp", settings.denoiser_start_spp);
+            break;
+        case PostProcessingType::kMLUpsample:
+            AddPostEffect(m_primary, PostEffectType::kMLUpsampler);
             m_post_effect->SetParameter("gpu_memory_fraction", settings.gpu_mem_fraction);
             m_post_effect->SetParameter("visible_devices", settings.visible_devices);
             m_post_effect->SetParameter("start_spp", settings.denoiser_start_spp);
@@ -797,9 +787,9 @@ namespace Baikal
 
     void AppClRender::SetPostEffectParams(int sample_cnt)
     {
-        switch (m_denoiser_type)
+        switch (m_post_processing_type)
         {
-        case DenoiserType::kBilateral:
+        case PostProcessingType::kBilateralDenoiser:
         {
             const auto radius = 10U - RadeonRays::clamp((sample_cnt / 16), 1U, 9U);
             m_post_effect->SetParameter("radius", static_cast<float>(radius));
@@ -809,7 +799,7 @@ namespace Baikal
             m_post_effect->SetParameter("albedo_sensitivity", 0.5f + (radius / 10.f) * 0.5f);
             break;
         }
-        case DenoiserType::kWavelet:
+        case PostProcessingType::kWaveletDenoser:
         {
             auto pCamera = dynamic_cast<PerspectiveCamera*>(m_camera.get());
             m_post_effect->SetParameter("camera_focal_length", pCamera->GetFocalLength());
@@ -822,8 +812,9 @@ namespace Baikal
             m_post_effect->SetParameter("camera_aspect_ratio", pCamera->GetAspectRatio());
             break;
         }
-        case DenoiserType::kML:
-        case DenoiserType::kNone:
+        case PostProcessingType::kMLDenoiser:
+        case PostProcessingType::kMLUpsample:
+        case PostProcessingType::kNone:
         default:
             break;
         }

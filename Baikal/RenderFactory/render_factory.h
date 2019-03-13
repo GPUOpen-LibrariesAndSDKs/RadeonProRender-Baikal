@@ -36,7 +36,8 @@ namespace Baikal
     {
         kBilateralDenoiser,
         kWaveletDenoiser,
-        kMLDenoiser
+        kMLDenoiser,
+        kMLUpsampler,
     };
 
     /**

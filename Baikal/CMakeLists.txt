@@ -15,16 +15,21 @@ set(OUTPUT_SOURCES
     Output/output.h)
 
 set(POSTEFFECT_ML_SOURCES
-    PostEffects/ML/denoiser.h
-    PostEffects/ML/denoiser.cpp
+    PostEffects/ML/upsampler_preprocessor.h
+    PostEffects/ML/upsampler_preprocessor.cpp
+    PostEffects/ML/denoiser_preprocessor.h
+    PostEffects/ML/denoiser_preprocessor.cpp
     PostEffects/ML/inference.h
-    PostEffects/ML/inference_impl.h
-    PostEffects/ML/inference_impl.cpp
-    PostEffects/ML/model.h
+    PostEffects/ML/inference.cpp
+    PostEffects/ML/ml_post_effect.h
+    PostEffects/ML/ml_post_effect.cpp
     PostEffects/ML/model_holder.h
     PostEffects/ML/model_holder.cpp
-    PostEffects/ML/tensor.h
-)
+    PostEffects/ML/data_preprocessor.h
+    PostEffects/ML/data_preprocessor.cpp
+    PostEffects/ML/image.h
+    PostEffects/ML/image.cpp
+    PostEffects/ML/error_handler.h)
 
 set(POSTEFFECT_SOURCES
     PostEffects/clw_post_effect.h
@@ -232,6 +237,11 @@ if (WIN32)
 else ()
     install(TARGETS Baikal LIBRARY DESTINATION lib)
 endif ()
+
+# add ml libs
+target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/3rdparty/RadeonProML")
+target_link_libraries(Baikal PUBLIC "${Baikal_SOURCE_DIR}/3rdparty/RadeonProML/libRadeonProML.so")
+target_link_libraries(Baikal PUBLIC libRadeonProML.so)
 
 file(TO_CMAKE_PATH ${BAIKAL_KERNELS_SRC} BAIKAL_KERNELS_SRC_CMAKE)
 install(DIRECTORY ${BAIKAL_KERNELS_SRC_CMAKE} DESTINATION Baikal)

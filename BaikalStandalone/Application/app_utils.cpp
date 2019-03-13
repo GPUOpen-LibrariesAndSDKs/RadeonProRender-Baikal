@@ -94,6 +94,8 @@ namespace Baikal
 
         s.image_file_format = m_cmd_parser.GetOption("-iff", s.image_file_format);
 
+        s.light_file = m_cmd_parser.GetOption("-lights", s.light_file);
+
         s.gpu_mem_fraction = m_cmd_parser.GetOption("-gmf", s.gpu_mem_fraction);
 
         s.visible_devices = m_cmd_parser.GetOption("-vds", s.visible_devices);
@@ -189,21 +191,25 @@ namespace Baikal
             s.cmd_line_mode = true;
         }
 
-        if (m_cmd_parser.OptionExists("-denoiser_type"))
+        if (m_cmd_parser.OptionExists("-postproc"))
         {
-            auto denoiser_type = m_cmd_parser.GetOption("-denoiser_type");
+            auto post_processing_type = m_cmd_parser.GetOption("-postproc");
 
-            if (denoiser_type == "bilateral")
+            if (post_processing_type == "bilateral")
             {
-                s.denoiser_type = DenoiserType::kBilateral;
+                s.post_processing_type = PostProcessingType::kBilateralDenoiser;
             }
-            else if (denoiser_type == "wavelet")
+            else if (post_processing_type == "wavelet")
             {
-                s.denoiser_type = DenoiserType::kWavelet;
+                s.post_processing_type = PostProcessingType::kWaveletDenoser;
             }
-            else if (denoiser_type == "ml")
+            else if (post_processing_type == "denoise")
             {
-                s.denoiser_type = DenoiserType::kML;
+                s.post_processing_type = PostProcessingType::kMLDenoiser;
+            }
+            else if (post_processing_type == "sisr")
+            {
+                s.post_processing_type = PostProcessingType::kMLUpsample;
             }
             else
             {

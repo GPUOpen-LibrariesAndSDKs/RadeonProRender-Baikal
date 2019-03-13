@@ -113,6 +113,29 @@ void BilateralDenoise_main(
     }
 }
 
+KERNEL
+void ToneMappingExponential(GLOBAL float4* restrict dst,
+                        GLOBAL float4 const* restrict src,
+                        int elems_num)
+{
+    int id = get_global_id(0);
+
+    if (id >= elems_num)
+    {
+        return;
+    }
+
+    if (src[id].w != 0.0f)
+    {
+        dst[id].xyz = 1.f - exp(-1.2f * src[id].xyz / src[id].w);
+    }
+    else
+    {
+        dst[id] = make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+}
+
+
 // perform division on w component
 KERNEL
 void DivideBySampleCount(GLOBAL float4* restrict dst,
@@ -149,8 +172,7 @@ void CopyInterleaved(GLOBAL float4* restrict dst,
                      int src_height,
                      int src_channels_offset, // offset inside pixel in channels (not bytes)
                      int src_channels_num,
-                     int channels_to_copy,
-                     GLOBAL float* restrict out_sample_count)
+                     int channels_to_copy)
 {
     int global_id = get_global_id(0);
 
@@ -172,11 +194,74 @@ void CopyInterleaved(GLOBAL float4* restrict dst,
     {
         dst_pixel[i] = src_pixel[i];
     }
+}
 
-    if (global_id == 0)
+static float3 BicubicConvolutionCompute(float4 f0, float4 f1, float4 f2, float4 f3)
+{
+    const float t = 0.5f;
+    float4 a0 = f1;
+    float4 a1 = (f0 - f2) / 2.f;
+    float4 a2 = -f0 - 3.5f * f1 + 4 * f2 + .5f * f3;
+    float4 a3 = .5f * f0 + 2.5f * f1 - 2.5f * f2 - .5f * f3;
+
+    return (a3 * t * t * t + a2 * t * t + a1 * t + a0).xyz;
+}
+
+KERNEL
+void BicubicUpscale2x_X(// size of the dst buffer should be enough
+                        // to store 2 * sizeof(float3) * width * height
+                        GLOBAL float4* restrict dst,
+                        GLOBAL float4 const* restrict src,
+                        int width,
+                        int height)
+{
+    int idx = get_global_id(0);
+    int src_idx = idx / 2;
+
+    dst[idx].w = src[0].w;
+
+    if (idx % 2 == 0 || (idx + 1) % (2 * width) == 0)
     {
-        *out_sample_count = src[0].w;
+        dst[idx].xyz = src[idx / 2].xyz;
+        return;
     }
+
+    dst[idx].xyz = BicubicConvolutionCompute(src[src_idx - 1],
+                                      src[src_idx],
+                                      src[src_idx + 1],
+                                      src[src_idx + 2]);
+
+
+}
+
+
+KERNEL
+void BicubicUpscale2x_Y(// size of the dst buffer should be enough to store
+                        // 2 * sizeof(float3) * width * height
+                        GLOBAL float4* restrict dst,
+                        GLOBAL float4 const* restrict src,
+                        int width,
+                        int height)
+{
+    int idx = get_global_id(0);
+
+    int x_coord = idx % width; // same for dst and src buffers
+    int dst_y = (idx - x_coord) / width;
+    int src_y = dst_y / 2;
+    int src_idx = src_y * width + x_coord;
+
+    dst[idx].w = src[0].w;
+
+    if (dst_y % 2 == 0 || dst_y == 1 || dst_y > height - 2)
+    {
+        dst[idx].xyz = src[src_idx].xyz;
+        return;
+    }
+
+    dst[idx].xyz = BicubicConvolutionCompute(src[src_idx - width],
+                                      src[src_idx],
+                                      src[src_idx + width],
+                                      src[src_idx + 2 * width]);
 }
 
 #endif
