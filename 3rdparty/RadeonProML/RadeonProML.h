@@ -18,7 +18,7 @@
  * -# Get output image data using mlMapImage() and mlUnmapImage().
  * -# If image size is changed, repeat from the step 5.
  * -# If image size is unchanged, repeat from the step 10.
- * -# In a case of a failure call  or mlGetModelError() to get details.
+ * -# In a case of a failure invoke the mlGetLastError() to get details.
  * -# Release the images using mlReleaseImage().
  * -# Release the model using mlReleaseModel().
  * -# Release the context using mlReleaseContext().
@@ -50,7 +50,7 @@ extern "C" {
 /**
  * Model parameters. All unused values must be initialized to 0.
  */
-struct ml_model_params
+typedef struct _ml_model_params
 {
     char const* model_path; /**< Path to a model in protobuf format. */
 
@@ -69,73 +69,75 @@ struct ml_model_params
                                   * accessible for calculations.
                                   * All devices are visible by default.
                                   */
-};
+} ml_model_params;
 
 /**
  * Context handle.
  */
-typedef struct ml_context_t {}* ml_context;
+typedef struct _ml_context* ml_context;
 
 /**
  * Model handle.
  */
-typedef struct ml_model_t {}* ml_model;
+typedef struct _ml_model* ml_model;
 
 /**
  * Image handle.
  */
-typedef struct ml_image_t {}* ml_image;
-
-#define ML_INVALID_HANDLE NULL
+typedef struct _ml_image* ml_image;
 
 /**
  * Operation status.
  */
-enum ml_status
+typedef enum _ml_status
 {
     ML_OK,
     ML_FAIL
-};
+
+} ml_status;
 
 /**
  * Image underlying data type.
  */
-enum ml_data_type
+typedef enum _ml_data_type
 {
-    ML_FLOAT32
-};
+    ML_FLOAT32,
+    ML_FLOAT16,
+    ML_INT32,
+
+} ml_data_type;
+
+/**
+* Image access mode.
+*/
+typedef enum _ml_access_mode
+{
+    ML_READ_ONLY,
+    ML_WRITE_ONLY,
+    ML_READ_WRITE
+
+} ml_access_mode;
 
 /**
  * 3D image description.
  */
-struct ml_image_info
+typedef struct _ml_image_info
 {
     ml_data_type dtype; /**< Underlying data type. */
-    size_t width;       /**< Image width. in pixels. 0 if unspecified. */
     size_t height;      /**< Image height, in pixels. 0 if unspecified. */
+    size_t width;       /**< Image width. in pixels. 0 if unspecified. */
     size_t channels;    /**< Image channel count. 0 if unspecified. */
-};
+
+} ml_image_info;
 
 
 /**
  * Creates a context.
  *
- * @return A valid context handle in case of success, ML_INVALID_HANDLE
- *         otherwise. The context should be released with mlReleaseContext().
+ * @return A valid context handle in case of success, NULL otherwise.
+ *         The context should be released with mlReleaseContext().
  */
 ML_API_ENTRY ml_context mlCreateContext();
-
-/**
- * Returns a formatted message with the last operation error.
- * May be called in case an operation returns ML_FAIL or ML_INVALID_HANDLE.
- *
- * @param[in]  context     A valid context handle.
- * @param[out] buffer      A buffer for the message.
- * @param[in]  buffer_size The buffer size, in bytes.
- *
- * @return The formatted message.
- */
-ML_API_ENTRY char* mlGetContextError(ml_context context, char* buffer, size_t buffer_size);
 
 /**
  * Releases a context created with mlCreateContext(), invalidates the handle.
@@ -144,19 +146,20 @@ ML_API_ENTRY char* mlGetContextError(ml_context context, char* buffer, size_t bu
  */
 ML_API_ENTRY void mlReleaseContext(ml_context context);
 
-
 /**
  * Creates a 3D image with a given description.
  * Image dimension order is (height, width, channels).
  *
  * @param[in] context A valid context handle.
  * @param[in] info    Image description with all dimensions specified.
+ * @param[in] mode    Image data access mode.
  *
- * @return A valid image handle in case of success, ML_INVALID_HANDLE
- *         otherwise. The image should be released with mlReleaseImage().
- *         To get more details in case of failure, call mlGetContextError().
+ * @return A valid image handle in case of success, NULL otherwise.
+ *         The image should be released with mlReleaseImage().
+ *         To get more details in case of failure, call mlGetLastError().
  */
-ML_API_ENTRY ml_image mlCreateImage(ml_context context, ml_image_info const* info);
+
+ML_API_ENTRY ml_image mlCreateImage(ml_context context, ml_image_info const* info, ml_access_mode mode);
 
 /**
  * Returns image description.
@@ -184,7 +187,7 @@ ML_API_ENTRY void* mlMapImage(ml_image image, size_t* size);
  * Unmaps a previously mapped image data.
  *
  * @param[in] image A valid image handle.
- * @param[in] size  A pointer to the previously mapped data.
+ * @param[in] data  A pointer to the previously mapped data.
  *
  * @return ML_OK in case of success, ML_FAIL otherwise.
  */
@@ -201,25 +204,13 @@ ML_API_ENTRY void mlReleaseImage(ml_image image);
 /**
  * Loads model data from a file.
  *
- * @param[in] model  A valid context handle.
- * @param[in] params Model parameters. @see #ml_model_params.
+ * @param[in] context A valid context handle.
+ * @param[in] params  Model parameters. @see #ml_model_params.
  *
  * @return ML_OK in case of success, ML_FAIL otherwise.
- *         To get more details in case of failure, call mlGetContextError().
+ *         To get more details in case of failure, call mlGetLastError().
  */
 ML_API_ENTRY ml_model mlCreateModel(ml_context context, ml_model_params const* params);
-
-/**
- * Returns a formatted message with the last operation error.
- * May be called in case an operation returns ML_FAIL or ML_INVALID_HANDLE.
- *
- * @param[in]  model       A valid model handle.
- * @param[out] buffer      A buffer for the message.
- * @param[in]  buffer_size The buffer size, in bytes.
- *
- * @return The formatted message.
- */
-ML_API_ENTRY char* mlGetModelError(ml_model model, char* buffer, size_t buffer_size);
 
 /**
  * Returns input image information.
@@ -233,7 +224,7 @@ ML_API_ENTRY char* mlGetModelError(ml_model model, char* buffer, size_t buffer_s
  *                         some dimensions may not be specified.
  *
  * @return ML_OK in case of success, ML_FAIL otherwise.
- *         To get more details in case of failure, call mlGetModelError().
+ *         To get more details in case of failure, call mlGetLastError().
  */
 ML_API_ENTRY ml_status mlGetModelInfo(ml_model model,
                                       ml_image_info* input_info,
@@ -257,7 +248,7 @@ ML_API_ENTRY ml_status mlSetModelInputInfo(ml_model model, ml_image_info const* 
  * @param[in] output A valid output image descriptor.
  *
  * @return ML_OK in case of success, ML_FAIL otherwise.
- *         To get more details in case of failure, call mlGetModelError().
+ *         To get more details in case of failure, call mlGetLastError().
  */
 ML_API_ENTRY ml_status mlInfer(ml_model model, ml_image input, ml_image output);
 
@@ -267,6 +258,19 @@ ML_API_ENTRY ml_status mlInfer(ml_model model, ml_image input, ml_image output);
  * @param model A valid model handle.
  */
 ML_API_ENTRY void mlReleaseModel(ml_model model);
+
+/**
+ * Returns a null-terminated string containing the last operation error message.
+ * May be called after some operation returns ML_FAIL or NULL.
+ * The error message is owned by the library and must NOT be freed by a client.
+ * The message is stored in a thread local storage, so this function
+ * should be called from the thread where the failure occured.
+ *
+ * @param[out] size Optional, the size of the error message (excluding the null-terminator).
+ *
+ * @return A pointer to the formatted message.
+ */
+ML_API_ENTRY const char* mlGetLastError(size_t* size);
 
 
 #ifdef __cplusplus

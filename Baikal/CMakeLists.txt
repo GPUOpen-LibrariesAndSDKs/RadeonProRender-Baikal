@@ -240,8 +240,8 @@ endif ()
 
 # add ml libs
 target_include_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/3rdparty/RadeonProML")
-target_link_libraries(Baikal PUBLIC "${Baikal_SOURCE_DIR}/3rdparty/RadeonProML/libRadeonProML.so")
-target_link_libraries(Baikal PUBLIC libRadeonProML.so)
+target_link_directories(Baikal PUBLIC "${Baikal_SOURCE_DIR}/3rdparty/RadeonProML")
+target_link_libraries(Baikal PUBLIC "${Baikal_SOURCE_DIR}/3rdparty/RadeonProML/RadeonProML.lib")
 
 file(TO_CMAKE_PATH ${BAIKAL_KERNELS_SRC} BAIKAL_KERNELS_SRC_CMAKE)
 install(DIRECTORY ${BAIKAL_KERNELS_SRC_CMAKE} DESTINATION Baikal)

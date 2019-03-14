@@ -34,20 +34,14 @@ namespace Baikal
         {
             if (status != ML_OK)
             {
-                std::vector<char> buffer(1024);
-                throw std::runtime_error(mlGetModelError(model,
-                                                         buffer.data(),
-                                                         buffer.size()));
+                throw std::runtime_error(mlGetLastError(nullptr));
             }
         }
 
 
         inline void ContextError(ml_context context)
         {
-            std::vector<char> buffer(1024);
-            throw std::runtime_error(mlGetContextError(context,
-                                                       buffer.data(),
-                                                       buffer.size()));
+            throw std::runtime_error(mlGetLastError(nullptr));
         }
     }
 }

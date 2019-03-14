@@ -80,14 +80,14 @@ namespace Baikal
             {
                 case ModelType::kDenoiser:
                     return std::make_unique<Inference>(
-                            "models/color_albedo_depth_normal_9_v3.pb",
+                            "models/color_albedo_depth_normal_9_v3.json",
                                           ml_image_info {ML_FLOAT32, width, height, std::get<0>(channels)},
                                           ml_image_info {ML_FLOAT32, width, height, std::get<1>(channels)},
                                           gpu_memory_fraction,
                                           visible_devices);
                 case ModelType::kUpsampler:
                     return std::unique_ptr<Inference>(
-                            new Inference("models/esrgan-05x3x32-198135.pb",
+                            new Inference("models/esrgan-03x2x32-273866.json",
                                           ml_image_info {ML_FLOAT32, width, height, std::get<0>(channels)},
                                           ml_image_info {ML_FLOAT32, 2 * width, 2 * height, std::get<1>(channels)},
                                           gpu_memory_fraction,
@@ -155,7 +155,7 @@ namespace Baikal
 
             auto res = m_inference->PopOutput();
 
-            if (res.image != ML_INVALID_HANDLE && res.tag >= m_start_seq)
+            if (res.image != nullptr && res.tag >= m_start_seq)
             {
                 size_t res_size;
                 auto res_data = static_cast<float*>(mlMapImage(res.image, &res_size));

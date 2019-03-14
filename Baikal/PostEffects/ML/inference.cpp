@@ -46,7 +46,7 @@ namespace Baikal
             ml_image_info image_info;
             // specify input tensor shape for model
             CheckModelStatus(m_model.GetModel(),
-                    mlGetModelInfo(m_model.GetModel(), &image_info, NULL));
+                    mlGetModelInfo(m_model.GetModel(), &image_info, nullptr));
 
             if (image_info.channels != input_desc.channels)
             {
@@ -91,16 +91,16 @@ namespace Baikal
 
         Image Inference::PopOutput()
         {
-            Image output_tensor = {0, ML_INVALID_HANDLE};
+            Image output_tensor = {0, nullptr};
             m_output_queue.try_pop(output_tensor);
             return output_tensor;
         }
 
         ml_image Inference::AllocImage(ml_image_info info)
         {
-            auto image = m_model.CreateImage(info);
+            auto image = m_model.CreateImage(info, ML_WRITE_ONLY);
 
-            if (image == ML_INVALID_HANDLE)
+            if (image == nullptr)
             {
                 throw std::runtime_error("can not create input image");
             }
@@ -115,7 +115,7 @@ namespace Baikal
                 Image input;
                 m_input_queue.wait_and_pop(input);
 
-                if (input.image == ML_INVALID_HANDLE)
+                if (input.image == nullptr)
                 {
                     break;
                 }
@@ -136,7 +136,7 @@ namespace Baikal
 
         void Inference::Shutdown()
         {
-            m_input_queue.push({0, ML_INVALID_HANDLE});
+            m_input_queue.push({0, nullptr});
             m_worker.join();
         }
     }

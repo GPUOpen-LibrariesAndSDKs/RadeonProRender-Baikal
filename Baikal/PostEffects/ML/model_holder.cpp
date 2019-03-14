@@ -35,7 +35,7 @@ namespace Baikal
         : m_context(mlCreateContext(), mlReleaseContext)
         , m_model(nullptr, nullptr)
         {
-            if (m_context == ML_INVALID_HANDLE)
+            if (m_context == nullptr)
             {
                 throw std::runtime_error("can't create ml context");
             }
@@ -48,18 +48,17 @@ namespace Baikal
 
             m_model = Handle<ml_model>(mlCreateModel(m_context.get(), &params), mlReleaseModel);
 
-            if (m_model == ML_INVALID_HANDLE)
-            {
-                throw std::runtime_error(
-                        "can't create ml model, check that model is not absent or valid");
+            if (m_model == nullptr)
+            {   
+                throw std::runtime_error(mlGetLastError(nullptr));
             }
         }
 
-        ml_image ModelHolder::CreateImage(ml_image_info const& info)
+        ml_image ModelHolder::CreateImage(ml_image_info const& info, ml_access_mode access_mode)
         {
-            auto tensor = mlCreateImage(m_context.get(), &info);
+            auto tensor = mlCreateImage(m_context.get(), &info, access_mode);
 
-            if (tensor == ML_INVALID_HANDLE)
+            if (tensor == nullptr)
             {
                 throw std::runtime_error("can not create model image");
             }

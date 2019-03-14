@@ -191,29 +191,29 @@ namespace Baikal
             s.cmd_line_mode = true;
         }
 
-        if (m_cmd_parser.OptionExists("-postproc"))
+        if (m_cmd_parser.OptionExists("-postprocess"))
         {
-            auto post_processing_type = m_cmd_parser.GetOption("-postproc");
+            auto post_processing_type = m_cmd_parser.GetOption("-postprocess");
 
-            if (post_processing_type == "bilateral")
+            if (post_processing_type == "denoise-bilateral")
             {
                 s.post_processing_type = PostProcessingType::kBilateralDenoiser;
             }
-            else if (post_processing_type == "wavelet")
+            else if (post_processing_type == "denoise-wavelet")
             {
                 s.post_processing_type = PostProcessingType::kWaveletDenoser;
             }
-            else if (post_processing_type == "denoise")
+            else if (post_processing_type == "denoise-ml")
             {
                 s.post_processing_type = PostProcessingType::kMLDenoiser;
             }
-            else if (post_processing_type == "sisr")
+            else if (post_processing_type == "upsample-ml-2x")
             {
                 s.post_processing_type = PostProcessingType::kMLUpsample;
             }
             else
             {
-                std::cerr << "WARNING: unknown denoiser mode\n";
+                std::cerr << "WARNING: unknown postprocessing type" << std::endl;
             }
         }
 

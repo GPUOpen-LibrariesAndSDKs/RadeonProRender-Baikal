@@ -46,7 +46,7 @@ namespace Baikal
                 return m_model.get();
             }
 
-            ml_image CreateImage(ml_image_info const& info);
+            ml_image CreateImage(ml_image_info const& info, ml_access_mode access_mode);
 
             ~ModelHolder();
 
