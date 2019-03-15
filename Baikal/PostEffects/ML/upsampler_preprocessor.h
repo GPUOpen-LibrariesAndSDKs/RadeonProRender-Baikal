@@ -37,8 +37,8 @@ namespace Baikal
         {
         public:
             UpsamplerPreprocessor(CLWContext context,
-                           Baikal::CLProgramManager const *program_manager,
-                           std::uint32_t spp = 1);
+                                  Baikal::CLProgramManager const *program_manager,
+                                  std::uint32_t spp = 1);
 
 
             Image MakeInput(PostEffect::InputSet const& inputs) override;

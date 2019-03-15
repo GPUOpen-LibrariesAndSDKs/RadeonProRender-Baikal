@@ -81,15 +81,15 @@ namespace Baikal
                 case ModelType::kDenoiser:
                     return std::make_unique<Inference>(
                             "models/color_albedo_depth_normal_9_v3.json",
-                                          ml_image_info {ML_FLOAT32, width, height, std::get<0>(channels)},
-                                          ml_image_info {ML_FLOAT32, width, height, std::get<1>(channels)},
+                                          ml_image_info {ML_FLOAT32, height, width, std::get<0>(channels)},
+                                          ml_image_info {ML_FLOAT32, height, width, std::get<1>(channels)},
                                           gpu_memory_fraction,
                                           visible_devices);
                 case ModelType::kUpsampler:
                     return std::unique_ptr<Inference>(
                             new Inference("models/esrgan-03x2x32-273866.json",
-                                          ml_image_info {ML_FLOAT32, width, height, std::get<0>(channels)},
-                                          ml_image_info {ML_FLOAT32, 2 * width, 2 * height, std::get<1>(channels)},
+                                          ml_image_info {ML_FLOAT32, height, width, std::get<0>(channels)},
+                                          ml_image_info {ML_FLOAT32, 2 * height, 2 * width, std::get<1>(channels)},
                                           gpu_memory_fraction,
                                           visible_devices));
 
@@ -200,7 +200,7 @@ namespace Baikal
             {
                 auto color = dynamic_cast<ClwOutput*>(input_set.at(OutputType::kColor))->data();
 
-                if (m_type == ModelType ::kDenoiser)
+                if (m_type == ModelType::kDenoiser)
                 {
                     context.CopyBuffer<float3>(0,
                                                color,
