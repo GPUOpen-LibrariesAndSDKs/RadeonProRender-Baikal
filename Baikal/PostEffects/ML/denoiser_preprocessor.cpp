@@ -84,7 +84,7 @@ namespace Baikal
                                                CL_MEM_READ_WRITE,
                                                m_channels * width * height);
 
-            ml_image_info image_info = {ML_FLOAT32, m_width, m_height, m_channels};
+            ml_image_info image_info = {ML_FLOAT32, m_height, m_width, m_channels};
             m_image = mlCreateImage(m_context.get(), &image_info, ML_READ_WRITE);
 
 

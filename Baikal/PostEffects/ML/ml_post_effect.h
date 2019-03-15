@@ -25,7 +25,7 @@ THE SOFTWARE.
 #include "data_preprocessor.h"
 #include "PostEffects/ML/inference.h"
 #include "PostEffects/clw_post_effect.h"
-#include "PostEffects/output_accessor.h"
+
 
 namespace Baikal
 {
@@ -66,7 +66,6 @@ namespace Baikal
             std::uint32_t m_start_seq = 0;
             std::uint32_t m_last_seq = 0;
             const CLProgramManager *m_program;
-            __RendererOutputAccessor m_accessor;
         };
     }
 }
