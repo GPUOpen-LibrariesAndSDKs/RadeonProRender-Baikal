@@ -50,7 +50,7 @@ namespace Baikal
 
             void Resize_2x(CLWBuffer<RadeonRays::float3> dst, CLWBuffer<RadeonRays::float3> src);
         private:
-            Inference::Ptr CreateInference(std::uint32_t width, std::uint32_t height);
+            Inference::Ptr CreateInference();
             void Init(InputSet const& input_set, Output& output);
 
             Inference::Ptr m_inference;
@@ -61,8 +61,8 @@ namespace Baikal
             CLWBuffer<RadeonRays::float3> m_last_image;
             CLWBuffer<RadeonRays::float3> m_resizer_cache;
             std::unique_ptr<DataPreprocessor> m_preproc;
-            std::uint32_t m_width = 0;
-            std::uint32_t m_height = 0;
+            std::uint32_t m_input_width = 0;
+            std::uint32_t m_input_height = 0;
             std::uint32_t m_start_seq = 0;
             std::uint32_t m_last_seq = 0;
             const CLProgramManager *m_program;

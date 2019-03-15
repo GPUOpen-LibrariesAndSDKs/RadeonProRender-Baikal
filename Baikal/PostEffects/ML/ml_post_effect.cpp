@@ -66,7 +66,7 @@ namespace Baikal
             }
         }
 
-        Inference::Ptr MLPostEffect::CreateInference(std::uint32_t width, std::uint32_t height)
+        Inference::Ptr MLPostEffect::CreateInference()
         {
             auto gpu_memory_fraction = GetParameter("gpu_memory_fraction").GetFloat();
             auto visible_devices = GetParameter("visible_devices").GetString();
@@ -81,18 +81,17 @@ namespace Baikal
                 case ModelType::kDenoiser:
                     return std::make_unique<Inference>(
                             "models/color_albedo_depth_normal_9_v3.json",
-                                          ml_image_info {ML_FLOAT32, height, width, std::get<0>(channels)},
-                                          ml_image_info {ML_FLOAT32, height, width, std::get<1>(channels)},
+                                          m_input_height,
+                                          m_input_width,
                                           gpu_memory_fraction,
                                           visible_devices);
                 case ModelType::kUpsampler:
                     return std::unique_ptr<Inference>(
                             new Inference("models/esrgan-03x2x32-273866.json",
-                                          ml_image_info {ML_FLOAT32, height, width, std::get<0>(channels)},
-                                          ml_image_info {ML_FLOAT32, 2 * height, 2 * width, std::get<1>(channels)},
+                                          m_input_height, 
+                                          m_input_width,
                                           gpu_memory_fraction,
                                           visible_devices));
-
                 default:
                     throw std::logic_error("Unsupported model type");
             }
@@ -102,11 +101,11 @@ namespace Baikal
         {
             auto aov = input_set.begin()->second;
 
-            m_width = aov->width();
-            m_height = aov->height();
+            m_input_width = aov->width();
+            m_input_height = aov->height();
 
-            m_inference = CreateInference(m_width, m_height);
-            auto out_shape = m_inference->GetOutputShape();
+            m_inference = CreateInference();
+            auto out_shape = m_inference->GetOutputInfo();
 
             m_last_image = CLWBuffer<float3>::Create(GetContext(),
                                                      CL_MEM_READ_WRITE,
@@ -118,8 +117,8 @@ namespace Baikal
 
         void MLPostEffect::Apply(InputSet const& input_set, Output& output)
         {
-            if (m_width != input_set.begin()->second->width() ||
-                m_height != input_set.begin()->second->height())
+            if (m_input_width != input_set.begin()->second->width() ||
+                m_input_height != input_set.begin()->second->height())
             {
                 m_is_dirty = true;
             }
@@ -138,7 +137,7 @@ namespace Baikal
             }
 
             auto context = GetContext();
-            auto shape = m_inference->GetInputShape();
+            auto shape = m_inference->GetInputInfo();
             auto input = m_preproc->MakeInput(input_set);
 
             if (input.tag == 1)
@@ -167,7 +166,7 @@ namespace Baikal
 
                 auto dest = m_host.data();
                 auto source = res_data;
-                auto output_shape = m_inference->GetOutputShape();
+                auto output_shape = m_inference->GetOutputInfo();
                 for (auto i = 0u; i < output_shape.width * output_shape.height; ++i)
                 {
                     dest->x = *source++;
@@ -244,11 +243,11 @@ namespace Baikal
             unsigned argc = 0;
             scale_x.SetArg(argc++, m_resizer_cache);
             scale_x.SetArg(argc++, src);
-            scale_x.SetArg(argc++, m_width);
-            scale_x.SetArg(argc++, m_height);
+            scale_x.SetArg(argc++, m_input_width);
+            scale_x.SetArg(argc++, m_input_height);
 
             // run BicubicUpScale2x_X kernel
-            auto thread_num = ((2 * m_width * m_height + 63) / 64) * 64;
+            auto thread_num = ((2 * m_input_width * m_input_height + 63) / 64) * 64;
             context.Launch1D(0,
                              thread_num,
                              64,
@@ -259,11 +258,11 @@ namespace Baikal
             argc = 0;
             scale_y.SetArg(argc++, dst);
             scale_y.SetArg(argc++, m_resizer_cache);
-            scale_y.SetArg(argc++, 2 * m_width);
-            scale_y.SetArg(argc++, m_height);
+            scale_y.SetArg(argc++, 2 * m_input_width);
+            scale_y.SetArg(argc++, m_input_height);
 
             // run BicubicUpScale2x_Y kernel
-            thread_num = ((4 * m_width * m_height + 63) / 64) * 64;
+            thread_num = ((4 * m_input_width * m_input_height + 63) / 64) * 64;
             context.Launch1D(0,
                              thread_num,
                              64,

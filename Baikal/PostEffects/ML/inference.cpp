@@ -31,35 +31,22 @@ namespace Baikal
     namespace PostEffects
     {
         Inference::Inference(std::string const& model_path,
-                             // input shapes
-                             ml_image_info const& input_desc,
-                             ml_image_info const& output_desc,
-                             // model params
+                             size_t input_height,
+                             size_t input_width,
                              float gpu_memory_fraction,
                              std::string const& visible_devices)
                 : m_model(model_path,
                           gpu_memory_fraction,
-                          visible_devices),
-                  m_input_desc(input_desc),
-                  m_output_desc(output_desc)
+                          visible_devices)
         {
-            ml_image_info image_info;
-            // specify input tensor shape for model
-            CheckModelStatus(m_model.GetModel(),
-                    mlGetModelInfo(m_model.GetModel(), &image_info, nullptr));
+            CheckStatus(mlGetModelInfo(m_model.GetModel(), &m_input_info, nullptr));
+            // Set unspecified input tensor dimensions
+            m_input_info.width = input_width;
+            m_input_info.height = input_height;
+            CheckStatus(mlSetModelInputInfo(m_model.GetModel(), &m_input_info));
 
-            if (image_info.channels != input_desc.channels)
-            {
-                throw std::runtime_error("input channels number is incorrect");
-            }
-
-            m_input_desc.dtype = image_info.dtype;
-            CheckModelStatus(m_model.GetModel(),
-                    mlSetModelInputInfo(m_model.GetModel(), &m_input_desc));
-
-            // get output tensor shape for out model
-            CheckModelStatus(m_model.GetModel(),
-                    mlGetModelInfo(m_model.GetModel(), NULL, &m_output_desc));
+            // Get output tensor shape for model
+            CheckStatus(mlGetModelInfo(m_model.GetModel(), nullptr, &m_output_info));
 
             m_worker = std::thread(&Inference::DoInference, this);
         }
@@ -69,19 +56,19 @@ namespace Baikal
             Shutdown();
         }
 
-        ml_image_info Inference::GetInputShape() const
+        ml_image_info Inference::GetInputInfo() const
         {
-            return m_input_desc;
+            return m_input_info;
         }
 
-        ml_image_info Inference::GetOutputShape() const
+        ml_image_info Inference::GetOutputInfo() const
         {
-            return m_output_desc;
+            return m_output_info;
         }
 
         Image Inference::GetInputData()
         {
-            return {0, AllocImage(m_input_desc)};
+            return {0, AllocImage(m_input_info, ML_READ_WRITE)};
         }
 
         void Inference::PushInput(Image&& image)
@@ -96,13 +83,13 @@ namespace Baikal
             return output_tensor;
         }
 
-        ml_image Inference::AllocImage(ml_image_info info)
+        ml_image Inference::AllocImage(ml_image_info info, ml_access_mode access_mode)
         {
-            auto image = m_model.CreateImage(info, ML_WRITE_ONLY);
+            auto image = m_model.CreateImage(info, access_mode);
 
             if (image == nullptr)
             {
-                throw std::runtime_error("can not create input image");
+                throw std::runtime_error("Couldn't not create image");
             }
 
             return image;
@@ -125,10 +112,9 @@ namespace Baikal
                     continue;
                 }
 
-                Image output = { input.tag, AllocImage(m_output_desc) };
+                Image output = { input.tag, AllocImage(m_output_info, ML_READ_WRITE) };
 
-                CheckModelStatus(m_model.GetModel(),
-                        mlInfer(m_model.GetModel(), input.image, output.image));
+                CheckStatus(mlInfer(m_model.GetModel(), input.image, output.image));
 
                 m_output_queue.push(std::move(output));
             }

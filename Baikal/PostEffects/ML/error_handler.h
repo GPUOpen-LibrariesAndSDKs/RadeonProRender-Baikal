@@ -30,7 +30,7 @@ namespace Baikal
 {
     namespace PostEffects
     {
-        inline void CheckModelStatus(ml_model model, ml_status status)
+        inline void CheckStatus(ml_status status)
         {
             if (status != ML_OK)
             {

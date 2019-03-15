@@ -43,15 +43,13 @@ namespace Baikal
             using Ptr = std::unique_ptr<Inference>;
 
             Inference(std::string const& model_path,
-                      // input shapes
-                      ml_image_info const& input_desc,
-                      ml_image_info const& output_desc,
-                      // model params
+                      size_t input_height,
+                      size_t input_width,
                       float gpu_memory_fraction,
                       std::string const& visible_devices);
 
-            ml_image_info GetInputShape() const;
-            ml_image_info GetOutputShape() const;
+            ml_image_info GetInputInfo() const;
+            ml_image_info GetOutputInfo() const;
 
             Image GetInputData();
             void PushInput(Image&& image);
@@ -61,14 +59,14 @@ namespace Baikal
 
         protected:
             void DoInference();
-            ml_image AllocImage(ml_image_info info);
+            ml_image AllocImage(ml_image_info info, ml_access_mode access_mode);
 
             RadeonRays::thread_safe_queue<Image> m_input_queue;
             RadeonRays::thread_safe_queue<Image> m_output_queue;
 
             ModelHolder m_model;
-            ml_image_info m_input_desc;
-            ml_image_info m_output_desc;
+            ml_image_info m_input_info;
+            ml_image_info m_output_info;
 
         private:
             void Shutdown();
