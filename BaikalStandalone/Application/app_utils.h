@@ -38,12 +38,12 @@ namespace Baikal
 
         bool help;
 
-        //model load settings
+        // model load settings
         std::string path;
         std::string modelname;
         std::string envmapname;
 
-        //render
+        // render
         std::uint32_t width;
         std::uint32_t height;
         int num_bounces;
@@ -53,12 +53,12 @@ namespace Baikal
         Mode mode;
         bool split_output = false;
 
-        //ao
+        // ao
         float ao_radius;
         int num_ao_rays;
         bool ao_enabled;
 
-        //camera
+        // camera
         RadeonRays::float3 camera_pos;
         RadeonRays::float3 camera_at;
         RadeonRays::float3 camera_up;
@@ -69,33 +69,34 @@ namespace Baikal
         float camera_focal_length;
         CameraType camera_type;
 
-        //folder to store camera position output
+        // folder to store camera position output
         std::string camera_out_folder;
 
-        //app
+        // app
         bool progressive;
         bool cmd_line_mode;
         bool recording_enabled;
         bool benchmark;
         bool gui_visible;
 
-        //bencmark
+        // bencmark
         Estimator::RayTracingStats stats;
         bool time_benchmarked;
         bool rt_benchmarked;
         bool time_benchmark;
         float time_benchmark_time;
 
-        //image file
+        // image file
         std::string base_image_file_name;
         std::string image_file_format;
 
         std::string light_file;
 
-        //unused
+        // unused
         int num_shadow_rays;
         int samplecount;
         float envmapmul;
+
         // OpenCL platform & device settings
         int platform_index;
         int device_index;
@@ -104,21 +105,20 @@ namespace Baikal
         float gpu_mem_fraction = 0; // float number from 0 to 1, percentage of max used device memory, 0 for default behavior
         std::string visible_devices;
 
-        // denoiser settings
-        PostProcessingType post_processing_type = PostProcessingType::kNone;
-        std::uint32_t denoiser_start_spp = 8;
+        // postprocessing settings
+        PostProcessingType postprocess_type = PostProcessingType::kNone;
+        std::uint32_t postprocess_start_spp = 1;
+        std::uint32_t postprocess_every_frame = 0; // TODO: make it bool
     };
 
     class AppCliParser
     {
     public:
-
         AppCliParser(int argc, char * argv[]);
         AppSettings Parse();
         static void ShowHelp();
 
     private:
-
         CmdParser m_cmd_parser;
     };
 }

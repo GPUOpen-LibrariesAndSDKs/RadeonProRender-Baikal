@@ -48,14 +48,21 @@ namespace Baikal
                       float gpu_memory_fraction,
                       std::string const& visible_devices);
 
+            virtual ~Inference();
+
             ml_image_info GetInputInfo() const;
             ml_image_info GetOutputInfo() const;
 
             Image GetInputData();
-            void PushInput(Image&& image);
 
+            void PushInput(Image&& image);
+            //
+            // Try to pop output image. 
+            // Returns empty image, if there are no infered element in the queue
+            Image TryPopOutput(); 
+            //
+            // Wait and pop output image. 
             Image PopOutput();
-            virtual ~Inference();
 
         protected:
             void DoInference();

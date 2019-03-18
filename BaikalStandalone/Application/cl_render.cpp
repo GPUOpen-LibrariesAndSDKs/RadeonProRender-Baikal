@@ -62,7 +62,7 @@ namespace Baikal
 
     AppClRender::AppClRender(AppSettings& settings, GLuint tex)
     : m_tex(tex)
-    , m_post_processing_type(settings.post_processing_type)
+    , m_post_processing_type(settings.postprocess_type)
     {
         InitCl(settings, m_tex);
         InitPostEffect(settings);
@@ -772,13 +772,15 @@ namespace Baikal
             AddPostEffect(m_primary, PostEffectType::kMLDenoiser);
             m_post_effect->SetParameter("gpu_memory_fraction", settings.gpu_mem_fraction);
             m_post_effect->SetParameter("visible_devices", settings.visible_devices);
-            m_post_effect->SetParameter("start_spp", settings.denoiser_start_spp);
+            m_post_effect->SetParameter("start_spp", settings.postprocess_start_spp);
+            m_post_effect->SetParameter("every_frame", settings.postprocess_every_frame);
             break;
         case PostProcessingType::kMLUpsample:
             AddPostEffect(m_primary, PostEffectType::kMLUpsampler);
             m_post_effect->SetParameter("gpu_memory_fraction", settings.gpu_mem_fraction);
             m_post_effect->SetParameter("visible_devices", settings.visible_devices);
-            m_post_effect->SetParameter("start_spp", settings.denoiser_start_spp);
+            m_post_effect->SetParameter("start_spp", settings.postprocess_start_spp);
+            m_post_effect->SetParameter("every_frame", settings.postprocess_every_frame);
             break;
         default:
             throw std::runtime_error("AppClRender(...): Unsupported denoiser type");

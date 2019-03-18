@@ -55,14 +55,18 @@ namespace Baikal
 
             Inference::Ptr m_inference;
             ModelType m_type;
-            bool m_is_dirty;
-            bool m_has_denoised_img;
+            bool m_is_dirty = true;
+            bool m_process_every_frame = false;
+            bool m_has_postprocessed_image = false;
+
             std::vector<RadeonRays::float3> m_host;
             CLWBuffer<RadeonRays::float3> m_last_image;
             CLWBuffer<RadeonRays::float3> m_resizer_cache;
             std::unique_ptr<DataPreprocessor> m_preproc;
+
             std::uint32_t m_input_width = 0;
             std::uint32_t m_input_height = 0;
+
             std::uint32_t m_start_seq = 0;
             std::uint32_t m_last_seq = 0;
             const CLProgramManager *m_program;

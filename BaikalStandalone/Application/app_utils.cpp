@@ -197,19 +197,19 @@ namespace Baikal
 
             if (post_processing_type == "denoise-bilateral")
             {
-                s.post_processing_type = PostProcessingType::kBilateralDenoiser;
+                s.postprocess_type = PostProcessingType::kBilateralDenoiser;
             }
             else if (post_processing_type == "denoise-wavelet")
             {
-                s.post_processing_type = PostProcessingType::kWaveletDenoser;
+                s.postprocess_type = PostProcessingType::kWaveletDenoser;
             }
             else if (post_processing_type == "denoise-ml")
             {
-                s.post_processing_type = PostProcessingType::kMLDenoiser;
+                s.postprocess_type = PostProcessingType::kMLDenoiser;
             }
             else if (post_processing_type == "upsample-ml-2x")
             {
-                s.post_processing_type = PostProcessingType::kMLUpsample;
+                s.postprocess_type = PostProcessingType::kMLUpsample;
             }
             else
             {
@@ -217,8 +217,15 @@ namespace Baikal
             }
         }
 
-        s.denoiser_start_spp = m_cmd_parser.GetOption("-start_spp", s.denoiser_start_spp);
-
+        s.postprocess_every_frame = m_cmd_parser.GetOption("-every_frame", s.postprocess_every_frame);
+        if (s.postprocess_every_frame)
+        {
+            s.postprocess_start_spp = 1;
+        }
+        else
+        {
+            s.postprocess_start_spp = m_cmd_parser.GetOption("-start_spp", s.postprocess_start_spp);
+        }
         return s;
     }
 

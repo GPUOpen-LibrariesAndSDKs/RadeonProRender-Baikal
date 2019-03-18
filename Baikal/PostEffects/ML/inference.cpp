@@ -76,10 +76,17 @@ namespace Baikal
             m_input_queue.push(std::move(image));
         }
 
-        Image Inference::PopOutput()
+        Image Inference::TryPopOutput()
         {
             Image output_tensor = {0, nullptr};
             m_output_queue.try_pop(output_tensor);
+            return output_tensor;
+        }
+
+        Image Inference::PopOutput()
+        {
+            Image output_tensor = { 0, nullptr };
+            m_output_queue.wait_and_pop(output_tensor);
             return output_tensor;
         }
 

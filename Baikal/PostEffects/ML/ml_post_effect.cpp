@@ -43,8 +43,6 @@ namespace Baikal
 #endif
         , m_inference(nullptr)
         , m_type(type)
-        , m_is_dirty(true)
-        , m_has_denoised_img(false)
         , m_start_seq(0)
         , m_last_seq(0)
         , m_program(program_manager)
@@ -52,6 +50,8 @@ namespace Baikal
             RegisterParameter("gpu_memory_fraction", .7f);
             RegisterParameter("visible_devices", std::string());
             RegisterParameter("start_spp", 1u);
+            RegisterParameter("every_frame", 0u);
+
             // init preprocessing
             switch (m_type)
             {
@@ -71,10 +71,7 @@ namespace Baikal
             auto gpu_memory_fraction = GetParameter("gpu_memory_fraction").GetFloat();
             auto visible_devices = GetParameter("visible_devices").GetString();
             m_preproc->SetStartSpp(GetParameter("start_spp").GetUint());
-
-            auto channels = m_preproc->ChannelsNum();
-
-            std::string model_path;
+            m_process_every_frame = static_cast<bool>(GetParameter("every_frame").GetUint());
 
             switch (m_type)
             {
@@ -140,21 +137,29 @@ namespace Baikal
             auto shape = m_inference->GetInputInfo();
             auto input = m_preproc->MakeInput(input_set);
 
-            if (input.tag == 1)
+            Image res;
+            if (m_process_every_frame)
             {
-                m_start_seq = m_last_seq + 1;
-                m_has_denoised_img = false;
-            }
-
-            if (input.image != nullptr)
-            {
-                input.tag = ++m_last_seq;
                 m_inference->PushInput(std::move(input));
+                res = m_inference->PopOutput();
+            }
+            else
+            {
+                if (input.tag == 1)
+                {
+                    m_start_seq = m_last_seq + 1;
+                }
+
+                if (input.image != nullptr)
+                {
+                    input.tag = ++m_last_seq;
+                    m_inference->PushInput(std::move(input));
+                }
+
+                res = m_inference->TryPopOutput();
             }
 
-            auto res = m_inference->PopOutput();
-
-            if (res.image != nullptr && res.tag >= m_start_seq)
+            if (res.image != nullptr && (res.tag >= m_start_seq || m_process_every_frame))
             {
                 size_t res_size;
                 auto res_data = static_cast<float*>(mlMapImage(res.image, &res_size));
@@ -182,21 +187,18 @@ namespace Baikal
                                     m_last_image,
                                     m_host.data(),
                                     res_size / (3 * sizeof(float)));
-
-                m_has_denoised_img = true;
-            }
-
-            if (m_has_denoised_img)
-            {
+                // Copy postprocessed image
                 context.CopyBuffer(0,
-                                   m_last_image,
-                                   clw_inference_output->data(),
-                                   0 /* srcOffset */,
-                                   0 /* destOffset */,
-                                   m_last_image.GetElementCount()).Wait();
+                    m_last_image,
+                    clw_inference_output->data(),
+                    0 /* srcOffset */,
+                    0 /* destOffset */,
+                    m_last_image.GetElementCount()).Wait();
             }
             else
             {
+                // Postprocessed image is not ready yet.
+                // Therefore, we'll output source (not-postprocessed) image
                 auto color = dynamic_cast<ClwOutput*>(input_set.at(OutputType::kColor))->data();
 
                 if (m_type == ModelType::kDenoiser)
